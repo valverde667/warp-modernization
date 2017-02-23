@@ -7538,11 +7538,11 @@ c     --- Only slab geometry is now supported.
 
 c     --- The parallel version does not yet work, due to the issue dealing
 c     --- with epsilon, described below.
-      if (fsdecomp%nxprocs*fsdecomp%nyprocs*fsdecomp%nzprocs > 1) then
-        print*,"multigrid2ddielectricsolve: does not yet work in parallel"
-        call kaboom("multigrid2ddielectricsolve: does not yet work in parallel")
-        return
-      endif
+C       if (fsdecomp%nxprocs*fsdecomp%nyprocs*fsdecomp%nzprocs > 1) then
+C         print*,"multigrid2ddielectricsolve: does not yet work in parallel"
+C         call kaboom("multigrid2ddielectricsolve: does not yet work in parallel")
+C         return
+C       endif
 
 c     --- If doing initialization only, then exit.
       if (iwhich == 1) return
@@ -7935,6 +7935,15 @@ c       --- Restriction - note that no scaling factor is needed
         call applyboundaryconditions3d(nxlocalcoarse-1,0,nzlocalcoarse-1,
      &                                 1,0,1,epsiloncoarse,1,localbounds,
      &                                 .true.,.false.)
+        print*,"Before Exch",ixproc,izproc,epsiloncoarse
+#ifdef MPIPARALLEL
+C           print*,"on proc",izproc,"coarse mpistatez:",coarsedecomp%mpistatez
+C           print*,"on proc",izproc,"full mpistatez:",fsdecomp%mpistatez
+          call mgexchange_epsilon2(1,nxlocalcoarse,0,nzlocalcoarse,
+     &                        epsiloncoarse,1,0,1,
+     &                        -1,-1,0,0,coarsedecomp)
+#endif
+        print*,"After Exch",ixproc,izproc,epsiloncoarse
 c       --- XXX epsiloncoarse needs to be exchanged among neighboring
 c       --- XXX processors. This code needs to be written, so this solver
 c       --- XXX will not work in parallel. (This is the only issue -
