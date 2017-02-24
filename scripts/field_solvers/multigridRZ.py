@@ -362,15 +362,10 @@ class MultiGrid2DDielectric(MultiGrid2D):
     def __init__(self,epsilon=None,lreducedpickle=1,**kw):
         MultiGrid2D.__init__(self,lreducedpickle,**kw)
 
-        # if epsilon is None:
-        #     self.epsilon = eps0*fones((self.nxlocal+2,self.nzlocal+2),'d')
-        # else:
-        #     self.epsilon = epsilon
-
-        self.epsilon = epsilon
-        # TODO: Find appropriate flag to use
-        # Flag to prevent decomposition from happening after first step
-        self.already_did_this = False
+        if epsilon is None:
+            self.epsilon = eps0*fones((self.nxlocal+2,self.nzlocal+2),'d')
+        else:
+            self.epsilon = epsilon
 
     def dosolve(self,iwhich=0,zfact=None,isourcepndtscopies=None,indts=None,iselfb=None):
         if not self.l_internal_dosolve: return
@@ -387,8 +382,6 @@ class MultiGrid2DDielectric(MultiGrid2D):
         self._phi = self.potential
         self._rho = self.source
         if isinstance(self.potential,float): return
-
-        self.epsilon_decomp(self.epsilon)
 
         mgverbose = self.getmgverbose()
         mgiters = zeros(1,'l')
@@ -427,62 +420,6 @@ class MultiGrid2DDielectric(MultiGrid2D):
                              self.dx,self.dz,0,self.bounds,conductorobject)
         return res
 
-    def epsilon_decomp(self, epsilon):
-        #  TODO: Catch for only starting in parallel?
-        if not self.already_did_this:
-            nxguard = 1
-            nzguard = 1
-            nxlocal = self.nxlocal
-            nzlocal = self.nzlocal
-            ix = self.fsdecomp.ix[self.fsdecomp.ixproc]
-            iz = self.fsdecomp.iz[self.fsdecomp.izproc]
-            epsilondecomp = zeros([nxlocal + 2, nzlocal + 2])
-            print "LBS", ix, iz
-            print "localcell", "on",self.ixproc,self.izproc, (nxlocal, nzlocal)
-            # doing interior cells first
-            for i in range(ix + 1, ix + nxlocal + 2 * nxguard - 1):
-                for j in range(iz + 1, iz + nzlocal + 2 * nzguard - 1):
-                    epsilondecomp[i - ix, j - iz] = epsilon[i, j]
-
-            # Fill lower guard cells
-            if ix == 0:
-                epsilondecomp[0, 1:-1] = epsilon[0, iz + 1:iz + nzlocal + 2 * nzguard - 1]
-            else:
-                epsilondecomp[0, :] = epsilon[ix + 1, iz:iz + nzlocal + 2 * nzguard]
-
-            if iz == 0:
-                epsilondecomp[1:-1, 0] = epsilon[ix + 1:ix + nxlocal + 2 * nxguard - 1, 0]
-            else:
-                epsilondecomp[:, 0] = epsilon[ix:ix + nxlocal + 2 * nxguard, iz + 1]
-
-            # Fill in upper guard cells
-            if ix + nxlocal == self.nx:
-                epsilondecomp[-1, 1:-1] = epsilon[-1, iz + 1:iz + nzlocal + 2 * nzguard - 1]
-            else:
-                epsilondecomp[-1, :] = epsilon[ix + 2 + 2 * nxguard + nxlocal % 2, iz:iz + nzlocal + 2 * nzguard]
-
-            if iz + nzlocal == self.nz:
-                epsilondecomp[1:-1, -1] = epsilon[ix + 1:ix + nxlocal + 2 * nxguard - 1, -1]
-            else:
-                epsilondecomp[:, -1] = epsilon[ix:ix + nxlocal + 2 * nxguard, iz + nzlocal]#iz + 2 + 2 * nzguard + nzlocal % 2]
-
-            if (self.ixproc, self.izproc) == (0,0):
-                epsilondecomp[0, 0] = epsilon[0, 0]
-            if (self.ixproc, self.izproc) == (self.nxprocs - 1, 0):
-                epsilondecomp[-1, 0] = epsilon[-1, 0]
-            if (self.ixproc, self.izproc) == (0, self.nzprocs - 1):
-                epsilondecomp[0, -1] = epsilon[0, -1]
-            if (self.ixproc, self.izproc) == (self.nxprocs - 1, self.nzprocs - 1):
-                epsilondecomp[-1, -1] = epsilon[-1, -1]
-            print self.nxprocs, self.nzprocs
-
-            # print "ON PROC", self.ixproc, self.izproc, epsilondecomp
-            savetxt('proc_{}_{}.txt'.format(self.ixproc, self.izproc), epsilondecomp)
-            self.epsilon = epsilondecomp
-        else:
-            return
-
-        self.already_did_this = True
 ##############################################################################
 ##############################################################################
 ##############################################################################
