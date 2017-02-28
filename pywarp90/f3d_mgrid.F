@@ -7723,13 +7723,14 @@ c Routine that does the v-cycle for multigrid. Note that it is recursive.
       integer(ISZ):: lzoffsetall(0:fsdecomp%nzprocs-1)
       integer(ISZ):: rzoffsetall(0:fsdecomp%nzprocs-1)
       integer(ISZ):: lxoffset,rxoffset
-      integer(ISZ):: lzoffset,rzoffset
+      integer(ISZ):: lzoffset,rzoffset, test_lzoffset
       type(Decomposition):: coarsedecomp
       integer(ISZ):: allocerror
       integer(ISZ):: nxguardres,nzguardres
       logical(ISZ):: lpe0
       real(kind=8):: sss(2)
-
+      logical :: exist
+      character (len=90) :: filename
       localbounds = globalbounds
       xminodx = xmminlocal/dx
 
@@ -7873,6 +7874,12 @@ c       --- used in the serial version.
         lxoffset = lxoffsetall(ixproc)
         rxoffset = rxoffsetall(ixproc)
         lzoffset = lzoffsetall(izproc)
+C         Testing adjustment to lzoffset for cellcenteredrestriction
+        if(lzoffset /= 0)then
+          test_lzoffset = lzoffset
+        else
+          test_lzoffset = lzoffset
+        endif
         rzoffset = rzoffsetall(izproc)
         if (coarsedecomp%ix(ixproc) > 0) localboundsc(0) = -1
         if (coarsedecomp%ix(ixproc)+nxlocalcoarse < nxcoarse) localboundsc(1) = -1
@@ -7889,6 +7896,7 @@ c       --- Calculate the xmminlocal of the coarse grid
         rxoffset = 0
         lzoffset = 0
         rzoffset = 0
+        test_lzoffset = 0
         xmminlocalcoarse = xmminlocal
 #endif
 
@@ -7928,22 +7936,51 @@ c       --- Restriction - note that no scaling factor is needed
      &                  nxcoarse,nzcoarse,nxlocalcoarse,nzlocalcoarse,
      &                  rhocoarse,
      &                  localbounds,localboundsc,lxoffset,lzoffset,.true.)
+        print*,"lxoffset",lxoffset,"lzoffset",lzoffset
+        print*,"rxoffset",rxoffset,"rzoffset",rzoffset
         call restrict2dcellcentered(nx,nz,nxlocal,nzlocal,epsilon,
      &                    nxcoarse,nzcoarse,nxlocalcoarse,nzlocalcoarse,
      &                    epsiloncoarse,
-     &                    localbounds,localboundsc,lxoffset,lzoffset)
+     &                    localbounds,localboundsc,lxoffset,test_lzoffset)
+
+
+
+
         call applyboundaryconditions3d(nxlocalcoarse-1,0,nzlocalcoarse-1,
      &                                 1,0,1,epsiloncoarse,1,localbounds,
      &                                 .true.,.false.)
-        print*,"Before Exch",ixproc,izproc,epsiloncoarse
+C         print*,"Before Exch",ixproc,izproc,epsiloncoarse
 #ifdef MPIPARALLEL
-C           print*,"on proc",izproc,"coarse mpistatez:",coarsedecomp%mpistatez
-C           print*,"on proc",izproc,"full mpistatez:",fsdecomp%mpistatez
           call mgexchange_epsilon2(1,nxlocalcoarse,0,nzlocalcoarse,
      &                        epsiloncoarse,1,0,1,
      &                        -1,-1,0,0,coarsedecomp)
 #endif
-        print*,"After Exch",ixproc,izproc,epsiloncoarse
+
+
+#ifdef MPIPARALLEL
+        write(filename, '("epsilcoarse_",I1,"_",I1,".txt")') ixproc, izproc
+#else
+        write(filename, '("epsilcoarse.txt")')
+#endif
+        inquire(file=filename, exist=exist)
+        if (exist) then
+          open(12, file=filename, status="old", position="append", action="write")
+        else
+          open(12, file=filename, status="new", action="write")
+        end if
+
+        write(12,*) "PROCSSOR X",ixproc,"PROCESSOR Z",izproc
+        write(12,*) "NX",nx,"NZ",nz
+        write(12,*) "NXLOCAL",nxlocal,"NZLOCAL",nzlocal
+        write(12,*) "NXCOARSE",nxcoarse,"NZCOARSE",nzcoarse
+        write(12,*) "NXLOCALCOARSE",nxlocalcoarse,"NZLOCALCOARSE",nzlocalcoarse
+        write(12,*) "OFFX",lxoffset,"OFFZ",lzoffset
+        write(12,*) epsiloncoarse
+
+        close(12)
+
+C         print*,"After Exch",ixproc,izproc,epsiloncoarse
+
 c       --- XXX epsiloncoarse needs to be exchanged among neighboring
 c       --- XXX processors. This code needs to be written, so this solver
 c       --- XXX will not work in parallel. (This is the only issue -
@@ -8394,11 +8431,11 @@ c     --- substantial amount of time.
         ixmin = ((ixcoarse-1)*nx - lxoffset + 4*nxcoarse)/nxcoarse-3
         ixmax = ((ixcoarse+1)*nx - lxoffset - 1)/nxcoarse
         if (ixmin < 0) ixmin = 0
-        if (ixmax > nx+1) ixmax = nx+1
+        if (ixmax > nxlocal+1) ixmax = nxlocal+1
         if (ixmax < ixmin) continue
 
         do ix=ixmin,ixmax
-          wx(ix-ixmin) = 1. - abs(ixcoarse - ix*dxi)
+          wx(ix-ixmin) = 1. - abs(ixcoarse - (ix + 1.*lxoffset/nxcoarse)*dxi)
         enddo
         ixmina(ixcoarse) = ixmin
         ixmaxa(ixcoarse) = ixmax
@@ -8434,7 +8471,8 @@ c     --- Do the loops.
         enddo
       enddo
 !$OMP END DO
-
+C       print*, "WXA",wxa
+C       print*, "WZA",wza
       deallocate(ixmina,ixmaxa)
       deallocate(izmina,izmaxa)
       deallocate(wxa,wza)

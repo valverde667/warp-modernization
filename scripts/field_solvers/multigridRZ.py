@@ -370,7 +370,7 @@ class MultiGrid2DDielectric(MultiGrid2D):
         self.epsilon = epsilon
         # TODO: Find appropriate flag to use
         # Flag to prevent decomposition from happening after first step
-        self.already_did_this = False
+        self.epsilon_decomp_flag = False
 
     def dosolve(self,iwhich=0,zfact=None,isourcepndtscopies=None,indts=None,iselfb=None):
         if not self.l_internal_dosolve: return
@@ -429,7 +429,7 @@ class MultiGrid2DDielectric(MultiGrid2D):
 
     def epsilon_decomp(self, epsilon):
         #  TODO: Catch for only starting in parallel?
-        if not self.already_did_this:
+        if not self.epsilon_decomp_flag:
             nxguard = 1
             nzguard = 1
             nxlocal = self.nxlocal
@@ -437,8 +437,8 @@ class MultiGrid2DDielectric(MultiGrid2D):
             ix = self.fsdecomp.ix[self.fsdecomp.ixproc]
             iz = self.fsdecomp.iz[self.fsdecomp.izproc]
             epsilondecomp = zeros([nxlocal + 2, nzlocal + 2])
-            print "LBS", ix, iz
-            print "localcell", "on",self.ixproc,self.izproc, (nxlocal, nzlocal)
+            # print "LBS", ix, iz
+            # print "localcell", "on",self.ixproc,self.izproc, (nxlocal, nzlocal)
             # doing interior cells first
             for i in range(ix + 1, ix + nxlocal + 2 * nxguard - 1):
                 for j in range(iz + 1, iz + nzlocal + 2 * nzguard - 1):
@@ -466,6 +466,7 @@ class MultiGrid2DDielectric(MultiGrid2D):
             else:
                 epsilondecomp[:, -1] = epsilon[ix:ix + nxlocal + 2 * nxguard, iz + nzlocal]#iz + 2 + 2 * nzguard + nzlocal % 2]
 
+            # Fill in corners
             if (self.ixproc, self.izproc) == (0,0):
                 epsilondecomp[0, 0] = epsilon[0, 0]
             if (self.ixproc, self.izproc) == (self.nxprocs - 1, 0):
@@ -474,7 +475,7 @@ class MultiGrid2DDielectric(MultiGrid2D):
                 epsilondecomp[0, -1] = epsilon[0, -1]
             if (self.ixproc, self.izproc) == (self.nxprocs - 1, self.nzprocs - 1):
                 epsilondecomp[-1, -1] = epsilon[-1, -1]
-            print self.nxprocs, self.nzprocs
+            # print self.nxprocs, self.nzprocs
 
             # print "ON PROC", self.ixproc, self.izproc, epsilondecomp
             savetxt('proc_{}_{}.txt'.format(self.ixproc, self.izproc), epsilondecomp)
@@ -482,7 +483,7 @@ class MultiGrid2DDielectric(MultiGrid2D):
         else:
             return
 
-        self.already_did_this = True
+        self.epsilon_decomp_flag = True
 ##############################################################################
 ##############################################################################
 ##############################################################################

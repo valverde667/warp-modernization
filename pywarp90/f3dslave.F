@@ -2234,7 +2234,7 @@ c          relative to the upper index, nx, ny or nz.
 c lguardres: when true, the guard cells on the other processors may differ
 c            than what they are locally. In this case, they must be set
 c            accordingly.
-
+        integer(ISZ):: offset_c, off1, off2
         integer(ISZ):: ic
         integer(ISZ):: npx,npy,npz
         integer(ISZ):: px,py,pz
@@ -2469,19 +2469,24 @@ c       --- Data to be sent
           pe_nzguard = nzguard
         endif
 C         TODO: Need to adjust how meizle are picked by 1? And change x too
+C         offset_c = max(nzlocal * fsdecomp%izproc - fsdecomp%iz)
+C         if(offset_c == 0)then
+C           offset_c = 1
+C         endif
+        print*,"OFFSETC", offset_c
         pe_ixls = fsdecomp%ix + max(-pe_nxguard,ils) + 1
         pe_ixle = fsdecomp%ix + max(-pe_nxguard,ile) + 1
         pe_iyls = fsdecomp%iy + max(-pe_nyguard,ils)
         pe_iyle = fsdecomp%iy + max(-pe_nyguard,ile)
-        pe_izls = fsdecomp%iz + max(-pe_nzguard,ils) + 1
-        pe_izle = fsdecomp%iz + max(-pe_nzguard,ile) + 1
+        pe_izls = fsdecomp%iz + max(-pe_nzguard,ils)
+        pe_izle = fsdecomp%iz + max(-pe_nzguard,ile)
 
         pe_ixus = fsdecomp%ix + fsdecomp%nx + min(pe_nxguard,ius) - 1
         pe_ixue = fsdecomp%ix + fsdecomp%nx + min(pe_nxguard,iue) - 1
         pe_iyus = fsdecomp%iy + fsdecomp%ny + min(pe_nyguard,ius)
         pe_iyue = fsdecomp%iy + fsdecomp%ny + min(pe_nyguard,iue)
-        pe_izus = fsdecomp%iz + fsdecomp%nz + min(pe_nzguard,ius) - 1
-        pe_izue = fsdecomp%iz + fsdecomp%nz + min(pe_nzguard,iue) - 1
+        pe_izus = fsdecomp%iz + fsdecomp%nz + min(pe_nzguard,ius)
+        pe_izue = fsdecomp%iz + fsdecomp%nz + min(pe_nzguard,iue)
 
 c       --- Get the lower and upper range of the good data. Good data means
 c       --- data that was calculated on the processor and is available to send
@@ -2721,7 +2726,17 @@ C           endif
         else
 
           do pz=0,fsdecomp%nzprocs-1
-
+C           Define offsets to account for staggered epsilon grid
+C           Currents works in testing for nxproc=1,nzproc=2 and odd nz
+C           Need to fully generalize
+            off1 = nzlocal * pz - fsdecomp%iz(pz)
+            off2 = nzlocal * fsdecomp%izproc - fsdecomp%iz(fsdecomp%izproc)
+            offset_c = max(off1, off2)
+            print*, "OFFSET_C", offset_c
+            pe_izls = pe_izls + offset_c
+            pe_izle = pe_izle + offset_c
+            pe_izus = pe_izus - offset_c
+            pe_izue = pe_izue - offset_c
             if (fsdecomp%mpistatez(pz) >= 1) then
               messagedata%zsendtypes(pz) = MPI_DOUBLE_PRECISION
               messagedata%zsendcounts(pz) = 0
@@ -2753,8 +2768,8 @@ C               endif
 c             --- Sending to the lower guard cells on the right
               i1global = max(pe_izls(pz),me_izlgood)
               i2global = min(pe_izle(pz),me_izugood)
-                print*, "Processor:",fsdecomp%izproc,"SENDING TO LOWER GUARD ON:",pz
-                print*,"For pz",pz,"i1global", i1global,"i2global",i2global
+C                 print*, "Processor:",fsdecomp%izproc,"SENDING TO LOWER GUARD ON:",pz
+C                 print*,"For pz",pz,"i1global", i1global,"i2global",i2global
 c             if (pz > fsdecomp%izproc+1) then
 c               i2global = pe_izle(fsdecomp%izproc+1)
 c             endif
@@ -2762,8 +2777,8 @@ c             endif
 c             --- Sending to the upper guard cells on the left
               i1global = max(pe_izus(pz),me_izlgood)
               i2global = min(pe_izue(pz),me_izugood)
-                print*, "Processor:",fsdecomp%izproc,"SENDING TO UPPER GUARD ON:",pz
-                print*,"For pz",pz,"i1global", i1global,"i2global",i2global
+C                 print*, "Processor:",fsdecomp%izproc,"SENDING TO UPPER GUARD ON:",pz
+C                 print*,"For pz",pz,"i1global", i1global,"i2global",i2global
 c             if (pz < fsdecomp%izproc-1) then
 c               i1global = pe_izus(fsdecomp%izproc-1)
 c             endif
@@ -2774,8 +2789,8 @@ c             --- Send nothing to self
             endif
             starts(2) = i1global - me_iz + nzguard
             sizes(2) = i2global - i1global + 1
-                print*, "ON",fsdecomp%izproc,"SIZE in Z",sizes(2),i2global,i1global,me_iz
-                print*, "ON",fsdecomp%izproc,"START in Z",starts(2),"WITH SIZE",sizes(2)
+C                 print*, "ON",fsdecomp%izproc,"SIZE in Z",sizes(2),i2global,i1global,me_iz
+C                 print*, "ON",fsdecomp%izproc,"START in Z",starts(2),"WITH SIZE",sizes(2)
 c           --- Create the data types for data that is to be sent
             if (ALL(sizes > 0)) then
               call MPI_TYPE_CREATE_SUBARRAY(dims,nlocal,sizes,starts,
@@ -2784,7 +2799,7 @@ c           --- Create the data types for data that is to be sent
      &                                      messagedata%zsendtypes(pz),mpierror)
               call MPI_TYPE_COMMIT(messagedata%zsendtypes(pz),mpierror)
               messagedata%zsendcounts(pz) = 1
-              print*,"DATA WILL TRY TO SEND"
+C               print*,"DATA WILL TRY TO SEND"
             else
               messagedata%zsendtypes(pz) = MPI_DOUBLE_PRECISION
               messagedata%zsendcounts(pz) = 0
@@ -2820,10 +2835,10 @@ c           --- Create the data types for data that is to be received
      &                                      messagedata%zrecvtypes(pz),mpierror)
               call MPI_TYPE_COMMIT(messagedata%zrecvtypes(pz),mpierror)
               messagedata%zrecvcounts(pz) = 1
-              print*,"PROC",pz,"REC",messagedata%zrecvcounts(pz)
+C               print*,"PROC",pz,"REC",messagedata%zrecvcounts(pz)
             else
 
-                print*,"PROC",fsdecomp%izproc,"FAILED AT DATA REC TYPES FROM",pz
+C                 print*,"PROC",fsdecomp%izproc,"FAILED AT DATA REC TYPES FROM",pz
               messagedata%zrecvtypes(pz) = MPI_DOUBLE_PRECISION
               messagedata%zrecvcounts(pz) = 0
             endif
