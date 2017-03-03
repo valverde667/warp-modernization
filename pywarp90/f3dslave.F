@@ -2260,6 +2260,8 @@ c            accordingly.
         integer(MPIISZ):: dims,nlocal(-1:2),starts(-1:2),sizes(-1:2)
         integer(MPIISZ):: mpierror
         real(kind=8):: substarttime,wtime
+        integer(ISZ),allocatable:: test_rank(:)
+        integer(ISZ):: test_i
         if (lf3dtimesubs) substarttime = wtime()
 
 c       --- Search through the cached data to see if this data set has
@@ -2401,7 +2403,6 @@ C      TODO: Will need to generalize nlocal_y size for 3D
         messagedata%xdispls = 0
         messagedata%ydispls = 0
         messagedata%zdispls = 0
-        print*,"NLOCAL",nlocal
 c       --- First, calculate what data needs to be sent and received.
 
 c       --- Send and recv all of the first dimension.
@@ -2422,7 +2423,7 @@ c       --- Data to be sent
         me_iyle = me_iy + max(-nyguard,ile)
         me_izls = me_iz + max(-nzguard,ils)
         me_izle = me_iz + max(-nzguard,ile)
-        print*,"IZ in mpass",fsdecomp%iz
+
         me_ixus = me_ix + me_nx + min(nxguard,ius)
         me_ixue = me_ix + me_nx + min(nxguard,iue)
         me_iyus = me_iy + me_ny + min(nyguard,ius)
@@ -2446,6 +2447,12 @@ c       --- Data to be sent
         allocate(pe_ixue(0:fsdecomp%nxprocs-1))
         allocate(pe_iyue(0:fsdecomp%nyprocs-1))
         allocate(pe_izue(0:fsdecomp%nzprocs-1))
+
+        allocate(test_rank(0:fsdecomp%nzprocs-1))
+
+        do test_i=0,fsdecomp%nzprocs-1
+          test_rank(test_i) = test_i
+        enddo
 
         if (lguardres) then
           where (fsdecomp%nx < fsdecomp%nxglobal)
@@ -2473,16 +2480,15 @@ C         offset_c = max(nzlocal * fsdecomp%izproc - fsdecomp%iz)
 C         if(offset_c == 0)then
 C           offset_c = 1
 C         endif
-        print*,"OFFSETC", offset_c
-        pe_ixls = fsdecomp%ix + max(-pe_nxguard,ils) + 1
-        pe_ixle = fsdecomp%ix + max(-pe_nxguard,ile) + 1
+        pe_ixls = fsdecomp%ix + max(-pe_nxguard,ils)
+        pe_ixle = fsdecomp%ix + max(-pe_nxguard,ile)
         pe_iyls = fsdecomp%iy + max(-pe_nyguard,ils)
         pe_iyle = fsdecomp%iy + max(-pe_nyguard,ile)
         pe_izls = fsdecomp%iz + max(-pe_nzguard,ils)
         pe_izle = fsdecomp%iz + max(-pe_nzguard,ile)
 
-        pe_ixus = fsdecomp%ix + fsdecomp%nx + min(pe_nxguard,ius) - 1
-        pe_ixue = fsdecomp%ix + fsdecomp%nx + min(pe_nxguard,iue) - 1
+        pe_ixus = fsdecomp%ix + fsdecomp%nx + min(pe_nxguard,ius)
+        pe_ixue = fsdecomp%ix + fsdecomp%nx + min(pe_nxguard,iue)
         pe_iyus = fsdecomp%iy + fsdecomp%ny + min(pe_nyguard,ius)
         pe_iyue = fsdecomp%iy + fsdecomp%ny + min(pe_nyguard,iue)
         pe_izus = fsdecomp%iz + fsdecomp%nz + min(pe_nzguard,ius)
@@ -2525,7 +2531,7 @@ c       --- include all of the data in the guard cells as well.
             endif
 
             starts(1) = 0
-            sizes(1) = me_ny + 2
+            sizes(1) = me_ny + 2*nyguard + 1
             starts(2) = 0
             sizes(2) = me_nz + 2
 
@@ -2729,14 +2735,14 @@ C           endif
 C           Define offsets to account for staggered epsilon grid
 C           Currents works in testing for nxproc=1,nzproc=2 and odd nz
 C           Need to fully generalize
-            off1 = nzlocal * pz - fsdecomp%iz(pz)
-            off2 = nzlocal * fsdecomp%izproc - fsdecomp%iz(fsdecomp%izproc)
-            offset_c = max(off1, off2)
-            print*, "OFFSET_C", offset_c
-            pe_izls = pe_izls + offset_c
-            pe_izle = pe_izle + offset_c
-            pe_izus = pe_izus - offset_c
-            pe_izue = pe_izue - offset_c
+C             off1 = nzlocal * pz - fsdecomp%iz(pz)
+C             off2 = nzlocal * fsdecomp%izproc - fsdecomp%iz(fsdecomp%izproc)
+C             offset_c = max(off1, off2)
+C             print*, "OFFSET_C", offset_c
+C             pe_izls = pe_izls + offset_c
+C             pe_izle = pe_izle + offset_c
+C             pe_izus = pe_izus - offset_c
+C             pe_izue = pe_izue - offset_c
             if (fsdecomp%mpistatez(pz) >= 1) then
               messagedata%zsendtypes(pz) = MPI_DOUBLE_PRECISION
               messagedata%zsendcounts(pz) = 0
@@ -2765,6 +2771,12 @@ C               endif
      &        pe_izugood = pe_iz + pe_nz + pe_nzguard(pz)
 
             if (pz > fsdecomp%izproc) then
+C             off1 = nzlocal * pz - fsdecomp%iz(pz)
+C             off2 = nzlocal * fsdecomp%izproc - fsdecomp%iz(fsdecomp%izproc)
+C             offset_c = max(off1, off2)
+C             print*, "Proc:",fsdecomp%izproc,"SENDING to:",pz,"OFFSET_C", offset_c
+C             pe_izls = pe_izls + offset_c - mod(nzlocal,2) + mod(fsdecomp%nz(fsdecomp%izproc),2)
+C             pe_izle = pe_izle + offset_c - mod(nzlocal,2) + mod(fsdecomp%nz(fsdecomp%izproc),2)
 c             --- Sending to the lower guard cells on the right
               i1global = max(pe_izls(pz),me_izlgood)
               i2global = min(pe_izle(pz),me_izugood)
@@ -2774,6 +2786,12 @@ c             if (pz > fsdecomp%izproc+1) then
 c               i2global = pe_izle(fsdecomp%izproc+1)
 c             endif
             else if (pz < fsdecomp%izproc) then
+C             off1 = nzlocal * pz - fsdecomp%iz(pz)
+C             off2 = nzlocal * fsdecomp%izproc - fsdecomp%iz(fsdecomp%izproc)
+C             offset_c = max(off1, off2)
+C             print*, "Proc",fsdecomp%izproc,"SENDING to:",pz,"OFFSET_C", offset_c - mod(nzlocal,2)
+C             pe_izus = pe_izus - offset_c - mod(nzlocal,2) + mod(fsdecomp%nz(fsdecomp%izproc),2)
+C             pe_izue = pe_izue - offset_c - mod(nzlocal,2) + mod(fsdecomp%nz(fsdecomp%izproc),2)          
 c             --- Sending to the upper guard cells on the left
               i1global = max(pe_izus(pz),me_izlgood)
               i2global = min(pe_izue(pz),me_izugood)
@@ -2862,7 +2880,7 @@ C                 print*,"PROC",fsdecomp%izproc,"FAILED AT DATA REC TYPES FROM",
         deallocate(pe_ixue)
         deallocate(pe_iyue)
         deallocate(pe_izue)
-
+        print*, "FINISHED DEALLOC"
 !$OMP MASTER
         if (lf3dtimesubs) timegetmessagedata = timegetmessagedata + wtime() - substarttime
 !$OMP END MASTER

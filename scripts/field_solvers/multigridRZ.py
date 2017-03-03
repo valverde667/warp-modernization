@@ -448,23 +448,23 @@ class MultiGrid2DDielectric(MultiGrid2D):
             if ix == 0:
                 epsilondecomp[0, 1:-1] = epsilon[0, iz + 1:iz + nzlocal + 2 * nzguard - 1]
             else:
-                epsilondecomp[0, :] = epsilon[ix + 1, iz:iz + nzlocal + 2 * nzguard]
+                epsilondecomp[0, :] = epsilon[ix, iz:iz + nzlocal + 2 * nzguard]
 
             if iz == 0:
                 epsilondecomp[1:-1, 0] = epsilon[ix + 1:ix + nxlocal + 2 * nxguard - 1, 0]
             else:
-                epsilondecomp[:, 0] = epsilon[ix:ix + nxlocal + 2 * nxguard, iz + 1]
+                epsilondecomp[:, 0] = epsilon[ix:ix + nxlocal + 2 * nxguard, iz]
 
             # Fill in upper guard cells
             if ix + nxlocal == self.nx:
                 epsilondecomp[-1, 1:-1] = epsilon[-1, iz + 1:iz + nzlocal + 2 * nzguard - 1]
             else:
-                epsilondecomp[-1, :] = epsilon[ix + 2 + 2 * nxguard + nxlocal % 2, iz:iz + nzlocal + 2 * nzguard]
+                epsilondecomp[-1, :] = epsilon[ix + nxlocal + 1, iz:iz + nzlocal + 2 * nzguard]
 
             if iz + nzlocal == self.nz:
                 epsilondecomp[1:-1, -1] = epsilon[ix + 1:ix + nxlocal + 2 * nxguard - 1, -1]
             else:
-                epsilondecomp[:, -1] = epsilon[ix:ix + nxlocal + 2 * nxguard, iz + nzlocal]#iz + 2 + 2 * nzguard + nzlocal % 2]
+                epsilondecomp[:, -1] = epsilon[ix:ix + nxlocal + 2 * nxguard, iz + nzlocal + 1]#iz + 2 + 2 * nzguard + nzlocal % 2]
 
             # Fill in corners
             if (self.ixproc, self.izproc) == (0,0):

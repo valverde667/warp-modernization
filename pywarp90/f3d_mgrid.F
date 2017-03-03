@@ -7723,7 +7723,7 @@ c Routine that does the v-cycle for multigrid. Note that it is recursive.
       integer(ISZ):: lzoffsetall(0:fsdecomp%nzprocs-1)
       integer(ISZ):: rzoffsetall(0:fsdecomp%nzprocs-1)
       integer(ISZ):: lxoffset,rxoffset
-      integer(ISZ):: lzoffset,rzoffset, test_lzoffset
+      integer(ISZ):: lzoffset,rzoffset, test_lzoffset, test_epsc_rows
       type(Decomposition):: coarsedecomp
       integer(ISZ):: allocerror
       integer(ISZ):: nxguardres,nzguardres
@@ -7936,8 +7936,7 @@ c       --- Restriction - note that no scaling factor is needed
      &                  nxcoarse,nzcoarse,nxlocalcoarse,nzlocalcoarse,
      &                  rhocoarse,
      &                  localbounds,localboundsc,lxoffset,lzoffset,.true.)
-        print*,"lxoffset",lxoffset,"lzoffset",lzoffset
-        print*,"rxoffset",rxoffset,"rzoffset",rzoffset
+
         call restrict2dcellcentered(nx,nz,nxlocal,nzlocal,epsilon,
      &                    nxcoarse,nzcoarse,nxlocalcoarse,nzlocalcoarse,
      &                    epsiloncoarse,
@@ -7955,6 +7954,21 @@ C         print*,"Before Exch",ixproc,izproc,epsiloncoarse
      &                        epsiloncoarse,1,0,1,
      &                        -1,-1,0,0,coarsedecomp)
 #endif
+
+C #ifdef MPIPARALLEL
+C       if(nzlocal /= nzlocalcoarse)then
+C         if(izproc == 0)then
+C           do test_epsc_rows=0,nxlocalcoarse+1
+C             epsiloncoarse(test_epsc_rows,nzlocalcoarse+1) = 5.6968137E-11
+C           enddo
+C         endif
+C         if(izproc == 1)then
+C           do test_epsc_rows=0,nxlocalcoarse+1
+C             epsiloncoarse(test_epsc_rows,0) = 5.4227941E-11
+C           enddo
+C         endif
+C       endif
+C #endif
 
 
 #ifdef MPIPARALLEL
