@@ -4510,3 +4510,214 @@ c=============================================================================
       return
       end
 c=============================================================================
+c=============================================================================
+c=============================================================================
+      subroutine mgexchange_epsilon_periodic(nc,nxlocal,nylocal,nzlocal,phi,
+     &                                   nxguardphi,nyguardphi,nzguardphi,i1,i2,
+     &                                   localbounds,fsdecomp)
+      use Subtimersf3d
+      use Decompositionmodule
+      integer(ISZ):: nc,nxlocal,nylocal,nzlocal,nx,ny,nz
+      integer(ISZ):: nxguardphi,nyguardphi,nzguardphi,i1,i2
+      real(kind=8):: phi(0:nc-1,-1:nxlocal,
+     &                          -nyguardphi:nylocal+nyguardphi,
+     &                          -1:nzlocal)
+      integer(ISZ):: localbounds(0:5)
+      type(Decomposition):: fsdecomp
+      real(kind=8):: substarttime,wtime
+      if (lf3dtimesubs) substarttime = wtime()
+
+      if ((localbounds(0) == 2 .or. localbounds(1) == 2) .and.
+     &    fsdecomp%nxprocs > 0) then
+        call mgexchange_epsilonperiodic_work(0,nc,nxlocal,nylocal,nzlocal,phi,
+     &                                   i1,i2,nxguardphi,nyguardphi,nzguardphi,
+     &                                   fsdecomp%mpi_comm_x,
+     &                                   fsdecomp%ixproc,fsdecomp%nxprocs,
+     &                                   fsdecomp%nxglobal,
+     &                                   fsdecomp%ix,fsdecomp%nx,
+     &                                   fsdecomp%mpistatex)
+      endif
+      if ((localbounds(2) == 2 .or. localbounds(3) == 2) .and.
+     &    fsdecomp%nyprocs > 0) then
+        call mgexchange_epsilonperiodic_work(1,nc,nxlocal,nylocal,nzlocal,phi,
+     &                                   i1,i2,nxguardphi,nyguardphi,nzguardphi,
+     &                                   fsdecomp%mpi_comm_y,
+     &                                   fsdecomp%iyproc,fsdecomp%nyprocs,
+     &                                   fsdecomp%nyglobal,
+     &                                   fsdecomp%iy,fsdecomp%ny,
+     &                                   fsdecomp%mpistatey)
+      endif
+      if ((localbounds(4) == 2 .or. localbounds(5) == 2) .and.
+     &    fsdecomp%nzprocs > 0) then
+        call mgexchange_epsilonperiodic_work(2,nc,nxlocal,nylocal,nzlocal,phi,
+     &                                   i1,i2,nxguardphi,nyguardphi,nzguardphi,
+     &                                   fsdecomp%mpi_comm_z,
+     &                                   fsdecomp%izproc,fsdecomp%nzprocs,
+     &                                   fsdecomp%nzglobal,
+     &                                   fsdecomp%iz,fsdecomp%nz,
+     &                                   fsdecomp%mpistatez)
+      endif
+
+!$OMP MASTER
+      if (lf3dtimesubs) timemgexchange_phi_periodic = timemgexchange_phi_periodic + wtime() - substarttime
+!$OMP END MASTER
+
+      return
+      end
+c=============================================================================
+c=============================================================================
+      subroutine mgexchange_epsilonperiodic_work(axis,nc,nxlocal,nylocal,nzlocal,
+     &                                       phi,i1,i2,
+     &                                       nxguardphi,nyguardphi,nzguardphi,
+     &                                       mpi_communicator,iproc,nprocs,nz,
+     &                                       pe_iz,pe_nz,mpistate)
+      use Subtimersf3d
+      use mpi
+      integer(ISZ):: axis
+      integer(ISZ):: nc,nxlocal,nylocal,nzlocal,i1,i2
+      integer(ISZ):: nxguardphi,nyguardphi,nzguardphi
+      real(kind=8):: phi(0:nc-1,-1:nxlocal,
+     &                          -nyguardphi:nylocal+nyguardphi,
+     &                          -1:nzlocal)
+      integer(ISZ):: mpi_communicator,iproc,nprocs,nz
+      integer(ISZ):: pe_iz(0:nprocs-1),pe_nz(0:nprocs-1)
+      integer(ISZ):: mpistate(0:nprocs-1)
+
+c This routine sends out and receives boundary data for the MG field solver.
+c This only sends plane iz=0 when there are periodic boundary conditions.
+c Note that this operation needs to be separate from mgexchange_phi since
+c there are cases when the same two processors exchange data on the left
+c and right, and this cannot be done (easily) with the alltoall.
+
+      real(kind=8),pointer:: buffer(:,:,:,:)
+      integer(MPIISZ):: ip,ip0,ipn
+      integer(MPIISZ):: ix1,ix2,iy1,iy2,iz1,iz2
+
+      integer(MPIISZ):: mpistatus(MPI_STATUS_SIZE)
+      integer(MPIISZ):: mpierror,mpi_comm_mpiisz
+      integer(MPIISZ):: messid = 10
+      integer(MPIISZ):: nn
+
+      if (mpistate(iproc) > 0) return
+
+      mpi_comm_mpiisz = mpi_communicator
+
+c     --- By default, select for full dimension of each axis. The down
+c     --- select is done below.
+      ix1 = -nxguardphi
+      ix2 = nxlocal
+      iy1 = -nyguardphi
+      iy2 = nylocal
+      iz1 = -nzguardphi
+      iz2 = nzlocal
+
+c     --- Find the first and last processors that are still active.
+      ip0 = -1
+      do ip=0,nprocs-1
+        if (mpistate(ip) == 0) then
+          if (ip0 == -1) ip0 = ip
+          ipn = ip
+        endif
+      enddo
+
+c     --- Sends and receives can all be done synchronously since none
+c     --- of the data overlaps.
+      if (iproc == ip0) then
+c       --- The loop only covers processors to the right since any processors
+c       --- to the left would not need phi on the left boundary. In some cases,
+c       --- this processor my be sending other than boundary data to the left.
+c       --- This avoids the send, which would cause this process to lock up
+c       --- on the waitall since that message would never be received.
+        do ip=ip0+1,nprocs-1
+          if (mpistate(ip) > 0) cycle
+          if (pe_iz(ip) + pe_nz(ip) == nz) then
+            if (axis == 0) then
+              ix1 = -i2
+              ix2 = -i1
+            elseif (axis == 1) then
+              iy1 = -i2
+              iy2 = -i1
+            elseif (axis == 2) then
+              iz1 = -i2
+              iz2 = -i1
+            endif
+            allocate(buffer(0:nc-1,ix1:ix2,iy1:iy2,iz1:iz2))
+            buffer = phi(:,ix1:ix2,iy1:iy2,iz1:iz2)
+            nn = nc*(ix2-ix1+1)*(iy2-iy1+1)*(iz2-iz1+1)
+            call MPI_SEND(buffer,nn,
+     &                    MPI_DOUBLE_PRECISION,ip,messid,
+     &                    mpi_comm_mpiisz,mpierror)
+            deallocate(buffer)
+          endif
+        enddo
+      endif
+
+      if (iproc > ip0 .and. pe_iz(iproc) + pe_nz(iproc) == nz) then
+        if (axis == 0) then
+          ix1 = nxlocal - i2
+          ix2 = nxlocal - i1
+        elseif (axis == 1) then
+          iy1 = nylocal - i2
+          iy2 = nylocal - i1
+        elseif (axis == 2) then
+          iz1 = nzlocal - i2
+          iz2 = nzlocal - i1
+        endif
+        allocate(buffer(0:nc-1,ix1:ix2,iy1:iy2,iz1:iz2))
+        nn = nc*(ix2-ix1+1)*(iy2-iy1+1)*(iz2-iz1+1)
+        call MPI_RECV(buffer,nn,
+     &                MPI_DOUBLE_PRECISION,ip0,messid,
+     &                mpi_comm_mpiisz,mpistatus,mpierror)
+        phi(:,ix1:ix2,iy1:iy2,iz1:iz2) = buffer
+        deallocate(buffer)
+      endif
+
+      if (iproc == ipn .and. i1 < 0) then
+c       --- See comments on loop above.
+        do ip=0,ipn - 1
+          if (mpistate(ip) > 0) cycle
+          if (pe_iz(ip) == 0) then
+            if (axis == 0) then
+              ix1 = nxlocal + i1
+              ix2 = nxlocal + i1
+            elseif (axis == 1) then
+              iy1 = nylocal + i1
+              iy2 = nylocal + i1
+            elseif (axis == 2) then
+              iz1 = nzlocal + i1
+              iz2 = nzlocal + i1
+            endif
+            allocate(buffer(0:nc-1,ix1:ix2,iy1:iy2,iz1:iz2))
+            buffer = phi(:,ix1:ix2,iy1:iy2,iz1:iz2)
+            nn = nc*(ix2-ix1+1)*(iy2-iy1+1)*(iz2-iz1+1)
+            call MPI_SEND(buffer,nn,
+     &                    MPI_DOUBLE_PRECISION,ip,messid,
+     &                    mpi_comm_mpiisz,mpierror)
+            deallocate(buffer)
+          endif
+        enddo
+      endif
+
+      if (iproc < ipn .and. pe_iz(iproc) == 0 .and. i1 < 0) then
+        if (axis == 0) then
+          ix1 = i1
+          ix2 = i1
+        elseif (axis == 1) then
+          iy1 = i1
+          iy2 = i1
+        elseif (axis == 2) then
+          iz1 = i1
+          iz2 = i1
+        endif
+        nn = nc*(ix2-ix1+1)*(iy2-iy1+1)*(iz2-iz1+1)
+        allocate(buffer(0:nc-1,ix1:ix2,iy1:iy2,iz1:iz2))
+        call MPI_RECV(buffer,nn,
+     &                MPI_DOUBLE_PRECISION,ipn,messid,
+     &                mpi_comm_mpiisz,mpistatus,mpierror)
+        phi(:,ix1:ix2,iy1:iy2,iz1:iz2) = buffer
+        deallocate(buffer)
+      endif
+
+      return
+      end
+c=============================================================================

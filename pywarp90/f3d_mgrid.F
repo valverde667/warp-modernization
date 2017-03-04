@@ -7778,7 +7778,9 @@ c     --- Do initial SOR passes.
 
 c     --- Check if this is the finest level. If so, then don't do any further
 c     --- coarsening. This is the same check that is done in getmglevels.
-      if (nx >= 4 .and. nz >= 4 .and.
+C     changed to stop coarsening at 6 (was 4) to prevent failure of periodic boundary exchange
+C     epsilon has n - 1 cells compared to n for phi and will not be able to exchange boudnaries if n <= 3
+      if (nx >= 5 .and. nz >= 5 .and.
      &    mglevel < mgmaxlevels) then
 
         nxguardres = 1
@@ -7953,6 +7955,9 @@ C         print*,"Before Exch",ixproc,izproc,epsiloncoarse
           call mgexchange_epsilon2(1,nxlocalcoarse,0,nzlocalcoarse,
      &                        epsiloncoarse,1,0,1,
      &                        -1,-1,0,0,coarsedecomp)
+        call mgexchange_phi_periodic(1,nxlocalcoarse - 1,0,nzlocalcoarse - 1,epsiloncoarse,
+     &                               1,0,1,
+     &                               -1,-1,localboundsc,coarsedecomp)
 #endif
 
 C #ifdef MPIPARALLEL
