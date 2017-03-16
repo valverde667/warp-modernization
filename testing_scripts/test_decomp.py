@@ -10,7 +10,6 @@ File has modes to generate:
 	 1. A linearly varying (in z) dielectric
 	 2. A random dielectric value in each cell. 
 	 	Constrained between 1-2 * eps_0.
-With width = 1um and length = 10 um cutoff to parallel/serial divergence starts at 31 cells in z
 """
 
 if comm_world.size != 1:
@@ -104,6 +103,7 @@ installconductor(plate,dfill=largepos)
 # Restric to one v-cycle per step (doesn't really matter in this case with no particles)
 solverE.mgmaxiters = 1
 
+# Set SOR coefficient for faster convergence
 omega = 2./(1. + np.sin(np.pi/min(NUM_X+1,NUM_Z+1)))
 solverE.mgparam = omega
 
