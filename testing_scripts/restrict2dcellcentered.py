@@ -34,7 +34,7 @@ class Restrict2dCellCentered(object):
 
     def calculate_z_values(self):
         wz = np.zeros([4, ])
-        wza = np.zeros([4, self.nzlocalcoarse])
+        self.wza = np.zeros([4, self.nzlocalcoarse])
         self.izmina = []
         self.izmaxa = []
 
@@ -49,15 +49,14 @@ class Restrict2dCellCentered(object):
             if izmax < izmin:
                 pass
 
-            # print izmin, izmax
             for iz in range(izmin, izmax+1):
                 wz[iz - izmin] = 1. - abs(izcoarse + 1 - (iz + 1. * self.lzoffset / self.nzcoarse) * self.dzi)
 
             self.izmina.append(izmin)
             self.izmaxa.append(izmax)
-            wza[:, izcoarse] = wz
+            self.wza[:, izcoarse] = wz
 
-        return wza
+        return self.wza
 
     def calculate_x_values(self):
         wx = np.zeros([4, ])
@@ -76,10 +75,9 @@ class Restrict2dCellCentered(object):
             if ixmax < ixmin:
                 pass
 
-            # print ixmin, ixmax
             for ix in range(ixmin, ixmax + 1):
                 wx[ix - ixmin] = 1. - abs(ixcoarse + 1 - (ix + 1. * self.lxoffset / self.nxcoarse) * self.dxi)
-
+                print ix, ix - ixmin, ixmax
             self.ixmina.append(ixmin)
             self.ixmaxa.append(ixmax)
             self.wxa[:, ixcoarse] = wx
@@ -87,10 +85,7 @@ class Restrict2dCellCentered(object):
         return self.wxa
 
     def create_coarse_grid(self, wxa, wza):
-        print len(self.izmina)
-        print len(self.izmaxa)
         for izcoarse in range(1, self.nzlocalcoarse + 1):
-            print izcoarse
             izmin = self.izmina[izcoarse - 1]
             izmax = self.izmaxa[izcoarse - 1]
             wz = wza[:, izcoarse - 1]
@@ -127,9 +122,9 @@ if __name__ == "__main__":
     nxlocal = nzlocal = 7
     # First restriction level
     nxcoarse = 4
-    nzcoarse = 7
+    nzcoarse = 4
     nxlocalcoarse = 4
-    nzlocalcoarse = 7
+    nzlocalcoarse = 4
     localbounds = [2, 2, 1, 1, 0, 0]
     localboundscoarse = [2, 2, 1, 1, 0, 0]
     lxoffset = 0
@@ -137,6 +132,8 @@ if __name__ == "__main__":
 
     # epsilon and epsiloncoarse
     epsilon = np.ones([nx + 2, nz + 2]) * 8.857e-12
+    for i in range(epsilon.shape[1]):
+        epsilon[:,i] = (i + 1) * 1e-11
     epsiloncoarse = np.ones([nxcoarse + 2, nzcoarse + 2])
 
     restriction = Restrict2dCellCentered(nx, nz, nxlocal, nzlocal,
