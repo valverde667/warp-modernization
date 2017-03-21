@@ -366,6 +366,28 @@ multigrid2ddielectricsolve(iwhich:integer,nx:integer,nz:integer,
                  gridmode:integer,conductors:ConductorType,lrz:logical,
                  fsdecomp:Decomposition)
    subroutine
+   # Solves Poisson's equation in 3D using the multigrid method. All input is
+   # through the argument list.
+multigrid3ddielectricsolve(iwhich:integer,nx:integer,ny:integer,nz:integer,
+                 nxlocal:integer,nylocal:integer,nzlocal:integer,
+                 nxguardphi:integer,nyguardphi:integer,nzguardphi:integer,
+                 nxguardrho:integer,nyguardrho:integer,nzguardrho:integer,
+                 dx:real,dy:real,dz:real,
+                 phi(-nxguardphi:nxlocal+nxguardphi,
+                     -nyguardphi:nylocal+nyguardphi,
+                     -nzguardphi:nzlocal+nzguardphi):real,
+                 rho(-nxguardrho:nxlocal+nxguardrho,
+                     -nyguardrho:nylocal+nyguardrho,
+                     -nzguardrho:nzlocal+nzguardrho):real,
+                 epsilon(0:nxlocal+1,0:nylocal+1,0:nzlocal+1):real,
+                 bounds(0:5):integer,xmminlocal:real,ymminlocal:real,
+                 mgparam:real,mgiters:integer,mgmaxiters:integer,
+                 mgmaxlevels:integer,mgerror:real,mgtol:real,mgverbose:integer,
+                 downpasses:integer,uppasses:integer,
+                 lcndbndy:logical,laddconductor:logical,
+                 gridmode:integer,conductors:ConductorType,
+                 fsdecomp:Decomposition)
+   subroutine
    # Solves Poisson's equation in 2D with a variable dielectric using the
    # multigrid method. All input is through the argument list.
 mgsolveimplicites3d(iwhich:integer,nx:integer,ny:integer,nz:integer,
@@ -422,6 +444,15 @@ residual2ddielectric(nxlocal:integer,nzlocal:integer,
            phi:real,rho:real,epsilon:real,res:real,dx:real,dz:real,
            mglevel:integer,localbounds(0:5):integer,lcndbndy:logical,
            conductors:ConductorType,xminodx:real,lrz:logical)
+   subroutine
+   # Calculates the residual for 3d arrays with dielectric solver
+residual3ddielectric(nxlocal:integer,nylocal:integer,nzlocal:integer,
+           nxguardphi:integer,nyguardphi:integer,nzguardphi:integer,
+           nxguardrho:integer,nyguardrho:integer,nzguardrho:integer,
+           nxguardres:integer,nyguardres:integer,nzguardres:integer,
+           phi:real,rho:real,epsilon:real,res:real,dx:real,dy:real,dz:real,
+           mglevel:integer,localbounds(0:5):integer,lcndbndy:logical,
+           conductors:ConductorType,xminodx:real,yminodx:real)
    subroutine
    # Calculates the residual for 2d arrays with a variable dielectric
 restrict3d(nx:integer,ny:integer,nz:integer,
