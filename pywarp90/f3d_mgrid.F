@@ -8261,6 +8261,8 @@ c         --- Allocate new work space
      &                    localbounds,localboundsc,
      &                    lxoffset,test_lzoffset)
 
+          epsiloncoarse = eps0
+
           epsbounds = localboundsc
           where (epsbounds .eq. 0)
             epsbounds = 1
@@ -8300,7 +8302,7 @@ c       --- Restriction - note that no scaling factor is needed
 #ifdef DEBUG
 
 #ifdef MPIPARALLEL
-        write(filename, '("epsilcoarse_",I1,"_",I1,".txt")') 
+        write(filename, '("epsilcoarse_",I0.2,"_",I0.2,".txt")') 
      &    ixproc, izproc
 #else
         write(filename, '("epsilcoarse.txt")')
@@ -9760,6 +9762,8 @@ c         --- Allocate new work space
           
           epsiloncoarse => epscoarsecache(mglevel)%arr
           
+          epsiloncoarse = eps0
+          
           call restrict3dcellcentered(nx,ny,nz,
      &                    nxlocal,nylocal,nzlocal,epsilon,
      &                    nxcoarse,nycoarse,nzcoarse,
@@ -9797,9 +9801,37 @@ C           print*,"Before Exch",ixproc,izproc,epsiloncoarse
         
         epsiloncoarse => epscoarsecache(mglevel)%arr
 
+#ifdef DEBUG
+
+#ifdef MPIPARALLEL
+        write(filename, '("epsilcoarse_",I0.2,"_",I0.2,"_",I0.2,".txt")') 
+     &    ixproc, iyproc, izproc
+#else
+        write(filename, '("epsilcoarse.txt")')
+#endif
+        inquire(file=filename, exist=exist)
+        if (exist) then
+          open(12, file=filename, status="old", 
+     &             position="append", action="write")
+        else
+          open(12, file=filename, status="new", action="write")
+        end if
+
+        write(12,*) "PROCSSOR X,Y,Z",ixproc,iyproc,izproc
+        write(12,*) "N",nx,ny,nz
+        write(12,*) "NLOCAL",nxlocal,nylocal,nzlocal
+        write(12,*) "NCOARSE",nxcoarse,nycoarse,nzcoarse
+        write(12,*) "NLOCALCOARSE",nxlocalcoarse,nylocalcoarse,
+     &              nzlocalcoarse
+        write(12,*) "OFF",lxoffset,lyoffset,lzoffset
+        write(12,*) epsiloncoarse
+
+        close(12)
+
+#endif
+
         rhocoarse = 0.
         phicoarse = 0.
-c        epsiloncoarse = eps0
 
 c       --- Restriction - note that no scaling factor is needed
         call restrict3d(nx,ny,nz,nxlocal,nylocal,nzlocal,

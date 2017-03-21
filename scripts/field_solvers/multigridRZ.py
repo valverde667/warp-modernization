@@ -19,7 +19,6 @@ class MultiGrid2D(MultiGrid3D):
 
     def __init__(self,lreducedpickle=1,**kw):
         kw['lreducedpickle'] = lreducedpickle
-        kw['lreducedpickle'] = lreducedpickle
         self.grid_overlap = 2
 
         # --- Force ny (which is not used here)

@@ -3946,7 +3946,7 @@ c=============================================================================
       integer(ISZ):: nc,nxlocal,nylocal,nzlocal,ils,ile,ius,iue
       integer(ISZ):: nxguardphi,nyguardphi,nzguardphi
       real(kind=8):: phi(0:nc-1,-nxguardphi:nxlocal,
-     &                          0:nylocal+nyguardphi,
+     &                          -nyguardphi:nylocal,
      &                          -nxguardphi:nzlocal)
       type(Decomposition):: fsdecomp
 
