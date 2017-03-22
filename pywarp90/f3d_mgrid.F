@@ -685,7 +685,7 @@ c         --- Change rstar if using Nuemann boundary conditions
 c     --- Caclulate the potential on the next coarser level.
 c     --- Check if this is the coarsest level. If so, then don't do any further
 c     --- coarsening. This is the same check that is done in getmglevels.
-      if ((nx >= NMGMIN .or. ny >= NMGMIN .or. nz >= NMGMIN) .and.
+      if ((nx >= NMGMIN .and. ny >= NMGMIN .and. nz >= NMGMIN) .and.
      &    mglevel < mgmaxlevels) then
 
         call getnextcoarselevel3d(nx,ny,nz,nxlocal,nylocal,nzlocal,
@@ -3743,27 +3743,14 @@ c     --- Note that nzlocalcoarse is only used if full-coarsening is done.
       write(*,*) "nx, ny, nz: ", nx, ny, nz
 #endif
       
-      
-      if (nx .gt. NMGMIN) then
-        nxcoarse = (nx+1)/mgcoarsening
-        if (mod(nxcoarse,2) == 1) nxcoarse = nxcoarse + 1
-      else
-        nxcoarse = nx
-      endif
+      nxcoarse = (nx+1)/mgcoarsening
+      if (mod(nxcoarse,2) == 1) nxcoarse = nxcoarse + 1
 
-      if (ny .gt. NMGMIN) then
-        nycoarse = (ny+1)/mgcoarsening
-        if (mod(nycoarse,2) == 1) nycoarse = nycoarse + 1
-      else
-        nycoarse = ny
-      endif
+      nycoarse = (ny+1)/mgcoarsening
+      if (mod(nycoarse,2) == 1) nycoarse = nycoarse + 1
 
-      if (nz .gt. NMGMIN) then
-        nzcoarse = (nz+1)/mgcoarsening
-        if (mod(nzcoarse,2) == 1) nzcoarse = nzcoarse + 1
-      else
-        nzcoarse = nz
-      endif
+      nzcoarse = (nz+1)/mgcoarsening
+      if (mod(nzcoarse,2) == 1) nzcoarse = nzcoarse + 1
 
 #ifdef DEBUG
       write(*,*) "nxcoarse,nycoarse,nzcoarse :", nxcoarse, nycoarse,
@@ -3917,10 +3904,10 @@ c     --- Allocate temp space
         conductors%levellz(mglevel) = lz
         conductors%levels = mglevel + 1
 
-        if ( .not. (nxfine >= NMGMIN .and.
-     &              nyfine >= NMGMIN .and.
-     &              nzfine >= NMGMIN .and.
-     &              mglevel < mgmaxlevels))
+        if ( nxfine < NMGMIN .or.
+     &      (nyfine < NMGMIN . and. nyfine > 0) .or.
+     &       nzfine < NMGMIN .or.
+     &       mglevel == mgmaxlevels)
      &    exit
 
         call getnextcoarselevel3d(nxfine,nyfine,nzfine,
@@ -8261,8 +8248,6 @@ c         --- Allocate new work space
      &                    localbounds,localboundsc,
      &                    lxoffset,test_lzoffset)
 
-          epsiloncoarse = eps0
-
           epsbounds = localboundsc
           where (epsbounds .eq. 0)
             epsbounds = 1
@@ -8302,7 +8287,7 @@ c       --- Restriction - note that no scaling factor is needed
 #ifdef DEBUG
 
 #ifdef MPIPARALLEL
-        write(filename, '("epsilcoarse_",I0.2,"_",I0.2,".txt")') 
+        write(filename, '("epsilcoarse_",I1,"_",I1,".txt")') 
      &    ixproc, izproc
 #else
         write(filename, '("epsilcoarse.txt")')
@@ -9762,8 +9747,6 @@ c         --- Allocate new work space
           
           epsiloncoarse => epscoarsecache(mglevel)%arr
           
-          epsiloncoarse = eps0
-          
           call restrict3dcellcentered(nx,ny,nz,
      &                    nxlocal,nylocal,nzlocal,epsilon,
      &                    nxcoarse,nycoarse,nzcoarse,
@@ -9801,37 +9784,9 @@ C           print*,"Before Exch",ixproc,izproc,epsiloncoarse
         
         epsiloncoarse => epscoarsecache(mglevel)%arr
 
-#ifdef DEBUG
-
-#ifdef MPIPARALLEL
-        write(filename, '("epsilcoarse_",I0.2,"_",I0.2,"_",I0.2,".txt")') 
-     &    ixproc, iyproc, izproc
-#else
-        write(filename, '("epsilcoarse.txt")')
-#endif
-        inquire(file=filename, exist=exist)
-        if (exist) then
-          open(12, file=filename, status="old", 
-     &             position="append", action="write")
-        else
-          open(12, file=filename, status="new", action="write")
-        end if
-
-        write(12,*) "PROCSSOR X,Y,Z",ixproc,iyproc,izproc
-        write(12,*) "N",nx,ny,nz
-        write(12,*) "NLOCAL",nxlocal,nylocal,nzlocal
-        write(12,*) "NCOARSE",nxcoarse,nycoarse,nzcoarse
-        write(12,*) "NLOCALCOARSE",nxlocalcoarse,nylocalcoarse,
-     &              nzlocalcoarse
-        write(12,*) "OFF",lxoffset,lyoffset,lzoffset
-        write(12,*) epsiloncoarse
-
-        close(12)
-
-#endif
-
         rhocoarse = 0.
         phicoarse = 0.
+c        epsiloncoarse = eps0
 
 c       --- Restriction - note that no scaling factor is needed
         call restrict3d(nx,ny,nz,nxlocal,nylocal,nzlocal,
