@@ -3740,7 +3740,7 @@ c     --- Note that nzlocalcoarse is only used if full-coarsening is done.
       real(kind=8):: mingridsize
 
 #ifdef DEBUG
-      write(*,*) "nx, ny, nz: ", nx, ny, nz
+c      write(*,*) "nx, ny, nz: ", nx, ny, nz
 #endif
       
       nxcoarse = (nx+1)/mgcoarsening
@@ -3753,8 +3753,8 @@ c     --- Note that nzlocalcoarse is only used if full-coarsening is done.
       if (mod(nzcoarse,2) == 1) nzcoarse = nzcoarse + 1
 
 #ifdef DEBUG
-      write(*,*) "nxcoarse,nycoarse,nzcoarse :", nxcoarse, nycoarse,
-     &                                           nzcoarse
+c      write(*,*) "nxcoarse,nycoarse,nzcoarse :", nxcoarse, nycoarse,
+c     &                                           nzcoarse
 #endif
 
       mingridsize = min(dx,dy)
@@ -7811,12 +7811,12 @@ c     --- converted and expanded for the multigrid solver.
 
 #ifdef MPIPARALLEL
 c     --- These calls break the parallel field solver
-c     call mgexchange_phi_periodic(1,nxlocal,0,nzlocal,phi,
-c    &                             nxguardphi,0,nzguardphi,
-c    &                             -1,0,localbounds,fsdecomp)
-c     call mgexchange_phi(1,nxlocal,0,nzlocal,phi,
-c    &                    nxguardphi,0,nzguardphi,
-c    &                    -1,-1,fsdecomp)
+c      call mgexchange_phi_periodic(1,nxlocal,0,nzlocal,phi,
+c     &                             nxguardphi,0,nzguardphi,
+c     &                             -1,0,localbounds,fsdecomp)
+c      call mgexchange_phi(1,nxlocal,0,nzlocal,phi,
+c     &                    nxguardphi,0,nzguardphi,
+c     &                    -1,-1,fsdecomp)
 #endif
 
 c     --- Make sure guard planes have sensible values before beginning.
@@ -8010,6 +8010,16 @@ c     Initialize Cached Arrays if needed
       if (fsdecomp%ix(ixproc)+nxlocal < nx) localbounds(1) = -1
       if (fsdecomp%iz(izproc) > 0)          localbounds(4) = -1
       if (fsdecomp%iz(izproc)+nzlocal < nz) localbounds(5) = -1
+
+c     Make sure rho guard cells are sane
+      if (mglevel .eq. 0) then
+        call mgexchange_phi(1,nxlocal,0,nzlocal,rho,
+     &                      nxguardrho,0,nzguardrho,
+     &                      -1,-1,fsdecomp)
+        call mgexchange_phi_periodic(1,nxlocal,0,nzlocal,rho,
+     &                             nxguardrho,0,nzguardrho,
+     &                             0,0,localbounds,fsdecomp)
+      endif
 #endif
 
       if (lprintmgarraysumdiagnostic) then
@@ -8094,6 +8104,27 @@ c       --- Get the residual on the current grid.
      &                      nxguardres,0,nzguardres,
      &                      -3,-1,fsdecomp)
 #endif
+
+#ifdef DEBUG
+        write(filename, '("res_",I0.2,"_",I0.2,".txt")') 
+     &    ixproc, izproc
+
+        inquire(file=filename, exist=exist)
+        if (exist) then
+          open(12, file=filename, status="old", 
+     &             position="append", action="write")
+        else
+          open(12, file=filename, status="new", action="write")
+        end if
+
+        write(12,*) "PROCSSOR X",ixproc,"PROCESSOR Z",izproc
+        write(12,*) "NX",nx,"NZ",nz
+        write(12,*) "NXLOCAL",nxlocal,"NZLOCAL",nzlocal
+        write(12,'(10(F17.7))') res
+
+        close(12)
+#endif  
+
         if (lprintmgarraysumdiagnostic) then
           call mggetarraysum(nxlocal,0,nzlocal,nxguardres,0,nzguardres,
      &                       res,fsdecomp,0,sss)
@@ -8286,12 +8317,8 @@ c       --- Restriction - note that no scaling factor is needed
 
 #ifdef DEBUG
 
-#ifdef MPIPARALLEL
-        write(filename, '("epsilcoarse_",I1,"_",I1,".txt")') 
+        write(filename, '("epsilcoarse_",I0.2,"_",I0.2,".txt")') 
      &    ixproc, izproc
-#else
-        write(filename, '("epsilcoarse.txt")')
-#endif
         inquire(file=filename, exist=exist)
         if (exist) then
           open(12, file=filename, status="old", 
@@ -8307,10 +8334,9 @@ c       --- Restriction - note that no scaling factor is needed
         write(12,*) "NXLOCALCOARSE",nxlocalcoarse,"NZLOCALCOARSE",
      &              nzlocalcoarse
         write(12,*) "OFFX",lxoffset,"OFFZ",lzoffset
-        write(12,*) epsiloncoarse
+        write(12,'(10(E17.7))') epsiloncoarse
 
         close(12)
-
 #endif
 
         if (lprintmgarraysumdiagnostic) then
@@ -8366,6 +8392,26 @@ c       --- Add in resulting error.
      &                               nxguardphi,0,nzguardphi,
      &                               -1,-1,localbounds,fsdecomp)
 #endif
+
+#ifdef DEBUG
+        write(filename, '("phi_",I0.2,"_",I0.2,".txt")') 
+     &    ixproc, izproc
+
+        inquire(file=filename, exist=exist)
+        if (exist) then
+          open(12, file=filename, status="old", 
+     &             position="append", action="write")
+        else
+          open(12, file=filename, status="new", action="write")
+        end if
+
+        write(12,*) "PROCSSOR X",ixproc,"PROCESSOR Z",izproc
+        write(12,*) "NX",nx,"NZ",nz
+        write(12,*) "NXLOCAL",nxlocal,"NZLOCAL",nzlocal
+        write(12,'(10(F17.7))') phi
+
+        close(12)
+#endif          
 
 c        deallocate(phicoarse,rhocoarse,epsiloncoarse)
 c        deallocate(res)
@@ -8857,7 +8903,7 @@ c conductor boundaries for points near conductor surface.
       integer(ISZ):: ic,ix,iz
       real(kind=8):: pxm,pzm,pxp,pzp
       real(kind=8):: dxm,dzm,dxp,dzp
-      real(kind=8):: epxm,epzm,epxp,epzp
+      real(kind=8):: epxm,epzm,epxp,epzp,epsbari,const
       real(kind=8):: cxm,czm,cxp,czp
       real(kind=8):: voltfac,c0
       real(kind=8):: rr(0:nxlocal),rri(0:nxlocal)
@@ -8873,6 +8919,9 @@ c     --- coarser levels since solver for the residuals.
       else
         voltfac = 0.
       endif
+
+c     Constant to multiply into rho
+      const = 1./(2.*(dxsqi+dzsqi))
 
 c     --- Note that in the loop below, for the Neumann boundary conditions,
 c     --- the potentials are not set since they will be multiplied by zero
@@ -8949,16 +8998,19 @@ c       --- used and so is not set.
         endif
 
 c       --- Setup the epsilon coefficients
-        epxm = 0.5*(epsilon(ix  ,iz) + epsilon(ix  ,iz+1))
-        epxp = 0.5*(epsilon(ix+1,iz) + epsilon(ix+1,iz+1))
-        epzm = 0.5*(epsilon(ix,iz  ) + epsilon(ix+1,iz  ))
-        epzp = 0.5*(epsilon(ix,iz+1) + epsilon(ix+1,iz+1))
+c        epxm = 0.5*(epsilon(ix  ,iz) + epsilon(ix  ,iz+1))
+c        epxp = 0.5*(epsilon(ix+1,iz) + epsilon(ix+1,iz+1))
+c        epzm = 0.5*(epsilon(ix,iz  ) + epsilon(ix+1,iz  ))
+c        epzp = 0.5*(epsilon(ix,iz+1) + epsilon(ix+1,iz+1))
+
+        epsbari = 4./(epsilon(ix,iz) + epsilon(ix+1,iz)
+     &              + epsilon(ix,iz+1) + epsilon(ix+1,iz+1))
 
 c       --- Now construct the coefficients
-        cxm = epxm*dxsqi/(dxm*(0.5*dxm + 0.5*dxp))
-        cxp = epxp*dxsqi/(dxp*(0.5*dxm + 0.5*dxp))
-        czm = epzm*dzsqi/(dzm*(0.5*dzm + 0.5*dzp))
-        czp = epzp*dzsqi/(dzp*(0.5*dzm + 0.5*dzp))
+        cxm = dxsqi/(dxm*(0.5*dxm + 0.5*dxp))
+        cxp = dxsqi/(dxp*(0.5*dxm + 0.5*dxp))
+        czm = dzsqi/(dzm*(0.5*dzm + 0.5*dzp))
+        czp = dzsqi/(dzp*(0.5*dzm + 0.5*dzp))
         if (-1. < dels(0,ic) .and. dels(0,ic) <= 0.) cxm = 0.
         if (-1. < dels(1,ic) .and. dels(1,ic) <= 0.) cxp = 0.
         if (-1. < dels(4,ic) .and. dels(4,ic) <= 0.) czm = 0.
@@ -8980,7 +9032,7 @@ c       --- isolated case which doesn't make sense anyway, so let a NaN
 c       --- happen rather than add an extra check on c0.
 
         c0 = cxm + cxp + czm + czp
-        phi(ix,iz) = mgparam*(rho(ix,iz)
+        phi(ix,iz) = mgparam*(rho(ix,iz) * const * epsbari
      &                      + cxm*pxm + cxp*pxp + czm*pzm + czp*pzp)/c0
      &               + (1. - mgparam)*subgrid%prevphi(ic)
 c       print*,phi(ix,iz),rho(ix,iz),cxm,pxm,cxp,pxp,czm,pzm,czp,pzp,c0,
@@ -9023,7 +9075,7 @@ c conductor boundaries for points near conductor surface.
       real(kind=8):: pxm,pzm,pxp,pzp
       real(kind=8):: dxm,dzm,dxp,dzp
       real(kind=8):: cxm,czm,cxp,czp
-      real(kind=8):: epxm,epzm,epxp,epzp
+      real(kind=8):: epxm,epzm,epxp,epzp, epsbari, const
       real(kind=8):: voltfac,ppp,c0
       real(kind=8):: rr(0:nxlocal),rri(0:nxlocal)
       real(kind=8),pointer:: dels(:,:),volt(:,:)
@@ -9048,6 +9100,8 @@ c     --- using uninitialized variables.
       pxp = 0.
       pzm = 0.
       pzp = 0.
+
+      const = 1./(2.*(dxsqi+dzsqi))
 
 c     --- Precalculate the radius for efficiency
       if (lrz) then
@@ -9140,16 +9194,19 @@ c       --- used and so is not set.
 
 
 c       --- Setup the epsilon coefficients
-        epxm = 0.5*(epsilon(ix  ,iz) + epsilon(ix  ,iz+1))
-        epxp = 0.5*(epsilon(ix+1,iz) + epsilon(ix+1,iz+1))
-        epzm = 0.5*(epsilon(ix,iz  ) + epsilon(ix+1,iz  ))
-        epzp = 0.5*(epsilon(ix,iz+1) + epsilon(ix+1,iz+1))
+c        epxm = 0.5*(epsilon(ix  ,iz) + epsilon(ix  ,iz+1))
+c        epxp = 0.5*(epsilon(ix+1,iz) + epsilon(ix+1,iz+1))
+c        epzm = 0.5*(epsilon(ix,iz  ) + epsilon(ix+1,iz  ))
+c        epzp = 0.5*(epsilon(ix,iz+1) + epsilon(ix+1,iz+1))
+
+        epsbari = 4./(epsilon(ix,iz) + epsilon(ix+1,iz)
+     &              + epsilon(ix,iz+1) + epsilon(ix+1,iz+1))
 
 c       --- Now construct the coefficients
-        cxm = epxm*dxsqi/(dxm*(0.5*dxm + 0.5*dxp))
-        cxp = epxp*dxsqi/(dxp*(0.5*dxm + 0.5*dxp))
-        czm = epzm*dzsqi/(dzm*(0.5*dzm + 0.5*dzp))
-        czp = epzp*dzsqi/(dzp*(0.5*dzm + 0.5*dzp))
+        cxm = dxsqi/(dxm*(0.5*dxm + 0.5*dxp))
+        cxp = dxsqi/(dxp*(0.5*dxm + 0.5*dxp))
+        czm = dzsqi/(dzm*(0.5*dzm + 0.5*dzp))
+        czp = dzsqi/(dzp*(0.5*dzm + 0.5*dzp))
         if (-1. < dels(0,ic) .and. dels(0,ic) <= 0.) cxm = 0.
         if (-1. < dels(1,ic) .and. dels(1,ic) <= 0.) cxp = 0.
         if (-1. < dels(4,ic) .and. dels(4,ic) <= 0.) czm = 0.
@@ -9167,9 +9224,10 @@ c       --- Correct coefficients for axisymmetric case
         endif
 
         c0 = cxm + cxp + czm + czp
-        res(ix,iz) = ppp*(rho(ix,iz) + cxm*pxm + cxp*pxp 
-     &                    + czm*pzm + czp*pzp
-     &                    - c0*phi(ix,iz))
+        res(ix,iz) = ppp*((rho(ix,iz) * const * epsbari
+     &                    + cxm*pxm + cxp*pxp 
+     &                    + czm*pzm + czp*pzp)/c0
+     &                    - phi(ix,iz))
 
         if (0. >= dels(0,ic) .and. dels(0,ic) >= -1.) res(ix-1,iz) = 0.
         if (0. >= dels(1,ic) .and. dels(1,ic) >= -1.) res(ix+1,iz) = 0.
@@ -9472,6 +9530,19 @@ c Routine that does the v-cycle for multigrid. Note that it is recursive.
 
       epsbounds = 1
 
+      if (nxlocal .ne. conductors%levelnx(mglevel) .or.
+     &    nylocal .ne. conductors%levelny(mglevel) .or.
+     &    nzlocal .ne. conductors%levelnz(mglevel)) then
+        print*,"grid nx, ny, nz = ",nxlocal,nylocal,nzlocal
+        print*,"conductor nx,ny,nz = ",conductors%levelnx(mglevel),
+     &                                 conductors%levelny(mglevel),
+     &                                 conductors%levelnz(mglevel)
+        call kaboom("vcycle3ddielectric: error: the coarsening level"//
+     &              " of the conductor is"//
+     &              " inconsistent with that used by the solver")
+        return
+      endif
+
 c     Initialize Cached Arrays if needed
       if (.not.ALLOCATED(phicoarsecache)) then
         allocate(phicoarsecache(0:mgmaxlevels))
@@ -9490,7 +9561,37 @@ c     Initialize Cached Arrays if needed
       if (fsdecomp%iy(iyproc)+nylocal < ny) localbounds(3) = -1
       if (fsdecomp%iz(izproc) > 0)          localbounds(4) = -1
       if (fsdecomp%iz(izproc)+nzlocal < nz) localbounds(5) = -1
+      
+c     Make sure rho guard cells are sane
+      if (mglevel .eq. 0) then 
+        call mgexchange_phi(1,nxlocal,nylocal,nzlocal,rho,
+     &                        nxguardrho,nyguardrho,nzguardrho,
+     &                        -1,-1,fsdecomp)
+        call mgexchange_phi_periodic(1,nxlocal,nylocal,nzlocal,rho,
+     &                               nxguardrho,nyguardrho,nzguardrho,
+     &                               0,0,localbounds,fsdecomp)
+      endif
 #endif
+
+#ifdef DEBUG
+        write(filename, '("rho_",I0.2,"_",I0.2"_"I0.2,".txt")') 
+     &    ixproc, iyproc, izproc
+
+        inquire(file=filename, exist=exist)
+        if (exist) then
+          open(12, file=filename, status="old", 
+     &             position="append", action="write")
+        else
+          open(12, file=filename, status="new", action="write")
+        end if
+
+        write(12,*) "PROCESSOR X,Y,Z",ixproc,iyproc,izproc
+        write(12,*) "N",nx,ny,nz
+        write(12,*) "NLOCAL",nxlocal,nylocal,nzlocal
+        write(12,'(10(ES20.10))') rho
+
+        close(12)
+#endif  
 
       if (lprintmgarraysumdiagnostic) then
 #ifdef MPIPARALLEL
@@ -9532,7 +9633,7 @@ c     --- Do initial SOR passes.
         if (lpe0) print*,"V2 rho",mglevel,sss/eps0
       endif
 
-c     --- Check if this is the finest level. If so, then don't do any further
+c     --- Check if this is the coarsest level. If so, then don't do any further
 c     --- coarsening. This is the same check that is done in getmglevels.
 C     changed to stop coarsening at 6 (was 4) to prevent failure of periodic boundary exchange
 C     epsilon has n - 1 cells compared to n for phi and will not be able to exchange boudnaries if n <= 3
@@ -9584,6 +9685,25 @@ c       --- Get the residual on the current grid.
      &                      nxguardres,nyguardres,nzguardres,
      &                      -3,-1,fsdecomp)
 #endif
+#ifdef DEBUG
+        write(filename, '("res_",I0.2,"_",I0.2"_"I0.2,".txt")') 
+     &    ixproc, iyproc, izproc
+
+        inquire(file=filename, exist=exist)
+        if (exist) then
+          open(12, file=filename, status="old", 
+     &             position="append", action="write")
+        else
+          open(12, file=filename, status="new", action="write")
+        end if
+
+        write(12,*) "PROCESSOR X,Y,Z",ixproc,iyproc,izproc
+        write(12,*) "N",nx,ny,nz
+        write(12,*) "NLOCAL",nxlocal,nylocal,nzlocal
+        write(12,'(10(ES20.10))') res
+
+        close(12)
+#endif  
         if (lprintmgarraysumdiagnostic) then
           call mggetarraysum(nxlocal,nylocal,nzlocal,
      &                       nxguardres,nyguardres,nzguardres,
@@ -9780,15 +9900,36 @@ C           print*,"Before Exch",ixproc,izproc,epsiloncoarse
      &                                   1,1,1,
      &                                  -1,-1,epsbounds,coarsedecomp)
 #endif
+
+#ifdef DEBUG
+          write(filename, '("epscoarse_",I0.2,"_",I0.2"_"I0.2,".txt")') 
+     &      ixproc, iyproc, izproc
+
+          inquire(file=filename, exist=exist)
+          if (exist) then
+            open(12, file=filename, status="old", 
+     &               position="append", action="write")
+          else
+            open(12, file=filename, status="new", action="write")
+          end if
+
+          write(12,*) "PROCESSOR X,Y,Z",ixproc,iyproc,izproc
+          write(12,*) "N",nx,ny,nz
+          write(12,*) "NLOCAL",nxlocal,nylocal,nzlocal
+          write(12,'(10(ES20.10))') epsiloncoarse
+
+        close(12)
+#endif  
+
         endif
         
         epsiloncoarse => epscoarsecache(mglevel)%arr
 
-        rhocoarse = 0.
+c        rhocoarse = 0.
         phicoarse = 0.
-c        epsiloncoarse = eps0
 
-c       --- Restriction - note that no scaling factor is needed
+c       --- Restriction - note that no scaling factor is needed since rho 
+c       is not prescaled with mgparam/(2*(dxsqi+dysqi+dzsqi))
         call restrict3d(nx,ny,nz,nxlocal,nylocal,nzlocal,
      &                  nxguardres,nyguardres,nzguardres,res,
      &                  nxcoarse,nycoarse,nzcoarse,
@@ -9861,8 +10002,28 @@ c       --- Add in resulting error.
 #ifdef MPIPARALLEL
         call mgexchange_phi_periodic(1,nxlocal,nylocal,nzlocal,phi,
      &                               nxguardphi,nyguardphi,nzguardphi,
-     &                               -1,-1,localbounds,fsdecomp)
+     &                               -1,0,localbounds,fsdecomp)
 #endif
+
+#ifdef DEBUG
+        write(filename, '("phi_",I0.2,"_",I0.2"_"I0.2,".txt")') 
+     &    ixproc, iyproc, izproc
+
+        inquire(file=filename, exist=exist)
+        if (exist) then
+          open(12, file=filename, status="old", 
+     &             position="append", action="write")
+        else
+          open(12, file=filename, status="new", action="write")
+        end if
+
+        write(12,*) "PROCESSOR X,Y,Z",ixproc,iyproc,izproc
+        write(12,*) "N",nx,ny,nz
+        write(12,*) "NLOCAL",nxlocal,nylocal,nzlocal
+        write(12,'(10(ES20.10))') phi
+
+        close(12)
+#endif  
 
 c        deallocate(phicoarse,rhocoarse,epsiloncoarse)
 c        deallocate(res)
@@ -10102,9 +10263,15 @@ c       --- surface of the conductor boundaries.
         call mgexchange_phi_periodic(1,nxlocal,nylocal,nzlocal,phi,
      &                               nxguardphi,nyguardphi,nzguardphi,
      &                               -1,0,localbounds,fsdecomp)
-        call mgexchange_phi(1,nxlocal,nylocal,nzlocal,phi,
-     &                      nxguardphi,nyguardphi,nzguardphi,
-     &                      -1,0,fsdecomp)
+        if (parity == s_parity) then
+          call mgexchange_phi(1,nxlocal,nylocal,nzlocal,phi,
+     &                          nxguardphi,nyguardphi,nzguardphi,
+     &                          0,0,fsdecomp)
+        else
+          call mgexchange_phi(1,nxlocal,nylocal,nzlocal,phi,
+     &                          nxguardphi,nyguardphi,nzguardphi,
+     &                          -1,0,fsdecomp)
+        endif
 #endif
 
 c     --- end of loop over even and odd points
@@ -10112,9 +10279,9 @@ c     --- end of loop over even and odd points
 
 #ifdef MPIPARALLEL
 c     --- Exchange phi in the z guard planes
-      call mgexchange_phi(1,nxlocal,nylocal,nzlocal,phi,
-     &                    nxguardphi,nyguardphi,nzguardphi,
-     &                    -1,-1,fsdecomp)
+c      call mgexchange_phi(1,nxlocal,nylocal,nzlocal,phi,
+c     &                    nxguardphi,nyguardphi,nzguardphi,
+c     &                    -1,-1,fsdecomp)
 #endif
 
       return
@@ -10162,7 +10329,7 @@ c Calculate the residual on the grid. Residual = r.h.s. - l.h.s.
       dysqi = 1./dy**2
       dzsqi = 1./dz**2
 
-      const = 1./(dxsqi+dysqi+dzsqi)
+      const = 1./(2.*(dxsqi+dysqi+dzsqi))
 
 c     --- Set the loop limits, including edges when appropriate.
       ixmin = 0
@@ -10180,9 +10347,34 @@ c     --- Set the loop limits, including edges when appropriate.
 
 c     --- Calculate the residual.
 
+c       --- This zeroing out is done inside the loop so that the cache look
+c       --- ups for the zeroing and the calculation are done at the same time.
+        if (localbounds(4) == 0) then
+c         --- At Dirichlet boundaries, zero out res at the boundary.
+          res(:,:,-nzguardres:0) = 0.
+        else if (localbounds(4)  > 0 .and. nzguardres > 1) then
+c         --- Otherwise, only zero out the guard cells that won't be otherwise
+c         --- filled in.
+          res(:,:,-nzguardres:-2) = 0
+        endif
+
 !$OMP DO
       do iz=izmin,izmax
+      
+        if (localbounds(2) == 0) then
+          res(:,-nyguardres:0,iz) = 0.
+        else if (localbounds(2)  > 0 .and. nyguardres > 1) then
+          res(:,-nyguardres:-2,iz) = 0.
+        endif
+          
         do iy=iymin,iymax
+        
+          if (localbounds(0) == 0) then
+            res(-nxguardres:0,iy,iz) = 0.
+          else if (localbounds(0)  > 0 .and. nxguardres > 1) then
+            res(-nxguardres:-2,iy,iz) = 0.
+          endif
+        
           do ix=ixmin,ixmax
 c             Calculate coefficient values for 3D dielectric residual calc 
               epsbari = 1./(epsilon(ix,iy,iz) + epsilon(ix+1,iy,iz)
@@ -10219,9 +10411,29 @@ c             Update residual
      &                      - phi(ix,iy,iz)
 
           enddo
+          
+          if (localbounds(1) == 0) then
+            res(nxlocal:nxlocal+nxguardres,iy,iz) = 0.
+          else if (localbounds(1)  > 0 .and. nxguardres > 1) then
+            res(nxlocal+2:nxlocal+nxguardres,iy,iz) = 0.
+          endif
+          
         enddo
+        
+        if (localbounds(3) == 0) then
+          res(:,nylocal:nylocal+nyguardres,iz) = 0.
+        else if (localbounds(3)  > 0 .and. nyguardres > 1) then
+          res(:,nylocal+2:nylocal+nyguardres,iz) = 0.
+        endif
+        
       enddo
 !$OMP END DO
+
+      if (localbounds(5) == 0) then
+        res(:,:,nzlocal:nzlocal+nzguardres) = 0.
+      else if (localbounds(5)  > 0 .and. nzguardres > 1) then
+        res(:,:,nzlocal+2:nzlocal+nzguardres) = 0.
+      endif
 
 c     --- Zero the residual inside conductors.
       call cond_potmgres(conductors%interior,
@@ -10429,7 +10641,7 @@ c conductor boundaries for points near conductor surface.
       integer(ISZ):: ic,ix,iy,iz
       real(kind=8):: pxm,pym,pzm,pxp,pyp,pzp
       real(kind=8):: dxm,dym,dzm,dxp,dyp,dzp
-      real(kind=8):: epxm,epym,epzm,epxp,epyp,epzp
+      real(kind=8):: epxm,epym,epzm,epxp,epyp,epzp,epsbari,const
       real(kind=8):: cxm,cym,czm,cxp,cyp,czp
       real(kind=8):: voltfac,c0
       real(kind=8):: rr(0:nxlocal),rri(0:nxlocal)
@@ -10458,6 +10670,7 @@ c     --- using uninitialized variables.
       pzm = 0.
       pzp = 0.
 
+      const = 1./(2.*(dxsqi+dysqi+dzsqi))
 
 c     --- loop over points near surface of conductors
 !$OMP DO
@@ -10539,26 +10752,31 @@ c       --- used and so is not set.
         endif
 
 c       --- Setup the epsilon coefficients
-        epxm = 0.25*(epsilon(ix,iy,iz) + epsilon(ix,iy+1,iz)
-     &             + epsilon(ix,iy,iz+1) + epsilon(ix,iy+1,iz+1))
-        epxp = 0.25*(epsilon(ix+1,iy,iz) + epsilon(ix+1,iy+1,iz)
-     &             + epsilon(ix+1,iy,iz+1) + epsilon(ix+1,iy+1,iz+1))
-        epym = 0.25*(epsilon(ix,iy,iz) + epsilon(ix+1,iy,iz)
-     &             + epsilon(ix,iy,iz+1) + epsilon(ix+1,iy,iz+1))
-        epyp = 0.25*(epsilon(ix,iy+1,iz) + epsilon(ix+1,iy+1,iz)
-     &             + epsilon(ix,iy+1,iz+1) + epsilon(ix+1,iy+1,iz+1))
-        epzm = 0.25*(epsilon(ix,iy,iz) + epsilon(ix+1,iy,iz)
-     &             + epsilon(ix,iy+1,iz) + epsilon(ix+1,iy+1,iz))
-        epzp = 0.25*(epsilon(ix,iy,iz+1) + epsilon(ix+1,iy,iz+1)
-     &             + epsilon(ix,iy+1,iz+1) + epsilon(ix+1,iy+1,iz+1))
+c        epxm = 0.25*(epsilon(ix,iy,iz) + epsilon(ix,iy+1,iz)
+c     &             + epsilon(ix,iy,iz+1) + epsilon(ix,iy+1,iz+1))
+c        epxp = 0.25*(epsilon(ix+1,iy,iz) + epsilon(ix+1,iy+1,iz)
+c     &             + epsilon(ix+1,iy,iz+1) + epsilon(ix+1,iy+1,iz+1))
+c        epym = 0.25*(epsilon(ix,iy,iz) + epsilon(ix+1,iy,iz)
+c     &             + epsilon(ix,iy,iz+1) + epsilon(ix+1,iy,iz+1))
+c        epyp = 0.25*(epsilon(ix,iy+1,iz) + epsilon(ix+1,iy+1,iz)
+c     &             + epsilon(ix,iy+1,iz+1) + epsilon(ix+1,iy+1,iz+1))
+c        epzm = 0.25*(epsilon(ix,iy,iz) + epsilon(ix+1,iy,iz)
+c     &             + epsilon(ix,iy+1,iz) + epsilon(ix+1,iy+1,iz))
+c        epzp = 0.25*(epsilon(ix,iy,iz+1) + epsilon(ix+1,iy,iz+1)
+c     &             + epsilon(ix,iy+1,iz+1) + epsilon(ix+1,iy+1,iz+1))
+
+        epsbari = 1./(epsilon(ix,iy,iz) + epsilon(ix+1,iy,iz)
+     &              + epsilon(ix+1,iy+1,iz) + epsilon(ix,iy+1,iz)
+     &              + epsilon(ix+1,iy,iz+1) + epsilon(ix,iy,iz+1)
+     &              + epsilon(ix,iy+1,iz+1) + epsilon(ix+1,iy+1,iz+1))
 
 c       --- Now construct the coefficients
-        cxm = epxm*dxsqi/(dxm*(0.5*dxm + 0.5*dxp))
-        cxp = epxp*dxsqi/(dxp*(0.5*dxm + 0.5*dxp))
-        cym = epym*dysqi/(dym*(0.5*dym + 0.5*dyp))
-        cyp = epyp*dysqi/(dyp*(0.5*dym + 0.5*dyp))
-        czm = epzm*dzsqi/(dzm*(0.5*dzm + 0.5*dzp))
-        czp = epzp*dzsqi/(dzp*(0.5*dzm + 0.5*dzp))
+        cxm = dxsqi/(dxm*(0.5*dxm + 0.5*dxp))
+        cxp = dxsqi/(dxp*(0.5*dxm + 0.5*dxp))
+        cym = dysqi/(dym*(0.5*dym + 0.5*dyp))
+        cyp = dysqi/(dyp*(0.5*dym + 0.5*dyp))
+        czm = dzsqi/(dzm*(0.5*dzm + 0.5*dzp))
+        czp = dzsqi/(dzp*(0.5*dzm + 0.5*dzp))
         if (-1. < dels(0,ic) .and. dels(0,ic) <= 0.) cxm = 0.
         if (-1. < dels(1,ic) .and. dels(1,ic) <= 0.) cxp = 0.
         if (-1. < dels(2,ic) .and. dels(2,ic) <= 0.) cym = 0.
@@ -10572,7 +10790,7 @@ c       --- happen rather than add an extra check on c0.
 
         c0 = cxm + cxp + cym + cyp + czm + czp
         
-        phi(ix,iy,iz) = mgparam*(rho(ix,iy,iz)
+        phi(ix,iy,iz) = mgparam*(rho(ix,iy,iz) * const * epsbari
      &                      + cxm*pxm + cxp*pxp 
      &                      + cym*pym + cyp*pyp
      &                      + czm*pzm + czp*pzp)/c0
@@ -10619,7 +10837,7 @@ c conductor boundaries for points near conductor surface.
       real(kind=8):: pxm,pym,pzm,pxp,pyp,pzp
       real(kind=8):: dxm,dym,dzm,dxp,dyp,dzp
       real(kind=8):: cxm,cym,czm,cxp,cyp,czp
-      real(kind=8):: epxm,epym,epzm,epxp,epyp,epzp
+      real(kind=8):: epxm,epym,epzm,epxp,epyp,epzp,epsbari,const
       real(kind=8):: voltfac,ppp,c0
       real(kind=8),pointer:: dels(:,:),volt(:,:)
 
@@ -10646,6 +10864,7 @@ c     --- using uninitialized variables.
       pzm = 0.
       pzp = 0.
 
+      const = 1./(2.*(dxsqi+dysqi+dzsqi))
 
 c     --- loop over points near surface of conductors
 !$OMP DO
@@ -10765,26 +10984,31 @@ c       --- used and so is not set.
 
 
 c       --- Setup the epsilon coefficients
-        epxm = 0.25*(epsilon(ix,iy,iz) + epsilon(ix,iy+1,iz)
-     &             + epsilon(ix,iy,iz+1) + epsilon(ix,iy+1,iz+1))
-        epxp = 0.25*(epsilon(ix+1,iy,iz) + epsilon(ix+1,iy+1,iz)
-     &             + epsilon(ix+1,iy,iz+1) + epsilon(ix+1,iy+1,iz+1))
-        epym = 0.25*(epsilon(ix,iy,iz) + epsilon(ix+1,iy,iz)
-     &             + epsilon(ix,iy,iz+1) + epsilon(ix+1,iy,iz+1))
-        epyp = 0.25*(epsilon(ix,iy+1,iz) + epsilon(ix+1,iy+1,iz)
-     &             + epsilon(ix,iy+1,iz+1) + epsilon(ix+1,iy+1,iz+1))
-        epzm = 0.25*(epsilon(ix,iy,iz) + epsilon(ix+1,iy,iz)
-     &             + epsilon(ix,iy+1,iz) + epsilon(ix+1,iy+1,iz))
-        epzp = 0.25*(epsilon(ix,iy,iz+1) + epsilon(ix+1,iy,iz+1)
-     &             + epsilon(ix,iy+1,iz+1) + epsilon(ix+1,iy+1,iz+1))
+c        epxm = 0.25*(epsilon(ix,iy,iz) + epsilon(ix,iy+1,iz)
+c     &             + epsilon(ix,iy,iz+1) + epsilon(ix,iy+1,iz+1))
+c        epxp = 0.25*(epsilon(ix+1,iy,iz) + epsilon(ix+1,iy+1,iz)
+c     &             + epsilon(ix+1,iy,iz+1) + epsilon(ix+1,iy+1,iz+1))
+c        epym = 0.25*(epsilon(ix,iy,iz) + epsilon(ix+1,iy,iz)
+c     &             + epsilon(ix,iy,iz+1) + epsilon(ix+1,iy,iz+1))
+c        epyp = 0.25*(epsilon(ix,iy+1,iz) + epsilon(ix+1,iy+1,iz)
+c     &             + epsilon(ix,iy+1,iz+1) + epsilon(ix+1,iy+1,iz+1))
+c        epzm = 0.25*(epsilon(ix,iy,iz) + epsilon(ix+1,iy,iz)
+c     &             + epsilon(ix,iy+1,iz) + epsilon(ix+1,iy+1,iz))
+c        epzp = 0.25*(epsilon(ix,iy,iz+1) + epsilon(ix+1,iy,iz+1)
+c     &             + epsilon(ix,iy+1,iz+1) + epsilon(ix+1,iy+1,iz+1))
+     
+        epsbari = 1./(epsilon(ix,iy,iz) + epsilon(ix+1,iy,iz)
+     &              + epsilon(ix+1,iy+1,iz) + epsilon(ix,iy+1,iz)
+     &              + epsilon(ix+1,iy,iz+1) + epsilon(ix,iy,iz+1)
+     &              + epsilon(ix,iy+1,iz+1) + epsilon(ix+1,iy+1,iz+1))
 
 c       --- Now construct the coefficients
-        cxm = epxm*dxsqi/(dxm*(0.5*dxm + 0.5*dxp))
-        cxp = epxp*dxsqi/(dxp*(0.5*dxm + 0.5*dxp))
-        cym = epym*dysqi/(dym*(0.5*dym + 0.5*dyp))
-        cyp = epyp*dysqi/(dyp*(0.5*dym + 0.5*dyp))
-        czm = epzm*dzsqi/(dzm*(0.5*dzm + 0.5*dzp))
-        czp = epzp*dzsqi/(dzp*(0.5*dzm + 0.5*dzp))
+        cxm = dxsqi/(dxm*(0.5*dxm + 0.5*dxp))
+        cxp = dxsqi/(dxp*(0.5*dxm + 0.5*dxp))
+        cym = dysqi/(dym*(0.5*dym + 0.5*dyp))
+        cyp = dysqi/(dyp*(0.5*dym + 0.5*dyp))
+        czm = dzsqi/(dzm*(0.5*dzm + 0.5*dzp))
+        czp = dzsqi/(dzp*(0.5*dzm + 0.5*dzp))
         if (-1. < dels(0,ic) .and. dels(0,ic) <= 0.) cxm = 0.
         if (-1. < dels(1,ic) .and. dels(1,ic) <= 0.) cxp = 0.
         if (-1. < dels(2,ic) .and. dels(2,ic) <= 0.) cym = 0.
@@ -10797,10 +11021,11 @@ c       --- isolated case which doesn't make sense anyway, so let a NaN
 c       --- happen rather than add an extra check on c0.
 
         c0 = cxm + cxp + cym + cyp + czm + czp
-        res(ix,iy,iz) = ppp*(rho(ix,iy,iz) + cxm*pxm + cxp*pxp
+        res(ix,iy,iz) = ppp*((rho(ix,iy,iz) * const * epsbari
+     &                               + cxm*pxm + cxp*pxp
      &                               + cym*pym + cyp*pyp
-     &                               + czm*pzm + czp*pzp
-     &                               - c0*phi(ix,iy,iz))
+     &                               + czm*pzm + czp*pzp)/c0
+     &                               - phi(ix,iy,iz))
 
         if (0. >= dels(0,ic) .and. dels(0,ic) >= -1.) 
      &    res(ix-1,iy,iz) = 0.
