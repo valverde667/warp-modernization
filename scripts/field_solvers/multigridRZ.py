@@ -4,6 +4,7 @@ Class for doing multigrid field solve on 2-D
 """
 from ..warp import *
 from find_mgparam import find_mgparam
+import numpy as np
 
 try:
     import psyco
@@ -57,11 +58,23 @@ class MultiGrid2D(MultiGrid3D):
         self.mgiters = 0
         self.mgerror = 0.
 
+        self.ladd_rhob = False
+        
+        if self.solvergeom == w3d.XZgeom:
+            self.initrhob((self.nx + 1, self.nz + 1))
+
     def getrho(self):
         'Returns the rho array without the guard cells'
         return self.source[self.nxguardrho:-self.nxguardrho or None,
                            0,
                            self.nzguardrho:-self.nzguardrho or None]
+
+    def initrhob(self, dims):
+        self.rhob = fzeros(dims)
+        self.ladd_rhob = True
+
+    def getrhob(self):
+        return self.rhob
 
     def getrhop(self):
         'Returns the rhop array without the guard cells'
@@ -129,6 +142,13 @@ class MultiGrid2D(MultiGrid3D):
             zfact = 1./sqrt((1.-beta)*(1.+beta))
         else:
             beta =  sqrt( (1.-1./zfact)*(1.+1./zfact) )
+
+        if self.ladd_rhob is True:
+            nxlocal = self.nxlocal
+            nzlocal = self.nzlocal
+            ix = self.fsdecomp.ix[self.fsdecomp.ixproc]
+            iz = self.fsdecomp.iz[self.fsdecomp.izproc]
+            self.source[self.nxguardrho:-self.nxguardrho or None, 0, self.nzguardrho:-self.nzguardrho or None] += self.rhob[ix:ix+nxlocal+1,iz:iz+nzlocal+1]
 
         # --- This is only done for convenience.
         self._phi = self.potential
@@ -383,6 +403,13 @@ class MultiGrid2DDielectric(MultiGrid2D):
         else:
             beta =  sqrt( (1.-1./zfact)*(1.+1./zfact) )
 
+        if self.ladd_rhob is True:
+            nxlocal = self.nxlocal
+            nzlocal = self.nzlocal
+            ix = self.fsdecomp.ix[self.fsdecomp.ixproc]
+            iz = self.fsdecomp.iz[self.fsdecomp.izproc]
+            self.source[self.nxguardrho:-self.nxguardrho or None, 0, self.nzguardrho:-self.nzguardrho or None] += self.rhob[ix:ix+nxlocal+1,iz:iz+nzlocal+1]
+
         # --- This is only done for convenience.
         self._phi = self.potential
         self._rho = self.source
@@ -478,7 +505,7 @@ class MultiGrid2DDielectric(MultiGrid2D):
             # print self.nxprocs, self.nzprocs
 
             # print "ON PROC", self.ixproc, self.izproc, epsilondecomp
-            savetxt('proc_{}_{}.txt'.format(self.ixproc, self.izproc), epsilondecomp)
+            #savetxt('proc_{}_{}.txt'.format(self.ixproc, self.izproc), epsilondecomp)
             self.epsilon = epsilondecomp
         else:
             return

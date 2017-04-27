@@ -107,13 +107,22 @@ class ParticleScraper(object):
                       install=1,lbeforescraper=0,lfastscraper=0,
                       grid=None,gridmode=0,nxscale=1,nyscale=1,nzscale=1,
                       interceptvelocitymethod='finitedifference',
-                      species=None):
+                      species=None, surfacespecies = None, rhob = None, chargingfactor = 1.0):
         self.mglevel = mglevel
         self.aura = aura
         self.lbeforescraper = lbeforescraper
         self.lfastscraper = lfastscraper
         self.interceptvelocitymethod = interceptvelocitymethod
         self.species = species
+
+        # Modifications to handle dielectric charging
+        self.surfacespecies = surfacespecies # any species which we do not want to be scraped
+        self.rhob = rhob # surface charge density
+        self.chargingfactor = chargingfactor # For accelerated charging
+
+        if self.rhob is not None:
+            self.surfacecount = fzeros((w3d.nx + 1, w3d.nz + 1)) 
+
         # --- First set so install is false. Reset later with input value.
         # --- This is needed since in some cases registerconductors may want
         # --- to do the install. This just skips it in that case.
@@ -493,6 +502,10 @@ class ParticleScraper(object):
         # --- If there are no particles in this species, that nothing needs to be done
         if top.pgroup.nps[js] == 0: return
 
+        if self.surfacespecies != None:
+            if self.surfacespecies.jslist[0] == js:
+                return # Do not scrape any surface species
+
         # --- Get mesh information into local variables
         dx,dy,dz,nx,ny,nz,ix,iy,iz = self.grid.getmeshsize(self.mglevel)
         xmin = self.grid.xmmin + ix*dx
@@ -848,10 +861,24 @@ class ParticleScraper(object):
                         put(top.pgroup.uzp,ic,-take(top.pgroup.uzp,ic))
 
                 else:
-
                     # --- For particles which are inside, set gaminv to 0, the lost
                     # --- particle flag
                     put(top.pgroup.gaminv,ic,0.)
+
+                    if c.material == 'dielectric' and self.rhob is not None:
+                        np = len(ic)
+                        w = self.chargingfactor * top.pgroup.sq[js] * w3d.nx * w3d.nz / ((w3d.xmmax - w3d.xmmin) * (w3d.zmmax - w3d.zmmin)) * ones(np, 'd')
+                        deposgrid2d(1, np, take(top.pgroup.xp, ic), take(top.pgroup.zp, ic), w, w3d.nx, w3d.nz, self.rhob, self.surfacecount, w3d.xmmin, w3d.xmmax, w3d.zmmin, w3d.zmmax)
+                        
+#                        if w3d.boundxy is periodic:
+#                            self.rhob[0,:] = (self.rhob[-1,:] + self.rhob[0,:]) / 1.0
+#                            self.rhob[-1,:] = self.rhob[0,:]
+#
+#                        if w3d.bound0 is periodic:
+#                            self.rhob[:,0] = (self.rhob[:,-1] + self.rhob[:,0]) / 1.0
+#                            self.rhob[:,-1] = self.rhob[:,0]
+                        
+                        #self.surfacespecies.addparticles(x = take(top.pgroup.xp, ic), y = take(top.pgroup.yp, ic), z = take(top.pgroup.zp, ic), vx = 0., vy = 0., vz = 0.)
 
                 # --- Remove the already handled particles, returning if there
                 # --- are no more.

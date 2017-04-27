@@ -1018,6 +1018,186 @@ class MultiGrid3D(SubcycledPoissonSolver):
 
 MultiGrid = MultiGrid3D
 
+class MultiGrid3DDielectric(MultiGrid3D):
+    """
+  3-D solver allowing for spatially varying dielectric
+    """
+
+    def __init__(self,epsilon=None,lreducedpickle=1,**kw):
+        MultiGrid3D.__init__(self,lreducedpickle,**kw)
+
+        # if epsilon is None:
+        #     self.epsilon = eps0*fones((self.nxlocal+2,self.nzlocal+2),'d')
+        # else:
+        #     self.epsilon = epsilon
+
+        self.epsilon = epsilon
+        # TODO: Find appropriate flag to use
+        # Flag to prevent decomposition from happening after first step
+        self.epsilon_decomp_flag = False
+
+        self.ladd_rhob = False
+
+        if self.solvergeom == w3d.XYZgeom:
+            self.initrhob((self.nx + 1, self.ny + 1, self.nz + 1))
+
+    def initrhob(self, dims):
+        self.rhob = fzeros(dims)
+        self.ladd_rhob = True
+
+    def getrhob(self):
+        return self.rhob
+
+    def dosolve(self,iwhich=0,zfact=None,isourcepndtscopies=None,indts=None,iselfb=None):
+        if not self.l_internal_dosolve: return
+        assert self.epsilon is not None,"epsilon must be defined"
+
+        # --- set for longitudinal relativistic contraction
+        #if zfact is None:
+        #    beta = top.pgroup.fselfb[iselfb]/clight
+        #    zfact = 1./sqrt((1.-beta)*(1.+beta))
+        #else:
+        #    beta =  sqrt( (1.-1./zfact)*(1.+1./zfact) )
+
+        if self.ladd_rhob is True:
+            nxlocal = self.nxlocal
+            nylocal = self.nylocal
+            nzlocal = self.nzlocal
+            ix = self.fsdecomp.ix[self.fsdecomp.ixproc]
+            iy = self.fsdecomp.iy[self.fsdecomp.iyproc]
+            iz = self.fsdecomp.iz[self.fsdecomp.izproc]
+            self.source[self.nxguardrho:-self.nxguardrho or None,
+                        self.nyguardrho:-self.nyguardrho or None,
+                        self.nzguardrho:-self.nzguardrho or None] \
+                += self.rhob[ix:ix+nxlocal+1,iy:iy+nylocal+1,iz:iz+nzlocal+1]
+
+        # --- This is only done for convenience.
+        self._phi = self.potential
+        self._rho = self.source
+        if isinstance(self.potential,float): return
+
+        self.epsilon_decomp(self.epsilon)
+
+        mgverbose = self.getmgverbose()
+        mgiters = zeros(1,'l')
+        mgerror = zeros(1,'d')
+        # --- This takes care of clear out the conductor information if needed.
+        # --- Note that f3d.gridmode is passed in below - this still allows the
+        # --- user to use the addconductor method if needed.
+        if self.gridmode == 0: self.clearconductors([top.pgroup.fselfb[iselfb]])
+        conductorobject = self.getconductorobject(top.pgroup.fselfb[iselfb])
+        multigrid3ddielectricsolve(iwhich,self.nx,self.ny,self.nz,
+                         self.nxlocal,self.nylocal,self.nzlocal,
+                         self.nxguardphi,self.nyguardphi,self.nzguardphi,
+                         self.nxguardrho,self.nyguardrho,self.nzguardrho,
+                         self.dx,self.dy,self.dz,
+                         self._phi,
+                         self._rho,
+                         self.epsilon,self.bounds,
+                         self.xmminlocal,self.ymminlocal,
+                         self.mgparam,mgiters,self.mgmaxiters,
+                         self.mgmaxlevels,mgerror,self.mgtol,mgverbose,
+                         self.downpasses,self.uppasses,
+                         self.lcndbndy,self.laddconductor,
+                         f3d.gridmode,conductorobject,
+                         self.fsdecomp)
+
+        self.mgiters = mgiters[0]
+        self.mgerror = mgerror[0]
+
+    def getresidual(self):
+        res = zeros(shape(self._phi),'d')
+        conductorobject = self.getconductorobject()
+        residual3ddielectric(self.nxlocal,self.nylocal,self.nzlocal,
+                             self.nxguardphi,self.nyguardphi,self.nzguardphi,
+                             self.nxguardrho,self.nyguardrho,self.nzguardrho,
+                             self.nxguardphi,self.nyguardphi,self.nzguardphi,
+                             self._phi,rho,self.epsilon,res,
+                             self.dx,self.dy,self.dz,0,self.bounds,
+                             True,conductorobject,
+                             self.xmminlocal/self.dx, self.ymminlocal/self.dy)
+        return res
+
+    def epsilon_decomp(self, epsilon):
+        #  TODO: Catch for only starting in parallel?
+        if not self.epsilon_decomp_flag:
+            nxguard = 1
+            nyguard = 1
+            nzguard = 1
+            nxlocal = self.nxlocal
+            nylocal = self.nylocal
+            nzlocal = self.nzlocal
+            ix = self.fsdecomp.ix[self.fsdecomp.ixproc]
+            iy = self.fsdecomp.iy[self.fsdecomp.iyproc]
+            iz = self.fsdecomp.iz[self.fsdecomp.izproc]
+            epsilondecomp = zeros([nxlocal + 2, nylocal + 2, nzlocal + 2])
+            # print "LBS", ix, iz
+            # print "localcell", "on",self.ixproc,self.izproc, (nxlocal, nzlocal)
+            # doing interior cells first
+            for i in range(ix + 1, ix + nxlocal + 2 * nxguard - 1):
+                for j in range(iy + 1, iy + nylocal + 2 * nyguard - 1):
+                    for k in range(iz + 1, iz + nzlocal + 2 * nzguard - 1):
+                        epsilondecomp[i - ix, j - iy, k - iz] = epsilon[i, j, k]
+
+            # Fill lower guard cells
+            if ix == 0:
+                epsilondecomp[0, 1:-1, 1:-1] = epsilon[0, iy + 1:iy + nylocal + 2 * nyguard - 1, iz + 1:iz + nzlocal + 2 * nzguard - 1]
+            else:
+                epsilondecomp[0, :, :] = epsilon[ix, iy:iy + nylocal + 2 * nyguard, iz:iz + nzlocal + 2 * nzguard]
+
+            if iy == 0:
+                epsilondecomp[1:-1, 0, 1:-1] = epsilon[ix + 1:ix + nxlocal + 2 * nxguard - 1, 0, iz + 1:iz + nzlocal + 2 * nzguard - 1]
+            else:
+                epsilondecomp[:, 0, :] = epsilon[ix:ix + nxlocal + 2 * nyguard, iy, iz:iz + nzlocal + 2 * nzguard]
+
+            if iz == 0:
+                epsilondecomp[1:-1, 1:-1, 0] = epsilon[ix + 1:ix + nxlocal + 2 * nxguard - 1, iy + 1:iy + nylocal + 2 * nyguard - 1, 0]
+            else:
+                epsilondecomp[:, :, 0] = epsilon[ix:ix + nxlocal + 2 * nyguard, ix:ix + nylocal + 2 * nyguard, iz]
+
+            # Fill in upper guard cells
+            if ix + nxlocal == self.nx:
+                epsilondecomp[-1, 1:-1, 1:-1] = epsilon[-1, iy + 1:iy + nylocal + 2 * nyguard - 1, iz + 1:iz + nzlocal + 2 * nzguard - 1]
+            else:
+                epsilondecomp[-1, :, :] = epsilon[ix + nxlocal + 1, iy:iy + nylocal + 2 * nyguard, iz:iz + nzlocal + 2 * nzguard]
+
+            if iy + nylocal == self.ny:
+                epsilondecomp[1:-1, -1, 1:-1] = epsilon[ix + 1:ix + nxlocal + 2 * nxguard - 1, -1, iz + 1:iz + nzlocal + 2 * nzguard - 1]
+            else:
+                epsilondecomp[:, -1, :] = epsilon[ix:ix + nxlocal + 2 * nxguard, iy + nylocal + 1, iz:iz + nzlocal + 2 * nzguard]
+
+            if iz + nzlocal == self.nz:
+                epsilondecomp[1:-1, 1:-1, -1] = epsilon[ix + 1:ix + nxlocal + 2 * nxguard - 1, iy + 1:iy + nylocal + 2 * nyguard - 1, -1]
+            else:
+                epsilondecomp[:, :, -1] = epsilon[ix:ix + nxlocal + 2 * nxguard, iy:iy + nylocal + 2 * nyguard, iz + nzlocal + 1]
+
+            # Fill in corners
+            if (self.ixproc, self.iyproc, self.izproc) == (0,0,0):
+                epsilondecomp[0, 0, 0] = epsilon[0, 0, 0]
+            if (self.ixproc, self.iyproc, self.izproc) == (self.nxprocs - 1, 0, 0):
+                epsilondecomp[-1, 0, 0] = epsilon[-1, 0, 0]
+            if (self.ixproc, self.iyproc, self.izproc) == (0, self.nzprocs - 1, 0):
+                epsilondecomp[0, -1, 0] = epsilon[0, -1, 0]
+            if (self.ixproc, self.iyproc, self.izproc) == (self.nxprocs - 1, self.nzprocs - 1, 0):
+                epsilondecomp[-1, -1, 0] = epsilon[-1, -1, 0]
+            if (self.ixproc, self.iyproc, self.izproc) == (0,0,self.nzprocs - 1):
+                epsilondecomp[0, 0, -1] = epsilon[0, 0, -1]
+            if (self.ixproc, self.iyproc, self.izproc) == (self.nxprocs - 1, 0, self.nzprocs - 1):
+                epsilondecomp[-1, 0, -1] = epsilon[-1, 0, -1]
+            if (self.ixproc, self.iyproc, self.izproc) == (0, self.nzprocs - 1, self.nzprocs - 1):
+                epsilondecomp[0, -1, -1] = epsilon[0, -1, -1]
+            if (self.ixproc, self.iyproc, self.izproc) == (self.nxprocs - 1, self.nzprocs - 1, self.nzprocs - 1):
+                epsilondecomp[-1, -1, -1] = epsilon[-1, -1, -1]
+            # print self.nxprocs, self.nzprocs
+
+            # print "ON PROC", self.ixproc, self.izproc, epsilondecomp
+            #savetxt('proc_{}_{}.txt'.format(self.ixproc, self.izproc), epsilondecomp)
+            self.epsilon = epsilondecomp
+        else:
+            return
+
+        self.epsilon_decomp_flag = True
+
 ##############################################################################
 ##############################################################################
 class FullMultiGrid3D(MultiGrid3D):

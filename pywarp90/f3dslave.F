@@ -2395,11 +2395,13 @@ c       --- in the cache needs to be freed.
         messagedata%zdispls => messagedatacache(icache)%zdispls
 
 c       --- Now, do the actual calculation.
-C      TODO: Will need to generalize nlocal_y size for 3D
         dims = 4
-        nlocal = (/nc,nxlocal+2,
-     &                nylocal+1,
-     &                nzlocal+2/)
+        nlocal = (/nc,nxlocal+2*nxguard,
+     &                nylocal+2*nyguard,
+     &                nzlocal+2*nzguard/)
+     
+        if (nylocal .eq. 0) nlocal(1) = 1.
+
         messagedata%xdispls = 0
         messagedata%ydispls = 0
         messagedata%zdispls = 0
@@ -2531,9 +2533,11 @@ c       --- include all of the data in the guard cells as well.
             endif
 
             starts(1) = 0
-            sizes(1) = me_ny + 2*nyguard + 1
+            sizes(1) = me_ny + 2*nyguard
             starts(2) = 0
-            sizes(2) = me_nz + 2
+            sizes(2) = me_nz + 2*nzguard
+
+            if (nylocal .eq. 0) sizes(1) = 1
 
             pe_ix = fsdecomp%ix(px)
             pe_nx = fsdecomp%nx(px)
@@ -2635,9 +2639,9 @@ c           --- Create the data types for data that is to be received
             endif
 
             starts(0) = 0
-            sizes(0) = me_nx + 2
+            sizes(0) = me_nx + 2*nxguard
             starts(2) = 0
-            sizes(2) = me_nz + 2
+            sizes(2) = me_nz + 2*nzguard
 
             pe_iy = fsdecomp%iy(py)
             pe_ny = fsdecomp%ny(py)
@@ -2759,7 +2763,9 @@ C               endif
             starts(0) = 0
             sizes(0) = me_nx + 2*nxguard
             starts(1) = 0
-            sizes(1) = me_ny + 2*nyguard + 1
+            sizes(1) = me_ny + 2*nyguard
+            
+            if (nylocal .eq. 0) sizes(1) = 1
 
             pe_iz = fsdecomp%iz(pz)
             pe_nz = fsdecomp%nz(pz)
@@ -2880,7 +2886,9 @@ C                 print*,"PROC",fsdecomp%izproc,"FAILED AT DATA REC TYPES FROM",
         deallocate(pe_ixue)
         deallocate(pe_iyue)
         deallocate(pe_izue)
+#ifdef DEBUG
         print*, "FINISHED DEALLOC"
+#endif
 !$OMP MASTER
         if (lf3dtimesubs) timegetmessagedata = timegetmessagedata + wtime() - substarttime
 !$OMP END MASTER
@@ -3938,7 +3946,7 @@ c=============================================================================
       integer(ISZ):: nc,nxlocal,nylocal,nzlocal,ils,ile,ius,iue
       integer(ISZ):: nxguardphi,nyguardphi,nzguardphi
       real(kind=8):: phi(0:nc-1,-nxguardphi:nxlocal,
-     &                          0:nylocal+nyguardphi,
+     &                          -nyguardphi:nylocal,
      &                          -nxguardphi:nzlocal)
       type(Decomposition):: fsdecomp
 
