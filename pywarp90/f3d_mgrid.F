@@ -10239,7 +10239,7 @@ c       --- surface of the conductor boundaries.
            call condbndymg3ddielectric(conductors%oddsubgrid,
      &                                 nxlocal,nylocal,nzlocal,
      &                                 nxguardphi,nyguardphi,nzguardphi,
-     &                                 nxguardrho,nzguardphi,nzguardrho,
+     &                                 nxguardrho,nyguardrho,nzguardrho,
      &                                 phi,rho,epsilon,
      &                                 dxsqi,dysqi,dzsqi,
      &                                 xminodx,yminodx,
