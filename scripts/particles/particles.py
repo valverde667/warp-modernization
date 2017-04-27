@@ -520,17 +520,17 @@ def setgetparticlebcastdefault(defval=1):
     """
     _particlebcastdefault[0] = defval
 
-# This function handles list of pgroups 
+# This function handles list of pgroups
 # It returns a concatenated list resultlist
 # Which contains a collection of attributes of all pgroups
-# that are obtained using getfunc 
+# that are obtained using getfunc
 def _handlepgroups(getfunc, iw, gather, bcast, **kw):
     if bcast is None: bcast = _particlebcastdefault[0]
     pgroups = kw.pop('pgroups')
     resultlist = []
     for pgroup in pgroups:
         kw['pgroup'] = pgroup
-        resultlist.append(getfunc(iw, gather=False, bcast=False, **kw))
+        resultlist.append(getfunc(iw=iw, gather=False, bcast=False, **kw))
     result = concatenate(resultlist)
     if lparallel and gather: return gatherarray(result, bcast=bcast)
     else: return result
@@ -1124,8 +1124,10 @@ def getpid(id=0,iw=0,gather=1,bcast=None,**kw):
   For particle selection options, see :py:func:`~particles.selectparticles`.
     """
     if 'pgroups' in kw:
-        return _handlepgroups(getpid, iw, gather, bcast, **kw)
-    if bcast is None: bcast = _particlebcastdefault[0] 
+        return _handlepgroups(getpid, iw, gather, bcast, idpgroups=id, **kw)
+    if 'idpgroups' in kw:
+        id=kw.pop('idpgroups')
+    if bcast is None: bcast = _particlebcastdefault[0]
     suffix,object,pgroup = _getobjectpgroup(kw)
     lost = kw.get('lost',0)
     if lost:
@@ -1233,7 +1235,7 @@ def getw(iw=0,gather=1,bcast=None,**kw):
   This is equivalent to getpid(id=top.wpid-1). For particle selection options, see :py:func:`~particles.selectparticles`.
     """
     return getpid(id=top.wpid-1,gather=gather,bcast=bcast,**kw)
-    
+
 def getke(iw=0,js=0,jslist=None,gather=1,bcast=None,**kw):
     "Returns the particles kinetic energy. For particle selection options, see :py:func:`~particles.selectparticles`."
     if 'pgroups' in kw:

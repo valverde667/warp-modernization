@@ -1,4 +1,4 @@
-from generic_tools import absorb, EM3D, any
+from generic_tools import EM3D, any, openbc
 
 def initialize_beam_fields( em, dim, beam, w3d, top,
                             beam_pgroup=None, beam_jslist=None ) :
@@ -25,19 +25,32 @@ def initialize_beam_fields( em, dim, beam, w3d, top,
 
     beam_pgroup: a ParticleGroup
         Contain the species which represents the beam (along with others)
-        
+
     beam_jslist: a list of ints
         Indicates which species in beam_pgroup represents the beam
     """
 
-    # Change the boundary conditions to absorbing
-    # (required by the multi-grid solver)
+    # Change the boundary conditions if needed
     saved_bound0 = w3d.bound0
     saved_boundnz = w3d.boundnz
     saved_boundxy = w3d.boundxy
-    w3d.bound0  = 0
-    w3d.boundnz = 0
-    w3d.boundxy = 0
+    if w3d.boundxy == openbc and em.solvergeom == w3d.XYZgeom:
+        # For 3D open boundary conditions, try to import the OpenBC3D solver
+        # (requires a separate installation)
+        try:
+            from warp.field_solvers.openbcsolver import OpenBC3D as ESolver
+        # If the OpenBC3D solver is not available, change the boundary
+        # conditions only within the scope of this function, in order to
+        # use the MultiGrid3D solver instead
+        except ImportError:
+            w3d.bound0  = 0
+            w3d.boundnz = 0
+            w3d.boundxy = 0
+    # Else, use the MultiGrid solver in any case
+    else:
+        w3d.bound0  = 0
+        w3d.boundnz = 0
+        w3d.boundxy = 0
 
     # Create a helper solver to calculate the fields of the bunch
     # (This is not the actual solver on which the simulation will be run,
@@ -58,11 +71,11 @@ def initialize_beam_fields( em, dim, beam, w3d, top,
         nzguard=em.nzguard)
 #        l_setcowancoefs=True,
 #        l_correct_num_Cherenkov=True )
-    
+
     # Get the initial fields
     em_help.initstaticfields( relat_species=beam, relat_pgroup=beam_pgroup,
                              relat_jslist=beam_jslist )
-    
+
     # Allocate the arrays in em class that contain the fields
     em.allocatedataarrays()
 

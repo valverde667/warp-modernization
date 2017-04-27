@@ -3,8 +3,7 @@ Class for doing open boundary field solve in 3-D
 ----------------------------------------------
 """
 from ..warp import *
-import openbc
-
+import openbc_poisson
 
 ##############################################################################
 class OpenBC3D(SubcycledPoissonSolver):
@@ -48,7 +47,7 @@ class OpenBC3D(SubcycledPoissonSolver):
 
     """
 
-    def __init__(self,igfflag=False,lreducedpickle=1,**kw):
+    def __init__(self,igfflag=True,lreducedpickle=1,**kw):
         self.igfflag = igfflag
         kw['lreducedpickle'] = lreducedpickle
         self.grid_overlap = 2
@@ -451,7 +450,7 @@ class OpenBC3D(SubcycledPoissonSolver):
     def hasconductors(self):
         return False
 
-    def dosolve(self,iwhich=0,zfact=None,isourcepndtscopies=None,indts=None,iselfb=None):
+    def dosolve(self,iwhich=0,zfact=1.,isourcepndtscopies=None,indts=None,iselfb=None):
         if not self.l_internal_dosolve: return
 
         # --- This is only done for convenience.
@@ -459,34 +458,72 @@ class OpenBC3D(SubcycledPoissonSolver):
         self._rho = self.source
         if isinstance(self.potential,float): return
 
-        rho = self._rho[self.nxguardrho:-self.nxguardrho-1,
-                        self.nyguardrho:-self.nyguardrho-1,
-                        self.nzguardrho:-self.nzguardrho-1]
-        phi = self._phi[self.nxguardphi:-self.nxguardphi-1,
-                        self.nyguardphi:-self.nyguardphi-1,
-                        self.nzguardphi:-self.nzguardphi-1]
+        # The last proc in each direction has one more cell, in order to
+        # be able to calculate the finite difference for E.
+        # (For the other procs, this extra cell is not included, as it
+        # is obtained from a different proc)
+        x_offset = int(top.ixproc == top.nxprocs-1)
+        y_offset = int(top.iyproc == top.nyprocs-1)
+        z_offset = int(top.izproc == top.nzprocs-1)
+        # (x/y/z_offset is 1 if the extra cell is included, and 0 otherwise)
+        rho = self._rho[self.nxguardrho:self.nxguardrho+self.nx+x_offset,
+                        self.nyguardrho:self.nyguardrho+self.ny+y_offset,
+                        self.nzguardrho:self.nzguardrho+self.nz+z_offset]
+        phi = self._phi[self.nxguardphi:self.nxguardphi+self.nx+x_offset,
+                        self.nyguardphi:self.nyguardphi+self.ny+y_offset,
+                        self.nzguardphi:self.nzguardphi+self.nz+z_offset]
 
-        ilo, ihi = 1, self.nx
-        jlo, jhi = 1, self.ny
-        klo, khi = 1, self.nz
-
+        # Local size of the arrays
+        ilo, ihi = 1, self.nx + x_offset
+        jlo, jhi = 1, self.ny + y_offset
+        klo, khi = 1, self.nz + z_offset
+        # Global size of the arrays
         ilo_rho_gbl, ihi_rho_gbl = ilo, ihi
         jlo_rho_gbl, jhi_rho_gbl = jlo, jhi
         klo_rho_gbl, khi_rho_gbl = klo, khi
 
-        idecomp = 0
+        # MPI decomposition
+        idecomp = -1
+        # Number of processors in each dimension
+        nxp = nyp = nzp = 1
+
         igfflag = ((self.igfflag and 1) or 0) # for normal green function (1 for IGF)
         self.ierr = zeros(1, 'l')
 
-        charge = rho*self.dx*self.dy*self.dz
-        openbc.openbcpotential(charge/eps0,phi,self.dx,self.dy,self.dz,ilo,ihi,jlo,jhi,klo,khi,
-                               ilo_rho_gbl,ihi_rho_gbl,jlo_rho_gbl,jhi_rho_gbl,klo_rho_gbl,khi_rho_gbl,
-                               idecomp,igfflag,self.ierr)
+        # Calculate charge per cell
+        charge = rho * (self.dx * self.dy * self.dz * zfact)
+        # Scale the charge, to match the assumed units of `openbcpotential`
+        # so that the returned potential phi is in SI units
+        charge *= 1./(4.*pi*eps0)
+        openbc_poisson.openbcpotential(
+            charge, phi, self.dx, self.dy, self.dz*zfact,
+            ilo, ihi, jlo, jhi, klo, khi,
+            ilo_rho_gbl, ihi_rho_gbl, jlo_rho_gbl, jhi_rho_gbl,
+            klo_rho_gbl, khi_rho_gbl, idecomp, nxp, nyp, nzp,
+            igfflag, self.ierr)
+
+        # For now, set phi in the guard cell to be equal to the value in
+        # in the last physical cell (this effectively sets E to 0 in the
+        # guard cells)
+        # - Along x
+        self._phi[:self.nxguardphi,:,:] = \
+            (self._phi[self.nxguardphi,:,:])[newaxis,:,:]
+        self._phi[ self.nxguardphi+self.nx+x_offset:,:,: ] = \
+            (self._phi[self.nxguardphi+self.nx+x_offset-1,:,:])[newaxis,:,:]
+        # - Along y
+        self._phi[:,:self.nyguardphi,:] = \
+            (self._phi[:,self.nyguardphi,:])[:,newaxis,:]
+        self._phi[ :,self.nyguardphi+self.ny+y_offset:,: ] = \
+            (self._phi[ :,self.nyguardphi+self.ny+y_offset-1,:])[:,newaxis,:]
+        # - Along z
+        self._phi[:,:,:self.nzguardphi] = \
+            (self._phi[:,:,self.nzguardphi])[:,:,newaxis]
+        self._phi[ :,:,self.nzguardphi+self.nz+z_offset:] = \
+            (self._phi[ :,:,self.nzguardphi+self.nz+z_offset-1])[:,:,newaxis]
 
         # --- Note that the guard cells and upper edge of the domain are not set yet.
         # --- A future fix will be to pass in the entire grid into the solver, including the guard
         # --- cells. Though, this would require the rho array to be the same size as phi.
-
         #applyboundaryconditions3d(self.nx,self.ny,self.nz,self.nxguardphi,self.nyguardphi,self.nzguardphi,
         #                          self._phi,1,self.bounds,false,false)
 
@@ -527,4 +564,3 @@ class OpenBC3D(SubcycledPoissonSolver):
                    0,self.bounds,1.,1,true,
                    false,0,conductorobject,false)
         return res
-

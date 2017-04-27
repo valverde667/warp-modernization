@@ -4,14 +4,14 @@ FROM ubuntu:14.04
 RUN apt-get update \
     && apt-get install -y \
     wget \
-    mpich \
     make \
     git \
+    gcc \
     libx11-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Create a new user and copy the current branch of Warp
-# into the Docker container 
+# into the Docker container
 RUN useradd --create-home warp_user
 RUN mkdir /home/warp_user/warp/
 COPY ./ /home/warp_user/warp/
@@ -27,31 +27,29 @@ USER warp_user
 RUN cd /home/warp_user \
     && wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh \
     && bash miniconda.sh -b \
-    && rm miniconda.sh 
+    && rm miniconda.sh
 ENV PATH /home/warp_user/miniconda2/bin:$PATH
 
 # Install python dependencies for warp
-RUN conda update conda \
-    && conda install --yes \
+RUN conda install -c conda-forge --yes \
     numpy \
     scipy \
-    pytest \
+    gcc \
+    mpi4py \
     h5py \
-    && conda clean --tarballs
-
-# Install matplotlib and mpi4py via pip
-RUN pip install matplotlib mpi4py
+    dateutil \
+    && conda clean --all
 
 # Install Forthon
 RUN pip install --upgrade pip \
     && pip install Forthon
 
-# Compile warp 
+# Compile warp
 RUN cd warp/pywarp90 \
     && echo 'FCOMP= -F gfortran' >> Makefile.local \
     && echo 'FCOMP= -F gfortran --fcompex mpif90' >> Makefile.local.pympi \
     && echo "if parallel:" >> setup.local.py \
-    && echo "   library_dirs += ['/usr/lib/x86_64-linux-gnu']" >> setup.local.py \
+    && echo "   library_dirs += ['/home/warp_user/miniconda2/lib/']" >> setup.local.py \
     && echo "   libraries = fcompiler.libs + ['mpichf90', 'mpich', 'opa', 'mpl']" >> setup.local.py \
     && make install \
     && make pinstall
@@ -60,7 +58,9 @@ RUN cd warp/pywarp90 \
 RUN git clone https://bitbucket.org/dpgrote/pygist.git \
     && cd pygist \
     && python setup.py config \
-    && python setup.py install
+    && python setup.py install \
+    && cd .. \
+    && rm -rf pygist
 
 # Prepare the run directory
 RUN mkdir run/

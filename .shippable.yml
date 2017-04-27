@@ -19,3 +19,7 @@ build:
     - mpirun -np 4 python restart_after_lpa_script.py -p 2 1 2
     - rm -rf ./diags
     - mpirun -np 2 python lpa_boostedframe_script.py
+
+    # Finally, check that warp can be imported by itself, without
+    # depending on scipy or h5py
+    - conda uninstall --yes scipy h5py ; python -c 'import warp'

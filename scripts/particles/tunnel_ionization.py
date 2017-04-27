@@ -1,5 +1,6 @@
 from warp import *
 from warp.particles.ionization import *
+from scipy import special
 
 class TunnelIonization(Ionization):
   def __init__(self,**kw):
@@ -120,10 +121,12 @@ velocity of the incident particle.
       IPotAE = (1/27.212)*elemnt.ionization_levels[charge];# Ionization Potential. in A.U.
       zAtom = charge + 1.; # charge of ion created after ionization; should be +1 after(?)
       nEff = zAtom/sqrt(2.*IPotAE);# effective principle q no.
+      nEff0 = sqrt( 13.6/elemnt.ionization_levels[0] )
+      lEff = nEff0 - 1
       E_atomic_rel = self.alpha*self.alpha*self.alpha*self.alpha*emass*clight*clight/(echarge*rElec)
       Eeff = E/E_atomic_rel; #Elec. field Normalized.
       #-------ADK Ionization formula in At. Units---------------#
-      C_nl = ( ((2.*e)/nEff)**nEff ) /sqrt(2*pi*nEff); #ADK Costant C_n*l
+      C_nl = sqrt( 2**(2*nEff) / ( nEff * special.gamma( nEff+lEff+1 ) * special.gamma( nEff-lEff ) ) )
       F_lm = 1.; #ADK constant f(l,m)
       #-------------------------------------------------------#
       frac = ((2*IPotAE)**1.5)/Eeff;

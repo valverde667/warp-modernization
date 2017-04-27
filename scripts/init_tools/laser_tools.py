@@ -1,16 +1,9 @@
 import numpy as np
 from scipy.constants import c, m_e, e
-from scipy.interpolate import RegularGridInterpolator
 from .boost_tools import BoostConverter
-import h5py
-# Try importing parallel functions, in order to broadcast
-# the experimental laser file, if required
-try:
-    from warp.parallel import mpibcast, me
-except ImportError:
-    # Single-proc simulation
-    mpibcast = lambda x:x
-    me = 0
+# Import laser antenna and laser profiles
+from ..field_solvers.laser.laser_profiles import *
+from warp import openbc
 
 def add_laser( em, dim, a0, w0, ctau, z0, zf=None, lambda0=0.8e-6,
                theta_pol=0., source_z=0., zeta=0, beta=0, phi2=0,
@@ -21,8 +14,8 @@ def add_laser( em, dim, a0, w0, ctau, z0, zf=None, lambda0=0.8e-6,
     and laser_polangle
 
     NB: When using this interface, the antenna is necessarily
-    motionless in the lab-frame. 
-    
+    motionless in the lab-frame.
+
     Parameters
     ----------
     em : an EM3D object
@@ -30,11 +23,11 @@ def add_laser( em, dim, a0, w0, ctau, z0, zf=None, lambda0=0.8e-6,
 
     dim: str
        Either "2d", "3d" or "circ"
-       
+
     a0 : float (unitless)
        *Used only if no laser_file is provided, i.e. for a Gaussian pulse*
        The a0 of a Gaussian pulse at focus
-    
+
     w0 : float (in meters)
        *Used only if no laser_file is provided, i.e. for a Gaussian pulse*
        The waist of the Gaussian pulse at focus
@@ -51,7 +44,7 @@ def add_laser( em, dim, a0, w0, ctau, z0, zf=None, lambda0=0.8e-6,
        *Used only if no laser_file is provided, i.e. for a Gaussian pulse*
        The position of the laser focus relative to z=0.
        If not provided, then the laser focus is at z0
-    
+
     lambda0 : float (in meters), optional
        The central wavelength of the laser
        Default : 0.8 microns (Ti:Sapph laser)
@@ -77,12 +70,12 @@ def add_laser( em, dim, a0, w0, ctau, z0, zf=None, lambda0=0.8e-6,
        *Used only if no laser_file is provided, i.e. for a Gaussian pulse*
        Temporal chirp, at focus,
        as defined in Akturk et al., Opt Express, vol 12, no 19 (2014)
-       
+
     gamma_boost : float, optional
         When initializing the laser in a boosted frame, set the value of
         `gamma_boost` to the corresponding Lorentz factor. All the other
         quantities (ctau, zf, source_z, etc.) are to be given in the lab frame.
-        
+
     laser_file: str or None
        If None, the laser will be initialized as Gaussian
        Otherwise, the laser_file should point to a standardized HDF5 file
@@ -97,6 +90,13 @@ def add_laser( em, dim, a0, w0, ctau, z0, zf=None, lambda0=0.8e-6,
     # Wavevector and speed of the antenna
     k0 = 2*np.pi/lambda0
     source_v = 0.
+    inv_c = 1./c
+    tau = ctau * inv_c
+    t_peak = - z0 * inv_c
+    if zf is None:
+        focal_length = source_z - z0
+    else:
+        focal_length = source_z - zf
 
     # Create a laser_profile object
     # Note that the laser_profile needs to be a callable instance of a class,
@@ -118,12 +118,13 @@ def add_laser( em, dim, a0, w0, ctau, z0, zf=None, lambda0=0.8e-6,
         # Create a laser profile object to store these parameters
         if (beta == 0) and (zeta == 0) and (phi2 == 0):
             # Without spatio-temporal correlations
-            laser_profile = GaussianProfile( k0, w0, ctau, z0, zf,
-                                source_z, source_v, a0, dim, boost )
+            laser_profile = GaussianProfile( k0, w0, tau, t_peak, a0, dim,
+                focal_length=focal_length, boost=boost, source_v=source_v )
         else:
             # With spatio-temporal correlations
-            laser_profile = GaussianSTCProfile( k0, w0, ctau, z0, zf,
-                source_z, source_v, a0, zeta, beta, phi2, dim, boost )        
+            laser_profile = GaussianSTCProfile( k0, w0, tau, t_peak, a0, zeta,
+                                   beta, phi2, dim, focal_length=focal_length,
+                                   boost=boost, source_v=source_v )
 
     # - Case of an experimental profile
     else:
@@ -136,7 +137,7 @@ def add_laser( em, dim, a0, w0, ctau, z0, zf=None, lambda0=0.8e-6,
         # Create a laser profile object
         laser_profile = ExperimentalProfile( k0, laser_file,
                                              laser_file_energy )
-    
+
     # Link its profile function the em object
     em.laser_func = laser_profile
 
@@ -152,280 +153,149 @@ def add_laser( em, dim, a0, w0, ctau, z0, zf=None, lambda0=0.8e-6,
     em.laser_depos_order_z=1
 
 
-class ExperimentalProfile( object ):
-    """Class that calculates the laser from a data file."""
+#===============================================================================
+def retropropagation(em, w3d, negative_propagation=False):
+    """
+    This routine is used to retropropagate a laser.
 
-    def __init__( self, k0, laser_file, laser_file_energy ):
-        
-        # The first processor loads the file and sends it to the others
-        # (This prevents all the processors from accessing the same file,
-        # which can substantially slow down the simulation)
-        if me==0:
-            with h5py.File(laser_file) as f:
-                r = f['r'][:]
-                t = f['t'][:]
-                Ereal = f['Ereal'][:,:]
-                Eimag = f['Eimag'][:,:]
+	When the function is called, the B field sign is changed to inverse the
+	direction of propagation.
+	Then, after considering the plane of the antenna, which separates the box
+	into 2 half-spaces, all the fields in one half-space are set to zero.
+	Only one pulse generated by the antenna is thus kept, depending on the
+    value of the flag negative_propagation.
+
+	Parameter:
+    -----------
+
+	negative_propagation: boolean
+		Indicate the half-space set to 0. If False, it suppresses the pulse
+		propagating along laser_vector. If None, none of the spaces are set to
+		0.
+    """
+    f = em.fields
+
+    # Change the sign of B
+    f.Bx = - f.Bx
+    f.By = - f.By
+    f.Bz = - f.Bz
+
+    # Put zero values in the half space where the propagation was positive by
+    # default.
+    nbpoints = f.Ex.shape
+    xmin = w3d.xmminlocal - em.nxguard*em.dx
+    xmax = w3d.xmmaxlocal + em.nxguard*em.dx
+    ymin = w3d.ymminlocal - em.nyguard*em.dy
+    ymax = w3d.ymmaxlocal + em.nyguard*em.dy
+    zmin = w3d.zmminlocal - em.nzguard*em.dz
+    zmax = w3d.zmmaxlocal + em.nzguard*em.dz
+
+    x = np.linspace(xmin, xmax, nbpoints[0])
+    y = np.linspace(ymin, ymax, nbpoints[1])
+    z = np.linspace(zmin, zmax, nbpoints[2])
+    x,y,z = np.meshgrid(x,y,z,indexing='ij')
+
+    vect = em.laser_antenna.vector
+    spot = em.laser_antenna.spot
+
+    mesh_points_antenna_frame = (x-spot[0]) * vect[0] + (y-spot[1]) * vect[1] \
+                                + (z-spot[2]) * vect[2]
+
+    # Set the fields to 0 if negative_propagation is defined
+    if negative_propagation is not None :
+        # Condition to find the corresponding halfspace depending on the value
+        # of negative_propagation.
+        if negative_propagation:
+            zero_condition = (mesh_points_antenna_frame < 0 )
         else:
-            r = None
-            t = None
-            Ereal = None
-            Eimag = None
-        # Broadcast the data to all procs
-        r = mpibcast( r )
-        t = mpibcast( t )
-        Ereal = mpibcast( Ereal )
-        Eimag = mpibcast( Eimag )
+            zero_condition = (mesh_points_antenna_frame > 0 )
 
-        # Recover the complex field
-        E_data = Ereal + 1.j*Eimag
-                
-        # Change the value of the field (by default it is 1J)
-        E_norm = np.sqrt( laser_file_energy )
-        E_data = E_data*E_norm
-        self.E0 = abs(E_data).max()
+        # All the field arrays are put to 0 in this halfspace.
+        # The Rho array is not reset assuming there were no particles before
+        # and then no charges.
+        f.Ex[zero_condition] = 0
+        f.Ey[zero_condition] = 0
+        f.Ez[zero_condition] = 0
+        f.Bx[zero_condition] = 0
+        f.By[zero_condition] = 0
+        f.Bz[zero_condition] = 0
+        f.Jx[zero_condition] = 0
+        f.Jy[zero_condition] = 0
+        f.Jz[zero_condition] = 0
 
-        # Register the wavevector
-        self.k0 = k0
+        # Set the fields in the PML to 0 if existing
+        b = em.bounds
+        list_boundaries = []
 
-        # Interpolation object
-        self.interp_func = RegularGridInterpolator( (t, r), E_data,
-                            bounds_error=False, fill_value=0. )
-        
-    def __call__( self, x, y, t ):
-        """
-        Return the transverse profile of the laser at the position
-        of the antenna
+        # side
+        if b[0] == openbc:
+            list_boundaries.append(em.block.sidexl.syf)
+        if b[1] == openbc:
+            list_boundaries.append(em.block.sidexr.syf)
+        if b[2] == openbc:
+            list_boundaries.append(em.block.sideyl.syf)
+        if b[3] == openbc:
+            list_boundaries.append(em.block.sideyr.syf)
+        if b[4] == openbc:
+            list_boundaries.append(em.block.sidezl.syf)
+        if b[5] == openbc:
+            list_boundaries.append(em.block.sidezr.syf)
 
-        Parameters:
-        -----------
-        x: float or ndarray
-            First transverse direction in meters
+        # edge
+        if b[0] == openbc and b[2] == openbc:
+            list_boundaries.append(em.block.edgexlyl.syf)
+        if b[0] == openbc and b[3] == openbc:
+            list_boundaries.append(em.block.edgexlyr.syf)
+        if b[0] == openbc and b[4] == openbc:
+            list_boundaries.append(em.block.edgexlzl.syf)
+        if b[0] == openbc and b[5] == openbc:
+            list_boundaries.append(em.block.edgexlzr.syf)
+        if b[1] == openbc and b[2] == openbc:
+            list_boundaries.append(em.block.edgexryl.syf)
+        if b[1] == openbc and b[3] == openbc:
+            list_boundaries.append(em.block.edgexryr.syf)
+        if b[1] == openbc and b[4] == openbc:
+            list_boundaries.append(em.block.edgexrzl.syf)
+        if b[1] == openbc and b[5] == openbc:
+            list_boundaries.append(em.block.edgexrzr.syf)
+        if b[2] == openbc and b[4] == openbc:
+            list_boundaries.append(em.block.edgeylzl.syf)
+        if b[2] == openbc and b[5] == openbc:
+            list_boundaries.append(em.block.edgeylzr.syf)
+        if b[3] == openbc and b[4] == openbc:
+            list_boundaries.append(em.block.edgeyrzl.syf)
+        if b[3] == openbc and b[5] == openbc:
+            list_boundaries.append(em.block.edgeyrzr.syf)
 
-        y: float or ndarray
-            Second transverse direction in meters
+        # corner
+        if b[0] == openbc and b[2] == openbc and b[4] == openbc:
+            list_boundaries.append(em.block.cornerxlylzl.syf)
+        if b[0] == openbc and b[2] == openbc and b[5] == openbc:
+            list_boundaries.append(em.block.cornerxlylzr.syf)
+        if b[0] == openbc and b[3] == openbc and b[4] == openbc:
+            list_boundaries.append(em.block.cornerxlyrzl.syf)
+        if b[0] == openbc and b[3] == openbc and b[5] == openbc:
+            list_boundaries.append(em.block.cornerxlyrzr.syf)
+        if b[1] == openbc and b[2] == openbc and b[4] == openbc:
+            list_boundaries.append(em.block.cornerxrylzl.syf)
+        if b[1] == openbc and b[2] == openbc and b[5] == openbc:
+            list_boundaries.append(em.block.cornerxrylzr.syf)
+        if b[1] == openbc and b[3] == openbc and b[4] == openbc:
+            list_boundaries.append(em.block.cornerxryrzl.syf)
+        if b[1] == openbc and b[3] == openbc and b[5] == openbc:
+            list_boundaries.append(em.block.cornerxryrzr.syf)
 
-        t: float
-            Time in seconds
-        """
-        # Calculate the array of radius
-        r = np.sqrt( x**2 + y**2 )
+        for syf in list_boundaries :
+            syf.exx[...] = 0.;           syf.bxx[...] = 0.
+            syf.exy[...] = 0.;           syf.bxy[...] = 0.
+            syf.exz[...] = 0.;           syf.bxz[...] = 0.
+            syf.eyx[...] = 0.;           syf.byx[...] = 0.
+            syf.eyy[...] = 0.;           syf.byy[...] = 0.
+            syf.eyz[...] = 0.;           syf.byz[...] = 0.
+            syf.ezx[...] = 0.;           syf.bzx[...] = 0.
+            syf.ezy[...] = 0.;           syf.bzy[...] = 0.
+            syf.ezz[...] = 0.;           syf.bzz[...] = 0.
 
-        # Interpolate to find the complex amplitude
-        Ecomplex = self.interp_func( (t, r) )
-
-        # Add laser oscillations
-        Eosc = ( Ecomplex * np.exp( -1.j*self.k0*c*t ) ).real
-
-        return( Eosc )
-
-class GaussianProfile( object ):
-    """Class that calculates a Gaussian laser pulse."""
-
-    def __init__( self, k0, w0, ctau, z0, zf, source_z,
-                  source_v, a0, dim, boost ):
-
-        # Set a number of parameters for the laser      
-        E0 = a0*m_e*c**2*k0/e
-        zr = 0.5*k0*w0**2
-        # Set default focusing position
-        if zf is None : zf = z0
-
-        # Store the parameters
-        self.k0 = k0
-        self.w0 = w0
-        self.zr = zr
-        self.ctau = ctau
-        self.zf = zf
-        self.z0 = z0
-        self.source_z = source_z
-        self.E0 = E0
-        self.v_antenna = source_v
-        self.boost = boost
-        
-        # Geometric coefficient (for the evolution of the amplitude)
-        # In 1D, there is no transverse components, therefore the geomtric
-        # coefficient shouldn't be included.
-        if  dim=="1d":
-            self.geom_coeff = 0.
-        elif dim=="2d":
-            self.geom_coeff = 0.5
-        elif dim in ["circ", "3d"]:
-            self.geom_coeff = 1.
-
-
-    def __call__( self, x, y, t_modified ):
-        """
-        Return the transverse profile of the laser at the position
-        of the antenna
-
-        Parameters:
-        -----------
-        x: float or ndarray
-            First transverse direction in meters
-
-        y: float or ndarray
-            Second transverse direction in meters
-
-        t_modified: float
-            Time in seconds, multiplied by (1-v_antenna/c)
-            This multiplication is done in em3dsolver.py, when
-            calling the present function.
-        """
-        # Calculate the array of radius
-        r2 = x**2 + y**2
-
-        # Get the true time
-        # (The top.time has been multiplied by (1-v_antenna/c)
-        # in em3dsolver.py, before calling the present function)
-        t = t_modified/(1.-self.v_antenna/c)
-        # Get the position of the antenna at this time
-        z_source = self.source_z + self.v_antenna * t
-
-        # When running in the boosted frame, convert these position to
-        # the lab frame, so as to use the lab-frame formula of the laser
-        if self.boost is not None:
-            zlab_source = self.boost.gamma0*( z_source + self.boost.beta0*c*t )
-            tlab_source = self.boost.gamma0*( t + self.boost.beta0*z_source/c )
-            # Overwrite boosted frame values, within the scope of this function
-            z_source = zlab_source
-            t = tlab_source
-
-        # Lab-frame formula for the laser:
-        # - Waist and curvature and the position of the source
-        z = z_source - self.zf
-        w = self.w0 * np.sqrt( 1 + ( z/self.zr )**2 )
-        R = z *( 1 + ( self.zr/z )**2 )
-        # - Propagation phase at the position of the source
-        propag_phase = self.k0*( z_source - c*t) \
-            - self.geom_coeff * np.arctan( z/self.zr ) \
-            + self.k0 * r2 / (2*R)
-        # - Longitudinal and transverse profile
-        trans_profile = (self.w0/w)**self.geom_coeff * np.exp( - r2 / w**2 )
-        long_profile = np.exp(
-            - ( z_source - c*t - self.z0 )**2 /self.ctau**2 )
-        # -Curvature oscillations
-        curvature_oscillations = np.cos( propag_phase )
-        # - Combine profiles
-        profile =  long_profile * trans_profile * curvature_oscillations
-        
-        # Boosted-frame: convert the laser amplitude
-        # These formula assume that the antenna is motionless in the lab frame
-        if self.boost is not None:
-            conversion_factor = 1./self.boost.gamma0
-            # The line below is to compensate the fact that the laser
-            # amplitude is multiplied by (1-v_antenna/c) in em3dsolver.py
-            conversion_factor *= 1./(1. - self.v_antenna/c)
-            E0 = conversion_factor * self.E0
-        else:
-            E0 = self.E0
-        
-        return( E0*profile )
-
-
-class GaussianSTCProfile( object ):
-    """Class that calculates a Gaussian laser pulse
-    with spatio-temporal correlations (STC)"""
-
-    def __init__( self, k0, w0, ctau, z0, zf, source_z, source_v,
-                  a0, zeta, beta, phi2, dim, boost ):
-
-        # Set a number of parameters for the laser      
-        E0 = a0*m_e*c**2*k0/e
-        zr = 0.5*k0*w0**2
-        # Set default focusing position
-        if zf is None: zf = z0
-        
-        # Store the parameters
-        self.k0 = k0
-        self.inv_zr = 1./zr
-        self.inv_w02 = 1./w0**2
-        self.inv_tau2 = c**2/ctau**2
-        self.zf = zf
-        self.z0 = z0
-        self.source_z = source_z
-        self.v_antenna = source_v
-        self.E0 = E0
-        self.beta = beta
-        self.zeta = zeta
-        self.phi2 = phi2
-        self.boost = boost
-
-        # Geometric coefficient (for the evolution of the amplitude)
-        # In 1D, there is no transverse components, therefore the geomtric
-        # coefficient shouldn't be included.
-        if  dim=="1d":
-            self.geom_coeff = 0.
-        elif dim=="2d":
-            self.geom_coeff = 0.5
-        elif dim in ["circ", "3d"]:
-            self.geom_coeff = 1.
-
-
-    def __call__( self, x, y, t_modified ):
-        """
-        Return the transverse profile of the laser at the position
-        of the antenna
-
-        Parameters:
-        -----------
-        x: float or ndarray
-            First transverse direction in meters
-
-        y: float or ndarray
-            Second transverse direction in meters
-
-        t_modified: float
-            Time in seconds, multiplied by (1-v_antenna/c)
-            This multiplication is done in em3dsolver.py, when
-            calling the present function.
-        """
-        # Get the true time
-        # (The top.time has been multiplied by (1-v_antenna/c)
-        # in em3dsolver.py, before calling the present function)
-        t = t_modified/(1.-self.v_antenna/c)
-        # Get the position of the antenna at this time
-        z_source = self.source_z + self.v_antenna * t
-
-        # When running in the boosted frame, convert these position to
-        # the lab frame, so as to use the lab-frame formula of the laser
-        if self.boost is not None:
-            zlab_source = self.boost.gamma0*( z_source + self.boost.beta0*c*t )
-            tlab_source = self.boost.gamma0*( t + self.boost.beta0*z_source/c )
-            # Overwrite boosted frame values, within the scope of this function
-            z_source = zlab_source
-            t = tlab_source
-        
-        # Diffraction and stretching factor
-        z = z_source - self.zf
-        diffract_factor = 1 - 1j*z*self.inv_zr
-        stretch_factor = 1 + \
-          4*(self.zeta + self.beta*z)**2 * \
-            (self.inv_tau2*self.inv_w02) / diffract_factor \
-        + 2j*(self.phi2 - self.beta**2*self.k0*z) * self.inv_tau2
-        
-        # Calculate the argument of the complex exponential
-        exp_argument = 1j * self.k0*( c*t - z_source ) \
-          - (y**2 + x**2) * self.inv_w02 / diffract_factor \
-          - 1./stretch_factor * self.inv_tau2 * \
-            ( t - (z_source - self.z0)/c - self.beta*self.k0*x \
-            - 2j*x*(self.zeta + self.beta*z)*self.inv_w02/diffract_factor )**2
-
-        # Get the profile
-        profile = np.exp(exp_argument) / \
-          ( diffract_factor**self.geom_coeff * stretch_factor**.5 )
-
-        # Boosted-frame: convert the laser amplitude
-        # These formula assume that the antenna is motionless in the lab frame
-        if self.boost is not None:
-            conversion_factor = 1./self.boost.gamma0
-            # The line below is to compensate the fact that the laser
-            # amplitude is multiplied by (1-v_antenna/c) in em3dsolver.py
-            conversion_factor *= 1./(1. - self.v_antenna/c)
-            E0 = conversion_factor * self.E0
-        else:
-            E0 = self.E0
-        
-        return( E0 * profile.real )
-
-        
+    print "================================================"
+    print " Retropropagation completed."
+    print "================================================"

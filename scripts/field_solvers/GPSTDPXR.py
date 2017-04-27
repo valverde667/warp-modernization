@@ -1,652 +1,88 @@
-""" Class for FFT-based Pseudo-Spectral solver """
-import numpy as np
-import math
-import copy
-import os
+"""
+ _______________________________________________________________________________
 
+ *** Copyright Notice ***
+
+ "Particle In Cell Scalable Application Resource (PICSAR) v2", Copyright (c)
+ 2016, The Regents of the University of California, through Lawrence Berkeley
+ National Laboratory (subject to receipt of any required approvals from the
+ U.S. Dept. of Energy). All rights reserved.
+
+ If you have questions about your rights to use or distribute this software,
+ please contact Berkeley Lab's Innovation & Partnerships Office at IPO@lbl.gov.
+
+ NOTICE.
+ This Software was developed under funding from the U.S. Department of Energy
+ and the U.S. Government consequently retains certain rights. As such, the U.S.
+ Government has been granted for itself and others acting on its behalf a
+ paid-up, nonexclusive, irrevocable, worldwide license in the Software to
+ reproduce, distribute copies to the public, prepare derivative works, and
+ perform publicly and display publicly, and to permit other to do so.
+
+
+ Class for 2D & 3D FFT-based electromagnetic solver
+
+ Developers:
+ Henri Vincenti
+
+ Date:
+ Creation 2016
+
+ _______________________________________________________________________________
+
+"""
+from warp.field_solvers.GPSTD import *
 try:
-    # Try to import fortran wrapper of FFTW
-    import fastfftforpy as fftpy
-    import fastfftpy as fstpy
-    fst=fstpy.fastfft
-    fft=fftpy
-    l_fftw_fort=True
+    from picsar_python import picsarpy as pxrpy
+    pxr = pxrpy.picsar
+    l_pxr=True
+    print 'PICSAR package found and loaded.'
 except:
-    fft = np.fft
-    l_fftw_fort=False
+    l_pxr=False
+    print 'PICSAR package not found.'
+try:
+    from mpi4py import MPI
+except:
+    print 'Error cannot import mpi4py'
+import numpy as np
 
-print('l_fftw_fort',l_fftw_fort)
+class GPSTDPXR(GPSTD):
 
-def iszero(f):
-    """
-    Returns True if f==0.
-
-    Parameters
-    ----------
-    f : any
-        Input argument, can be of any type and shape.
-
-    Returns
-    -------
-    val : bool
-        True if f==0., False if it is not.
-
-    """
-    if type(f) is type(0.):
-        if f==0.:
-            return True
-    return False
-
-def getmatcompress(mat):
-    matcompress = copy.deepcopy(mat)
-    matlist = []
-    matlistindices = []
-    for i in range(len(mat)):
-        for j in range(len(mat[0])):
-            if mat[i][j] in matlist:
-                l = matlist.index(mat[i][j])
-                matcompress[i][j]=matlistindices[l]
-            else:
-                matlist.append(mat[i][j])
-#              matlistabs.append(abs(mat[i][j]))
-                matlistindices.append([i,j])
-                matcompress[i][j]=None
-
-    return None#matcompress
-
-def multmat(matrix1,matrix2,matcompress=None):
-    """
-    Returns dot product of two 2-D lists.
-    Each element of the list is a scalar or a real 1-D, 2-D or 3-D array.
-
-    Parameters
-    ----------
-    matrix1 : 2-D matrix list
-        First argument.
-    matrix2 : 2-D matrix list
-        Second argument.
-    matcompress : 2-D matrix list for compression
-        Optional third argument
-
-    Returns
-    -------
-    output : 2-D matrix list
-        Returns the dot product of matrix1 and matrix 2.
-
-    """
-        # Matrix multiplication
-    if len(matrix1[0]) != len(matrix2):
-    # Check matrix dimensions
-        print 'Matrices must be m*n and n*p to multiply!'
-    else:
-        # Multiply if correct dimensions
-        new_matrix = copy.deepcopy(matrix2)
-        for i in range(len(matrix2)):
-            for j in range(len(matrix2[0])):
-                new_matrix[i][j]=0.
-        for i in range(len(matrix2)):
-            for j in range(len(matrix1[0])):
-                if matcompress is not None:
-                    if matcompress[i][j] is not None:
-                        ii = matcompress[i][j][0]
-                        jj = matcompress[i][j][1]
-                        new_matrix[i][j]=new_matrix[ii][jj]
-                        doadd=0
-                    else:
-                        doadd=1
+    def create_fortran_matrix_blocks(self):
+        mymat = self.mymat
+        nrow=len(mymat)
+        # Allocate new block matrix in Fortran
+        # And corresponding vector blocks
+        pxr.allocate_new_matrix_vector(nrow)
+        # Get Matrix index
+        self.matrix_index = pxr.nmatrixes
+        # Alias Fortran blocks to mymat elements
+        for i in range(1,nrow+1):
+            for j in range(1,nrow+1):
+                mymat[i-1][j-1] = np.asarray(mymat[i-1][j-1])
+                if (mymat[i-1][j-1].ndim == 2):
+                    ki = self.fields_name[i-1]
+                    n1=self.fields[ki].shape[0]
+                    n2=self.fields[ki].shape[1]
+                    n3=self.fields[ki].shape[2]
+                    n1mymat=mymat[i-1][j-1].shape[0]
+                    n2mymat=mymat[i-1][j-1].shape[1]
+                    if (n1==1):
+                        mymat[i-1][j-1]=np.reshape(mymat[i-1][j-1],(1,n1mymat,n2mymat))
+                    elif(n2==1):
+                        mymat[i-1][j-1]=np.reshape(mymat[i-1][j-1],(n1mymat,1,n2mymat))
+                    elif(n3==1):
+                        mymat[i-1][j-1]=np.reshape(mymat[i-1][j-1],(n1mymat,n2mymat,1))
                 else:
-                    doadd=1
-                if doadd:
-                    for k in range(len(matrix1)):
-                        if not iszero(matrix2[i][k]) and not iszero(matrix1[k][j]):
-                            new_matrix[i][j] += matrix2[i][k]*matrix1[k][j]
-        return new_matrix
-
-def exp_by_squaring_matrixlist(x, n, matcompress=None):
-    if n < 1:
-        raise Exception('Error in exp_by_squaring_matrixlist: n<1.')
-
-    if n == 1:return x
-    y = np.identity(len(x)).tolist()
-    while n > 1:
-      if float(n/2)==float(n)/2: # if n is even then
-        x = multmat(x,x,matcompress=matcompress)
-        n /= 2
-      else:
-        y = multmat(x,y,matcompress=matcompress)
-        x = multmat(x,x,matcompress=matcompress)
-        n = (n-1)/2
-    return multmat(x,y,matcompress=matcompress)
-
-def FD_weights(z,n,m):
-    """
- adapted from Matlab code from Fornberg (1998)
- Calculates FD weights. The parameters are:
-  z   location np.where approximations are to be accurate,
-  n   number of grid points,
-  m   highest derivative that we want to find weights for
-  c   array size m+1,lentgh(x) containing (as output) in
-      successive rows the weights for derivatives 0,1,...,m.
-    """
-
-    x = np.arange(-n/2+1,n/2+1)*1.
-
-    c=np.zeros([m+1,n]); c1=1.; c4=x[0]-z; c[0,0]=1.;
-    for i in range(1,n):
-        mn=min(i+1,m+1); c2=1.; c5=c4; c4=x[i]-z;
-        for j in range(0,i-0):
-            c3=x[i]-x[j];  c2=c2*c3;
-            if j==i-1:
-                c[1:mn,i]=c1*(np.arange(1,mn)*c[0:mn-1,i-1]-c5*c[1:mn,i-1])/c2;
-                c[0,i]=-c1*c5*c[0,i-1]/c2;
-            c[1:mn,j]=(c4*c[1:mn,j]-np.arange(1,mn)*c[0:mn-1,j])/c3;
-            c[0,j]=c4*c[0,j]/c3;
-        c1=c2;
-
-    return c
-
-def FD_weights_hvincenti(p,l_staggered=False):
-    # --- from Henri Vincenti's formulas
-    factorial = math.factorial
-
-    c = np.zeros(p/2)
-    for i in range(p/2):
-        l=i+1
-        if l_staggered:
-            lognumer = math.log(16.)*(1.-p/2.)+math.log(factorial(p-1.))*2
-            logdenom = math.log(2.*l-1.)*2.+math.log(factorial(p/2.+l-1.))+math.log(factorial(p/2.-l))+2*math.log(factorial(p/2.-1.))
-        else:
-            lognumer = math.log(factorial(p/2.))*2
-            logdenom = math.log(factorial(p/2.+l))+math.log(factorial(p/2.-l))+math.log(l)
-        c[i] = (-1.)**(l+1)*np.exp(lognumer-logdenom)
-    return c
-
-class Fourier_Space():
-
-    __flaginputs__ = {'nx':1,'ny':1,'nz':1,
-                      'nxguard':0,'nyguard':0,'nzguard':0,
-                      'norderx':np.inf,'nordery':np.inf,'norderz':np.inf,
-                      'dt':1.,'dx':1.,'dy':1.,'dz':1.,
-                      'l_staggered':False,
-                      'bc_periodic':[0,0,0],
-                      'l_fftw': l_fftw_fort,
-                      'nthreads': None}
-
-    def __init__(self,**kw):
-        try:
-            kw['kwdict'].update(kw)
-            kw = kw['kwdict']
-            del kw['kwdict']
-        except KeyError:
-            pass
-
-        self.processdefaultsfromdict(Fourier_Space.__flaginputs__,kw)
-
-
-
-        # Dimensions of real space arrays
-        nx = self.nx
-        ny = self.ny
-        nz = self.nz
-        if not self.bc_periodic[0]:
-            nx+=2*self.nxguard
-        if not self.bc_periodic[1]:
-            ny+=2*self.nyguard
-        if not self.bc_periodic[2]:
-            nz+=2*self.nzguard
-        self.dim_r2c=dims_r2c=[]
-        if nx>1:
-            dims_r2c+=[nx]
-        if ny>1:
-            dims_r2c+=[ny]
-        if nz>1:
-            dims_r2c+=[nz]
-
-        # Dimensions of Fourier space arrays
-        if (len(dims_r2c)==3):
-            nxf = nx//2+1
-            nyf = ny
-            nzf = nz
-        elif (len(dims_r2c) ==2):
-            if (nx>1):
-                nxf=nx//2+1
-                nyf=ny
-                nzf=nz
-            else:
-                nxf=nx
-                nyf=ny//2
-                nzf=nz
-        self.dims=dims=[]
-        if nxf>1:
-            dims+=[nxf]
-        if nyf>1:
-            dims+=[nyf]
-        if nzf>1:
-            dims+=[nzf]
-
-        # --- sets kx, ky, kz, k
-        if nx>1:
-            self.kxn = np.ones(dims)
-            self.kx_unmod = np.ones(dims)
-            kxunit = 2.*np.pi*(self.rfftfreq(nx))/self.dx
-            kxunit_mod = kxunit.copy()
-            self.kxunit = kxunit
-            if self.norderx is not np.inf:
-                xcoefs=0.
-                if self.l_staggered:
-#                    xc = 0.5
-                    xi = 2
-                else:
-#                    xc = 0.
-                    xi = 1
-#                w = FD_weights(xc, self.norderx+1,1)[-1,self.norderx/2+1:]
-                w = FD_weights_hvincenti(self.norderx,l_staggered=self.l_staggered)
-
-                for i in range(self.norderx/2):
-                    xcoefs+=w[i]*2*np.sin(kxunit*(xi*i+1)*self.dx/xi)
-
-                kxunit_mod*=xcoefs/np.where(kxunit==0.,1.,kxunit*self.dx)
-
-        if ny>1:
-            self.kyn = np.ones(dims)
-            self.ky_unmod = np.ones(dims)
-            if (nx == 1): # Case 2D YZ
-                kyunit = 2.*np.pi*(self.rfftfreq(ny))/self.dy
-            else:         # CASE 3D XYZ or 2D XY
-                kyunit = 2.*np.pi*(self.fftfreq(ny))/self.dy
-            kyunit_mod = kyunit.copy()
-            self.kyunit = kyunit
-            if self.nordery is not np.inf:
-                ycoefs=0.
-                if self.l_staggered:
-                    yc = 0.5
-                    yi = 2
-                else:
-                    yc = 0.
-                    yi = 1
-#                w = FD_weights(yc, self.nordery+1,1)[-1,self.nordery/2+1:]
-                w = FD_weights_hvincenti(self.nordery,l_staggered=self.l_staggered)
-
-                for i in range(self.nordery/2):
-                    ycoefs+=w[i]*2*np.sin(kyunit*(yi*i+1)*self.dy/yi)
-
-                kyunit_mod*=ycoefs/np.where(kyunit==0.,1.,kyunit*self.dy)
-
-        if nz>1:
-            self.kzn = np.ones(dims)
-            self.kz_unmod = np.ones(dims)
-            kzunit = 2.*np.pi*(self.fftfreq(nz))/self.dz
-            kzunit_mod = kzunit.copy()
-            self.kzunit = kzunit
-            if self.norderz is not np.inf:
-                zcoefs=0.
-                if self.l_staggered:
-                    zc = 0.5
-                    zi = 2
-                else:
-                    zc = 0.
-                    zi = 1
-#                w = FD_weights(zc, self.norderz+1,1)[-1,self.norderz/2+1:]
-                w = FD_weights_hvincenti(self.norderz,l_staggered=self.l_staggered)
-
-                for i in range(self.norderz/2):
-                    zcoefs+=w[i]*2*np.sin(kzunit*(zi*i+1)*self.dz/zi)
-
-                kzunit_mod*=zcoefs/np.where(kzunit==0.,1.,kzunit*self.dz)
-
-        if len(dims)==3:
-            for k in range(nzf):
-                for j in range(nyf):
-                    self.kxn[:,j,k] *= kxunit_mod
-                    self.kx_unmod[:,j,k] *= kxunit
-
-            for i in range(nxf):
-                for k in range(nzf):
-                    self.kyn[i,:,k] *= kyunit_mod
-                    self.ky_unmod[i,:,k] *= kyunit
-
-            for i in range(nxf):
-                for j in range(nyf):
-                    self.kzn[i,j,:] *= kzunit_mod
-                    self.kz_unmod[i,j,:] *= kzunit
-
-            self.kx=self.kxn.copy()
-            self.ky=self.kyn.copy()
-            self.kz=self.kzn.copy()
-            self.k = np.sqrt(self.kxn*self.kxn+self.kyn*self.kyn+self.kzn*self.kzn)
-            self.kmag = abs(np.where(self.k==0.,1.,self.k))
-            self.kxn = self.kxn/self.kmag
-            self.kyn = self.kyn/self.kmag
-            self.kzn = self.kzn/self.kmag
-
-
-            j = 1j
-            if self.l_staggered:
-                self.kxmn = self.kxn*np.exp(-j*self.kx_unmod*self.dx/2)
-                self.kxpn = self.kxn*np.exp( j*self.kx_unmod*self.dx/2)
-                self.kymn = self.kyn*np.exp(-j*self.ky_unmod*self.dy/2)
-                self.kypn = self.kyn*np.exp( j*self.ky_unmod*self.dy/2)
-                self.kzmn = self.kzn*np.exp(-j*self.kz_unmod*self.dz/2)
-                self.kzpn = self.kzn*np.exp( j*self.kz_unmod*self.dz/2)
-                self.kxm = self.kx*np.exp(-j*self.kx_unmod*self.dx/2)
-                self.kxp = self.kx*np.exp( j*self.kx_unmod*self.dx/2)
-                self.kym = self.ky*np.exp(-j*self.ky_unmod*self.dy/2)
-                self.kyp = self.ky*np.exp( j*self.ky_unmod*self.dy/2)
-                self.kzm = self.kz*np.exp(-j*self.kz_unmod*self.dz/2)
-                self.kzp = self.kz*np.exp( j*self.kz_unmod*self.dz/2)
-            else:
-                self.kxmn = self.kxn
-                self.kxpn = self.kxn
-                self.kymn = self.kyn
-                self.kypn = self.kyn
-                self.kzmn = self.kzn
-                self.kzpn = self.kzn
-                self.kxm = self.kx
-                self.kxp = self.kx
-                self.kym = self.ky
-                self.kyp = self.ky
-                self.kzm = self.kz
-                self.kzp = self.kz
-
-        if len(dims)==2:
-            j = 1j
-            # --- 2D YZ
-            if nx==1:
-                for i in range(nzf):
-                    self.kyn[:,i] *= kyunit_mod
-                    self.ky_unmod[:,i] *= kyunit
-                for i in range(nyf):
-                    self.kzn[i,:] *= kzunit_mod
-                    self.kz_unmod[i,:] *= kzunit
-                self.kx_unmod = 0.
-                self.ky=self.kyn.copy()
-                self.kz=self.kzn.copy()
-                self.k = np.sqrt(self.kyn*self.kyn+self.kzn*self.kzn)
-                self.kmag = abs(np.where(self.k==0.,1.,self.k))
-                self.kyn = self.kyn/self.kmag
-                self.kzn = self.kzn/self.kmag
-                self.kxp = 0.
-                self.kxm = 0.
-                self.kxpn = 0.
-                self.kxmn = 0.
-                if self.l_staggered:
-                    self.kymn = self.kyn*np.exp(-j*self.ky_unmod*self.dy/2)
-                    self.kypn = self.kyn*np.exp( j*self.ky_unmod*self.dy/2)
-                    self.kzmn = self.kzn*np.exp(-j*self.kz_unmod*self.dz/2)
-                    self.kzpn = self.kzn*np.exp( j*self.kz_unmod*self.dz/2)
-                    self.kym = self.ky*np.exp(-j*self.ky_unmod*self.dy/2)
-                    self.kyp = self.ky*np.exp( j*self.ky_unmod*self.dy/2)
-                    self.kzm = self.kz*np.exp(-j*self.kz_unmod*self.dz/2)
-                    self.kzp = self.kz*np.exp( j*self.kz_unmod*self.dz/2)
-                else:
-                    self.kymn = self.kyn
-                    self.kypn = self.kyn
-                    self.kzmn = self.kzn
-                    self.kzpn = self.kzn
-                    self.kym = self.ky
-                    self.kyp = self.ky
-                    self.kzm = self.kz
-                    self.kzp = self.kz
-
-            if ny==1:
-            # --- 2D XZ
-                for i in range(nzf):
-                    self.kxn[:,i] *= kxunit_mod
-                    self.kx_unmod[:,i] *= kxunit
-                for i in range(nxf):
-                    self.kzn[i,:] *= kzunit_mod
-                    self.kz_unmod[i,:] *= kzunit
-                self.ky_unmod = 0.
-                self.kx=self.kxn.copy()
-                self.kz=self.kzn.copy()
-                self.k = np.sqrt(self.kxn*self.kxn+self.kzn*self.kzn)
-                self.kmag = abs(np.where(self.k==0.,1.,self.k))
-                self.kxn = self.kxn/self.kmag
-                self.kzn = self.kzn/self.kmag
-                self.kyp = 0.
-                self.kym = 0.
-                self.kypn = 0.
-                self.kymn = 0.
-                if self.l_staggered:
-                    self.kxmn = self.kxn*np.exp(-j*self.kx_unmod*self.dx/2)
-                    self.kxpn = self.kxn*np.exp( j*self.kx_unmod*self.dx/2)
-                    self.kzmn = self.kzn*np.exp(-j*self.kz_unmod*self.dz/2)
-                    self.kzpn = self.kzn*np.exp( j*self.kz_unmod*self.dz/2)
-                    self.kxm = self.kx*np.exp(-j*self.kx_unmod*self.dx/2)
-                    self.kxp = self.kx*np.exp( j*self.kx_unmod*self.dx/2)
-                    self.kzm = self.kz*np.exp(-j*self.kz_unmod*self.dz/2)
-                    self.kzp = self.kz*np.exp( j*self.kz_unmod*self.dz/2)
-                else:
-                    self.kxmn = self.kxn
-                    self.kxpn = self.kxn
-                    self.kzmn = self.kzn
-                    self.kzpn = self.kzn
-                    self.kxm = self.kx
-                    self.kxp = self.kx
-                    self.kzm = self.kz
-                    self.kzp = self.kz
-
-            if nz==1:
-            # --- 2D XY
-                for i in range(nyf):
-                    self.kxn[:,i] *= kxunit_mod
-                    self.kx_unmod[:,i] *= kxunit
-                for i in range(nxf):
-                    self.kyn[i,:] *= kyunit_mod
-                    self.ky_unmod[i,:] *= kyunit
-                self.kz_unmod = 0.
-                self.kx=self.kxn.copy()
-                self.ky=self.kyn.copy()
-                self.k = np.sqrt(self.kxn*self.kxn+self.kyn*self.kyn)
-                self.kmag = abs(np.where(self.k==0.,1.,self.k))
-                self.kxn = self.kxn/self.kmag
-                self.kyn = self.kyn/self.kmag
-                self.kzp = 0.
-                self.kzm = 0.
-                self.kzpn = 0.
-                self.kzmn = 0.
-                if self.l_staggered:
-                    self.kxmn = self.kxn*np.exp(-j*self.kx_unmod*self.dx/2)
-                    self.kxpn = self.kxn*np.exp( j*self.kx_unmod*self.dx/2)
-                    self.kymn = self.kyn*np.exp(-j*self.ky_unmod*self.dy/2)
-                    self.kypn = self.kyn*np.exp( j*self.ky_unmod*self.dy/2)
-                    self.kxm = self.kx*np.exp(-j*self.kx_unmod*self.dx/2)
-                    self.kxp = self.kx*np.exp( j*self.kx_unmod*self.dx/2)
-                    self.kym = self.ky*np.exp(-j*self.ky_unmod*self.dy/2)
-                    self.kyp = self.ky*np.exp( j*self.ky_unmod*self.dy/2)
-                else:
-                    self.kxmn = self.kxn
-                    self.kxpn = self.kxn
-                    self.kymn = self.kyn
-                    self.kypn = self.kyn
-                    self.kxm = self.kx
-                    self.kxp = self.kx
-                    self.kym = self.ky
-                    self.kyp = self.ky
-        # compute FFTW plans if FFTW loaded
-        if (self.l_fftw):
-            if self.nthreads is None:
-                self.nthreads=int(os.getenv('OMP_NUM_THREADS',1))
-        # Init plans
-        self.plan_rfftn={}
-        self.plan_irfftn={}
-        self.planj_rfftn=None
-        self.planj_irfftn=None
-
-    def create_plan_rfftn(self, dims):
-        if self.l_fftw:
-            return fftpy.compute_plan_rfftn(dims,nthreads=self.nthreads, plan_opt=fst.fftw_measure)
-        else:
-            return None
-
-    def create_plan_irfftn(self, dims):
-        if self.l_fftw:
-            return fftpy.compute_plan_irfftn(dims,nthreads=self.nthreads, plan_opt=fst.fftw_measure)
-        else:
-            return None
-
-    def fftn(self, a, field_out=None, plan=None):
-        if (self.l_fftw):
-            return fftpy.fftn(a,plan=plan,nthreads=self.nthreads, field_out=field_out)
-        else:
-            return np.fft.fftn(a)
-
-    def rfftn(self, a, field_out=None, plan =None):
-        if (self.l_fftw):
-            return fftpy.rfftn(a,plan=plan,nthreads=self.nthreads, field_out=field_out)
-        else:
-            axes = np.arange(0,a.ndim)
-            last_axe = axes[-1]
-            axes[-1] = axes[0]
-            axes[0]  = last_axe
-            return np.fft.rfftn(a, axes=axes)
-
-    def ifftn(self, a, field_out=None, plan=None):
-        if (self.l_fftw):
-            return fftpy.ifftn(a,plan=plan,nthreads=self.nthreads, field_out=field_out)
-        else:
-            return np.fft.ifftn(a)
-    def irfftn(self, a, dims, field_out=None, plan=None):
-        if (self.l_fftw):
-            return fftpy.irfftn(a,dims, plan=plan,nthreads=self.nthreads, field_out=field_out)
-        else:
-            axes = np.arange(0,a.ndim)
-            last_axe = axes[-1]
-            axes[-1] = axes[0]
-            axes[0]  = last_axe
-            rdims = dims.copy()
-            rdims[0] = dims[-1]
-            rdims[-1]=dims[0]
-            return np.fft.irfftn(a, axes=axes, s=rdims)
-
-    def fft(self, a, axis=0):
-        if (self.l_fftw):
-            return fftpy.fft(a, axis=axis,nthreads=self.nthreads)
-        else:
-            return np.fft.fft(a, axis=axis)
-
-    def ifft(self, a, axis=0):
-        if (self.l_fftw):
-            return fftpy.ifft(a, axis=axis,nthreads=self.nthreads)
-        else:
-            return np.fft.ifft(a, axis=axis)
-
-    def fftfreq(self, a):
-        if (self.l_fftw):
-            return fftpy.fftfreq(a)
-        else:
-            return np.fft.fftfreq(a)
-
-    def rfftfreq(self, a):
-        if (self.l_fftw):
-            return fftpy.rfftfreq(a)
-        else:
-            return np.fft.rfftfreq(a)
-
-    def processdefaultsfromdict(self,dict,kw):
-        for name,defvalue in dict.iteritems():
-            if name not in self.__dict__:
-                self.__dict__[name] = kw.get(name,defvalue)
-            if name in kw: del kw[name]
-
-    def get_ius(self):
-        if self.bc_periodic[0]:
-            ixl = self.nxguard
-            ixu = max(1,self.nx+self.nxguard)
-        else:
-            ixl = 0
-            ixu = max(1,self.nx+2*self.nxguard)
-        if self.bc_periodic[1]:
-           iyl = self.nyguard
-           iyu = max(1,self.ny+self.nyguard)
-        else:
-            iyl = 0
-            iyu = max(1,self.ny+2*self.nyguard)
-        if self.bc_periodic[2]:
-           izl = self.nzguard
-           izu = max(1,self.nz+self.nzguard)
-        else:
-            izl = 0
-            izu = max(1,self.nz+2*self.nzguard)
-        return ixl,ixu,iyl,iyu,izl,izu
-
-    def divsetorig(self,num,denom,orig):
-        """
-        Divide num by denom when denom is 0 at origin. Value at origin is provided by orig.
-        """
-        denommag = denom.copy()
-        if len(self.dims)==1:denommag[0]=1.
-        if len(self.dims)==2:denommag[0,0]=1.
-        if len(self.dims)==3:denommag[0,0,0]=1.
-        r = num/denommag
-        if len(self.dims)==1:r[0]=orig
-        if len(self.dims)==2:r[0,0]=orig
-        if len(self.dims)==3:r[0,0,0]=orig
-        del denommag
-        return r
-
-class GPSTD_Matrix():
-
-    def __init__(self,fields={}):
-        self.fields=fields
-        n = len(self.fields.keys())
-
-        self.mat = np.zeros([n,n]).tolist()
-        for i in range(n):
-            self.mat[i][i]=1.
-
-        self.fields_name = {}
-        self.fields_order = {}
-        for i,fname in enumerate(self.fields.keys()):
-            self.fields_name[i]=fname
-            self.fields_order[fname]=i
-
-    def add_op(self,fname,ops):
-        assert fname in self.fields.keys(), "Error on GPSTD/add_op: field not found in dictionary."
-        ifield = self.fields_order[fname]
-        for op in ops.keys():
-            assert op in self.fields.keys(), "Error on GPSTD/add_op: field not found in dictionary."
-            iop = self.fields_order[op]
-            self.mat[ifield][iop] = ops[op]
-
-class GPSTD(Fourier_Space):
-
-    __flaginputs__ = {'dt':1.,'ntsub':1}
-
-    def __init__(self,**kw):
-        try:
-            kw['kwdict'].update(kw)
-            kw = kw['kwdict']
-            del kw['kwdict']
-        except KeyError:
-            pass
-
-        self.processdefaultsfromdict(GPSTD.__flaginputs__,kw)
-        Fourier_Space.__init__(self,kwdict=kw)
-
-        self.fields = {}        # dict. of fields in real space
-        self.Ffields = {}       # dict. of fields in Fourier space
-        self.LSource = {}       # dict. of logical for sources
-        self.Sfilters = {}      # dict. of filters to apply to sources before push
-        self.Ffilters = {}      # dict. of filters to apply to fields after push
-
-    def add_fields(self,f,l_source=False):
-        self.fields.update(f)
-
-        for k in f.keys():
-            self.LSource[k] = l_source
-
-        self.fields_name = {}
-        self.fields_order = {}
-        for i,fname in enumerate(self.fields.keys()):
-            self.fields_name[i]=fname
-            self.fields_order[fname]=i
-
-    def add_Ffilter(self,Fname,Ffilter):
-        self.Ffilters[Fname]=Ffilter
-
-    def add_Sfilter(self,Sname,Sfilter):
-        self.Sfilters[Sname]=Sfilter
+                    if (np.size(mymat[i-1][j-1])==1):
+                        mymat[i-1][j-1]=np.reshape(mymat[i-1][j-1],(1,1,1))
+                if mymat[i-1][j-1].dtype is not np.dtype('complex128'):
+                    mymat[i-1][j-1]=mymat[i-1][j-1].astype(np.complex128)
+                mymat[i-1][j-1]=np.asfortranarray(mymat[i-1][j-1])
+                n1 = mymat[i-1][j-1].shape[0]
+                n2 = mymat[i-1][j-1].shape[1]
+                n3 = mymat[i-1][j-1].shape[2]
+                pxr.point_to_matrix_block_p2f(self.mymat[i-1][j-1],n1,n2,n3,i,j,self.matrix_index)
 
     def get_Ffields(self):
         ixl,ixu,iyl,iyu,izl,izu = self.get_ius()
@@ -654,10 +90,10 @@ class GPSTD(Fourier_Space):
             self.fields_shape = [ixu-ixl,iyu-iyl,izu-izl]
             for k in self.fields.keys():
                 self.plan_rfftn[k] = self.create_plan_rfftn(np.asarray(self.fields_shape))
-                self.Ffields[k]    =self.rfftn(np.squeeze(self.fields[k][ixl:ixu,iyl:iyu,izl:izu]),plan=self.plan_rfftn[k])
+                self.Ffields[k]    =self.rfftn(self.fields[k][ixl:ixu,iyl:iyu,izl:izu],plan=self.plan_rfftn[k])
         else:
             for k in self.fields.keys():
-                self.Ffields[k]=self.rfftn(np.squeeze(self.fields[k][ixl:ixu,iyl:iyu,izl:izu]),field_out=self.Ffields[k],plan=self.plan_rfftn[k])
+                self.Ffields[k]=self.rfftn(self.fields[k][ixl:ixu,iyl:iyu,izl:izu],field_out=self.Ffields[k],plan=self.plan_rfftn[k])
 
     def get_fields(self):
         ixl,ixu,iyl,iyu,izl,izu = self.get_ius()
@@ -666,67 +102,63 @@ class GPSTD(Fourier_Space):
                     self.plan_irfftn[k] = self.create_plan_irfftn(np.asarray(self.fields_shape))
         for k in self.fields.keys():
             if not self.LSource[k]:
-                shapek = np.asarray(np.shape(np.squeeze(self.fields[k][ixl:ixu,iyl:iyu,izl:izu])))
-                f = self.irfftn(self.Ffields[k], shapek, field_out=np.squeeze(self.fields[k][ixl:ixu,iyl:iyu,izl:izu]), plan=self.plan_irfftn[k])
-                f.resize(self.fields_shape)
-                self.fields[k][ixl:ixu,iyl:iyu,izl:izu] = f.real
+                shapek = np.asarray(np.shape(self.fields[k][ixl:ixu,iyl:iyu,izl:izu]))
+                self.fields[k][ixl:ixu,iyl:iyu,izl:izu] = self.irfftn(self.Ffields[k], shapek, field_out=self.fields[k][ixl:ixu,iyl:iyu,izl:izu], plan=self.plan_irfftn[k])
 
     def push_fields(self):
 
+        # --- Fourier transforming fields
         self.get_Ffields()
-
         # --- filter sources before push
         for k in self.Sfilters.keys():
-            self.Ffields[k]*=self.Sfilters[k]
-
+           self.Ffields[k]*=self.Sfilters[k]
         mymat = self.mymat
         n = len(mymat)
-
         # --- set dictionary of field values before time step
         oldfields = {}
         for k in self.Ffields.keys():
-            oldfields[k] = self.Ffields[k].copy()
-
+            oldfields[k] = self.Ffields[k].copy(order='F')
         # --- set dictionary of field flags for update
         updated_fields = {}
         for k in self.Ffields.keys():
             updated_fields[k] = False
+        # --- Alias block vectors in Fortran
+        for i in range(1,n+1):
+            ki = self.fields_name[i-1]
+            n1r=self.fields[ki].shape[0]
+            n2r=self.fields[ki].shape[1]
+            n3r=self.fields[ki].shape[2]
+            nfs = self.Ffields[ki].ndim
+            if (nfs < 3):
+                n1=self.Ffields[ki].shape[0]
+                n2=self.Ffields[ki].shape[1]
+                if(n1r==1):
+                    self.Ffields[ki]=np.reshape(self.Ffields[ki],(1,n1,n2))
+                    oldfields[ki]=np.reshape(oldfields[ki],(1,n1,n2))
+                elif(n2r==1):
+                    self.Ffields[ki]=np.reshape(self.Ffields[ki],(n1,1,n2))
+                    oldfields[ki]=np.reshape(oldfields[ki],(n1,1,n2))
+                elif(n3r==1):
+                    self.Ffields[ki]=np.reshape(self.Ffields[ki],(n1,n2,1))
+                    oldfields[ki]=np.reshape(oldfields[ki],(n1,n2,1))
+            nn1=self.Ffields[ki].shape[0]
+            nn2=self.Ffields[ki].shape[1]
+            nn3=self.Ffields[ki].shape[2]
+            pxr.point_to_vector_block_p2f(self.Ffields[ki],nn1,nn2,nn3,i, \
+                                        self.matrix_index,False,self.LSource[ki])
+            pxr.point_to_vector_block_p2f(oldfields[ki],nn1,nn2,nn3,i, \
+                                        self.matrix_index,True,self.LSource[ki])
+        # --- fields update in FORTRAN
+        pxr.multiply_mat_vector(self.matrix_index)
 
-        # --- fields update
-        # --- multiply vector 'fields' by matrix 'mymat', returning result in 'fields'
-        for i in range(n):
-            # --- get key of field of rank i
-            ki = self.fields_name[i]
-            # --- cycle to next item if current field is a source
-            if self.LSource[ki]:continue
-
-            # --- update diagonal first
-            # --- if matrix value is 1., do nothing
-            if not mymat[i][i] is 1.:
-                updated_fields[ki] = True
-                if mymat[i][i] is 0.:
-                # --- if matrix value is 0., zero out array
-                    self.Ffields[i][...] = 0.
-                else:
-                # --- otherwise, multiply by matrix value
-                    self.Ffields[ki] *= mymat[i][i]
-
-            # --- update field for non-diagonal matrix elements.
-            for j in range(n):
-                if i!=j and not mymat[i][j] is 0.:
-                    # --- update only if matrix element is non-zero
-                    updated_fields[ki] = True
-                    kj = self.fields_name[j]
-                    self.Ffields[ki] += mymat[i][j]*oldfields[kj]
-
+        # Deleting old copies of the fields
         del oldfields
 
         # --- filter fields after push
         for k in self.Ffilters.keys():
-            self.Ffields[k]*=self.Ffilters[k]
-
+           self.Ffields[k]*=self.Ffilters[k]
+        # Fourier transforming back fields
         self.get_fields()
-
         # --- set periodic BC
         if self.bc_periodic[0]:
             ngx = self.nxguard
@@ -762,12 +194,7 @@ class GPSTD(Fourier_Space):
 
         del updated_fields
 
-    def getm(self,a='ex',b='ex'):
-        o=self.fields_order
-        m=self.mymat
-        return m[o[a]][o[b]]
-
-class GPSTD_Maxwell_PML(GPSTD):
+class PSATD_Maxwell_PML(GPSTDPXR):
 
     __flaginputs__ = {'syf':None,'l_pushf':False,'l_pushg':False,'clight':299792458.0}
 
@@ -780,239 +207,6 @@ class GPSTD_Maxwell_PML(GPSTD):
             pass
 
         self.processdefaultsfromdict(GPSTD_Maxwell_PML.__flaginputs__,kw)
-
-        syf=self.syf
-        nx = np.max([1,syf.nx])
-        ny = np.max([1,syf.ny])
-        nz = np.max([1,syf.nz])
-        kw['nx']=nx
-        kw['ny']=ny
-        kw['nz']=nz
-
-        GPSTD.__init__(self,kwdict=kw)
-
-        j = 1j
-
-        if self.l_pushf:
-            self.add_fields({"exx":syf.exx, \
-                             "exy":syf.exy, \
-                             "exz":syf.exz, \
-                             "eyx":syf.eyx, \
-                             "eyy":syf.eyy, \
-                             "eyz":syf.eyz, \
-                             "ezx":syf.ezx, \
-                             "ezy":syf.ezy, \
-                             "ezz":syf.ezz})
-        else:
-            self.add_fields({"exy":syf.exy, \
-                             "exz":syf.exz, \
-                             "eyx":syf.eyx, \
-                             "eyz":syf.eyz, \
-                             "ezx":syf.ezx, \
-                             "ezy":syf.ezy})
-        if self.l_pushg:
-            self.add_fields({"bxx":syf.bxx, \
-                             "bxy":syf.bxy, \
-                             "bxz":syf.bxz, \
-                             "byx":syf.byx, \
-                             "byy":syf.byy, \
-                             "byz":syf.byz, \
-                             "bzx":syf.bzx, \
-                             "bzy":syf.bzy, \
-                             "bzz":syf.bzz})
-        else:
-            self.add_fields({"bxy":syf.bxy, \
-                             "bxz":syf.bxz, \
-                             "byx":syf.byx, \
-                             "byz":syf.byz, \
-                             "bzx":syf.bzx, \
-                             "bzy":syf.bzy})
-        if self.l_pushf:
-            self.add_fields({"fx":syf.fx, \
-                             "fy":syf.fy, \
-                             "fz":syf.fz})
-
-        if self.l_pushg:
-            self.add_fields({"gx":syf.gx, \
-                             "gy":syf.gy, \
-                             "gz":syf.gz})
-
-        self.get_Ffields()
-
-        m0 = 0.
-        m1 = 1.
-        dt=self.dt/self.ntsub
-        cdt=dt*self.clight
-
-        if self.nx>1:
-            axm = j*dt*self.clight*self.kxm
-            axp = j*dt*self.clight*self.kxp
-        else:
-            axm = axp = 0.
-
-        if self.ny>1:
-            aym = j*dt*self.clight*self.kym
-            ayp = j*dt*self.clight*self.kyp
-        else:
-            aym = ayp = 0.
-
-        if self.nz>1:
-            azm = j*dt*self.clight*self.kzm
-            azp = j*dt*self.clight*self.kzp
-        else:
-            azm = azp = 0.
-
-        if self.nx>1:
-            axp0 = 0.5/self.ntsub
-            axm0 = 0.65/self.ntsub
-        else:
-            axm0 = axp0 = 0.
-
-        if self.ny>1:
-            ayp0 = 0.55/self.ntsub
-            aym0 = 0.45/self.ntsub
-        else:
-            aym0 = ayp0 = 0.
-
-        if self.nz>1:
-            azp0 = 0.35/self.ntsub
-            azm0 = 0.25/self.ntsub
-        else:
-            azm0 = azp0 = 0.
-
-        self.mymatref = self.getmaxwellmat_pml(axp0,ayp0,azp0,axm0,aym0,azm0, \
-                            0.1/self.ntsub,0.11/self.ntsub,m0,m1, \
-                            0.5*self.dx,0.5*self.dy,0.5*self.dz,l_matref=1)
-
-        matcompress = getmatcompress(self.mymatref)
-
-        self.mymatref = exp_by_squaring_matrixlist(self.mymatref, self.ntsub, matcompress=matcompress)
-
-        self.mymat = self.getmaxwellmat_pml(axp,ayp,azp,axm,aym,azm,dt,cdt,m0,m1,\
-                     self.kx_unmod,self.ky_unmod,self.kz_unmod,l_matref=0,matcompress=matcompress)
-
-        self.mymat = exp_by_squaring_matrixlist(self.mymat, self.ntsub, matcompress=matcompress)
-
-    def getmaxwellmat_pml(self,axp,ayp,azp,axm,aym,azm,dt,cdt,m0,m1,
-                      kx_unmod,ky_unmod,kz_unmod,l_matref=0,
-                      matcompress=None):
-        c=self.clight
-
-        matpushb = GPSTD_Matrix(self.fields)
-        if self.l_pushf:
-            # --- bx
-            if self.l_pushg:matpushb.add_op('bxx',{'bxx':1.,'gx':axm/2,'gy':axm/2,'gz':axm/2})
-            matpushb.add_op('bxy',{'bxy':1.,'ezx':-ayp/2,'ezy':-ayp/2,'ezz':-ayp/2})
-            matpushb.add_op('bxz',{'bxz':1.,'eyx': azp/2,'eyy': azp/2,'eyz': azp/2})
-            # --- by
-            matpushb.add_op('byx',{'byx':1.,'ezx': axp/2,'ezy': axp/2,'ezz': axp/2})
-            if self.l_pushg:matpushb.add_op('byy',{'byy':1.,'gx':aym/2,'gy':aym/2,'gz':aym/2})
-            matpushb.add_op('byz',{'byz':1.,'exx':-azp/2,'exy':-azp/2,'exz':-azp/2})
-            # --- bz
-            matpushb.add_op('bzx',{'bzx':1.,'eyx':-axp/2,'eyy':-axp/2,'eyz':-axp/2})
-            matpushb.add_op('bzy',{'bzy':1.,'exx': ayp/2,'exy': ayp/2,'exz': ayp/2})
-            if self.l_pushg:matpushb.add_op('bzz',{'bzz':1.,'gx':azm/2,'gy':azm/2,'gz':azm/2})
-        else:
-            # --- bx
-            if self.l_pushg:matpushb.add_op('bxx',{'bxx':1.,'gx':axm/2,'gy':axm/2,'gz':axm/2})
-            matpushb.add_op('bxy',{'bxy':1.,'ezx':-ayp/2,'ezy':-ayp/2})
-            matpushb.add_op('bxz',{'bxz':1.,'eyx': azp/2,'eyz': azp/2})
-            # --- by
-            matpushb.add_op('byx',{'byx':1.,'ezx': axp/2,'ezy': axp/2})
-            if self.l_pushg:matpushb.add_op('byy',{'byy':1.,'gx':aym/2,'gy':aym/2,'gz':aym/2})
-            matpushb.add_op('byz',{'byz':1.,'exy':-azp/2,'exz':-azp/2})
-            # --- bz
-            matpushb.add_op('bzx',{'bzx':1.,'eyx':-axp/2,'eyz':-axp/2})
-            matpushb.add_op('bzy',{'bzy':1.,'exy': ayp/2,'exz': ayp/2})
-            if self.l_pushg:matpushb.add_op('bzz',{'bzz':1.,'gx':azm/2,'gy':azm/2,'gz':azm/2})
-
-        matpushe = GPSTD_Matrix(self.fields)
-        if self.l_pushg:
-            # --- ex
-            if self.l_pushf:matpushe.add_op('exx',{'exx':1.,'fx':axp,'fy':axp,'fz':axp})
-            matpushe.add_op('exy',{'exy':1.,'bzx': aym,'bzy': aym,'bzz': aym})
-            matpushe.add_op('exz',{'exz':1.,'byx':-azm,'byy':-azm,'byz':-azm})
-            # --- ey
-            matpushe.add_op('eyx',{'eyx':1.,'bzx':-axm,'bzy':-axm,'bzz':-axm})
-            if self.l_pushf:matpushe.add_op('eyy',{'eyy':1.,'fx':ayp,'fy':ayp,'fz':ayp})
-            matpushe.add_op('eyz',{'eyz':1.,'bxx': azm,'bxy': azm,'bxz': azm})
-            # --- ez
-            matpushe.add_op('ezx',{'ezx':1.,'byx': axm,'byy': axm,'byz': axm})
-            matpushe.add_op('ezy',{'ezy':1.,'bxx':-aym,'bxy':-aym,'bxz':-aym})
-            if self.l_pushf:matpushe.add_op('ezz',{'ezz':1.,'fx':azp,'fy':azp,'fz':azp})
-        else:
-            # --- ex
-            if self.l_pushf:matpushe.add_op('exx',{'exx':1.,'fx':axp,'fy':axp,'fz':axp})
-            matpushe.add_op('exy',{'exy':1.,'bzx': aym,'bzy': aym})
-            matpushe.add_op('exz',{'exz':1.,'byx':-azm,'byz':-azm})
-            # --- ey
-            matpushe.add_op('eyx',{'eyx':1.,'bzx':-axm,'bzy':-axm})
-            if self.l_pushf:matpushe.add_op('eyy',{'eyy':1.,'fx':ayp,'fy':ayp,'fz':ayp})
-            matpushe.add_op('eyz',{'eyz':1.,'bxy': azm,'bxz': azm})
-            # --- ez
-            matpushe.add_op('ezx',{'ezx':1.,'byx': axm,'byz': axm})
-            matpushe.add_op('ezy',{'ezy':1.,'bxy':-aym,'bxz':-aym})
-            if self.l_pushf:matpushe.add_op('ezz',{'ezz':1.,'fx':azp,'fy':azp,'fz':azp})
-
-        if self.l_pushf:
-            matpushf = GPSTD_Matrix(self.fields)
-            matpushf.add_op('fx',{'fx':1.,'exx':axm/2,'exy':axm/2,'exz':axm/2})
-            matpushf.add_op('fy',{'fy':1.,'eyx':aym/2,'eyy':aym/2,'eyz':aym/2})
-            matpushf.add_op('fz',{'fz':1.,'ezx':azm/2,'ezy':azm/2,'ezz':azm/2})
-
-        if self.l_pushg:
-            matpushg = GPSTD_Matrix(self.fields)
-            matpushg.add_op('gx',{'gx':1.,'bxx':axp,'bxy':axp,'bxz':axp})
-            matpushg.add_op('gy',{'gy':1.,'byx':ayp,'byy':ayp,'byz':ayp})
-            matpushg.add_op('gz',{'gz':1.,'bzx':azp,'bzy':azp,'bzz':azp})
-
-        if self.l_pushf:
-            mymat = multmat(matpushf.mat,matpushb.mat,matcompress=matcompress)
-            if self.l_pushg:mymat = multmat(mymat,matpushg.mat,matcompress=matcompress)
-            mymat = multmat(mymat,matpushe.mat,matcompress=matcompress)
-            mymat = multmat(mymat,matpushf.mat,matcompress=matcompress)
-            mymat = multmat(mymat,matpushb.mat,matcompress=matcompress)
-        else:
-            mymat = multmat(matpushb.mat,matpushe.mat,matcompress=matcompress)
-            if self.l_pushg:mymat = multmat(mymat,matpushg.mat,matcompress=matcompress)
-            mymat = multmat(mymat,matpushb.mat,matcompress=matcompress)
-
-        return mymat
-
-    def push(self):
-        syf = self.syf
-
-        self.push_fields()
-
-        for f in self.fields.values():
-            if self.nx>1:
-                f[:self.nxguard/2,...]=0.
-                f[-self.nxguard/2:,...]=0.
-            if self.ny>1:
-                f[:,:self.nyguard/2,:]=0.
-                f[:,-self.nyguard/2:,:]=0.
-            if self.nz>1:
-                f[...,:self.nzguard/2]=0.
-                f[...,-self.nzguard/2:]=0.
-
-#      scale_em3d_split_fields(syf,top.dt,self.l_pushf)
-
-        return
-
-class PSATD_Maxwell_PML(GPSTD):
-
-    __flaginputs__ = {'syf':None,'l_pushf':False,'l_pushg':False,'clight':299792458.0}
-
-    def __init__(self,**kw):
-        try:
-            kw['kwdict'].update(kw)
-            kw = kw['kwdict']
-            del kw['kwdict']
-        except KeyError:
-            pass
-
-        self.processdefaultsfromdict(GPSTD_Maxwell_PML.__flaginputs__,kw)
-
         syf=self.syf
         nx = np.max([1,syf.nx])
         ny = np.max([1,syf.ny])
@@ -1103,6 +297,7 @@ class PSATD_Maxwell_PML(GPSTD):
             azm = azp = 0.
 
         self.mymat = self.getmaxwellmat_pml(C,S,axp,ayp,azp,axm,aym,azm)
+        self.create_fortran_matrix_blocks()
 
     def getmaxwellmat_pml(self,C,S,axp,ayp,azp,axm,aym,azm):
         mymat = GPSTD_Matrix(self.fields)
@@ -1182,7 +377,7 @@ class PSATD_Maxwell_PML(GPSTD):
                 f[:self.nxguard,...]=0.
                 f[-self.nxguard/2:,...]=0.
             if self.ny>1:
-                f[:,:self.nyguard/2,:]=0.
+                f[:,:self.nyguard,:]=0.
                 f[:,-self.nyguard/2:,:]=0.
             if self.nz>1:
                 f[...,:self.nzguard/2]=0.
@@ -1192,14 +387,14 @@ class PSATD_Maxwell_PML(GPSTD):
 
         return
 
-class GPSTD_Maxwell(GPSTD):
+class GPSTD_Maxwell(GPSTDPXR):
 
     __flaginputs__ = {'yf':None,
                       'l_pushf':False,
                       'l_pushg':False,
                       'clight':299792458.0,
                       'eps0':8.854187817620389e-12,
-                      'V_galilean':np.array([0.,0.,0.]),
+                       'V_galilean':np.array([0.,0.,0.]),
                       'V_pseudogalilean':np.array([0.,0.,0.])}
 
     def __init__(self,**kw):
@@ -1211,7 +406,6 @@ class GPSTD_Maxwell(GPSTD):
             pass
 
         self.processdefaultsfromdict(GPSTD_Maxwell.__flaginputs__,kw)
-
         yf=self.yf
         nx = np.max([1,yf.nx])
         ny = np.max([1,yf.ny])
@@ -1291,14 +485,14 @@ class GPSTD_Maxwell(GPSTD):
         matcompress = getmatcompress(self.mymatref)
 
         self.mymatref = exp_by_squaring_matrixlist(self.mymatref, self.ntsub, matcompress=matcompress)
-
         if np.all(self.V_galilean==0.):
             self.mymat = self.getmaxwellmat(axp,ayp,azp,axm,aym,azm,dt,cdt,m0,m1,\
                          self.kx_unmod,self.ky_unmod,self.kz_unmod,l_matref=0,matcompress=matcompress)
         else:
-            self.mymat = self.getmaxwellmat_galilean(axp,ayp,azp,axm,aym,azm,dt,cdt,m0,m1,\
-                         self.kx_unmod,self.ky_unmod,self.kz_unmod,l_matref=0,matcompress=matcompress,
-                         V_galilean=self.V_galilean)
+            self.mymat = self.getmaxwellmat_galilean(self.kxpn,self.kypn,self.kzpn,\
+                        self.kxmn,self.kymn,self.kzmn,dt,cdt,self.V_galilean)
+
+        self.create_fortran_matrix_blocks()
 
     def getmaxwellmat(self,axp,ayp,azp,axm,aym,azm,dt,cdt,m0,m1,
                       kx_unmod,ky_unmod,kz_unmod,l_matref=0,
@@ -1409,8 +603,8 @@ class GPSTD_Maxwell(GPSTD):
 
         if self.l_pushf:
             matpushrho = GPSTD_Matrix(self.fields)
-#            matpushrho.add_op('rho',{'rho':T,'jx':-axm/c,'jy':-aym/c,'jz':-azm/c})
-#            matpushrho.add_op('rho',{'rho':T,'drho':1./self.ntsub})
+    #            matpushrho.add_op('rho',{'rho':T,'jx':-axm/c,'jy':-aym/c,'jz':-azm/c})
+    #            matpushrho.add_op('rho',{'rho':T,'drho':1./self.ntsub})
             alpha = 0.5*j*kV*dt
             matpushrho.add_op('rho',{'rho':(1.+alpha)/(1.-alpha),'drho':1./(self.ntsub*(1.-alpha))})
             matpushdrho = GPSTD_Matrix(self.fields)
@@ -1496,7 +690,7 @@ class GPSTD_Maxwell(GPSTD):
 
         return
 
-class PSATD_Maxwell(GPSTD):
+class PSATD_Maxwell(GPSTDPXR):
 
     __flaginputs__ = {'yf':None,
                       'l_pushf':False,
@@ -1553,14 +747,19 @@ class PSATD_Maxwell(GPSTD):
 
         if np.all(self.V_galilean==0.) and np.all(self.V_pseudogalilean==0.):
             self.mymat = self.getmaxwellmat(self.kxpn,self.kypn,self.kzpn,\
-                         self.kxmn,self.kymn,self.kzmn,dt,cdt)
+                     self.kxmn,self.kymn,self.kzmn,dt,cdt)
         else:
             if np.any(self.V_galilean<>0.):
-                self.mymat = self.getmaxwellmat_galilean(self.kxpn,self.kypn,self.kzpn,\
-                             self.kxmn,self.kymn,self.kzmn,dt,cdt,self.V_galilean)
+                self.mymat = self.getmaxwellmat_galilean(self.kxpn,self.kypn, \
+                            self.kzpn, self.kxmn,self.kymn,self.kzmn,dt,cdt, \
+                            self.V_galilean)
+
             if np.any(self.V_pseudogalilean<>0.):
-                self.mymat = self.getmaxwellmat_pseudogalilean(self.kxpn,self.kypn,self.kzpn,\
-                             self.kxmn,self.kymn,self.kzmn,dt,cdt,self.V_pseudogalilean)
+                self.mymat = self.getmaxwellmat_pseudogalilean(self.kxpn, \
+                             self.kypn, self.kzpn, self.kxmn,self.kymn, \
+                             self.kzmn,dt,cdt,self.V_pseudogalilean)
+
+        self.create_fortran_matrix_blocks()
 
     def getmaxwellmat(self,kxpn,kypn,kzpn,kxmn,kymn,kzmn,dt,cdt):
 
@@ -1648,7 +847,6 @@ class PSATD_Maxwell(GPSTD):
             mymat.add_op('g',{'g':C,'bx':axp*c,'by':ayp*c,'bz':azp*c})
 
         return mymat.mat
-
     def getmaxwellmat_galilean(self,kxpn,kypn,kzpn,kxmn,kymn,kzmn,dt,cdt,V_galilean=np.array([0.,0.,0.])):
 
         j = 1j

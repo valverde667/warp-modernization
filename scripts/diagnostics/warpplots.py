@@ -2487,7 +2487,7 @@ def ppvector(gridy=None,gridx=None,ymesh=None,xmesh=None,scale=None,
         if len(shape(xmesh)) == 1:
             xmesh = xmesh[:,newaxis]*ones(ny+1)[newaxis,:]
         if len(shape(ymesh)) == 1:
-            ymesh = ymesh[newaxis,:]*ones(ny+1)[:,newaxis]
+            ymesh = ymesh[newaxis,:]*ones(nx+1)[:,newaxis]
 
         # --- Compute scale
         if scale is None:

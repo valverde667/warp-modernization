@@ -430,7 +430,7 @@ class Species(object):
     - color='fg',marker='\1',msize=1.0: Default values used when making particle
                                         plots of the species.
     """
-    def __init__(self,js=None,pgroup=None,
+    def __init__(self,js=None,pgroup=None,pgroups=None,
                       type=None,charge=echarge,mass=emass,charge_state=0,
                       weight=None,name='',nautodt=1,
                       efetch=None,fselfb=None,limplicit=None,
@@ -448,6 +448,7 @@ class Species(object):
             self._pgroup = pgroup
             if not pgroup.allocated('sm'):
                 pgroup.gchange()
+        self.pgroups = pgroups
         self.type=type
         self.add_group(js,charge=charge,mass=mass,charge_state=charge_state,weight=weight)
         self.charge=self.pgroup.sq[self.jslist[0]]
@@ -494,7 +495,10 @@ class Species(object):
             # --- the first species has already been setup, then a new species needs
             # --- to be added.
             if self.pgroup.ns == 0 or self.pgroup.sm[0] != 0.:
-                addspecies(pgroup=self.pgroup)
+                if self.pgroup.name() == 'ParticleGroup':
+                    addspecies(pgroup=self.pgroup)
+                else:
+                    self.pgroup.addspecies()
             js = self.pgroup.ns-1
             # --- Setup the starting index for this species in the particle
             # --- arrays.
@@ -588,9 +592,9 @@ class Species(object):
                     nz = shape(dens)[2]-1
             density = dens
             densityc = 0.*dens
-        try:
+        if self.pgroups is not None:
             pgroups = self.flatten(self.pgroups)
-        except:
+        else:
             pgroups = [self.pgroup]
         np=0
         for pg in pgroups:
@@ -1847,7 +1851,7 @@ class Species(object):
         # --- are relative to start of the species. The ii returned can then be
         # --- used for example like self.xp[ii]. Note that this won't work if
         # --- jslist has includes multiple species.
-        ii = selectparticles(jslist=self.jslist,**kw)
+        ii = selectparticles(jslist=self.jslist,pgroup=self.pgroup,**kw)
         i1 = self.pgroup.ins[self.jslist[0]] - 1
         if isinstance(ii,slice):
             ii = slice(ii.start-i1,ii.stop-i1)
@@ -1857,291 +1861,290 @@ class Species(object):
 
     def getn(self,**kw):
         """Calls :py:func:`~particles.getn` for this species."""
-        if hasattr(self,'pgroups'): 
+        if self.pgroups is not None:
             listofpgroups=self.flatten(self.pgroups)
             return getn(jslist=self.jslist,pgroups=listofpgroups,**kw)
-        else: 
-            return getn(jslist=self.jslist,**kw)
-            
+        else:
+            return getn(jslist=self.jslist,pgroup=self.pgroup,**kw)
+
     def getx(self,**kw):
         """Calls :py:func:`~particles.getx` for this species."""
-        if hasattr(self,'pgroups'): 
+        if self.pgroups is not None:
             listofpgroups=self.flatten(self.pgroups)
             return getx(jslist=self.jslist,pgroups=listofpgroups,**kw)
-        else: 
-            return getx(jslist=self.jslist,**kw)
+        else:
+            return getx(jslist=self.jslist,pgroup=self.pgroup,**kw)
 
     def gety(self,**kw):
         """Calls :py:func:`~particles.gety` for this species."""
-        if hasattr(self,'pgroups'): 
+        if self.pgroups is not None:
             listofpgroups=self.flatten(self.pgroups)
             return gety(jslist=self.jslist,pgroups=listofpgroups,**kw)
-        else: 
-            return gety(jslist=self.jslist,**kw)
+        else:
+            return gety(jslist=self.jslist,pgroup=self.pgroup,**kw)
 
     def getz(self,**kw):
         """Calls :py:func:`~particles.getz` for this species."""
-        if hasattr(self,'pgroups'): 
+        if self.pgroups is not None:
             listofpgroups=self.flatten(self.pgroups)
             return getz(jslist=self.jslist,pgroups=listofpgroups,**kw)
-        else: 
-            return getz(jslist=self.jslist,**kw)
+        else:
+            return getz(jslist=self.jslist,pgroup=self.pgroup,**kw)
 
     def getr(self,**kw):
         """Calls :py:func:`~particles.getr` for this species."""
-        if hasattr(self,'pgroups'): 
+        if self.pgroups is not None:
             listofpgroups=self.flatten(self.pgroups)
             return getr(jslist=self.jslist,pgroups=listofpgroups,**kw)
-        else: 
-            return getr(jslist=self.jslist,**kw)
+        else:
+            return getr(jslist=self.jslist,pgroup=self.pgroup,**kw)
 
     def gettheta(self,**kw):
         """Calls :py:func:`~particles.gettheta` for this species."""
-        if hasattr(self,'pgroups'): 
+        if self.pgroups is not None:
             listofpgroups=self.flatten(self.pgroups)
             return gettheta(jslist=self.jslist,pgroups=listofpgroups,**kw)
-        else: 
-            return gettheta(jslist=self.jslist,**kw)
+        else:
+            return gettheta(jslist=self.jslist,pgroup=self.pgroup,**kw)
 
     def getvx(self,**kw):
         """Calls :py:func:`~particles.getvx` for this species."""
-        if hasattr(self,'pgroups'): 
+        if self.pgroups is not None:
             listofpgroups=self.flatten(self.pgroups)
             return getvx(jslist=self.jslist,pgroups=listofpgroups,**kw)
-        else: 
-            return getvx(jslist=self.jslist,**kw)
+        else:
+            return getvx(jslist=self.jslist,pgroup=self.pgroup,**kw)
 
 
     def getvy(self,**kw):
         """Calls :py:func:`~particles.getvy` for this species."""
-        if hasattr(self,'pgroups'): 
+        if self.pgroups is not None:
             listofpgroups=self.flatten(self.pgroups)
             return getvy(jslist=self.jslist,pgroups=listofpgroups,**kw)
-        else: 
-            return getvy(jslist=self.jslist,**kw)
+        else:
+            return getvy(jslist=self.jslist,pgroup=self.pgroup,**kw)
 
     def getvz(self,**kw):
         """Calls :py:func:`~particles.getvz` for this species."""
-        if hasattr(self,'pgroups'): 
+        if self.pgroups is not None:
             listofpgroups=self.flatten(self.pgroups)
             return getvz(jslist=self.jslist,pgroups=listofpgroups,**kw)
-        else: 
-            return getvz(jslist=self.jslist,**kw)
+        else:
+            return getvz(jslist=self.jslist,pgroup=self.pgroup,**kw)
 
     def getvr(self,**kw):
         """Calls :py:func:`~particles.getvr` for this species."""
-        if hasattr(self,'pgroups'): 
+        if self.pgroups is not None:
             listofpgroups=self.flatten(self.pgroups)
             return getvr(jslist=self.jslist,pgroups=listofpgroups,**kw)
-        else: 
-            return getvr(jslist=self.jslist,**kw)
+        else:
+            return getvr(jslist=self.jslist,pgroup=self.pgroup,**kw)
 
     def getvtheta(self,**kw):
         """Calls :py:func:`~particles.getvtheta` for this species."""
-        if hasattr(self,'pgroups'): 
+        if self.pgroups is not None:
             listofpgroups=self.flatten(self.pgroups)
             return getvtheta(jslist=self.jslist,pgroups=listofpgroups,**kw)
-        else: 
-            return getvtheta(jslist=self.jslist,**kw)
+        else:
+            return getvtheta(jslist=self.jslist,pgroup=self.pgroup,**kw)
 
     def getux(self,**kw):
         """Calls :py:func:`~particles.getux` for this species."""
-        if hasattr(self,'pgroups'): 
+        if self.pgroups is not None:
             listofpgroups=self.flatten(self.pgroups)
             return getux(jslist=self.jslist,pgroups=listofpgroups,**kw)
-        else: 
-            return getux(jslist=self.jslist,**kw)
+        else:
+            return getux(jslist=self.jslist,pgroup=self.pgroup,**kw)
 
     def getuy(self,**kw):
         """Calls :py:func:`~particles.getuy` for this species."""
-        if hasattr(self,'pgroups'): 
+        if self.pgroups is not None:
             listofpgroups=self.flatten(self.pgroups)
             return getuy(jslist=self.jslist,pgroups=listofpgroups,**kw)
-        else: 
-            return getuy(jslist=self.jslist,**kw)
+        else:
+            return getuy(jslist=self.jslist,pgroup=self.pgroup,**kw)
 
     def getuz(self,**kw):
         """Calls :py:func:`~particles.getuz` for this species."""
-        if hasattr(self,'pgroups'): 
+        if self.pgroups is not None:
             listofpgroups=self.flatten(self.pgroups)
             return getuz(jslist=self.jslist,pgroups=listofpgroups,**kw)
-        else: 
-            return getuz(jslist=self.jslist,**kw)
+        else:
+            return getuz(jslist=self.jslist,pgroup=self.pgroup,**kw)
 
     def getex(self,**kw):
         """Calls :py:func:`~particles.getex` for this species."""
-        if hasattr(self,'pgroups'): 
+        if self.pgroups is not None:
             listofpgroups=self.flatten(self.pgroups)
             return getex(jslist=self.jslist,pgroups=listofpgroups,**kw)
-        else: 
-            return getex(jslist=self.jslist,**kw)
+        else:
+            return getex(jslist=self.jslist,pgroup=self.pgroup,**kw)
 
     def getey(self,**kw):
         """Calls :py:func:`~particles.getey` for this species."""
-        if hasattr(self,'pgroups'): 
+        if self.pgroups is not None:
             listofpgroups=self.flatten(self.pgroups)
             return getey(jslist=self.jslist,pgroups=listofpgroups,**kw)
-        else: 
-            return getey(jslist=self.jslist,**kw)
+        else:
+            return getey(jslist=self.jslist,pgroup=self.pgroup,**kw)
 
     def getez(self,**kw):
         """Calls :py:func:`~particles.getez` for this species."""
-        if hasattr(self,'pgroups'): 
+        if self.pgroups is not None:
             listofpgroups=self.flatten(self.pgroups)
             return getez(jslist=self.jslist,pgroups=listofpgroups,**kw)
-        else: 
-            return getez(jslist=self.jslist,**kw)
+        else:
+            return getez(jslist=self.jslist,pgroup=self.pgroup,**kw)
 
     def geter(self,**kw):
         """Calls :py:func:`~particles.geter` for this species."""
-        if hasattr(self,'pgroups'): 
+        if self.pgroups is not None:
             listofpgroups=self.flatten(self.pgroups)
             return geter(jslist=self.jslist,pgroups=listofpgroups,**kw)
-        else: 
-            return geter(jslist=self.jslist,**kw)
+        else:
+            return geter(jslist=self.jslist,pgroup=self.pgroup,**kw)
 
     def getetheta(self,**kw):
         """Calls :py:func:`~particles.getetheta` for this species."""
-        if hasattr(self,'pgroups'): 
+        if self.pgroups is not None:
             listofpgroups=self.flatten(self.pgroups)
             return getetheta(jslist=self.jslist,pgroups=listofpgroups,**kw)
-        else: 
-            return getetheta(jslist=self.jslist,**kw)
+        else:
+            return getetheta(jslist=self.jslist,pgroup=self.pgroup,**kw)
 
     def getbx(self,**kw):
         """Calls :py:func:`~particles.getbx` for this species."""
-        if hasattr(self,'pgroups'): 
+        if self.pgroups is not None:
             listofpgroups=self.flatten(self.pgroups)
             return getbx(jslist=self.jslist,pgroups=listofpgroups,**kw)
-        else: 
-            return getbx(jslist=self.jslist,**kw)
+        else:
+            return getbx(jslist=self.jslist,pgroup=self.pgroup,**kw)
 
     def getby(self,**kw):
         """Calls :py:func:`~particles.getby` for this species."""
-        if hasattr(self,'pgroups'): 
+        if self.pgroups is not None:
             listofpgroups=self.flatten(self.pgroups)
             return getby(jslist=self.jslist,pgroups=listofpgroups,**kw)
-        else: 
-            return getby(jslist=self.jslist,**kw)
+        else:
+            return getby(jslist=self.jslist,pgroup=self.pgroup,**kw)
 
     def getbz(self,**kw):
         """Calls :py:func:`~particles.getbz` for this species."""
-        if hasattr(self,'pgroups'): 
+        if self.pgroups is not None:
             listofpgroups=self.flatten(self.pgroups)
             return getbz(jslist=self.jslist,pgroups=listofpgroups,**kw)
-        else: 
-            return getbz(jslist=self.jslist,**kw)
+        else:
+            return getbz(jslist=self.jslist,pgroup=self.pgroup,**kw)
 
     def getbr(self,**kw):
         """Calls :py:func:`~particles.getbr` for this species."""
-        if hasattr(self,'pgroups'): 
+        if self.pgroups is not None:
             listofpgroups=self.flatten(self.pgroups)
             return getbr(jslist=self.jslist,pgroups=listofpgroups,**kw)
-        else: 
-            return getbr(jslist=self.jslist,**kw)
+        else:
+            return getbr(jslist=self.jslist,pgroup=self.pgroup,**kw)
 
     def getbtheta(self,**kw):
         """Calls :py:func:`~particles.getbtheta` for this species."""
-        if hasattr(self,'pgroups'): 
+        if self.pgroups is not None:
             listofpgroups=self.flatten(self.pgroups)
             return getbtheta(jslist=self.jslist,pgroups=listofpgroups,**kw)
-        else: 
-            return getbtheta(jslist=self.jslist,**kw)
+        else:
+            return getbtheta(jslist=self.jslist,pgroup=self.pgroup,**kw)
 
     def getxp(self,**kw):
         """Calls :py:func:`~particles.getxp` for this species."""
-        if hasattr(self,'pgroups'): 
+        if self.pgroups is not None:
             listofpgroups=self.flatten(self.pgroups)
             return getxp(jslist=self.jslist,pgroups=listofpgroups,**kw)
-        else: 
-            return getxp(jslist=self.jslist,**kw)
+        else:
+            return getxp(jslist=self.jslist,pgroup=self.pgroup,**kw)
 
     def getyp(self,**kw):
         """Calls :py:func:`~particles.getyp` for this species."""
-        if hasattr(self,'pgroups'): 
+        if self.pgroups is not None:
             listofpgroups=self.flatten(self.pgroups)
             return getyp(jslist=self.jslist,pgroups=listofpgroups,**kw)
-        else: 
-            return getyp(jslist=self.jslist,**kw)
+        else:
+            return getyp(jslist=self.jslist,pgroup=self.pgroup,**kw)
 
     def getrp(self,**kw):
         """Calls :py:func:`~particles.getrp` for this species."""
-        if hasattr(self,'pgroups'): 
+        if self.pgroups is not None:
             listofpgroups=self.flatten(self.pgroups)
             return getrp(jslist=self.jslist,pgroups=listofpgroups,**kw)
-        else: 
-            return getrp(jslist=self.jslist,**kw)
+        else:
+            return getrp(jslist=self.jslist,pgroup=self.pgroup,**kw)
 
     def gettp(self,**kw):
         """Calls :py:func:`~particles.gettp` for this species."""
-        if hasattr(self,'pgroups'): 
+        if self.pgroups is not None:
             listofpgroups=self.flatten(self.pgroups)
             return gettp(jslist=self.jslist,pgroups=listofpgroups,**kw)
-        else: 
-            return gettp(jslist=self.jslist,**kw)
+        else:
+            return gettp(jslist=self.jslist,pgroup=self.pgroup,**kw)
 
     def getgaminv(self,**kw):
         """Calls :py:func:`~particles.getgaminv` for this species."""
-        if hasattr(self,'pgroups'): 
+        if self.pgroups is not None:
             listofpgroups=self.flatten(self.pgroups)
             return getgaminv(jslist=self.jslist,pgroups=listofpgroups,**kw)
-        else: 
-            return getgaminv(jslist=self.jslist,**kw)
+        else:
+            return getgaminv(jslist=self.jslist,pgroup=self.pgroup,**kw)
 
     def getpid(self,**kw):
         """Calls :py:func:`~particles.getpid` for this species."""
-        if hasattr(self,'pgroups'): 
+        if self.pgroups is not None:
             listofpgroups=self.flatten(self.pgroups)
             return getpid(jslist=self.jslist,pgroups=listofpgroups,**kw)
-        else: 
-            return getpid(jslist=self.jslist,**kw)      
-              
+        else:
+            return getpid(jslist=self.jslist,pgroup=self.pgroup,**kw)
+
     def getw(self,**kw):
         """Calls :py:func:`~particles.getw` for this species."""
-        if hasattr(self,'pgroups'): 
+        if self.pgroups is not None:
             listofpgroups=self.flatten(self.pgroups)
             return getw(jslist=self.jslist,pgroups=listofpgroups,**kw)
-        else: 
-            return getw(jslist=self.jslist,**kw)
-            
+        else:
+            return getw(jslist=self.jslist,pgroup=self.pgroup,**kw)
+
     def getweights(self,**kw):
         """Returns the weights of the particles, the product of pid[:,wpid]*sw."""
         if top.wpid != 0:
             # If space has been allocated for the weights, use them
-            if hasattr(self,'pgroups'): 
+            if self.pgroups is not None:
                 listofpgroups=self.flatten(self.pgroups)
                 return getw(jslist=self.jslist,pgroups=listofpgroups,**kw)*self.sw
-            else: 
-                return getw(jslist=self.jslist,**kw)*self.sw
+            else:
+                return getw(jslist=self.jslist,pgroup=self.pgroup,**kw)*self.sw
         else:
             # Otherwise, return an array of uniform weights
-            return ones_like( self.getx() ) * self.sw 
+            return ones_like( self.getx() ) * self.sw
 
     def getke(self,**kw):
         """Calls :py:func:`~particles.getke` for this species."""
-        if hasattr(self,'pgroups'): 
+        if self.pgroups is not None:
             listofpgroups=self.flatten(self.pgroups)
             return getke(jslist=self.jslist,pgroups=listofpgroups,**kw)
-        else: 
-            return getke(jslist=self.jslist,**kw)
+        else:
+            return getke(jslist=self.jslist,pgroup=self.pgroup,**kw)
 
-    def _callppfunc(self,ppfunc,pgroups=None,**kw):
+    def _callppfunc(self,ppfunc,pgroup=None,**kw):
         """This is an intermediary for all of the pp particle plot methods. This
         makes it easier to make changes to all of them at once, without adding alot
         of code."""
-        if pgroups is None:
-            try:
-                pgroups = self.pgroups
-            except:
-                pgroups = self.pgroup
-        if type(pgroups) == type([]):
-            for pgs in pgroups:
-                self._callppfunc(ppfunc,pgs,**kw)
-        else:
-            kw.setdefault('color',self.color)
-            kw.setdefault('marker',self.marker)
-            kw.setdefault('msize',self.msize)
-            return ppfunc(jslist=self.jslist,pgroup=pgroups,**kw)
+        if pgroup is None:
+            if self.pgroups is not None:
+                for pg in self.pgroups:
+                    self._callppfunc(ppfunc,pg,**kw)
+                return
+            else:
+                pgroup = self.pgroup
+
+        kw.setdefault('color',self.color)
+        kw.setdefault('marker',self.marker)
+        kw.setdefault('msize',self.msize)
+        return ppfunc(jslist=self.jslist,pgroup=pgroup,**kw)
 
     def ppxy(self,**kw):
         """Calls :py:func:`~warpplots.ppxy` for this species."""

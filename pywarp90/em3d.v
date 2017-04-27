@@ -435,6 +435,8 @@ apply_dmask(rho:real,jx:real,jy:real, jz:real,dmaskx:real,dmasky:real,dmaskz:rea
             bounds(6):integer,nguarddepos(3):integer,ntrans(3):integer,
             nx:integer,ny:integer,nz:integer,nxguard:integer,nyguard:integer,nzguard:integer,
             l_pushf:logical,l_2dxz:logical) subroutine
+addsubstractfields(child:EM3D_BLOCKtype,child_coarse:EM3D_BLOCKtype,
+                   parent:EM3D_BLOCKtype,lc(3):integer,ref(3):integer,l_2dxz:logical) subroutine
 addsubstractfields_nodal(child:EM3D_BLOCKtype,child_coarse:EM3D_BLOCKtype,
                    parent:EM3D_BLOCKtype,lc(3):integer,ref(3):integer,l_2dxz:logical) subroutine
 shift_em3dblock_ncells_x(b:EM3D_BLOCKtype,n:integer) subroutine

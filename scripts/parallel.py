@@ -208,6 +208,22 @@ def mpicommcreate(group = None, comm = None):
         result = None
     return result
 
+def mpicommsplit(color, key = 0, comm = None):
+    if comm is None: comm = comm_world
+    if lpyMPIactive:
+        result = comm.comm_split(color)
+    elif lmpi4pyactive:
+        result = comm.Split(color, key)
+    else:
+        result = None
+    return result
+
+def mpicommfree(comm):
+    if lpyMPIactive:
+        comm.comm_free()
+    elif lmpi4pyactive:
+        comm.Free()
+
 def mpiscatter(data = None, root = 0, comm = None):
     if comm is None: comm = comm_world
     if lpyMPIactive:

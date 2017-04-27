@@ -20,4 +20,4 @@ from field_diag import FieldDiagnostic
 from particle_diag import ParticleDiagnostic
 from boosted_field_diag import BoostedFieldDiagnostic
 from boosted_particle_diag import BoostedParticleDiagnostic
-from probe_particle_diag import ProbeParticleDiagnostic
+from probe_particle_diag import ParticleAccumulator, ProbeParticleDiagnostic

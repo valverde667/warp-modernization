@@ -974,8 +974,11 @@ c zgrid0 is the location of the grid at time = 0
       real(kind=8):: uxhat, uyhat, uzhat, udotv, pdotv
       real(kind=8):: zgrid
       real(kind=8):: pdens, px, py, pz, pe, p_tot, p_perp
-      real(kind=8):: laser_a0
-      real(kind=8):: pi0, pz_effective, gamma_effective
+      real(kind=8):: laser_a0sq
+      real(kind=8):: laser_Aamp, laser_Ax, laser_Ay
+      real(kind=8):: uxinlaser, uyinlaser, uzinlaser, gammainlaser
+      !real(kind=8):: pi0, pz_effective, gamma_effective
+      real(kind=8):: omega, kz, eta, gammae, gammabetae, gamma_effective
       real(kind=8):: px_old, py_old, pz_old
       real(kind=8):: p_old, e_old, p_new, e_new
       real(kind=8):: pxtemp, pytemp, pztemp, ptemp
@@ -1085,14 +1088,46 @@ c zgrid0 is the location of the grid at time = 0
         ! --- Quantities needed for frame transformations into and out
         ! --- the rest frame of the electron
         if (withgammaeffective) then
-          laser_a0 = sqrt(echarge**2*planck**2*pdens/(2.*pi**2*eps0*emass**2*clight**2*photon_energy))
-          pi0 = gamma_lab - uzlab/clight
-          pz_effective = uzlab/clight + laser_a0**2/(2.*pi0)
-          gamma_effective = sqrt(1. + pz_effective**2)
+c         --- equations from Rykovanov
+c         pi0 = gamma_lab - uzlab/clight
+c         pz_effective = uzlab/clight + laser_a0sq/(2.*pi0)
+c         gamma_effective = sqrt(1. + pz_effective**2)
+
+c         --- Based on Sarachik and Schappert
+c         laser_a0sq = echarge**2*planck**2*pdens/(2.*pi**2*eps0*emass**2*clight**2*photon_energy)
+c         omega = 2.*pi*photon_energy/planck
+c         kz = -omega/clight ! Note that this has the laser moving with vz = -clight
+c         eta = omega*tlab - kz*zlab ! For now, use phase = 0
+c         ! --- gammae and gammabetae are relative to the electron rest frame before the scatter
+c         gammae = 1. + laser_a0sq*sin(eta)**2/2.
+c         !gammabetae = -sqrt(gammae**2 - 1.) ! The sign assumes that the laser has vz = -clight
+c         gammabetae = -laser_a0sq*sin(eta)**2/2.
+c         ! --- Transform to lab frame, using gamma and u of the electron in the lab frame as the boost
+c         gamma_effective = gamma_lab*gammae + uzlab/clight*gammabetae
+
+c         --- Based on Bardsley, Penetrante, and Mittleman
+c         --- Note that Aamp is the unnormalized vector potential
+          laser_Aamp = sqrt(1.*planck**2*pdens/(4.*pi**2*eps0*photon_energy))
+          omega = 2.*pi*photon_energy/planck
+          kz = -omega/clight ! Note that this has the laser moving with vz = -clight
+          eta = omega*tlab - kz*zlab ! For now, use phase = 0
+          !call random_number(rn1)
+          rn1 = 0.
+          !laser_Ax = laser_Aamp*sin(eta + rn1*2.*pi) ! Linearly polarized in x
+          !laser_Ay = 0.
+          laser_Ax = sqrt(2.)*laser_Aamp*sin(eta + rn1*2.*pi) ! Circularly polarized
+          laser_Ay = sqrt(2.)*laser_Aamp*cos(eta + rn1*2.*pi) !
+          ! --- p = p0 + eA + zhat*(eA.eA + 2eA.p0)/(2(E0/c - p0||)) eq 2.5
+          uxinlaser = uxlab + echarge*laser_Ax/emass
+          uyinlaser = uylab + echarge*laser_Ay/emass
+          uzinlaser = uzlab - (echarge**2*(laser_Ax**2 + laser_Ay**2)/emass + 2*echarge*(laser_Ax*uxlab + laser_Ay*uylab))
+     &                     /(emass*2.*(gamma_lab*clight + uzlab))
+          gammainlaser = sqrt(1. + (uxinlaser**2 + uyinlaser**2 + uzinlaser**2)/clight**2)
+          gamma_effective = gammainlaser
           gamma_frame = gamma_effective
-          uxframe = uxlab
-          uyframe = uylab
-          uzframe = clight*pz_effective
+          uxframe = uxinlaser
+          uyframe = uyinlaser
+          uzframe = uzinlaser
         else
           gamma_frame = gamma_lab
           uxframe = uxlab

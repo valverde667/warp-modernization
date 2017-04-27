@@ -8,11 +8,11 @@ MPI can be installed **either** with MacPorts or HomeBrew.
 
 If you do not have MacPorts installed, install it from [this page](https://www.macports.org/install.php). Then run:
 
-```sudo port selfupdate```
-
-```sudo port install gcc48 +gfortran```
-
-```sudo port install openmpi-gcc48```
+```
+sudo port selfupdate
+sudo port install gcc48 +gfortran
+sudo port install openmpi-gcc48
+```
 
 If MacPort suggests to make `openmpi-gcc48` the default mpi, please follow this advice (typically by doing ```sudo port select --set mpi openmpi-gcc48-fortran```).
 
@@ -74,6 +74,7 @@ if parallel:
 	library_dirs += ['/opt/local/lib/openmpi-gcc48']
 	libraries = fcompiler.libs + ['mpi_usempi', 'mpi_mpifh', 'mpi']
 ```
+
     If you used HomeBrew:
 ```python
 if parallel:
