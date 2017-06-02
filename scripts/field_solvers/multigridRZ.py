@@ -415,7 +415,7 @@ class MultiGrid2DDielectric(MultiGrid2D):
         self._rho = self.source
         if isinstance(self.potential,float): return
 
-        self.epsilon_decomp(self.epsilon)
+        if self.epsilon is not None:self.epsilon_decomp(self.epsilon)
 
         mgverbose = self.getmgverbose()
         mgiters = zeros(1,'l')
@@ -511,6 +511,237 @@ class MultiGrid2DDielectric(MultiGrid2D):
             return
 
         self.epsilon_decomp_flag = True
+
+    def initializeconductors(self):
+        # --- Create the attributes for holding information about conductors
+        # --- and conductor objects.
+        # --- Note that a conductor object will be created for each value of
+        # --- fselfb. This is needed since fselfb effects how the coarsening
+        # --- is done, and different conductor data sets are needed for
+        # --- different coarsenings.
+
+        # --- This stores the ConductorType objects. Note that the objects are
+        # --- not actually created until getconductorobject is called.
+        self.conductorobjects = {}
+
+        # --- This stores the conductors that have been installed in each
+        # --- of the conductor objects.
+        self.installedconductorlists = {}
+
+        # --- This is a list of conductors that have been added.
+        # --- New conductors are not actually installed until the data is needed,
+        # --- when getconductorobject is called.
+        # --- Each element of this list contains all of the input to the
+        # --- installconductor method.
+        self.conductordatalist = []
+
+    def installconductor(self,conductor,
+                              xmin=None,xmax=None,
+                              ymin=None,ymax=None,
+                              zmin=None,zmax=None,
+                              dfill=None):
+        # --- This only adds the conductor to the list. The data is only actually
+        # --- installed when it is needed, during a call to getconductorobject.
+        self.conductordatalist.append((conductor,xmin,xmax,ymin,ymax,zmin,zmax,dfill))
+
+    def init_macroscopic_coefs(self):
+        if self.fields.l_macroscopic:return
+
+        self.fields.nxs = self.fields.nx
+        self.fields.nys = self.fields.ny
+        self.fields.nzs = self.fields.nz
+        self.fields.gchange()
+        self.fields.Sigmax=0.
+        self.fields.Sigmay=0.
+        self.fields.Sigmaz=0.
+        self.fields.Epsix=1.
+        self.fields.Epsiy=1.
+        self.fields.Epsiz=1.
+        self.fields.Mux=1.
+        self.fields.Muy=1.
+        self.fields.Muz=1.
+        self.fields.l_macroscopic=True
+
+    def _installconductor(self,conductorobject,installedlist,conductordata,fselfb):
+        # --- This does that actual installation of the conductor into the
+        # --- conductor object
+
+        # --- Extract the data from conductordata (the arguments to installconductor)
+        conductor,xmin,xmax,ymin,ymax,zmin,zmax,dfill = conductordata
+
+        # --- Set dfill to be a large number so that the entire interior of the conductor
+        # --- gets filled in. This ensures that the field is forced to zero everywhere
+        # --- inside the conductor, but does not introduce a performance penalty.
+        if dfill is None: dfill = largepos
+
+        if conductor in installedlist: return
+        installedlist.append(conductor)
+
+        nx,ny,nz = self.nx,self.ny,self.nz
+        if fselfb == 'p':
+            zscale = 1.
+            nxlocal,nylocal,nzlocal = self.nxp,self.nyp,self.nzp
+            mgmaxlevels = 1
+            decomp = self.ppdecomp
+        else:
+            # --- Get relativistic longitudinal scaling factor
+            # --- This is quite ready yet.
+            beta = fselfb/clight
+            zscale = 1./sqrt((1.-beta)*(1.+beta))
+            nxlocal,nylocal,nzlocal = self.nxlocal,self.nylocal,self.nzlocal
+            mgmaxlevels = None
+            decomp = self.fsdecomp
+
+        xmmin,xmmax = self.xmmin,self.xmmax
+        ymmin,ymmax = self.ymmin,self.ymmax
+        zmmin,zmmax = self.zmmin,self.zmmax
+        # to be updated
+        mgmaxlevels=1
+        conductorobject.interior.n=0
+        installconductors(conductor,xmin,xmax,ymin,ymax,zmin,zmax,dfill,
+                          top.zgrid,
+                          nx,ny,nz,
+                          nxlocal,nylocal,nzlocal,
+                          xmmin,xmmax,ymmin,ymmax,zmmin,zmmax,
+                          zscale,self.l2symtry,self.l4symtry,
+                          installrz=0,
+                          solvergeom=self.solvergeom,conductors=conductorobject,
+                          mgmaxlevels=mgmaxlevels,decomp=decomp)
+
+        self.nconds = conductorobject.interior.n
+        
+        if self.nconds==0 or conductor.permittivity is None:return
+
+        nxguard = 1
+        nzguard = 1
+        nxlocal = self.nxlocal
+        nzlocal = self.nzlocal
+        ix = self.fsdecomp.ix[self.fsdecomp.ixproc]
+        iz = self.fsdecomp.iz[self.fsdecomp.izproc]
+        self.epsilon = ones([nxlocal + 2, nzlocal + 2])*eps0
+        for i in range(self.nconds):
+            ix = conductorobject.interior.indx[0,i]
+            iz = conductorobject.interior.indx[2,i]
+            self.epsilon[ix,iz] = conductor.permittivity*eps0
+            
+        return
+
+
+
+        self.nxcond = self.fields.nx
+        self.fields.nycond = self.fields.ny
+        self.fields.nzcond = self.fields.nz
+        self.fields.gchange()
+        self.fields.incond=False
+        if self.fields.nconds>0:
+            if conductor.conductivity is not None or \
+               conductor.permittivity is not None or \
+               conductor.permeability is not None:
+                self.init_macroscopic_coefs()
+                if conductor.conductivity is not None:
+                    conductivity = conductor.conductivity
+                else:
+                    conductivity = 0.
+                if conductor.permittivity is not None:
+                    permittivity = conductor.permittivity
+                else:
+                    permittivity = 1.
+                if conductor.permeability is not None:
+                    permeability = conductor.permeability
+                else:
+                    permeability = 1.
+                set_macroscopic_coefs_on_yee(self.fields, \
+                                             self.fields.nconds, \
+                                             aint(conductorobject.interior.indx[:,:self.fields.nconds]), \
+                                             conductivity, \
+                                             permittivity, \
+                                             permeability)
+            else:
+                set_incond(self.fields, \
+                           self.fields.nconds, \
+                           aint(conductorobject.interior.indx[:,:self.fields.nconds]))
+                if self.block.xlbnd==openbc:self.fields.incond[:3,:,:]=False
+                if self.block.xrbnd==openbc:self.fields.incond[-3:,:,:]=False
+                if self.block.ylbnd==openbc:self.fields.incond[:,:3,:]=False
+                if self.block.yrbnd==openbc:self.fields.incond[:,-3:,:]=False
+                if self.block.zlbnd==openbc:self.fields.incond[:,:,:3]=False
+                if self.block.zrbnd==openbc:self.fields.incond[:,:,-3:]=False
+
+    def hasconductors(self):
+        return len(self.conductordatalist) > 0
+
+    def clearconductors(self):
+        "Clear out the conductor data"
+        for fselfb in top.fselfb:
+            if fselfb in self.conductorobjects:
+                conductorobject = self.conductorobjects[fselfb]
+                conductorobject.interior.n = 0
+                conductorobject.evensubgrid.n = 0
+                conductorobject.oddsubgrid.n = 0
+                self.installedconductorlists[fselfb] = []
+
+    def getconductorobject(self,fselfb=0.):
+        "Checks for and installs any conductors not yet installed before returning the object"
+        # --- This is the routine that does the creation of the ConductorType
+        # --- objects if needed and ensures that all conductors are installed
+        # --- into it.
+
+        # --- This method is needed during a restore from a pickle, since this
+        # --- object may be restored before the conductors. This delays the
+        # --- installation of the conductors until they are really needed.
+
+        # --- There is a special case, fselfb='p', which refers to the conductor
+        # --- object that has the data generated relative to the particle domain,
+        # --- which can be different from the field domain, especially in parallel.
+        if fselfb == 'p':
+            # --- In serial, just use a reference to the conductor object for the
+            # --- first iselfb group.
+            if not lparallel and 'p' not in self.conductorobjects:
+                self.conductorobjects['p'] = self.conductorobjects[top.fselfb[0]]
+                self.installedconductorlists['p'] = self.installedconductorlists[top.fselfb[0]]
+            # --- In parallel, a whole new instance is created (using the
+            # --- setdefaults below).
+            # --- Check to make sure that the grid the conductor uses is consistent
+            # --- with the particle grid. This is needed so that the conductor
+            # --- data is updated when particle load balancing is done. If the
+            # --- data is not consistent, delete the conductor object so that
+            # --- everything is reinstalled.
+            try:
+                conductorobject = self.conductorobjects['p']
+                if (conductorobject.leveliz[0] != self.izpslave[self.my_index] or
+                    conductorobject.levelnz[0] != self.nzpslave[self.my_index]):
+                    del self.conductorobjects['p']
+                    del self.installedconductorlists['p']
+            except KeyError:
+                # --- 'p' object has not yet been created anyway, so do nothing.
+                pass
+
+        conductorobject = self.conductorobjects.setdefault(fselfb,ConductorType())
+        installedconductorlist = self.installedconductorlists.setdefault(fselfb,[])
+
+        # --- Now, make sure that the conductors are installed into the object.
+        # --- This may be somewhat inefficient, since it loops over all of the
+        # --- conductors everytime. This makes the code more robust, though, since
+        # --- it ensures that all conductors will be properly installed into
+        # --- the conductor object.
+        for conductordata in self.conductordatalist:
+            self._installconductor(conductorobject,installedconductorlist,
+                                   conductordata,fselfb)
+
+        # --- Return the desired conductor object
+        return conductorobject
+
+    def setconductorvoltage(self,voltage,condid=0,discrete=false,
+                            setvinject=false):
+        return
+        'calls setconductorvoltage'
+        # --- Loop over all of the selfb groups to that all conductor objects
+        # --- are handled.
+        for iselfb in range(top.nsselfb):
+            conductorobject = self.getconductorobject(top.fselfb[iselfb])
+            setconductorvoltage(voltage,condid,discrete,setvinject,
+                                conductors=conductorobject)
+                                
 ##############################################################################
 ##############################################################################
 ##############################################################################
