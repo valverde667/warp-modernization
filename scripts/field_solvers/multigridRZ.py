@@ -624,49 +624,6 @@ class MultiGrid2DDielectric(MultiGrid2D):
             iz = conductorobject.interior.indx[2,i]
             self.epsilon[ix,iz] = conductor.permittivity*eps0
             
-        return
-
-
-
-        self.nxcond = self.fields.nx
-        self.fields.nycond = self.fields.ny
-        self.fields.nzcond = self.fields.nz
-        self.fields.gchange()
-        self.fields.incond=False
-        if self.fields.nconds>0:
-            if conductor.conductivity is not None or \
-               conductor.permittivity is not None or \
-               conductor.permeability is not None:
-                self.init_macroscopic_coefs()
-                if conductor.conductivity is not None:
-                    conductivity = conductor.conductivity
-                else:
-                    conductivity = 0.
-                if conductor.permittivity is not None:
-                    permittivity = conductor.permittivity
-                else:
-                    permittivity = 1.
-                if conductor.permeability is not None:
-                    permeability = conductor.permeability
-                else:
-                    permeability = 1.
-                set_macroscopic_coefs_on_yee(self.fields, \
-                                             self.fields.nconds, \
-                                             aint(conductorobject.interior.indx[:,:self.fields.nconds]), \
-                                             conductivity, \
-                                             permittivity, \
-                                             permeability)
-            else:
-                set_incond(self.fields, \
-                           self.fields.nconds, \
-                           aint(conductorobject.interior.indx[:,:self.fields.nconds]))
-                if self.block.xlbnd==openbc:self.fields.incond[:3,:,:]=False
-                if self.block.xrbnd==openbc:self.fields.incond[-3:,:,:]=False
-                if self.block.ylbnd==openbc:self.fields.incond[:,:3,:]=False
-                if self.block.yrbnd==openbc:self.fields.incond[:,-3:,:]=False
-                if self.block.zlbnd==openbc:self.fields.incond[:,:,:3]=False
-                if self.block.zrbnd==openbc:self.fields.incond[:,:,-3:]=False
-
     def hasconductors(self):
         return len(self.conductordatalist) > 0
 
