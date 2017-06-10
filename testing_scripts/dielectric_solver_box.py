@@ -12,6 +12,8 @@ This is an initial test that creates a linearly varying dielectric constant alon
 The initial domain decomposition for epsilon is done manually and this test will only work on 2 processors.
 """
 
+l_box=0
+
 if comm_world.size != 1:
     synchronizeQueuedOutput_mpi4py(out=False, error=False)
 
@@ -22,7 +24,7 @@ top.npinject = 0
 
 #Dimensions
 
-PLATE_SPACING = 10.e-6 #plate spacing
+PLATE_SPACING = 1.e-6 #plate spacing
 CHANNEL_WIDTH = 1e-6 #width of simulation box
 
 X_MAX = CHANNEL_WIDTH*0.5
@@ -34,8 +36,8 @@ Z_MAX = PLATE_SPACING
 
 
 #Grid parameters
-NUM_X = 8*4-1
-NUM_Z = 8*4-1
+NUM_X = 64-1
+NUM_Z = 64-1
 
 top.dt = 1e-12
 
@@ -60,56 +62,63 @@ w3d.zmmax = Z_MAX
 w3d.nx = NUM_X
 w3d.nz = NUM_Z
 
+w3d.dx = (w3d.xmmax-w3d.xmmin)/w3d.nx
+w3d.dz = (w3d.zmmax-w3d.zmmin)/w3d.nz
+
 # Field Solver
 
 testarray = np.ones([w3d.nx + 2, w3d.nz + 2]) * 8.854e-12
 
-# Hack to run in in parallel with 2 processors
-z_dependence = True
-if comm_world.size == 2:
-	testarray = np.ones([w3d.nx + 2, (w3d.nz + 1) //2 + 2]) * 8.854e-12
-	if z_dependence:
-		if comm_world.rank ==0:
-			for i in range((w3d.nz+1) // 2 + 2):
-				testarray[:,i] = (i+1) * 1.e-11 
-			testarray[:,-1] = ((w3d.nz+1) // 2 + 1) * 1.e-11 
-		if comm_world.rank ==1:
-			for i in range((w3d.nz+1) // 2 + 2):
-				testarray[:,i] = (i+4) * 1.e-11 
-			testarray[:,0] = ((w3d.nz+1) // 2 + 2 - 1) * 1.e-11 
-	if not z_dependence:		
-		testarray = np.ones([w3d.nx + 2, (w3d.nz+1) // 2 + 2]) * 8.854e-12
-elif comm_world.size == 1:
-	if z_dependence:
-		testarray[nint(w3d.nx/4):nint(3*w3d.nx/4),nint(w3d.nz/4):nint(3*w3d.nz/4)]=1.e-11
-	if not z_dependence:		
-		testarray = np.ones([w3d.nx + 2, w3d.nz + 2]) * 8.854e-12
+if not l_box:
+    # Hack to run in in parallel with 2 processors
+    z_dependence = True
+    if comm_world.size == 2:
+        testarray = np.ones([w3d.nx + 2, (w3d.nz + 1) //2 + 2]) * 8.854e-12
+        if z_dependence:
+            if comm_world.rank ==0:
+                for i in range((w3d.nz+1) // 2 + 2):
+                    testarray[:,i] = (i+1) * 1.e-11 
+                testarray[:,-1] = ((w3d.nz+1) // 2 + 1) * 1.e-11 
+            if comm_world.rank ==1:
+                for i in range((w3d.nz+1) // 2 + 2):
+                    testarray[:,i] = (i+4) * 1.e-11 
+                testarray[:,0] = ((w3d.nz+1) // 2 + 2 - 1) * 1.e-11 
+        if not z_dependence:		
+            testarray = np.ones([w3d.nx + 2, (w3d.nz+1) // 2 + 2]) * 8.854e-12
+    elif comm_world.size == 1:
+        if z_dependence:
+            testarray[nint(w3d.nx/4):nint(3*w3d.nx/4),nint(w3d.nz/4):nint(3*w3d.nz/4)]=1.e-11
+        if not z_dependence:		
+            testarray = np.ones([w3d.nx + 2, w3d.nz + 2]) * 8.854e-12
 
 print 'shape:',testarray.shape
 top.depos_order = 1
 
-solverE = MultiGrid2DDielectric(epsilon=testarray)
+if not l_box:
+    solverE = MultiGrid2DDielectric(epsilon=testarray)
+else:
+    solverE = MultiGrid2DDielectric()
 registersolver(solverE)
 
 
 # Conductors
 
-source = ZPlane(zcent=w3d.zmmin,zsign=-1.,voltage=0.)
+source = ZPlane(zcent=w3d.zmmin+0*w3d.dz,zsign=-1.,voltage=0.)
 solverE.installconductor(source, dfill=largepos)
 
-
-plate = ZPlane(voltage=10., zcent=Z_MAX)
+plate = ZPlane(voltage=10., zcent=Z_MAX-0.*w3d.dz)
 solverE.installconductor(plate,dfill=largepos)
 
-box = Box(xsize=0.5*(w3d.xmmax-w3d.xmmin),
-          ysize=0.5*(w3d.ymmax-w3d.ymmin),
-          zsize=0.5*(w3d.zmmax-w3d.zmmin),
-          xcent=0.5*(w3d.xmmax+w3d.xmmin),
-          ycent=0.5*(w3d.ymmax+w3d.ymmin),
-          zcent=0.5*(w3d.zmmax+w3d.zmmin),
-          permittivity=2.)
+if l_box:
+    box = Box(xsize=0.5*(w3d.xmmax-w3d.xmmin),
+              ysize=0.5*(w3d.ymmax-w3d.ymmin),
+              zsize=0.5*(w3d.zmmax-w3d.zmmin),
+              xcent=0.5*(w3d.xmmax+w3d.xmmin),
+              ycent=0.5*(w3d.ymmax+w3d.ymmin),
+              zcent=0.5*(w3d.zmmax+w3d.zmmin),
+              permittivity=2.26)
 
-solverE.installconductor(box)
+    solverE.installconductor(box,dfill=largepos)
 
 # Generate PIC code and Run Simulation
 solverE.mgmaxiters = 1

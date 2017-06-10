@@ -382,12 +382,12 @@ class MultiGrid2DDielectric(MultiGrid2D):
     def __init__(self,epsilon=None,lreducedpickle=1,**kw):
         MultiGrid2D.__init__(self,lreducedpickle,**kw)
 
-        # if epsilon is None:
-        #     self.epsilon = eps0*fones((self.nxlocal+2,self.nzlocal+2),'d')
-        # else:
-        #     self.epsilon = epsilon
+        if epsilon is None:
+             self.epsilon = eps0*fones((self.nxlocal+2,self.nzlocal+2),'d')
+        else:
+             self.epsilon = epsilon
 
-        self.epsilon = epsilon
+#        self.epsilon = epsilon
         # TODO: Find appropriate flag to use
         # Flag to prevent decomposition from happening after first step
         self.epsilon_decomp_flag = False
@@ -618,7 +618,7 @@ class MultiGrid2DDielectric(MultiGrid2D):
         nzlocal = self.nzlocal
         ix = self.fsdecomp.ix[self.fsdecomp.ixproc]
         iz = self.fsdecomp.iz[self.fsdecomp.izproc]
-        self.epsilon = ones([nxlocal + 2, nzlocal + 2])*eps0
+#        self.epsilon = ones([nxlocal + 2, nzlocal + 2])*eps0
         for i in range(self.nconds):
             ix = conductorobject.interior.indx[0,i]
             iz = conductorobject.interior.indx[2,i]
