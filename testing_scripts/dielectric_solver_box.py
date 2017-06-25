@@ -12,7 +12,8 @@ This is an initial test that creates a linearly varying dielectric constant alon
 The initial domain decomposition for epsilon is done manually and this test will only work on 2 processors.
 """
 
-l_box=0
+l_box=1
+epsn = 1.1294*2
 
 if comm_world.size != 1:
     synchronizeQueuedOutput_mpi4py(out=False, error=False)
@@ -67,31 +68,30 @@ w3d.dz = (w3d.zmmax-w3d.zmmin)/w3d.nz
 
 # Field Solver
 
-testarray = np.ones([w3d.nx + 2, w3d.nz + 2]) * 8.854e-12
+testarray = np.ones([w3d.nx + 2, w3d.nz + 2]) * eps0
 
 if not l_box:
     # Hack to run in in parallel with 2 processors
     z_dependence = True
     if comm_world.size == 2:
-        testarray = np.ones([w3d.nx + 2, (w3d.nz + 1) //2 + 2]) * 8.854e-12
+        testarray = np.ones([w3d.nx + 2, (w3d.nz + 1) //2 + 2]) * eps0
         if z_dependence:
             if comm_world.rank ==0:
                 for i in range((w3d.nz+1) // 2 + 2):
                     testarray[:,i] = (i+1) * 1.e-11 
-                testarray[:,-1] = ((w3d.nz+1) // 2 + 1) * 1.e-11 
+                testarray[:,-1] = ((w3d.nz+1) // 2 + 1) * epsn*eps0
             if comm_world.rank ==1:
                 for i in range((w3d.nz+1) // 2 + 2):
                     testarray[:,i] = (i+4) * 1.e-11 
-                testarray[:,0] = ((w3d.nz+1) // 2 + 2 - 1) * 1.e-11 
+                testarray[:,0] = ((w3d.nz+1) // 2 + 2 - 1) * epsn*eps0
         if not z_dependence:		
-            testarray = np.ones([w3d.nx + 2, (w3d.nz+1) // 2 + 2]) * 8.854e-12
+            testarray = np.ones([w3d.nx + 2, (w3d.nz+1) // 2 + 2]) * eps0
     elif comm_world.size == 1:
         if z_dependence:
-            testarray[nint(w3d.nx/4):nint(3*w3d.nx/4),nint(w3d.nz/4):nint(3*w3d.nz/4)]=1.e-11
+            testarray[nint(w3d.nx/4):nint(3*w3d.nx/4),nint(w3d.nz/4):nint(3*w3d.nz/4)]=epsn*eps0
         if not z_dependence:		
-            testarray = np.ones([w3d.nx + 2, w3d.nz + 2]) * 8.854e-12
+            testarray = np.ones([w3d.nx + 2, w3d.nz + 2]) * eps0
 
-print 'shape:',testarray.shape
 top.depos_order = 1
 
 if not l_box:
@@ -99,7 +99,7 @@ if not l_box:
 else:
     solverE = MultiGrid2DDielectric()
 registersolver(solverE)
-
+es=solverE
 
 # Conductors
 
@@ -116,7 +116,7 @@ if l_box:
               xcent=0.5*(w3d.xmmax+w3d.xmmin),
               ycent=0.5*(w3d.ymmax+w3d.ymmin),
               zcent=0.5*(w3d.zmmax+w3d.zmmin),
-              permittivity=2.26)
+              permittivity=epsn)
 
     solverE.installconductor(box,dfill=largepos)
 
@@ -131,13 +131,12 @@ top.verbosity = 0
 package("w3d")
 generate()
 
-winon(1)
-ppg(solverE.epsilon)
+winon()
+ppg(solverE.epsilon,view=3)
+limits(-2,w3d.nx+4,-2,w3d.nz+4)
 
 step(150)
 
-print solverE.getselfe().shape
-print getselfe('z').shape
 zfield = getselfe('z')
 if comm_world.size > 1:
 	if comm_world.rank == 0:
@@ -146,5 +145,5 @@ elif comm_world.size == 1:
 	np.save('diel_ser.npy',zfield)
 
 
-winon()
-ppg(zfield)
+pcphizx(filled=1,view=4)
+ppg(zfield,view=5)
