@@ -1021,11 +1021,11 @@ c  Finally, moment diagnostic printout and history storage
       end
 c=============================================================================
       subroutine exteb3d(np,xp,yp,zp,uzp,gaminv,dtl,dtr,
-     &                   bx,by,bz,ex,ey,ez,m,q,bendres,bendradi,gammabar,dt)
+     &                   bx,by,bz,ex,ey,ez,m,q,bendres,bendradi,dt)
       use Subtimersw3d
       use Timers
       integer(ISZ):: np
-      real(kind=8):: dtl,dtr,m,q,gammabar,dt
+      real(kind=8):: dtl,dtr,m,q,dt
       real(kind=8):: xp(np), yp(np), zp(np)
       real(kind=8):: uzp(np), gaminv(np)
       real(kind=8):: bx(np), by(np), bz(np), bendres(np), bendradi(np)
@@ -1389,6 +1389,7 @@ c=============================================================================
 
       real(kind=8),pointer:: zpo(:)
       real(kind=8),allocatable::dtlab(:),tlab(:)
+      integer:: alloc_status
       real(kind=8):: substarttime,wtime
       if (lw3dtimesubs) substarttime = wtime()
 
@@ -1408,7 +1409,11 @@ c     predictor-corrector.
         if (zoldpid > 0 .and. boost_gamma==1.) then
           zpo => pgroup%pid(i1:i2,zoldpid)
         else
-          allocate(zpo(np))
+          allocate(zpo(np), stat=alloc_status)
+          if (alloc_status /= 0) then
+            print*,"Error:positionadvance3d: zpo could not be allocated"
+            stop
+          endif
           zpo = pgroup%zp(i1:i2)
         endif
       endif
@@ -1430,7 +1435,11 @@ c     predictor-corrector.
           ! if the calculation is done in a boosted frame, then one must
           ! transform the particle quantities into the lab frame for
           ! the application of bending elements.
-          allocate(dtlab(np),tlab(np))
+          allocate(dtlab(np),tlab(np), stat=alloc_status)
+          if (alloc_status /= 0) then
+            print*,"Error:positionadvance3d: dtlab or tlab could not be allocated"
+            stop
+          endif
           invclightsq=1./clight**2
           uzboost=clight*sqrt(boost_gamma*boost_gamma-1.)
           vzboost = uzboost/boost_gamma
@@ -1627,11 +1636,11 @@ c     --- Create local pointers to the arrays in pgroup.
       real(kind=8),allocatable:: threadzmmnts0(:,:,:),threadzmmnts(:,:,:,:)
       integer(ISZ):: ithread,omp_get_thread_num
       integer(ISZ):: nthread,omp_get_num_threads
-      integer(ISZ):: allocerror
 #endif
       real(kind=8),pointer:: maxp(:,:),minp(:,:)
       real(kind=8),pointer:: zmmnts0(:,:),zmmnts(:,:,:)
       real(kind=8):: dummy(1) = (/1./)
+      integer:: alloc_status
       real(kind=8):: substarttime,wtime
 
       if (lw3dtimesubs) substarttime = wtime()
@@ -1674,35 +1683,48 @@ c     --- Create local pointers to the arrays in pgroup.
 !$OMP&PRIVATE(ip,xpo,ypo,zpo,uxpo,uypo,uzpo,bendres,bendradi,
 !$OMP&        uxpadv,uypadv,uzpadv,maxp,minp,zmmnts0,zmmnts)
 
-      allocate(uxpo(nparpgrp),uypo(nparpgrp),uzpo(nparpgrp))
-      allocate(gaminvo(nparpgrp))
-      allocate(bendres(nparpgrp), bendradi(nparpgrp))
+      allocate(uxpo(nparpgrp),uypo(nparpgrp),uzpo(nparpgrp), gaminvo(nparpgrp),
+     &         bendres(nparpgrp), bendradi(nparpgrp), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:padvnc3d: uxpo et al could not be allocated"
+        stop
+      endif
       if (center == "synchv" .and. chdtspid>0) then
-        allocate(exo(nparpgrp),eyo(nparpgrp),ezo(nparpgrp))
-        allocate(bxo(nparpgrp),byo(nparpgrp),bzo(nparpgrp))
+        allocate(exo(nparpgrp),eyo(nparpgrp),ezo(nparpgrp),
+     &           bxo(nparpgrp),byo(nparpgrp),bzo(nparpgrp), stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"Error:padvnc3d: exo et al could not be allocated"
+          stop
+        endif
       endif
       if (boost_gamma>1.) then
-        allocate(exlab(nparpgrp),eylab(nparpgrp),ezlab(nparpgrp))
-        allocate(bxlab(nparpgrp),bylab(nparpgrp),bzlab(nparpgrp))
-        allocate(zlab(nparpgrp),uxlab(nparpgrp),uylab(nparpgrp),
-     &           uzlab(nparpgrp),ginvlab(nparpgrp),tlab(nparpgrp))
-        allocate(tstart(nparpgrp),tend(nparpgrp))
+        allocate(exlab(nparpgrp),eylab(nparpgrp),ezlab(nparpgrp),
+     &           bxlab(nparpgrp),bylab(nparpgrp),bzlab(nparpgrp),
+     &           zlab(nparpgrp),uxlab(nparpgrp),uylab(nparpgrp),
+     &           uzlab(nparpgrp),ginvlab(nparpgrp),tlab(nparpgrp),
+     &           tstart(nparpgrp),tend(nparpgrp), stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"Error:padvnc3d: elab et al could not be allocated"
+          stop
+        endif
         invclightsq = 1./(clight*clight)
       endif
       if (any(pgroup%l_maps)) then
-        allocate(dtmaps(nparpgrp),zbeam_maps(nparpgrp),zbeamend_maps(nparpgrp),zend(nparpgrp))
+        allocate(dtmaps(nparpgrp),zbeam_maps(nparpgrp),zbeamend_maps(nparpgrp),zend(nparpgrp), stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"Error:padvnc3d: dtmaps et al could not be allocated"
+          stop
+        endif
         allspecl = .true.
       end if
 
 #ifdef _OPENMP
       allocate(maxp(6,0:nszmmnt),minp(6,0:nszmmnt),
      &         zmmnts0(NUMZMMNT,0:nszmmnt),
-     &         zmmnts(0:nzmmnt,NUMZMMNT,0:nszmmnt),stat=allocerror)
-      if (allocerror /= 0) then
-        print*,"padvnc3d: allocation error ",allocerror,
-     &         ": could not allocate temp arrays to shape ",nszmmnt
-        call kaboom("padvnc3d: allocation error")
-        return
+     &         zmmnts(0:nzmmnt,NUMZMMNT,0:nszmmnt),stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:padvnc3d: maxp et al could not allocate to shape ",nszmmnt
+        stop
       endif
 #endif
 
@@ -1877,7 +1899,7 @@ c             --- Set quad, dipole E and B; All: Bz
      &                     gaminv(i1:i2),-halfdt_s,halfdt_s,
      &                     bx(i1:i2),by(i1:i2),bz(i1:i2),
      &                     ex(i1:i2),ey(i1:i2),ez(i1:i2),sm(is),sq(is),
-     &                     bendres,bendradi,gammabar,fulldt_s)
+     &                     bendres,bendradi,fulldt_s)
             else
               uzboost=clight*sqrt(boost_gamma*boost_gamma-1.)
               exlab(1:ip)=0.;eylab(1:ip)=0.;ezlab(1:ip)=0.
@@ -1921,7 +1943,7 @@ c             --- Set quad, dipole E and B; All: Bz
      &                     ginvlab(1),-halfdt_s,halfdt_s,
      &                     bxlab(1),bylab(1),bzlab(1),
      &                     exlab(1),eylab(1),ezlab(1),sm(is),sq(is),
-     &                     bendres,bendradi,gammabar,fulldt_s)
+     &                     bendres,bendradi,fulldt_s)
               call seteb_in_boosted_frame(ip,exlab(1),eylab(1),ezlab(1),
      &                                       bxlab(1),bylab(1),bzlab(1),
      &                                       0.,0.,uzboost,boost_gamma)
@@ -2018,7 +2040,7 @@ c             --- Set quad, dipole E and B; All: Bz
      &                     gaminv(i1:i2),0.,halfdt_s,
      &                     bx(i1:i2),by(i1:i2),bz(i1:i2),
      &                     ex(i1:i2),ey(i1:i2),ez(i1:i2),sm(is),sq(is),
-     &                     bendres,bendradi,gammabar,fulldt_s)
+     &                     bendres,bendradi,fulldt_s)
             else
               uzboost=clight*sqrt(boost_gamma*boost_gamma-1.)
               exlab(1:ip)=0.;eylab(1:ip)=0.;ezlab(1:ip)=0.
@@ -2059,7 +2081,7 @@ c             --- Set quad, dipole E and B; All: Bz
      &                     ginvlab(1),0.,halfdt_s,
      &                     bxlab(1),bylab(1),bzlab(1),
      &                     exlab(1),eylab(1),ezlab(1),sm(is),sq(is),
-     &                     bendres,bendradi,gammabar,fulldt_s)
+     &                     bendres,bendradi,fulldt_s)
               call seteb_in_boosted_frame(ip,exlab(1),eylab(1),ezlab(1),
      &                                       bxlab(1),bylab(1),bzlab(1),
      &                                       0.,0.,uzboost,boost_gamma)
@@ -2228,7 +2250,7 @@ c               --- Set quad, dipole E and B; All: Bz
      &                       gaminv(i1:i2),-halfdt_s,0.,
      &                       bx(i1:i2),by(i1:i2),bz(i1:i2),
      &                       ex(i1:i2),ey(i1:i2),ez(i1:i2),sm(is),sq(is),
-     &                       bendres,bendradi,gammabar,fulldt_s)
+     &                       bendres,bendradi,fulldt_s)
               else
                 uzboost=clight*sqrt(boost_gamma*boost_gamma-1.)
                 exlab(1:ip)=0.;eylab(1:ip)=0.;ezlab(1:ip)=0.
@@ -2269,7 +2291,7 @@ c               --- Set quad, dipole E and B; All: Bz
      &                       ginvlab(1),-halfdt_s,0.,
      &                       bxlab(1),bylab(1),bzlab(1),
      &                       exlab(1),eylab(1),ezlab(1),sm(is),sq(is),
-     &                       bendres,bendradi,gammabar,fulldt_s)
+     &                       bendres,bendradi,fulldt_s)
                 call seteb_in_boosted_frame(ip,exlab(1),eylab(1),ezlab(1),
      &                                      bxlab(1),bylab(1),bzlab(1),
      &                                      0.,0.,uzboost,boost_gamma)
@@ -2366,12 +2388,10 @@ c     --- End of loop over species.
      &           threadminp(6,0:nszmmnt,nthread),
      &           threadzmmnts0(NUMZMMNT,0:nszmmnt,nthread),
      &           threadzmmnts(0:nzmmnt,NUMZMMNT,0:nszmmnt,nthread),
-     &           stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"padvnc3d: allocation error ",allocerror,
-     &           ": could not allocate temp arrays to shape ",nszmmnt,nthread
-          call kaboom("padvnc3d: allocation error")
-          return
+     &           stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"Error:padvnc3d: threadmaxp et al could not allocate to shape ",nszmmnt,nthread
+          stop
         endif
 !$OMP END SINGLE
         threadmaxp(:,:,ithread) = maxp
@@ -3365,6 +3385,7 @@ c with appropriate time step.
       integer(ISZ):: ip,ndtsmax
       real(kind=8):: substarttime,wtime,ddx,ddy,ddz,dtgaminv
       logical(ISZ):: ldownOK,lupOK
+      integer:: alloc_status
       if (lw3dtimesubs) substarttime = wtime()
 
 c     --- Set the flags saying whether particles of this species can move
@@ -3408,7 +3429,11 @@ c     --- Do nothing if both flags are false
       tdy = dy
       tdz = dz
       if (nxc>0) then
-        allocate(pisnearbycond(np))
+        allocate(pisnearbycond(np), stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"Error:check_cc3d: pisnearbycond could not be allocated"
+          stop
+        endif
         i1 = ipmin
         i2 = ipmin + np - 1
         call getgridngp3di(np,pgroup%xp(i1:i2),pgroup%yp(i1:i2),
@@ -6155,12 +6180,12 @@ c  Picglb is included only to use zbeam
       real(kind=8),allocatable,dimension(:):: perpscal,at,apt,bt,bpt
       real(kind=8),allocatable,dimension(:):: epsxt,epsyt,vzt,vtzt,ibeamt
       real(kind=8),allocatable,dimension(:):: xct,xpct,yct,ypct
-      integer(ISZ):: allocerror
 
       real(kind=8):: xmin,xmax,ymin,ymax
 #ifdef MPIPARALLEL
       real(kind=8):: zmin,zmax
 #endif
+      integer:: alloc_status
       real(kind=8):: substarttime,wtime
       if (lw3dtimesubs) substarttime = wtime()
 
@@ -6319,12 +6344,10 @@ c  Allocate scratch space for load. Must be done in the parallel block
      &         uxt(npgrp),uyt(npgrp),uzt(npgrp),perpscal(npgrp),
      &         at(npgrp),apt(npgrp),bt(npgrp),bpt(npgrp),
      &         epsxt(npgrp),epsyt(npgrp),vzt(npgrp),vtzt(npgrp),ibeamt(npgrp),
-     &         xct(npgrp),xpct(npgrp),yct(npgrp),ypct(npgrp),stat=allocerror)
-      if (allocerror /= 0) then
-        print*,"stptcl3d: allocation error ",allocerror,
-     &         ": could not allocate temp arrays to shape ",npgrp
-        call kaboom("stptcl3d: allocation error")
-        return
+     &         xct(npgrp),xpct(npgrp),yct(npgrp),ypct(npgrp),stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:stptcl3d: indx et al could not allocate temp arrays to shape ",npgrp
+        stop
       endif
 
       do js=0,pgroup%ns-1
@@ -7115,7 +7138,11 @@ c     --- end of if checking for positive npm and distrbtn is not preload
       endif
 
 c     --- Get the global number of particles
-      allocate(nptot(0:pgroup%ns-1))
+      allocate(nptot(0:pgroup%ns-1), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:stptcl3d: nptot could not be allocated"
+        stop
+      endif
       nptot = pgroup%nps
 #ifdef MPIPARALLEL
       call parallelsumintegerarray(nptot,pgroup%ns)
@@ -7345,6 +7372,7 @@ c  handling of blocks of particles at a time)
 
       integer(ISZ):: ipmin,nptmp,ip,i,j,k,ind0,m,ir
       real(kind=8):: g,dxi,dyi,dzi,u0,u1,v0,v1,w0,w1
+      integer:: alloc_status
 
 c     --- Set up offset array for vectorized deposition:
       nnx = nx + 1 + 2*nxguardrho
@@ -7380,7 +7408,11 @@ c       --- transverse boundaries.
 !$OMP PARALLEL PRIVATE(ipmin,nptmp,i,j,k,u1,u0,v1,v0,w1,w0,ir,ip,ind0,indx,m)
 !$OMP&FIRSTPRIVATE(np)
 
-      allocate(indx(0:7,0:nparpgrp-1),s(0:7,0:nparpgrp-1))
+      allocate(indx(0:7,0:nparpgrp-1),s(0:7,0:nparpgrp-1), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:setrho3dvector: indx and s could not be allocated"
+        stop
+      endif
 
 !$OMP DO
       do ipmin = 1,np,nparpgrp
@@ -7528,6 +7560,7 @@ c  Similar to vector, but rho is treated as a 3d array rather than a 1d array
 
       integer(ISZ):: ipmin,nptmp,ip,i,j,k,ir
       real(kind=8):: g,dxi,dyi,dzi,u0,u1,v0,v1,w0,w1
+      integer:: alloc_status
 
       g = wght*q/(dx*dy*dz)
       dxi = 1./dx
@@ -7550,8 +7583,11 @@ c       --- transverse boundaries.
 !$OMP&                 s,ii,jj,kk)
 !$OMP&FIRSTPRIVATE(np)
 
-      allocate(ii(0:nparpgrp-1), jj(0:nparpgrp-1), kk(0:nparpgrp-1))
-      allocate(s(0:7,0:nparpgrp-1))
+      allocate(ii(0:nparpgrp-1), jj(0:nparpgrp-1), kk(0:nparpgrp-1), s(0:7,0:nparpgrp-1), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:setrho3dscalar: ii et al could not be allocated"
+        stop
+      endif
 
 !$OMP DO
       do ipmin = 1,np,nparpgrp
@@ -8305,6 +8341,7 @@ c  precalculated for the next particle since the conversion can be a bottleneck.
       integer(ISZ):: ipmin,nptmp,ip,i,j,k,ind0,m,ir
       integer(ISZ):: inext,jnext,knext
       real(kind=8):: g,dxi,dyi,dzi,u0,u1,v0,v1,w0,w1
+      integer:: alloc_status
 
 c  Set up offset array for vectorized deposition:
       nnx = nx + 1 + 2*nxguardrho
@@ -8341,7 +8378,11 @@ c       --- transverse boundaries.
 !$OMP&                 m,inext,jnext,knext)
 !$OMP&FIRSTPRIVATE(np)
 
-      allocate(indx(0:7,0:nparpgrp-1),s(0:7,0:nparpgrp-1))
+      allocate(indx(0:7,0:nparpgrp-1),s(0:7,0:nparpgrp-1), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:setrho3dvector1: indx and s could not be allocated"
+        stop
+      endif
 
 !$OMP DO
       do ipmin = 1,np,nparpgrp
@@ -10806,7 +10847,6 @@ c --- all of the particles, otherwise the specified particles are loaded.
       integer(ISZ):: is1,is2,isid,i1,i2
       integer(ISZ):: ip,ipmin,is,indts
       real(kind=8):: swtmp
-      integer(ISZ):: allocerror
       logical(ISZ):: lzeroeven
       real(kind=8):: substarttime,subendtime,wtime
 c     --- This routine is always timed (data saved in lrtime)
@@ -11176,6 +11216,7 @@ c is needed for the field gather (efetch == 3).
 
       logical(ISZ):: checkalloc
       logical(ISZ):: doallocate
+      integer:: alloc_status
 
       checkalloc = lforce
 
@@ -11202,7 +11243,11 @@ c       --- has the wrong shape.
         if (doallocate) then
           allocate(selfep(3,-nxguarde:nxp+nxguarde,
      &                      -nyguarde:nyp+nyguarde,
-     &                      -nzguarde:nzp+nzguarde))
+     &                      -nzguarde:nzp+nzguarde), stat=alloc_status)
+          if (alloc_status /= 0) then
+            print*,"Error:allocateselfepforparticles: selfep could not be allocated"
+            stop
+          endif
         endif
 
       endif
@@ -11221,6 +11266,8 @@ c=============================================================================
      &                             -nyguardphi:nyp+nyguardphi,
      &                             -nzguardphi:nzp+nzguardphi)
 
+      integer:: alloc_status
+
 #ifndef MPIPARALLEL
 
 c      --- Point rho to the block for the currently active ndts group.
@@ -11234,13 +11281,21 @@ c     --- been.
       if (.not. associated(rho)) then
         allocate(rho(-nxguardrho:nxlocal+nxguardrho,
      &               -nyguardrho:nylocal+nyguardrho,
-     &               -nzguardrho:nzlocal+nzguardrho))
+     &               -nzguardrho:nzlocal+nzguardrho), stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"Error:assignrhoandphiforfieldsolve: rho could not be allocated"
+          stop
+        endif
         rho = 0.
       endif
       if (.not. associated(phi)) then
         allocate(phi(-nxguardphi:nxlocal+nxguardphi,
      &               -nyguardphi:nylocal+nyguardphi,
-     &               -nzguardphi:nzlocal+nzguardphi))
+     &               -nzguardphi:nzlocal+nzguardphi), stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"Error:assignrhoandphiforfieldsolve: phi could not be allocated"
+          stop
+        endif
         phi = 0.
       endif
 
@@ -11265,6 +11320,7 @@ c      --- Point selfe to selfep, making sure that selfep is allocated.
 #else
 
       logical(ISZ):: doallocate
+      integer:: alloc_status
 
 c     --- selfe needs to be allocated if it hasn't already been.
       doallocate = .false.
@@ -11277,7 +11333,11 @@ c     --- selfe needs to be allocated if it hasn't already been.
       if (doallocate) then
         allocate(selfe(3,-nxguarde:nxlocal+nxguarde,
      &                   -nyguarde:nylocal+nyguarde,
-     &                   -nzguarde:nzlocal+nzguarde))
+     &                   -nzguarde:nzlocal+nzguarde), stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"Error:allocateselfeforfieldsolve: selfe could not be allocated"
+          stop
+        endif
       endif
 
 #endif
@@ -11567,6 +11627,7 @@ c     --- particles group.
 c     --- Note that the B fields are passed in and are only used by fstype==12.
 
       integer(ISZ):: indts,tmpnsndts,getnsndtsforsubcycling,is
+      integer:: alloc_status
       real(kind=8):: substarttime,wtime
       if (lw3dtimesubs) substarttime = wtime()
 
@@ -11598,9 +11659,13 @@ c       --- The pointer assignment breaks with the xlf compilers, so instead
 c       --- new arrays are allocated and those are used as the work space.
 c       --- This is less efficient since there is overhead in the allocation
 c       --- and the data needs to be copied around.
-        allocate(xfsapi(n),yfsapi(n),zfsapi(n))
-        allocate(exfsapi(n),eyfsapi(n),ezfsapi(n))
-        allocate(bxfsapi(n),byfsapi(n),bzfsapi(n))
+        allocate(xfsapi(n),yfsapi(n),zfsapi(n),
+       &         exfsapi(n),eyfsapi(n),ezfsapi(n),
+       &         bxfsapi(n),byfsapi(n),bzfsapi(n), stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"Error:fetche3dfrompositions: xfsapi et al could not be allocated"
+          stop
+        endif
         xfsapi = x
         yfsapi = y
         zfsapi = z

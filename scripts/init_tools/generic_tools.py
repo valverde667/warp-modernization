@@ -4,7 +4,7 @@ from warp import *
 from warp.data_dumping.openpmd_diag import FieldDiagnostic, \
     ParticleDiagnostic, BoostedFieldDiagnostic, \
     BoostedParticleDiagnostic, ProbeParticleDiagnostic
-        
+
 def set_numerics( depos_order, efetch, particle_pusher, dim ):
     """
     Set up some of the parameters of the numerical scheme
@@ -14,11 +14,11 @@ def set_numerics( depos_order, efetch, particle_pusher, dim ):
     package('w3d')
     generate()
     top.vbeamfrm = saved_vbeamfrm
-    
+
     # Particle pusher
     top.lrelativ = true
     top.pgroup.lebcancel_pusher = particle_pusher
-    
+
     # Gathering and current deposition
     top.depos_order[...] = depos_order
     if dim in ["1d", "2d", "circ"]:
@@ -48,8 +48,8 @@ def set_boundary_conditions( f_boundz, f_boundxy, p_boundz, p_boundxy ):
     top.pbound0 = p_boundz
     top.pboundnz = p_boundz
     top.pboundxy = p_boundxy
-        
-def set_simulation_box( Nz, Nx, Ny, zmin, zmax, xmax, ymax, dim, 
+
+def set_simulation_box( Nz, Nx, Ny, zmin, zmax, xmax, ymax, dim,
                         xmin=None, ymin=None):
     """
     Calculate the bounds of simulation box and the cell sizes.
@@ -79,7 +79,7 @@ def set_simulation_box( Nz, Nx, Ny, zmin, zmax, xmax, ymax, dim,
         w3d.xmmin = 0
     w3d.nx = Nx
     w3d.dx = (w3d.xmmax-w3d.xmmin)*1./w3d.nx
-        
+
     # 3rd direction
     if dim=="1d":
         w3d.nx = w3d.ny = 2
@@ -95,7 +95,7 @@ def set_simulation_box( Nz, Nx, Ny, zmin, zmax, xmax, ymax, dim,
         w3d.ymmin = -1
         w3d.ny = 2
     w3d.dy = (w3d.ymmax-w3d.ymmin)*1./w3d.ny
-    
+
     # Specific case of cylindrical geometry
     if dim == "circ":
         w3d.solvergeom=w3d.RZgeom
@@ -112,7 +112,7 @@ def set_diagnostics( interactive ):
     Set up some general parameters for diagnostics
     """
     # Ensures that no extra saving is done
-    top.nhist = top.nt   
+    top.nhist = top.nt
 
     # The next switches save computational time by
     # disactivating some diagnostics
@@ -142,22 +142,22 @@ def set_smoothing_parameters(l_smooth, dim, npass_smooth,
             for i in range( len(npass_smooth[0]) ):
                 npass_smooth[1][i]=0
     else:
-        npass_smooth  = [[ 0 ],[ 0 ],[ 0 ]]
-        alpha_smooth  = [[ 1.],[ 1.],[ 1.]]
-        stride_smooth = [[ 1 ],[ 1 ],[ 1 ]]
-
+        # If l_smooth is 0, then set the elements of the list npass_smooth to 0
+        for i in range(len(npass_smooth)):
+            for j in range(len(npass_smooth[i])):
+                npass_smooth[i][j] = 0
 
 def prepare_weights( n_e, nppcellx, nppcelly, nppcellz,
                             dim, circ_m ):
     """
     Return the maximum weight of the macroparticles
     Do a few checks and prepare the weight array of the macroparticles
-    
+
     Parameters:
     -----------
     n_e : float
         Electron density (in number of physical particles per m^3)
-    
+
     nppcellx, nppcelly, nppcellz : floats
         Number of macroparticles per cell, along each direction
         When dim="2d", nppcelly is ignored

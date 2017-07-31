@@ -1300,7 +1300,7 @@ c esx and esy are the amount of extra space at the ends of the dimensions.
       integer(ISZ):: naux1,naux2
       integer(ISZ):: maxnaux1,maxnaux2
       real(kind=8),allocatable:: aux1(:),aux2(:)
-      integer(ISZ):: allocerror
+      integer(ISZ):: alloc_status
       data maxnaux1/0/,maxnaux2/0/
       save maxnaux1,maxnaux2,aux1,aux2
 
@@ -1323,9 +1323,9 @@ c     --- different from last time (deallocating if needed).
       if (naux1 > maxnaux1) then
         maxnaux1 = naux1
         if (allocated(aux1)) deallocate(aux1)
-        allocate(aux1(maxnaux1),stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"vpftz: allocation error ",allocerror,
+        allocate(aux1(maxnaux1),stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"vpftz: allocation error ",alloc_status,
      &           ": could not allocate aux1 to shape ",maxnaux1
           call kaboom("vpftz: allocation error")
           return
@@ -1334,9 +1334,9 @@ c     --- different from last time (deallocating if needed).
       if (naux2 > maxnaux2) then
         maxnaux2 = naux2
         if (allocated(aux2)) deallocate(aux2)
-        allocate(aux2(maxnaux2),stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"vpftz: allocation error ",allocerror,
+        allocate(aux2(maxnaux2),stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"vpftz: allocation error ",alloc_status,
      &           ": could not allocate aux2 to shape ",maxnaux2
           call kaboom("vpftz: allocation error")
           return
@@ -1409,7 +1409,7 @@ c esx and esy are the amount of extra space at the ends of the dimensions.
       integer(ISZ):: naux1,naux2
       integer(ISZ):: maxnaux1,maxnaux2
       real(kind=8),allocatable:: aux1(:),aux2(:)
-      integer(ISZ):: allocerror
+      integer(ISZ):: alloc_status
       data maxnaux1/0/,maxnaux2/0/
       save maxnaux1,maxnaux2,aux1,aux2
 
@@ -1432,9 +1432,9 @@ c     --- different from last time (deallocating if needed).
       if (naux1 > maxnaux1) then
         maxnaux1 = naux1
         if (allocated(aux1)) deallocate(aux1)
-        allocate(aux1(maxnaux1),stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"vpftzi: allocation error ",allocerror,
+        allocate(aux1(maxnaux1),stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"vpftzi: allocation error ",alloc_status,
      &           ": could not allocate aux1 to shape ",maxnaux1
           call kaboom("vpftzi: allocation error")
           return
@@ -1443,9 +1443,9 @@ c     --- different from last time (deallocating if needed).
       if (naux2 > maxnaux2) then
         maxnaux2 = naux2
         if (allocated(aux2)) deallocate(aux2)
-        allocate(aux2(maxnaux2),stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"vpftzi: allocation error ",allocerror,
+        allocate(aux2(maxnaux2),stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"vpftzi: allocation error ",alloc_status,
      &           ": could not allocate aux2 to shape ",maxnaux2
           call kaboom("vpftzi: allocation error")
           return
@@ -2348,7 +2348,7 @@ c -----------------------------------------------------------------
       integer(ISZ):: naux1,naux2
       integer(ISZ):: maxnaux1,maxnaux2
       real(kind=8),allocatable:: aux1(:),aux2(:)
-      integer(ISZ):: allocerror
+      integer(ISZ):: alloc_status
       data naux1/0/,naux2/0/
       data maxnaux1/0/,maxnaux2/0/
       save aux1,aux2,maxnaux1,maxnaux2
@@ -2371,9 +2371,9 @@ c     --- different from last time (deallocating if needed).
       if (naux1 > maxnaux1) then
         maxnaux1 = naux1
         if (allocated(aux1)) deallocate(aux1)
-        allocate(aux1(maxnaux1),stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"vsftx: allocation error ",allocerror,
+        allocate(aux1(maxnaux1),stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"vsftx: allocation error ",alloc_status,
      &           ": could not allocate aux1 to shape ",maxnaux1
           call kaboom("vsftx: allocation error")
           return
@@ -2382,9 +2382,9 @@ c     --- different from last time (deallocating if needed).
       if (naux2 > maxnaux2) then
         maxnaux2 = naux2
         if (allocated(aux2)) deallocate(aux2)
-        allocate(aux2(maxnaux2),stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"vsftx: allocation error ",allocerror,
+        allocate(aux2(maxnaux2),stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"vsftx: allocation error ",alloc_status,
      &           ": could not allocate aux2 to shape ",maxnaux2
           call kaboom("vsftx: allocation error")
           return
@@ -2485,7 +2485,7 @@ c -----------------------------------------------------------------
       integer(ISZ):: naux1,naux2
       integer(ISZ):: maxnaux1,maxnaux2
       real(kind=8),allocatable:: aux1(:),aux2(:)
-      integer(ISZ):: allocerror
+      integer(ISZ):: alloc_status
       data naux1/0/,naux2/0/
       data maxnaux1/0/,maxnaux2/0/
       save aux1,aux2,maxnaux1,maxnaux2
@@ -2509,9 +2509,9 @@ c     --- different from last time (deallocating if needed).
       if (naux1 > maxnaux1) then
         maxnaux1 = naux1
         if (allocated(aux1)) deallocate(aux1)
-        allocate(aux1(maxnaux1),stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"vsfty: allocation error ",allocerror,
+        allocate(aux1(maxnaux1),stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"vsfty: allocation error ",alloc_status,
      &           ": could not allocate aux1 to shape ",maxnaux1
           call kaboom("vsfty: allocation error")
           return
@@ -2520,9 +2520,9 @@ c     --- different from last time (deallocating if needed).
       if (naux2 > maxnaux2) then
         maxnaux2 = naux2
         if (allocated(aux2)) deallocate(aux2)
-        allocate(aux2(maxnaux2),stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"vsfty: allocation error ",allocerror,
+        allocate(aux2(maxnaux2),stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"vsfty: allocation error ",alloc_status,
      &           ": could not allocate aux2 to shape ",maxnaux2
           call kaboom("vsfty: allocation error")
           return
@@ -2581,7 +2581,7 @@ c  copy the data back to the original array.
 
       integer(ISZ):: naux1,naux2
       real(kind=8),allocatable:: aux1(:),aux2(:)
-      integer(ISZ):: allocerror
+      integer(ISZ):: alloc_status
 
 c     --- Calculate how much space is needed.
       naux1 = 20000
@@ -2592,16 +2592,16 @@ c     --- Calculate how much space is needed.
 c     --- Allocate the work space needed by dcft
 c     --- Note that since this happens inside a OpenMP parallel construct, each thread
 c     --- must allocate the work space each time.
-      allocate(aux1(naux1),stat=allocerror)
-      if (allocerror /= 0) then
-        print*,"cosqx: allocation error ",allocerror,
+      allocate(aux1(naux1),stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"cosqx: allocation error ",alloc_status,
      &         ": could not allocate aux1 to shape ",naux1
         call kaboom("cosqx: allocation error")
         return
       endif
-      allocate(aux2(naux2),stat=allocerror)
-      if (allocerror /= 0) then
-        print*,"cosqx: allocation error ",allocerror,
+      allocate(aux2(naux2),stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"cosqx: allocation error ",alloc_status,
      &         ": could not allocate aux2 to shape ",naux2
         call kaboom("cosqx: allocation error")
         return
@@ -2731,7 +2731,7 @@ c  copy the data back to the original array.
 
       integer(ISZ):: naux1,naux2
       real(kind=8),allocatable:: aux1(:),aux2(:)
-      integer(ISZ):: allocerror
+      integer(ISZ):: alloc_status
 
 c Setup and make call to the ESSL routine for Fourier-transforms
 
@@ -2742,16 +2742,16 @@ c     --- Calculate how much space is needed.
       if (ny > 2048) naux2 = naux2 + 2.28*ny
 
 c     --- Allocate the work space needed by dcft
-      allocate(aux1(naux1),stat=allocerror)
-      if (allocerror /= 0) then
-        print*,"cosqy: allocation error ",allocerror,
+      allocate(aux1(naux1),stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"cosqy: allocation error ",alloc_status,
      &         ": could not allocate aux1 to shape ",naux1
         call kaboom("cosqy: allocation error")
         return
       endif
-      allocate(aux2(naux2),stat=allocerror)
-      if (allocerror /= 0) then
-        print*,"cosqy: allocation error ",allocerror,
+      allocate(aux2(naux2),stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"cosqy: allocation error ",alloc_status,
      &         ": could not allocate aux2 to shape ",naux2
         call kaboom("cosqy: allocation error")
         return
@@ -3088,7 +3088,7 @@ c (Experience has shown that when filtering is used, the inverse capacity
 c matrix is very ill-conditioned and so the capacity matrix becomes garbled.)
 
       real(kind=8),allocatable:: zerofilt(:,:)
-      integer(ISZ):: allocerror
+      integer(ISZ):: alloc_status
       real(kind=8):: wx,wy,wz,cx,cy
 c     real(kind=8):: tt1,tt2
       integer(ISZ):: ix,iy,iz,i,j,info
@@ -3126,9 +3126,9 @@ c       --- 2 or 4 at a symmetric boundary)
         phi(ix+1,iy+1,iz+1) =     wx *    wy *    wz
 
 c       --- Solve for fields, with the filtering turned off
-        allocate(zerofilt(size(filt,1),size(filt,2)),stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"cmset3d: allocation error ",allocerror,
+        allocate(zerofilt(size(filt,1),size(filt,2)),stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"cmset3d: allocation error ",alloc_status,
      &           ": could not allocate zerofilt to shape ",
      &           size(filt,1),size(filt,2)
           call kaboom("cmset3d: allocation error")
@@ -4203,7 +4203,7 @@ c
 c  rest of variables are input and have the standard meanings.
 
       real(kind=8),allocatable:: zerofilt(:,:)
-      integer(ISZ):: allocerror
+      integer(ISZ):: alloc_status
       real(kind=8):: xx,yy,zz,dx,dy,dz
       integer(ISZ):: ix,iy,iz,i,j,ic,info
 
@@ -4232,9 +4232,9 @@ c  deposit unit charge on grid
         phi(ix  ,iy+1,iz+1) = (1. - xx)*(     yy)*(     zz)
         phi(ix+1,iy+1,iz+1) = (     xx)*(     yy)*(     zz)
 c  do 3-d field solve, turning filtering off
-        allocate(zerofilt(size(filt,1),size(filt,2)),stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"setcap3d: allocation error ",allocerror,
+        allocate(zerofilt(size(filt,1),size(filt,2)),stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"setcap3d: allocation error ",alloc_status,
      &           ": could not allocate zerofilt to shape ",
      &           size(filt,1),size(filt,2)
           call kaboom("setcap3d: allocation error")

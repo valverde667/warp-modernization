@@ -2863,6 +2863,7 @@ c  For periodic runs, assumes mesh period length = lattice period length
       integer(ISZ):: ip,iz
       real(kind=8):: z1,z2,zl,fl,zr,fr,frac
       real(kind=8),allocatable:: vz(:),dzi(:)
+      integer:: alloc_status
       real(kind=8):: substarttime,wtime
       if (ltoptimesubs) substarttime = wtime()
 
@@ -2871,7 +2872,11 @@ c  For periodic runs, assumes mesh period length = lattice period length
         return
       endif
 
-      allocate(vz(npz),dzi(npz))
+      allocate(vz(npz),dzi(npz), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:getbend: vz and dzi could not be allocated"
+        stop
+      endif
 
       vz  = uzp*gaminv
 c     --- Note that the absolute value is taken since dzi is used to scale
@@ -3013,17 +3018,17 @@ c   bx, by   quadrupole magnetic field
       real(kind=8):: cosph,sinph
       real(kind=8):: dodec
       real(kind=8), allocatable:: vz(:),dzi(:)
-      integer(ISZ):: allocerror
+      integer:: alloc_status
       real(kind=8):: substarttime,wtime
       if (ltoptimesubs) substarttime = wtime()
 
       if (.not. quads .or. .not. linquad(0)) return
-      allocate(vz(npz),dzi(npz),stat=allocerror)
-      if (allocerror /= 0) then
-        print*,"applyquad: allocation error ",allocerror,
+
+      allocate(vz(npz),dzi(npz), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"applyquad: allocation error ",alloc_status,
      &         ": could not allocate temp arrays to shape ",npz
-        call kaboom("applyquad: allocation error")
-        return
+        stop
       endif
 
       vz  = uzp*gaminv
@@ -3156,17 +3161,17 @@ c   bx, by   dipole magnetic field
       integer(ISZ):: io,ip,iz
       real(kind=8):: z1,z2,zl,fl,zr,fr,frac
       real(kind=8), allocatable:: vz(:),dzi(:)
-      integer(ISZ):: allocerror
+      integer:: alloc_status
       real(kind=8):: substarttime,wtime
       if (ltoptimesubs) substarttime = wtime()
 
       if (.not. dipos .or. .not. lindipo(0)) return
-      allocate(vz(npz),dzi(npz),stat=allocerror)
-      if (allocerror /= 0) then
-        print*,"applydipo: allocation error ",allocerror,
+
+      allocate(vz(npz),dzi(npz), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"applydipo: allocation error ",alloc_status,
      &         ": could not allocate temp arrays to shape ",npz
-        call kaboom("applydipo: allocation error")
-        return
+        stop
       endif
 
       vz  = uzp*gaminv
@@ -3302,12 +3307,17 @@ c less than the entire andvance step on entry/exit of the dipole.
       real(kind=8),allocatable:: vzi(:)
       real(kind=8):: qoverm,factor
       real(kind=8):: dstemp
+      integer:: alloc_status
       real(kind=8):: substarttime,wtime
       if (ltoptimesubs) substarttime = wtime()
 
       if (.not. dipos .or. .not. lindipo(0)) return
 
-      allocate(vzi(ipmin:ipmin+np-1))
+      allocate(vzi(ipmin:ipmin+np-1), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:sledgcor: vzi could not be allocated"
+        stop
+      endif
 
       qoverm = q/m
       if (lslice) then
@@ -3405,17 +3415,17 @@ c   bx, by   sextupole magnetic field
       real(kind=8):: xpmqoff,ypmqoff
       real(kind=8):: z1,z2,zl,fl,zr,fr,frac
       real(kind=8), allocatable:: vz(:),dzi(:)
-      integer(ISZ):: allocerror
+      integer:: alloc_status
       real(kind=8):: substarttime,wtime
       if (ltoptimesubs) substarttime = wtime()
 
       if (.not. sexts .or. .not. linsext(0)) return
-      allocate(vz(npz),dzi(npz),stat=allocerror)
-      if (allocerror /= 0) then
-        print*,"applysext: allocation error ",allocerror,
+
+      allocate(vz(npz),dzi(npz), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"applysext: allocation error ",alloc_status,
      &         ": could not allocate temp arrays to shape ",npz
-        call kaboom("applysext: allocation error")
-        return
+        stop
       endif
 
       vz  = uzp*gaminv
@@ -3527,19 +3537,18 @@ c   bx, by, bz   magnetic field
       integer(ISZ), allocatable:: tiele(:)
       real(kind=8), allocatable, dimension(:):: vz,dzi,tfrac,txpmqoff,typmqoff,
      &                                          trpmqoff,ttpmqoff
-      integer(ISZ):: allocerror
+      integer:: alloc_status
       real(kind=8):: substarttime,wtime
       if (ltoptimesubs) substarttime = wtime()
 
       if (.not. heles .or. .not. linhele(0)) return
 
       allocate(tiele(np),vz(npz),dzi(npz),tfrac(np),txpmqoff(np),typmqoff(np),
-     &         trpmqoff(np),ttpmqoff(np),stat=allocerror)
-      if (allocerror /= 0) then
-        print*,"applyhele: allocation error ",allocerror,
+     &         trpmqoff(np),ttpmqoff(np), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"applyhele: allocation error ",alloc_status,
      &         ": could not allocate temp arrays to shape ",np," and ",npz
-        call kaboom("applyhele: allocation error")
-        return
+        stop
       endif
 
       vz  = uzp*gaminv
@@ -3756,20 +3765,18 @@ c  and not once per particle per multipole component.
       real(kind=8), allocatable, dimension(:):: xxx,yyy,zzz,ttt,wzm,rr,tt,
      &                                          tex,tey,tez
       real(kind=8):: ex1,ey1,ez1
-      integer(ISZ):: allocerror
+      integer:: alloc_status
       real(kind=8):: substarttime,wtime
       if (ltoptimesubs) substarttime = wtime()
 
       if (.not. emlts .or. .not. linemlt(0)) return
 
       allocate(izm(np),izl(np),imm(np),xxx(np),yyy(np),zzz(np),ttt(np),wzm(np),
-     &         rr(np),tt(np),tex(np),tey(np),tez(np),
-     &         stat=allocerror)
-      if (allocerror /= 0) then
-        print*,"applyemlt: allocation error ",allocerror,
+     &         rr(np),tt(np),tex(np),tey(np),tez(np), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"applyemlt: allocation error ",alloc_status,
      &         ": could not allocate temp arrays to shape ",np
-        call kaboom("applyemlt: allocation error")
-        return
+        stop
       endif
 
       do io=1,nemltol
@@ -3966,20 +3973,18 @@ c  and not once per particle per multipole component.
       real(kind=8), allocatable, dimension(:):: xxx,yyy,zzz,ttt,wzm,rr,tt,
      &                                          tbx,tby,tbz
       real(kind=8):: bx1,by1,bz1
-      integer(ISZ):: allocerror
+      integer:: alloc_status
       real(kind=8):: substarttime,wtime
       if (ltoptimesubs) substarttime = wtime()
 
       if (.not. mmlts .or. .not. linmmlt(0)) return
 
       allocate(izm(np),izl(np),imm(np),xxx(np),yyy(np),zzz(np),ttt(np),wzm(np),
-     &         rr(np),tt(np),tbx(np),tby(np),tbz(np),
-     &         stat=allocerror)
-      if (allocerror /= 0) then
-        print*,"applymmlt: allocation error ",allocerror,
+     &         rr(np),tt(np),tbx(np),tby(np),tbz(np), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"applymmlt: allocation error ",alloc_status,
      &         ": could not allocate temp arrays to shape ",np
-        call kaboom("applymmlt: allocation error")
-        return
+        stop
       endif
 
       do io=1,nmmltol
@@ -4527,7 +4532,7 @@ c        + ...
       real(kind=8),allocatable:: zcent(:,:),zlen(:)
       real(kind=8),allocatable:: vz(:),dzi(:)
       real(kind=8):: z1,z2,zl,zr,fl,fr,frac
-      integer(ISZ):: allocerror
+      integer:: alloc_status
       real(kind=8),pointer, dimension(:):: xxx,yyy,zzz,ttt
       real(kind=8):: substarttime,wtime
       if (ltoptimesubs) substarttime = wtime()
@@ -4544,12 +4549,11 @@ c  Evaluation of E, vectorized over particles
       if (any(egrdhe)) then
 c       --- Setup to handling residence corrections for hard
 c       --- edged elements
-        allocate(vz(npz),dzi(npz),stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"applyegrd: allocation error ",allocerror,
+        allocate(vz(npz),dzi(npz), stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"applyegrd: allocation error ",alloc_status,
      &           ": could not allocate temp arrays to shape ",npz
-          call kaboom("applyegrd: allocation error")
-          return
+          stop
         endif
 
         vz  = uzp*gaminv
@@ -4560,19 +4564,21 @@ c       --- not needed. This only matters if vz < 0.
 
       endif
 
-      allocate(xxx(np),yyy(np),zzz(np),ttt(np),
-     &         stat=allocerror)
-      if (allocerror /= 0) then
-        print*,"applyegrd: allocation error ",allocerror,
+      allocate(xxx(np),yyy(np),zzz(np),ttt(np), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"applyegrd: allocation error ",alloc_status,
      &         ": could not allocate temp arrays to shape ",np
-        call kaboom("applyegrd: allocation error")
-        return
+        stop
       endif
 
 c     --- Precalculate sines and cosines for efficiency
-      allocate(ca(0:negrd),sa(0:negrd))
-      allocate(ct(0:negrd),st(0:negrd))
-      allocate(cp(0:negrd),sp(0:negrd))
+      allocate(ca(0:negrd),sa(0:negrd),
+     &         ct(0:negrd),st(0:negrd),
+     &         cp(0:negrd),sp(0:negrd), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:applyegrd: ca et al could not be allocated"
+        stop
+      endif
       ca = cos(egrdph)
       sa = sin(egrdph)
       ct = cos(egrdot)
@@ -4580,8 +4586,11 @@ c     --- Precalculate sines and cosines for efficiency
       cp = cos(egrdop)
       sp = sin(egrdop)
 
-      allocate(zcent(0:nzlmax,negrdol))
-      allocate(zlen(0:negrd))
+      allocate(zcent(0:nzlmax,negrdol), zlen(0:negrd), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:applyegrd: zcent and zlen could not be allocated"
+        stop
+      endif
       zcent = 0.5*(cegrdzs + cegrdze)
       zlen = egrdze - egrdzs
 
@@ -5075,7 +5084,7 @@ c        + ...
       real(kind=8),allocatable:: zcent(:,:),zlen(:)
       real(kind=8),allocatable:: vz(:),dzi(:)
       real(kind=8):: z1,z2,zl,zr,fl,fr,frac
-      integer(ISZ):: allocerror
+      integer:: alloc_status
       real(kind=8),pointer, dimension(:):: xxx,yyy,zzz,ttt
       real(kind=8):: substarttime,wtime
       if (ltoptimesubs) substarttime = wtime()
@@ -5092,12 +5101,11 @@ c  Evaluation of B, vectorized over particles
       if (any(bgrdhe)) then
 c       --- Setup to handling residence corrections for hard
 c       --- edged elements
-        allocate(vz(npz),dzi(npz),stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"applybgrd: allocation error ",allocerror,
+        allocate(vz(npz),dzi(npz), stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"applybgrd: allocation error ",alloc_status,
      &           ": could not allocate temp arrays to shape ",npz
-          call kaboom("applybgrd: allocation error")
-          return
+          stop
         endif
 
         vz  = uzp*gaminv
@@ -5108,19 +5116,21 @@ c       --- not needed. This only matters if vz < 0.
 
       endif
 
-      allocate(xxx(np),yyy(np),zzz(np),ttt(np),
-     &         stat=allocerror)
-      if (allocerror /= 0) then
-        print*,"applybgrd: allocation error ",allocerror,
+      allocate(xxx(np),yyy(np),zzz(np),ttt(np), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"applybgrd: allocation error ",alloc_status,
      &         ": could not allocate temp arrays to shape ",np
-        call kaboom("applybgrd: allocation error")
-        return
+        stop
       endif
 
 c     --- Precalculate sines and cosines for efficiency
-      allocate(ca(0:nbgrd),sa(0:nbgrd))
-      allocate(ct(0:nbgrd),st(0:nbgrd))
-      allocate(cp(0:nbgrd),sp(0:nbgrd))
+      allocate(ca(0:nbgrd),sa(0:nbgrd),
+     &         ct(0:nbgrd),st(0:nbgrd),
+     &         cp(0:nbgrd),sp(0:nbgrd), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:applybgrd: ca et al could not be allocated"
+        stop
+      endif
       ca = cos(bgrdph)
       sa = sin(bgrdph)
       ct = cos(bgrdot)
@@ -5128,8 +5138,11 @@ c     --- Precalculate sines and cosines for efficiency
       cp = cos(bgrdop)
       sp = sin(bgrdop)
 
-      allocate(zcent(0:nzlmax,nbgrdol))
-      allocate(zlen(0:nbgrd))
+      allocate(zcent(0:nzlmax,nbgrdol), zlen(0:nbgrd), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:applybgrd: zcent and zlen could not be allocated"
+        stop
+      endif
       zcent = 0.5*(cbgrdzs + cbgrdze)
       zlen = bgrdze - bgrdzs
 
@@ -6130,15 +6143,14 @@ c   dt       full step size
       real(kind=8):: phx,phy,cosphx,cosphy,sinphx,sinphy,rx,mx,ax1,ax2,ry,my,ay1,ay2
       real(kind=8):: dx1,dpx1,dx2,dpx2,dy1,dpy1,dy2,dpy2,cosphz,sinphz,phasex,phasey,phasez,coefz
       real(kind=8), allocatable:: vz(:)
-      integer(ISZ):: allocerror
+      integer:: alloc_status
 
       if (.not. lmaps .or. .not. linlmap(0)) return
-      allocate(vz(np),stat=allocerror)
-      if (allocerror /= 0) then
-        print*,"applylmap: allocation error ",allocerror,
+      allocate(vz(np), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"applylmap: allocation error ",alloc_status,
      &         ": could not allocate temp arrays to shape ",np
-        call kaboom("applylmap: allocation error")
-        return
+        stop
       endif
 
       ga = gammabar
@@ -6398,15 +6410,14 @@ c   dt       full step size
       real(kind=8):: phx,phy,cosphx,cosphy,sinphx,sinphy,rx,mx,ax1,ax2,ry,my,ay1,ay2
       real(kind=8):: dx1,dpx1,dx2,dpx2,dy1,dpy1,dy2,dpy2,cosphz,sinphz,phasex,phasey,phasez,coefz
       real(kind=8), allocatable:: vz(:)
-      integer(ISZ):: allocerror
+      integer:: alloc_status
 
       if (.not. lmaps .or. .not. linlmap(0)) return
-      allocate(vz(np),stat=allocerror)
-      if (allocerror /= 0) then
-        print*,"applylmap: allocation error ",allocerror,
+      allocate(vz(np), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"applylmap: allocation error ",alloc_status,
      &         ": could not allocate temp arrays to shape ",np
-        call kaboom("applylmap: allocation error")
-        return
+        stop
       endif
 
       ga = gammabar
@@ -7568,7 +7579,7 @@ c     bx,by,bz    magnetic field
       real(kind=8):: xt,yt,zt,xsave,ysave,zsave
       real(kind=8):: ext,eyt,ezt,exsave,eysave,ezsave
       real(kind=8):: bxt,byt,bzt,bxsave,bysave,bzsave
-      integer(ISZ):: allocerror
+      integer:: alloc_status
       real(kind=8):: substarttime,wtime
       if (ltoptimesubs) substarttime = wtime()
 
@@ -7589,12 +7600,11 @@ c  Evaluation of E, vectorized over particles
       if (any(pyelemhe)) then
 c       --- Setup to handling residence corrections for hard
 c       --- edged elements
-        allocate(vz(npz),dzi(npz),stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"applypyelem: allocation error ",allocerror,
+        allocate(vz(npz),dzi(npz), stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"applypyelem: allocation error ",alloc_status,
      &           ": could not allocate temp arrays to shape ",npz
-          call kaboom("applypyelem: allocation error")
-          return
+          stop
         endif
 
         vz  = uzp*gaminv
@@ -7605,9 +7615,13 @@ c       --- not needed. This only matters if vz < 0.
 
       endif
 
-      allocate(ca(0:npyelem),sa(0:npyelem))
-      allocate(ct(0:npyelem),st(0:npyelem))
-      allocate(cp(0:npyelem),sp(0:npyelem))
+      allocate(ca(0:npyelem),sa(0:npyelem),
+     &         ct(0:npyelem),st(0:npyelem),
+     &         cp(0:npyelem),sp(0:npyelem), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:applypyelem: ca et al could not be allocated"
+        stop
+      endif
       ca = cos(pyelemph)
       sa = sin(pyelemph)
       ct = cos(pyelemot)
@@ -7615,7 +7629,11 @@ c       --- not needed. This only matters if vz < 0.
       cp = cos(pyelemop)
       sp = sin(pyelemop)
 
-      allocate(zcent(0:npyelem),zlen(0:npyelem))
+      allocate(zcent(0:npyelem),zlen(0:npyelem), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:applypyelem: zcent and zlen could not be allocated"
+        stop
+      endif
       zcent = 0.5*(pyelemzs + pyelemze)
       zlen = pyelemze - pyelemzs
 

@@ -347,13 +347,11 @@ if write_particles == 1:
 if (write_lab_frame == 1) and (gamma_boost>1):
     diag0 = BoostedFieldDiagnostic( zmin_lab, zmax_lab, clight,
         dt_snapshot_lab, Ntot_snapshot_lab, gamma_boost, 
-        period=diag_period, top=top, w3d=w3d, em=em,
-        comm_world=comm_world, lparallel_output=parallel_output )
+        period=diag_period, top=top, w3d=w3d, em=em, comm_world=comm_world )
     installafterstep( diag0.write )
     diag3 = BoostedParticleDiagnostic( zmin_lab, zmax_lab, clight,
         dt_snapshot_lab, Ntot_snapshot_lab, gamma_boost, 
-        period=diag_period, top=top, w3d=w3d, em=em,
-        comm_world=comm_world, lparallel_output=parallel_output,
+        period=diag_period, top=top, w3d=w3d, em=em, comm_world=comm_world,
         species={ species.name : species for species in listofallspecies })
     installafterstep(diag3.write)
     

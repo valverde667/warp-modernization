@@ -1843,7 +1843,7 @@ c     --- Create local pointers to the arrays in pgroup.
       real(kind=8),allocatable:: threadzmmnts0(:,:,:),threadzmmnts(:,:,:,:)
       integer(ISZ):: ithread,omp_get_thread_num
       integer(ISZ):: nthread,omp_get_num_threads
-      integer(ISZ):: allocerror
+      integer(ISZ):: alloc_status
 #endif
       real(kind=8),pointer:: maxp(:,:),minp(:,:)
       real(kind=8),pointer:: zmmnts0(:,:),zmmnts(:,:,:)
@@ -1904,9 +1904,9 @@ c  Zero the moments if center is synchv
 #ifdef _OPENMP
         allocate(maxp(6,0:nszmmnt),minp(6,0:nszmmnt),
      &           zmmnts0(NUMZMMNT,0:nszmmnt),
-     &           zmmnts(0:nzmmnt,NUMZMMNT,0:nszmmnt),stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"padvncxy: allocation error ",allocerror,
+     &           zmmnts(0:nzmmnt,NUMZMMNT,0:nszmmnt), stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"padvncxy: allocation error ",alloc_status,
      &           ": could not allocate temp arrays to shape ",nszmmnt
           call kaboom("padvncxy: allocation error")
           return
@@ -2256,10 +2256,9 @@ c     --- End loop over species
         allocate(threadmaxp(6,0:nszmmnt,nthread),
      &           threadminp(6,0:nszmmnt,nthread),
      &           threadzmmnts0(NUMZMMNT,0:nszmmnt,nthread),
-     &           threadzmmnts(0:nzmmnt,NUMZMMNT,0:nszmmnt,nthread),
-     &           stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"padvncxy: allocation error ",allocerror,
+     &           threadzmmnts(0:nzmmnt,NUMZMMNT,0:nszmmnt,nthread), stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"padvncxy: allocation error ",alloc_status,
      &           ": could not allocate temp arrays to shape ",nszmmnt,nthread
           call kaboom("padvncxy: allocation error")
           return

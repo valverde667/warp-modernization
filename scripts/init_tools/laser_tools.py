@@ -7,7 +7,8 @@ from warp import openbc
 
 def add_laser( em, dim, a0, w0, ctau, z0, zf=None, lambda0=0.8e-6,
                theta_pol=0., source_z=0., zeta=0, beta=0, phi2=0,
-               gamma_boost=None, laser_file=None, laser_file_energy=None ):
+               gamma_boost=None, laser_file=None, laser_file_energy=None, 
+               cep=0. ):
     """
     Add a linearly-polarized, Gaussian laser pulse in the em object,
     by setting the correct laser_func, laser_emax, laser_source_z
@@ -92,7 +93,7 @@ def add_laser( em, dim, a0, w0, ctau, z0, zf=None, lambda0=0.8e-6,
     source_v = 0.
     inv_c = 1./c
     tau = ctau * inv_c
-    t_peak = - z0 * inv_c
+    t_peak = (source_z - z0) * inv_c
     if zf is None:
         focal_length = source_z - z0
     else:
@@ -119,7 +120,7 @@ def add_laser( em, dim, a0, w0, ctau, z0, zf=None, lambda0=0.8e-6,
         if (beta == 0) and (zeta == 0) and (phi2 == 0):
             # Without spatio-temporal correlations
             laser_profile = GaussianProfile( k0, w0, tau, t_peak, a0, dim,
-                focal_length=focal_length, boost=boost, source_v=source_v )
+                focal_length=focal_length, boost=boost, source_v=source_v, cep=cep )
         else:
             # With spatio-temporal correlations
             laser_profile = GaussianSTCProfile( k0, w0, tau, t_peak, a0, zeta,

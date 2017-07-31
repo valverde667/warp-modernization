@@ -328,22 +328,26 @@ class ProbeParticleDiagnostic(ParticleAccumulator):
                  particle_data=["position", "momentum", "weighting", "t"],
                  select=None, write_dir=None, lparallel_output=False,
                  write_metadata_parallel=False, onefile_per_flush=False,
-                 species={"electrons": None},iteration_min=None,iteration_max=None):
+                 species={"electrons": None},iteration_min=None,
+                 iteration_max=None, plane_velocity=None):
         """
         Initialize diagnostics that retrieve the particles crossing a given
         plane.
 
         Parameters
         ----------
-        plane_position: a list of 3 floats (in meters)
+        plane_position: a 1darray containing 3 floats (in meters)
             The position (in x, y, z) of one of the points of the plane
 
-        plane_normal_vector: a list of 3 floats
+        plane_normal_vector: a 1darray containing 3 floats
             The coordinates (in x, y, z) of one of the vectors of the plane
 
         period: int
             Number of iterations for which the data is accumulated in memory,
             before finally writing it to the disk.
+
+        plane_velocity : a 1darray containing 3 floats
+            Speed of the plane (in x ,y, z) in m/s
 
         See the documentation of ParticleDiagnostic and ParticleAccumulator
         for the other parameters
@@ -354,6 +358,7 @@ class ProbeParticleDiagnostic(ParticleAccumulator):
             write_dir = 'probe_diags'
         self.plane_position = plane_position
         self.plane_normal_vector = plane_normal_vector
+        self.plane_velocity = plane_velocity
 
         # Initialize Particle Accumulator normal attributes
         ParticleAccumulator.__init__(self, period, 1, top, w3d, comm_world,
@@ -373,7 +378,21 @@ class ProbeParticleDiagnostic(ParticleAccumulator):
 
     def init_catcher_object (self):
         self.particle_catcher = ParticleProbeCatcher( self.top, self.plane_position, \
-                                self.plane_normal_vector, self.particle_data )
+                                self.plane_normal_vector,  self.plane_velocity,
+                                self.particle_data )
+
+    def write( self ):
+        """
+        Redefines the method write of the parent class ParticleDiagnostic
+
+        Should be registered with installafterstep in Warp
+        """
+        if self.plane_velocity is not None:
+            increment = self.plane_velocity * self.top.dt
+            self.plane_position += increment
+            self.particle_catcher.plane_position +=  increment
+
+        ParticleAccumulator.write( self )
 
 class ParticleStorer:
     """
@@ -670,6 +689,76 @@ class ParticleCatcher:
 
         return( quantity_array )
 
+    def get_quantity_pgroup(self, pgroup, il, iu, quantity, l_prev=False):
+        """
+        Get a given particle quantity when using PICSAR
+
+        Parameters
+        ----------
+        pgroup: a pgroup of Species object of PICSAR
+            Contains the particle data from which the quantity is extracted
+
+        il, iu: int
+            Index min and max for the quantity array
+
+        quantity: string
+            Describes which quantity is queried
+            Either "x", "y", "z", "ux", "uy", "uz", "w"
+
+        l_prev: boolean
+            If True, then return the quantities of the previous timestep;
+            else return quantities of the current timestep
+        """
+        # Extract the chosen quantities
+        # At current timestep
+        if not(l_prev):
+            if quantity == "x":
+                quantity_array = pgroup.xp
+            elif quantity == "y":
+                quantity_array = pgroup.yp
+            elif quantity == "z":
+                quantity_array = pgroup.zp
+            elif quantity == "ux":
+                quantity_array = pgroup.uxp
+            elif quantity == "uy":
+                quantity_array = pgroup.uyp
+            elif quantity == "uz":
+                quantity_array = pgroup.uzp
+        # Or at previous timestep
+        else:
+            if quantity == "x":
+                quantity_array = pgroup.pid[:, self.top.xoldpid-1]
+            elif quantity == "y":
+                quantity_array = pgroup.pid[:, self.top.yoldpid-1]
+            elif quantity == "z":
+                quantity_array = pgroup.pid[:, self.top.zoldpid-1]
+            elif quantity == "ux":
+                quantity_array = pgroup.pid[:, self.top.uxoldpid-1]
+            elif quantity == "uy":
+                quantity_array = pgroup.pid[:, self.top.uyoldpid-1]
+            elif quantity == "uz":
+                quantity_array = pgroup.pid[:, self.top.uzoldpid-1]
+
+         # Quantities that do not depend on time step
+        if quantity == "w":
+             quantity_array = pgroup.pid[:, self.top.wpid-1]
+        elif quantity == "id":
+             quantity_array = pgroup.pid[:, self.top.ssnpid-1]
+        elif quantity == "ex":
+            quantity_array = pgroup.ex
+        elif quantity == "ey":
+            quantity_array = pgroup.ey
+        elif quantity == "ez":
+            quantity_array = pgroup.ez
+        elif quantity == "bx":
+            quantity_array = pgroup.bx
+        elif quantity == "by":
+            quantity_array = pgroup.by
+        elif quantity == "bz":
+            quantity_array = pgroup.bz
+
+        return( quantity_array[il:iu] )
+
     def apply_selection(self, select, slice_array):
         """
         Apply the rules of self.select to determine which
@@ -729,7 +818,8 @@ class ParticleProbeCatcher(ParticleCatcher):
     """
     Class that extracts, interpolates and gathers particles
     """
-    def __init__(self, top, plane_position, plane_normal_vector, particle_data ):
+    def __init__(self, top, plane_position, plane_normal_vector, plane_velocity,
+                  particle_data ):
         """
         Initialize the ParticleProbeCatcher object
 
@@ -750,6 +840,7 @@ class ParticleProbeCatcher(ParticleCatcher):
         # Some attributes neccessary for particle selections
         self.plane_position = plane_position
         self.plane_normal_vector = plane_normal_vector
+        self.plane_velocity  = plane_velocity
 
     def get_particle_slice( self, species ):
         """
@@ -766,35 +857,113 @@ class ParticleProbeCatcher(ParticleCatcher):
         num_part: int
             Number of selected particles
         """
-        # Quantities at current time step
-        current_x = self.get_quantity( species, "x" )
-        current_y = self.get_quantity( species, "y" )
-        current_z = self.get_quantity( species, "z" )
-        current_ux = self.get_quantity( species, "ux" )
-        current_uy = self.get_quantity( species, "uy" )
-        current_uz = self.get_quantity( species, "uz" )
-        weights = self.get_quantity( species, "w" )
 
-        # Quantities at previous time step
-        previous_x = self.get_quantity( species, "x", l_prev=True )
-        previous_y = self.get_quantity( species, "y", l_prev=True )
-        previous_z = self.get_quantity( species, "z", l_prev=True )
-        previous_ux = self.get_quantity( species, "ux", l_prev=True )
-        previous_uy = self.get_quantity( species, "uy", l_prev=True )
-        previous_uz = self.get_quantity( species, "uz", l_prev=True )
+        # If not pgroups - WARP only
+        if species.pgroups is None:
+            # Quantities at current time step
+            current_x = self.get_quantity( species, "x" )
+            current_y = self.get_quantity( species, "y" )
+            current_z = self.get_quantity( species, "z" )
+            current_ux = self.get_quantity( species, "ux" )
+            current_uy = self.get_quantity( species, "uy" )
+            current_uz = self.get_quantity( species, "uz" )
 
+            # Quantities at previous time step
+            previous_x = self.get_quantity( species, "x", l_prev=True )
+            previous_y = self.get_quantity( species, "y", l_prev=True )
+            previous_z = self.get_quantity( species, "z", l_prev=True )
+            previous_ux = self.get_quantity( species, "ux", l_prev=True )
+            previous_uy = self.get_quantity( species, "uy", l_prev=True )
+            previous_uz = self.get_quantity( species, "uz", l_prev=True )
+
+            # Quantities non related to the time
+            if self.top.wpid:
+                weights = self.get_quantity( species, "w" )
+            if self.top.ssnpid:
+                pid = self.get_quantity( species, "id" )
+
+        # If pgroups - WARP + PICSAR
+        else:
+            # Initialize empty list for each variable
+            list_current_x  = []; list_previous_x  = []
+            list_current_y  = []; list_previous_y  = []
+            list_current_z  = []; list_previous_z  = []
+            list_current_ux = []; list_previous_ux = []
+            list_current_uy = []; list_previous_uy = []
+            list_current_uz = []; list_previous_uz = []
+
+            if self.top.wpid:
+                list_w = []
+            if self.top.ssnpid:
+                list_id = []
+            js = species.jslist[0]
+
+            # Import the variable for each pgroup
+            for pgroup in species.flatten(species.pgroups):
+                # Index min and max for particle arrays
+                il = pgroup.ins[js] - 1
+                iu = il + pgroup.nps[js]
+
+                # Quantities at current time step
+                list_current_x.append(self.get_quantity_pgroup( pgroup, il, iu, "x" ))
+                list_current_y.append(self.get_quantity_pgroup( pgroup, il, iu, "y" ))
+                list_current_z.append(self.get_quantity_pgroup( pgroup, il, iu, "z" ))
+                list_current_ux.append(self.get_quantity_pgroup( pgroup, il, iu, "ux" ))
+                list_current_uy.append(self.get_quantity_pgroup( pgroup, il, iu, "uy" ))
+                list_current_uz.append(self.get_quantity_pgroup( pgroup, il, iu, "uz" ))
+
+                # Quantities at previous time step
+                list_previous_x.append(self.get_quantity_pgroup( pgroup, il, iu, "x", l_prev=True ))
+                list_previous_y.append(self.get_quantity_pgroup( pgroup, il, iu, "y", l_prev=True ))
+                list_previous_z.append(self.get_quantity_pgroup( pgroup, il, iu, "z", l_prev=True ))
+                list_previous_ux.append(self.get_quantity_pgroup( pgroup, il, iu, "ux", l_prev=True ))
+                list_previous_uy.append(self.get_quantity_pgroup( pgroup, il, iu, "uy", l_prev=True ))
+                list_previous_uz.append(self.get_quantity_pgroup( pgroup, il, iu, "uz", l_prev=True ))
+
+                # Quantities non related to the time
+                if self.top.wpid:
+                    list_w.append(self.get_quantity_pgroup( pgroup, il, iu, "w" ))
+                if self.top.ssnpid:
+                    list_id.append(self.get_quantity_pgroup( pgroup, il, iu, "id" ))
+
+            # Concatenate the different lists
+            current_x = np.concatenate(list_current_x)
+            current_y = np.concatenate(list_current_y)
+            current_z = np.concatenate(list_current_z)
+            current_ux = np.concatenate(list_current_ux)
+            current_uy = np.concatenate(list_current_uy)
+            current_uz = np.concatenate(list_current_uz)
+
+            previous_x = np.concatenate(list_previous_x)
+            previous_y = np.concatenate(list_previous_y)
+            previous_z = np.concatenate(list_previous_z)
+            previous_ux = np.concatenate(list_previous_ux)
+            previous_uy = np.concatenate(list_previous_uy)
+            previous_uz = np.concatenate(list_previous_uz)
+
+            if self.top.wpid:
+                weights  = np.concatenate(list_w)
+
+            if self.top.ssnpid:
+                pid = np.concatenate(list_id)
+
+        # This part is then common for WARP or WARP + PICSAR
         # A particle array for mapping purposes
         particle_indices = np.arange( len(current_z) )
 
         # For this snapshot:
         # - check if the particles where before the plane at the previous timestep
         # - check if the particle are beyond the plane at the current timestep
+        if self.plane_velocity is not None:
+            r_old = self.plane_position - self.plane_velocity * self.top.dt
+        else:
+            r_old = self.plane_position
         r = self.plane_position
         n = self.plane_normal_vector
         previous_position_relative_to_plane = \
-              n[0]*(previous_x - r[0]) \
-            + n[1]*(previous_y - r[1]) \
-            + n[2]*(previous_z - r[2])
+              n[0]*(previous_x - r_old[0]) \
+            + n[1]*(previous_y - r_old[1]) \
+            + n[2]*(previous_z - r_old[2])
         current_position_relative_to_plane = \
               n[0]*(current_x - r[0]) \
             + n[1]*(current_y - r[1]) \
@@ -805,14 +974,14 @@ class ParticleProbeCatcher(ParticleCatcher):
 
         num_part = np.shape(selected_indices)[0]
 
-        ## Select the particle quantities that satisfy the
-        ## aforementioned condition
         self.mass = species.mass
-        self.captured_quantities['w'] = np.take(weights, selected_indices)
-        if self.top.wpid != 0:
-            pid = self.get_quantity( species, "id", l_prev=True )
+        if self.top.wpid:
+            self.captured_quantities['w'] = np.take(weights, selected_indices)
+        if self.top.ssnpid:
             self.captured_quantities['id'] = np.take( pid, selected_indices)
 
+        ## Select the particle quantities that satisfy the
+        ## aforementioned condition
         current_x = np.take(current_x, selected_indices)
         current_y = np.take(current_y, selected_indices)
         current_z = np.take(current_z, selected_indices)

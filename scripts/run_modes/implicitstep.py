@@ -207,7 +207,7 @@ class ImplicitStep(PackageBase):
                      top.dbxdy,top.dbydx,ex,ey,ez,bx,by,bz)
 
             exteb3d(npd,x,y,z,uz,gaminv,-dtr,dtr,bx,by,bz,ex,ey,ez,
-                    pgroup.sm[js],pgroup.sq[js],bendres,bendradi,top.gammabar,top.dt)
+                    pgroup.sm[js],pgroup.sq[js],bendres,bendradi,top.dt)
 
     def advancezgrid(self):
         # --- Accelerate grid frame.

@@ -56,7 +56,7 @@ c     --- time to save memory.
      &               bongrid(0:nxlocal,iz,0),
      &               bongrid(0:nxlocal,iz,1),
      &               bongrid(0:nxlocal,iz,2),
-     &               ex,ey,ez,1.,1.,bendres,bendradi,1.,1.)
+     &               ex,ey,ez,1.,1.,bendres,bendradi,1.)
       enddo
 
 c     --- Apply the boundary conditions, setting the values in the guard cells.
@@ -694,7 +694,7 @@ c Note that chi0 is the (q/m/2*rho/eps0*dt**2) for each implicit species.
       real(kind=8),allocatable:: phisave(:,:)
       integer(ISZ):: localbounds(0:5)
       character(72):: errline
-      integer(ISZ):: allocerror
+      integer(ISZ):: alloc_status
       real(kind=8):: substarttime,wtime
       if (lfrztimesubs) substarttime = wtime()
 
@@ -773,9 +773,9 @@ c     --- Make sure guard planes have sensible values before beginning.
       endif
 #endif
 
-      allocate(phisave(-nxguardphi:nxlocal+nxguardphi,-nzguardphi:nzlocal+nzguardphi),stat=allocerror)
-      if (allocerror /= 0) then
-        print*,"mgsolveimplicites2d: allocation error ",allocerror,
+      allocate(phisave(-nxguardphi:nxlocal+nxguardphi,-nzguardphi:nzlocal+nzguardphi), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"mgsolveimplicites2d: allocation error ",alloc_status,
      &         ": could not allocate phisave to shape ",nxlocal,nzlocal
         call kaboom("mgsolveimplicites2d: allocation error")
         return
@@ -866,7 +866,6 @@ c       --- Make a print out.
 
       if (lfrztimesubs) timemgsolveimplicites2d = timemgsolveimplicites2d +
      &                                         wtime() - substarttime
-      call flush()
 
       return
       end
@@ -936,7 +935,7 @@ c Routine that does the v-cycle for multigrid. Note that it is recursive.
       integer(ISZ):: lzoffset,rzoffset
       type(Decomposition):: coarsedecomp
       logical(ISZ):: lpe0
-      integer(ISZ):: allocerror
+      integer(ISZ):: alloc_status
       real(kind=8):: sss(2)
 
       localbounds = globalbounds
@@ -1016,9 +1015,9 @@ c     --- Check if this is the finest level. If so, then don't do any further
 c     --- coarsening. This is the same check that is done in getmglevels.
       if (nx >= 4 .and. nz >= 4 .and. mglevel < mgmaxlevels) then
 
-        allocate(res(-nxguardres:nxlocal+nxguardres,-nzguardres:nzlocal+nzguardres),stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"vcycleimplicites2d: allocation error ",allocerror,
+        allocate(res(-nxguardres:nxlocal+nxguardres,-nzguardres:nzlocal+nzguardres), stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"vcycleimplicites2d: allocation error ",alloc_status,
      &           ": could not allocate res to shape ",nxlocal,nzlocal
           call kaboom("vcycleimplicites2d: allocation error")
           return
@@ -1119,36 +1118,35 @@ c       --- Calculate the xmminlocal of the coarse grid
 #endif
 
 c       --- Alloate new work space
-        allocate(phicoarse(-1:nxlocalcoarse+1,-1:nzlocalcoarse+1),
-     &           stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"vcycleimplicites2d: allocation error ",allocerror,
+        allocate(phicoarse(-1:nxlocalcoarse+1,-1:nzlocalcoarse+1), stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"vcycleimplicites2d: allocation error ",alloc_status,
      &           ": could not allocate phicoarse to shape ",
      &           nxlocalcoarse,nzlocalcoarse
           call kaboom("vcycleimplicites2d: allocation error")
           return
         endif
-        allocate(rhocoarse(0:nxlocalcoarse,0:nzlocalcoarse),stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"vcycleimplicites2d: allocation error ",allocerror,
+        allocate(rhocoarse(0:nxlocalcoarse,0:nzlocalcoarse), stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"vcycleimplicites2d: allocation error ",alloc_status,
      &           ": could not allocate rhocoarse to shape ",
      &           nxlocalcoarse,nzlocalcoarse
           call kaboom("vcycleimplicites2d: allocation error")
           return
         endif
         allocate(chi0coarse(-nxguardres:nxlocalcoarse+nxguardres,
-     &                      -nzguardres:nzlocalcoarse+nzguardres,0:ns-1),stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"vcycleimplicites2d: allocation error ",allocerror,
+     &                      -nzguardres:nzlocalcoarse+nzguardres,0:ns-1), stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"vcycleimplicites2d: allocation error ",alloc_status,
      &           ": could not allocate chi0coarse to shape ",
      &           nxlocalcoarse,nzlocalcoarse
           call kaboom("vcycleimplicites2d: allocation error")
           return
         endif
         allocate(bongridcoarse(-nxguardres:nxlocalcoarse+nxguardres,
-     &                         -nzguardres:nzlocalcoarse+nzguardres,0:2),stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"vcycleimplicites2d: allocation error ",allocerror,
+     &                         -nzguardres:nzlocalcoarse+nzguardres,0:2), stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"vcycleimplicites2d: allocation error ",alloc_status,
      &           ": could not allocate bongridcoarse to shape ",
      &           nxlocalcoarse,nzlocalcoarse,3
           call kaboom("vcycleimplicites2d: allocation error")

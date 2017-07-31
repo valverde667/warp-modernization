@@ -515,6 +515,7 @@ subroutine depose_jxjyjz_esirkepov_n_2d(jx,jy,jz,np,xp,yp,zp,uxp,uyp,uzp,gaminv,
                    ixmin, ixmax, izmin, izmax, icell, ncells, ndtodx, ndtodz, &
                    xl,xu,zl,zu
    real(kind=8):: starttime, wtime
+   integer:: alloc_status
 
    starttime = wtime()
 
@@ -524,9 +525,13 @@ subroutine depose_jxjyjz_esirkepov_n_2d(jx,jy,jz,np,xp,yp,zp,uxp,uyp,uzp,gaminv,
     xu = int((nox+1)/2)+1+ndtodx
     zl = -int(noz/2)-1-ndtodz
     zu = int((noz+1)/2)+1+ndtodz
-    allocate(sdx(xl:xu,zl:zu),sdz(xl:xu,zl:zu))
-    allocate(sx(xl:xu), sx0(xl:xu), dsx(xl:xu))
-    allocate(sz(zl:zu), sz0(zl:zu), dsz(zl:zu))
+    allocate(sdx(xl:xu,zl:zu),sdz(xl:xu,zl:zu), &
+             sx(xl:xu), sx0(xl:xu), dsx(xl:xu), &
+             sz(zl:zu), sz0(zl:zu), dsz(zl:zu), stat=alloc_status)
+    if (alloc_status /= 0) then
+      print*,"Error:depose_jxjyjz_esirkepov_n_2d: sdx et al could not be allocated"
+      stop
+    endif
 
     sx0=0.;sz0=0.
     sdx=0.;sdz=0.
@@ -836,6 +841,7 @@ subroutine depose_jxjyjz_esirkepov_n_2d_circ(jx,jy,jz,jx_circ,jy_circ,jz_circ,ci
                    xl,xu,zl,zu
   complex(kind=8) :: xymid,xymid0,xy,xy0,xyold,xyold0, im
   real(kind=8):: starttime, wtime
+  integer:: alloc_status
 
   starttime = wtime()
 
@@ -847,9 +853,13 @@ subroutine depose_jxjyjz_esirkepov_n_2d_circ(jx,jy,jz,jx_circ,jy_circ,jz_circ,ci
   xu = int((nox+1)/2)+1+ndtodx
   zl = -int(noz/2)-1-ndtodz
   zu = int((noz+1)/2)+1+ndtodz
-  allocate(sdx(xl:xu,zl:zu),sdz(xl:xu,zl:zu))
-  allocate(sx(xl:xu), sx0(xl:xu), dsx(xl:xu))
-  allocate(sz(zl:zu), sz0(zl:zu), dsz(zl:zu))
+  allocate(sdx(xl:xu,zl:zu),sdz(xl:xu,zl:zu), &
+           sx(xl:xu), sx0(xl:xu), dsx(xl:xu), &
+           sz(zl:zu), sz0(zl:zu), dsz(zl:zu), stat=alloc_status)
+  if (alloc_status /= 0) then
+    print*,"Error:depose_jxjyjz_esirkepov_n_2d_circ: sdx et al could not be allocated"
+    stop
+  endif
 
   sx0=0.;sz0=0.
   sdx=0.;sdz=0.
@@ -2230,6 +2240,7 @@ subroutine depose_jxjyjz_esirkepov_n(jx,jy,jz,np,xp,yp,zp,uxp,uyp,uzp,gaminv,w,q
                    ixmin, ixmax, iymin, iymax, izmin, izmax, icell, ncells, ndtodx, ndtody, ndtodz, &
                    xl,xu,yl,yu,zl,zu
    real(kind=8):: starttime, wtime
+   integer:: alloc_status
 
    starttime = wtime()
 
@@ -2242,10 +2253,14 @@ subroutine depose_jxjyjz_esirkepov_n(jx,jy,jz,np,xp,yp,zp,uxp,uyp,uzp,gaminv,w,q
     yu = int((noy+1)/2)+1+ndtody
     zl = -int(noz/2)-1-ndtodz
     zu = int((noz+1)/2)+1+ndtodz
-    allocate(sdx(xl:xu,yl:yu,zl:zu),sdy(xl:xu,yl:yu,zl:zu),sdz(xl:xu,yl:yu,zl:zu))
-    allocate(sx(xl:xu), sx0(xl:xu), dsx(xl:xu))
-    allocate(sy(yl:yu), sy0(yl:yu), dsy(yl:yu))
-    allocate(sz(zl:zu), sz0(zl:zu), dsz(zl:zu))
+    allocate(sdx(xl:xu,yl:yu,zl:zu),sdy(xl:xu,yl:yu,zl:zu),sdz(xl:xu,yl:yu,zl:zu), &
+             sx(xl:xu), sx0(xl:xu), dsx(xl:xu), &
+             sy(yl:yu), sy0(yl:yu), dsy(yl:yu), &
+             sz(zl:zu), sz0(zl:zu), dsz(zl:zu), stat=alloc_status)
+    if (alloc_status /= 0) then
+      print*,"Error:depose_jxjyjz_esirkepov_n: sdx et al could not be allocated"
+      stop
+    endif
 
     sx0=0.;sy0=0.;sz0=0.
     sdx=0.;sdy=0.;sdz=0.
@@ -3680,6 +3695,7 @@ subroutine getf1dz_n(np,zp,ex,ey,ez,zmin,dz,nz,nzguard,noz,exg,eyg,ezg)
       real(kind=8), dimension(:), allocatable :: sz0
       real(kind=8), parameter :: onesixth=1./6.,twothird=2./3.
       real(kind=8):: starttime, wtime
+      integer:: alloc_status
 
       starttime = wtime()
 
@@ -3695,7 +3711,11 @@ subroutine getf1dz_n(np,zp,ex,ey,ez,zmin,dz,nz,nzguard,noz,exg,eyg,ezg)
         izmin0 = -int((noz)/2)
         izmax0 =  int((noz+1)/2)
       end if
-      allocate(sz0(izmin0:izmax0))
+      allocate(sz0(izmin0:izmax0), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:gete1dz_n_energy_conserving: sz0 could not be allocated"
+        stop
+      endif
 
       do ip=1,np
 
@@ -3813,6 +3833,7 @@ subroutine getb1dz_n_energy_conserving(np,zp,bx,by,bz,zmin,dz,nz,nzguard, &
       real(kind=8), dimension(:), allocatable :: sz0
       real(kind=8), parameter :: onesixth=1./6.,twothird=2./3.
       real(kind=8):: starttime, wtime
+      integer:: alloc_status
 
       starttime = wtime()
 
@@ -3828,7 +3849,11 @@ subroutine getb1dz_n_energy_conserving(np,zp,bx,by,bz,zmin,dz,nz,nzguard, &
         izmin0 = -int((noz)/2)
         izmax0 =  int((noz+1)/2)
       end if
-      allocate(sz0(izmin0:izmax0))
+      allocate(sz0(izmin0:izmax0), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:getb1dz_n_energy_conserving: sz0 could not be allocated"
+        stop
+      endif
 
       sz=0.
       sz0=0.
@@ -4933,6 +4958,7 @@ subroutine getf2drz_circ_n(np,xp,yp,zp,ex,ey,ez,xmin,zmin,dx,dz,nx,ny,nz, &
       real(kind=8), dimension(:), allocatable :: sx0,sz0
       real(kind=8), parameter :: onesixth=1./6.,twothird=2./3.
       real(kind=8):: starttime, wtime
+      integer:: alloc_status
 
       starttime = wtime()
 
@@ -4955,7 +4981,11 @@ subroutine getf2drz_circ_n(np,xp,yp,zp,ex,ey,ez,xmin,zmin,dx,dz,nx,ny,nz, &
         izmin0 = -int((noz)/2)
         izmax0 =  int((noz+1)/2)
       end if
-      allocate(sx0(ixmin0:ixmax0),sz0(izmin0:izmax0))
+      allocate(sx0(ixmin0:ixmax0),sz0(izmin0:izmax0), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:gete2dxz_n_energy_conserving: sx0 and sz0 could not be allocated"
+        stop
+      endif
 
       signx = 1.
 
@@ -5188,6 +5218,7 @@ subroutine getf2drz_circ_n(np,xp,yp,zp,ex,ey,ez,xmin,zmin,dx,dz,nx,ny,nz, &
       real(kind=8), dimension(:), allocatable :: sx0,sy0,sz0
       real(kind=8), parameter :: onesixth=1./6.,twothird=2./3.
       real(kind=8):: starttime, wtime
+      integer:: alloc_status
 
       starttime = wtime()
 
@@ -5217,7 +5248,11 @@ subroutine getf2drz_circ_n(np,xp,yp,zp,ex,ey,ez,xmin,zmin,dx,dz,nx,ny,nz, &
         izmin0 = -int((noz)/2)
         izmax0 =  int((noz+1)/2)
       end if
-      allocate(sx0(ixmin0:ixmax0),sy0(iymin0:iymax0),sz0(izmin0:izmax0))
+      allocate(sx0(ixmin0:ixmax0),sy0(iymin0:iymax0),sz0(izmin0:izmax0), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:gete3d_n_energy_conserving: sx0, sy0, and sz0 could not be allocated"
+        stop
+      endif
 
       signx = 1.
       signy = 1.
@@ -5554,6 +5589,7 @@ subroutine getb2dxz_n_energy_conserving(np,xp,yp,zp,bx,by,bz,xmin,zmin,dx,dz,nx,
       real(kind=8), dimension(:), allocatable :: sx0,sz0
       real(kind=8), parameter :: onesixth=1./6.,twothird=2./3.
       real(kind=8):: starttime, wtime
+      integer:: alloc_status
 
       starttime = wtime()
 
@@ -5576,7 +5612,11 @@ subroutine getb2dxz_n_energy_conserving(np,xp,yp,zp,bx,by,bz,xmin,zmin,dx,dz,nx,
         izmin0 = -int((noz)/2)
         izmax0 =  int((noz+1)/2)
       end if
-      allocate(sx0(ixmin0:ixmax0),sz0(izmin0:izmax0))
+      allocate(sx0(ixmin0:ixmax0),sz0(izmin0:izmax0), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:getb2dxz_n_energy_conserving: sx0 and sz0 could not be allocated"
+        stop
+      endif
 
       signx = 1.
 
@@ -5812,6 +5852,7 @@ subroutine getb3d_n_energy_conserving(np,xp,yp,zp,bx,by,bz,xmin,ymin,zmin,dx,dy,
       real(kind=8), dimension(:), allocatable :: sx0,sy0,sz0
       real(kind=8), parameter :: onesixth=1./6.,twothird=2./3.
       real(kind=8):: starttime, wtime
+      integer:: alloc_status
 
       starttime = wtime()
 
@@ -5842,7 +5883,11 @@ subroutine getb3d_n_energy_conserving(np,xp,yp,zp,bx,by,bz,xmin,ymin,zmin,dx,dy,
         izmin0 = -int((noz)/2)
         izmax0 =  int((noz+1)/2)
       end if
-      allocate(sx0(ixmin0:ixmax0),sy0(iymin0:iymax0),sz0(izmin0:izmax0))
+      allocate(sx0(ixmin0:ixmax0),sy0(iymin0:iymax0),sz0(izmin0:izmax0), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:getb3d_n_energy_conserving: sx0, sy0, and sz0 could not be allocated"
+        stop
+      endif
 
       signx = 1.
       signy = 1.

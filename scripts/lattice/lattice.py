@@ -3459,17 +3459,17 @@ def pyelemfunctions():
     """This function is called from fortran"""
     for elemid in unique(top.idpyelem[:top.nppyelem]):
         ip = (top.idpyelem[:top.nppyelem] == elemid)
-        x = top.xpyelem[ip]
-        y = top.ypyelem[ip]
-        z = top.zpyelem[ip]
+        x = top.xpyelem[:top.nppyelem][ip]
+        y = top.ypyelem[:top.nppyelem][ip]
+        z = top.zpyelem[:top.nppyelem][ip]
         # --- The conversion to int is needed since a numpy.int64 is different than an int.
         (ex,ey,ez,bx,by,bz) = pyelemfunctionsdict[int(elemid)](x,y,z)
-        top.expyelem[ip] = ex
-        top.eypyelem[ip] = ey
-        top.ezpyelem[ip] = ez
-        top.bxpyelem[ip] = bx
-        top.bypyelem[ip] = by
-        top.bzpyelem[ip] = bz
+        top.expyelem[:top.nppyelem][ip] = ex
+        top.eypyelem[:top.nppyelem][ip] = ey
+        top.ezpyelem[:top.nppyelem][ip] = ez
+        top.bxpyelem[:top.nppyelem][ip] = bx
+        top.bypyelem[:top.nppyelem][ip] = by
+        top.bzpyelem[:top.nppyelem][ip] = bz
 
 def addnewpyelem(zs,ze,fn,ap=0.,ax=0.,ay=0.,ox=0.,oy=0.,
                  ph=0.,ot=0.,op=0.,sf=0.,sc=1.,he=false,

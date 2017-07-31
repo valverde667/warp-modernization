@@ -864,7 +864,7 @@ c     by(:) = 0.
 c     bz(:) = 0.
       call exteb3d(npd,x,y,z,pgroup%uzp(ipmin),pgroup%gaminv(ipmin),-dtr,dtr,
      &             bx,by,bz,ex,ey,ez,pgroup%sm(is),
-     &             pgroup%sq(is),bendres,bendradi,gammabar,dt)
+     &             pgroup%sq(is),bendres,bendradi,dt)
 c     Now get the gradients of B**2
       call getgradbsq(npd,is,x,y,z,bx,by,bz)
 !$OMP MASTER
@@ -1029,7 +1029,7 @@ c      use InGen
       bx(:)=0.;by(:)=0.;bz(:)=0.
       call exteb3d(npd,x,y,z,pgroup%uzp(ipmin),pgroup%gaminv(ipmin),-dtr,dtr,
      &         bx,by,bz,ex,ey,ez,pgroup%sm(is),
-     &         pgroup%sq(is),bendres,bendradi,gammabar,dt)
+     &         pgroup%sq(is),bendres,bendradi,dt)
       do i=1,npd
         bsq(i)=bx(i)**2 + by(i)**2 + bz(i)**2
         bsq_safe=bsq(i)+dksmall
@@ -1408,7 +1408,7 @@ c    --- Set quad, dipole E and B
      &              gaminv(ipmin),-halfdt,halfdt,
      &              bx,by,bz,
      &              ex(ipmin),ey(ipmin),ez(ipmin),sm(is),sq(is),
-     &              bendres,bendradi,gammabar,dt)
+     &              bendres,bendradi,dt)
 
       lresetparticlee = .false.
       deallocate(bendres, bendradi,bx,by,bz)

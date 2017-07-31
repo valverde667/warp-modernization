@@ -218,12 +218,6 @@ class EM3D(SubcycledPoissonSolver):
         # --- If there are any remaning keyword arguments, raise an error.
         assert len(kw.keys()) == 0,"Bad keyword arguments %s"%kw.keys()
 
-        # --- Set grid cell sizes for unused dimensions
-        if self.l_1dz:
-            self.dx = 1.e36
-        if self.l_2dxz:
-            self.dy = 1.e36
-
         # --- This needs to be called again since some mesh values may have changed
         # --- since it was previously called in FieldSolver.__init__.
         # --- For instance, if using RZ geometry, ny will be set to zero.
@@ -2150,7 +2144,7 @@ class EM3D(SubcycledPoissonSolver):
                         slice=self.ny/2
                 yslice = w3d.ymmin+slice*w3d.dy
                 selfslice = nint((yslice-self.block.ymin)/self.block.dy)
-                if self.l_2dxz:slice=0
+                if self.l_2dxz:slice=selfslice=0
                 if selfslice<0 or selfslice>nyd-1:
                     dataslice=None
                 else:
@@ -2177,6 +2171,9 @@ class EM3D(SubcycledPoissonSolver):
                       niso=None,isomin=None,isomax=None,isos=None,opacity=0.5,
                       cscale=1.,l_csym=0,
                       procs=None,
+                      xmmin=None,xmmax=None,
+                      ymmin=None,ymmax=None,
+                      zmmin=None,zmmax=None,
                       **kw):
         if direction is None and not l_opyndx:direction=2
         if self.l_2dxz:direction=1
@@ -2207,6 +2204,7 @@ class EM3D(SubcycledPoissonSolver):
                 nzd=shape(data)[0]
             elif self.l_2dxz:
                 nyd = 1
+                if len(shape(data))==3:data=data[:,0,:]
                 nxd,nzd=shape(data)
             else:
                 nxd,nyd,nzd=shape(data)
@@ -2222,17 +2220,25 @@ class EM3D(SubcycledPoissonSolver):
                     data=None
                     xmin=xmax=ymin=ymax=0.
                 else:
-                    if l_transpose:
-                        xmin=self.block.zmin+self.zgrid
-                        xmax=self.block.zmax+self.zgrid
-                        ymin=self.block.ymin
-                        ymax=self.block.ymax
-                    else:
+                    if ymmin is None:
                         xmin=self.block.ymin
+                    else:
+                        xmin=ymmin
+                    if ymmax is None:
                         xmax=self.block.ymax
+                    else:
+                        xmax=ymmax
+                    if zmmin is None:
                         ymin=self.block.zmin+self.zgrid
+                    else:
+                        ymin=zmmin
+                    if zmmax is None:
                         ymax=self.block.zmax+self.zgrid
+                    else:
+                        ymax=zmmax
                     if l_transpose:
+                        xmin,ymin=ymin,xmin
+                        xmax,ymax=ymax,xmax
                         data=transpose(data[selfslice,:,:])
                     else:
                         data=data[selfslice,:,:]
@@ -2244,21 +2250,30 @@ class EM3D(SubcycledPoissonSolver):
                         slice=self.ny/2
                 yslice = w3d.ymmin+slice*w3d.dy
                 selfslice = nint((yslice-self.block.ymin)/self.block.dy)
-                if self.l_2dxz:slice=0
+                if self.l_2dxz:slice=selfslice=0
                 if selfslice<0 or selfslice>nyd-1:
                     data=None
                     xmin=xmax=ymin=ymax=0.
                 else:
-                    if l_transpose:
-                        xmin=self.block.zmin+self.zgrid
-                        xmax=self.block.zmax+self.zgrid
-                        ymin=self.block.xmin
-                        ymax=self.block.xmax
-                    else:
+                    if xmmin is None:
                         xmin=self.block.xmin
+                    else:
+                        xmin=xmmin
+                    if xmmax is None:
                         xmax=self.block.xmax
+                    else:
+                        xmax=xmmax
+                    if zmmin is None:
                         ymin=self.block.zmin+self.zgrid
+                    else:
+                        ymin=zmmin
+                    if zmmax is None:
                         ymax=self.block.zmax+self.zgrid
+                    else:
+                        ymax=zmmax
+                    if l_transpose:
+                        xmin,ymin=ymin,xmin
+                        xmax,ymax=ymax,xmax
                     if self.l_2dxz:
                         if l_transpose and not self.l_1dz:
                             data=transpose(data)
@@ -2275,17 +2290,25 @@ class EM3D(SubcycledPoissonSolver):
                     data=None
                     xmin=xmax=ymin=ymax=0.
                 else:
-                    if l_transpose:
-                        xmin=self.block.ymin
-                        xmax=self.block.ymax
-                        ymin=self.block.xmin
-                        ymax=self.block.xmax
-                    else:
+                    if xmmin is None:
                         xmin=self.block.xmin
+                    else:
+                        xmin=xmmin
+                    if xmmax is None:
                         xmax=self.block.xmax
+                    else:
+                        xmax=xmmax
+                    if ymmin is None:
                         ymin=self.block.ymin
+                    else:
+                        ymin=ymmin
+                    if ymmax is None:
                         ymax=self.block.ymax
+                    else:
+                        ymax=ymmax
                     if l_transpose:
+                        xmin,ymin=ymin,xmin
+                        xmax,ymax=ymax,xmax
                         data=transpose(data[:,:,selfslice])
                     else:
                         data=data[:,:,selfslice]
@@ -2960,12 +2983,12 @@ class EM3D(SubcycledPoissonSolver):
         iu = il+pg.nps[js]
         w3d.ipminfsapi=pg.ins[js]
         w3d.npfsapi=pg.nps[js]
-        pg.ex[il:iu]=0.
-        pg.ey[il:iu]=0.
-        pg.ez[il:iu]=0.
-        pg.bx[il:iu]=0.
-        pg.by[il:iu]=0.
-        pg.bz[il:iu]=0.
+        pg.ex[il:iu]=top.ex0
+        pg.ey[il:iu]=top.ey0
+        pg.ez[il:iu]=top.ez0
+        pg.bx[il:iu]=top.bx0
+        pg.by[il:iu]=top.by0
+        pg.bz[il:iu]=top.bz0
         self.fetche()
         self.fetchb()
 
@@ -6592,15 +6615,13 @@ def pyinit_3dem_block(nx, ny, nz,
     f.jzmaxg = f.izmaxg-f.izming
     f.xmin = xmin
     f.ymin = ymin
-#    f.zmin = zmin # --- replaced by following line to fix issue with laser injection but following line wrong with MR
-    f.zmin = w3d.zmminlocal
+    f.zmin = zmin 
     f.dx = dx
     f.dy = dy
     f.dz = dz
     f.xmax = xmin+dx*nx
     f.ymax = ymin+dy*ny
-#    f.zmax = zmax+dz*nz # --- replaced by following line to fix issue with laser injection but following line wrong with MR
-    f.zmax = w3d.zmmaxlocal
+    f.zmax = zmin+dz*nz 
     f.dxi = 1./dx
     f.dyi = 1./dy
     f.dzi = 1./dz

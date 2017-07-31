@@ -1200,7 +1200,8 @@ class GPSTD_Maxwell(GPSTD):
                       'clight':299792458.0,
                       'eps0':8.854187817620389e-12,
                       'V_galilean':np.array([0.,0.,0.]),
-                      'V_pseudogalilean':np.array([0.,0.,0.])}
+                      'V_pseudogalilean':np.array([0.,0.,0.]),
+                      'l_theta_with_modif_k':True}
 
     def __init__(self,**kw):
         try:
@@ -1504,7 +1505,8 @@ class PSATD_Maxwell(GPSTD):
                       'clight':299792458.0,
                       'eps0':8.854187817620389e-12,
                       'V_galilean':np.array([0.,0.,0.]),
-                      'V_pseudogalilean':np.array([0.,0.,0.])}
+                      'V_pseudogalilean':np.array([0.,0.,0.]),
+                      'l_theta_with_modif_k':True}
 
     def __init__(self,**kw):
         try:
@@ -1555,10 +1557,11 @@ class PSATD_Maxwell(GPSTD):
             self.mymat = self.getmaxwellmat(self.kxpn,self.kypn,self.kzpn,\
                          self.kxmn,self.kymn,self.kzmn,dt,cdt)
         else:
-            if np.any(self.V_galilean<>0.):
+            if np.any(self.V_galilean != 0.):
                 self.mymat = self.getmaxwellmat_galilean(self.kxpn,self.kypn,self.kzpn,\
-                             self.kxmn,self.kymn,self.kzmn,dt,cdt,self.V_galilean)
-            if np.any(self.V_pseudogalilean<>0.):
+                             self.kxmn,self.kymn,self.kzmn,dt,cdt,self.V_galilean,
+                             l_theta_with_modif_k=self.l_theta_with_modif_k)
+            if np.any(self.V_pseudogalilean != 0.):
                 self.mymat = self.getmaxwellmat_pseudogalilean(self.kxpn,self.kypn,self.kzpn,\
                              self.kxmn,self.kymn,self.kzmn,dt,cdt,self.V_pseudogalilean)
 
@@ -1649,14 +1652,18 @@ class PSATD_Maxwell(GPSTD):
 
         return mymat.mat
 
-    def getmaxwellmat_galilean(self,kxpn,kypn,kzpn,kxmn,kymn,kzmn,dt,cdt,V_galilean=np.array([0.,0.,0.])):
+    def getmaxwellmat_galilean(self,kxpn,kypn,kzpn,kxmn,kymn,kzmn,dt,cdt,
+                V_galilean=np.array([0.,0.,0.]), l_theta_with_modif_k=True):
 
         j = 1j
         V0 = np.linalg.norm(V_galilean)
         c=self.clight
         C=self.coswdt
         S=self.sinwdt
-        kV=self.kx_unmod*V_galilean[0]+self.ky_unmod*V_galilean[1]+self.kz_unmod*V_galilean[2]
+        if l_theta_with_modif_k:
+            kV = self.kxp*V_galilean[0] + self.kyp*V_galilean[1] + self.kzp*V_galilean[2]
+        else:
+            kV=self.kx_unmod*V_galilean[0]+self.ky_unmod*V_galilean[1]+self.kz_unmod*V_galilean[2]
         Theta=T=np.exp(j*kV*dt)
         CT = C*Theta
         ST = S*Theta

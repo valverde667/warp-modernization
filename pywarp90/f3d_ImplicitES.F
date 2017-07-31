@@ -62,7 +62,7 @@ c     --- time to save memory.
      &                 bongrid(0:nxlocal,iy,iz,0),
      &                 bongrid(0:nxlocal,iy,iz,1),
      &                 bongrid(0:nxlocal,iy,iz,2),
-     &                 ex,ey,ez,1.,1.,bendres,bendradi,1.,1.)
+     &                 ex,ey,ez,1.,1.,bendres,bendradi,1.)
         enddo
       enddo
 
@@ -706,7 +706,7 @@ c resolution.
       real(kind=8):: bendx(-1:nxlocal+1)
       integer(ISZ):: localbounds(0:5)
       character(72):: errline
-      integer(ISZ):: allocerror
+      integer(ISZ):: alloc_status
       real(kind=8):: substarttime,wtime
       if (lf3dtimesubs) substarttime = wtime()
 
@@ -817,9 +817,9 @@ c     --- Make sure guard planes have sensible values before beginning.
       endif
 #endif
 
-      allocate(phisave(-1:nxlocal+1,-1:nylocal+1,-1:nzlocal+1),stat=allocerror)
-      if (allocerror /= 0) then
-        print*,"multigrid3dsolve: allocation error ",allocerror,
+      allocate(phisave(-1:nxlocal+1,-1:nylocal+1,-1:nzlocal+1), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"multigrid3dsolve: allocation error ",alloc_status,
      &         ": could not allocate phisave to shape ",nxlocal,nylocal,nzlocal
         call kaboom("multigrid3dsolve: allocation error")
         return
@@ -976,7 +976,7 @@ c Routine that does the v-cycle for multigrid. Note that it is recursive.
       integer(ISZ):: lyoffset,ryoffset
       integer(ISZ):: lzoffset,rzoffset
       type(Decomposition):: coarsedecomp
-      integer(ISZ):: allocerror
+      integer(ISZ):: alloc_status
       real(kind=8):: sss(2),reps0c
       logical(ISZ):: lpe0
       real(kind=8):: substarttime,wtime
@@ -1074,9 +1074,9 @@ c     --- coarsening. This is the same check that is done in getmglevels.
 
         allocate(res(-delx:nxlocal+delx,
      &               -dely:nylocal+dely,
-     &               -delz:nzlocal+delz),stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"vcycleimplicites3d: allocation error ",allocerror,
+     &               -delz:nzlocal+delz), stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"vcycleimplicites3d: allocation error ",alloc_status,
      &           ": could not allocate res to shape ",nxlocal,nylocal,nzlocal
           call kaboom("vcycleimplicites3d: allocation error")
           return
@@ -1175,19 +1175,17 @@ c       --- used in the serial version.
 #endif
 
 c       --- Alloate new work space
-        allocate(phicoarse(-1:nxlocalcoarse+1,-1:nylocalcoarse+1,-1:nzlocalcoarse+1),
-     &           stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"vcycleimplicites3d: allocation error ",allocerror,
+        allocate(phicoarse(-1:nxlocalcoarse+1,-1:nylocalcoarse+1,-1:nzlocalcoarse+1), stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"vcycleimplicites3d: allocation error ",alloc_status,
      &           ": could not allocate phicoarse to shape ",
      &           nxlocalcoarse,nylocalcoarse,nzlocalcoarse
           call kaboom("vcycleimplicites3d: allocation error")
           return
         endif
-        allocate(rhocoarse(0:nxlocalcoarse,0:nylocalcoarse,0:nzlocalcoarse),
-     &           stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"vcycleimplicites3d: allocation error ",allocerror,
+        allocate(rhocoarse(0:nxlocalcoarse,0:nylocalcoarse,0:nzlocalcoarse), stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"vcycleimplicites3d: allocation error ",alloc_status,
      &           ": could not allocate rhocoarse to shape ",
      &           nxlocalcoarse,nylocalcoarse,nzlocalcoarse
           call kaboom("vcycleimplicites3d: allocation error")
@@ -1195,9 +1193,9 @@ c       --- Alloate new work space
         endif
         allocate(chi0coarse(-delx:nxlocalcoarse+delx,
      &                      -dely:nylocalcoarse+dely,
-     &                      -delz:nzlocalcoarse+delz,0:ns-1),stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"vcycleimplicites3d: allocation error ",allocerror,
+     &                      -delz:nzlocalcoarse+delz,0:ns-1), stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"vcycleimplicites3d: allocation error ",alloc_status,
      &           ": could not allocate chi0coarse to shape ",
      &           nxlocalcoarse,nylocalcoarse,nzlocalcoarse
           call kaboom("vcycleimplicites3d: allocation error")
@@ -1206,9 +1204,9 @@ c       --- Alloate new work space
         if (withbadvance) then
           allocate(bongridcoarse(-delx:nxlocalcoarse+delx,
      &                           -dely:nylocalcoarse+dely,
-     &                           -delz:nzlocalcoarse+delz,0:2),stat=allocerror)
-          if (allocerror /= 0) then
-            print*,"vcycleimplicites3d: allocation error ",allocerror,
+     &                           -delz:nzlocalcoarse+delz,0:2), stat=alloc_status)
+          if (alloc_status /= 0) then
+            print*,"vcycleimplicites3d: allocation error ",alloc_status,
      &             ": could not allocate bongridcoarse to shape ",
      &             nxlocalcoarse,nylocalcoarse,nzlocalcoarse,delz
             call kaboom("vcycleimplicites3d: allocation error")

@@ -1,6 +1,5 @@
 import numpy as np
 from scipy.constants import c
-from warp.run_modes.boosted_frame import Boosted_Frame
 
 class BoostConverter( object ):
     """
@@ -20,7 +19,6 @@ class BoostConverter( object ):
         """
         self.gamma0 = gamma0
         self.beta0 = np.sqrt( 1 - 1./gamma0**2 )
-        self.bf = Boosted_Frame(gamma0, l_setselfb=0)
 
     def static_length( self, lab_frame_vars ):
         """

@@ -1652,7 +1652,7 @@ class Quasistatic(SubcycledPoissonSolver):
 #     &                   gaminv(ipmin),-halfdt_s,halfdt_s,
 #     &                   bx(ipmin),by(ipmin),bz(ipmin),
 #     &                   ex(ipmin),ey(ipmin),ez(ipmin),sm(is),sq(is),
-#     &                   bendres,bendradi,gammabar,fulldt_s)
+#     &                   bendres,bendradi,fulldt_s)
 #c           --- Correction to z on entry/exit to accelerator gap
 #            call zgapcorr(ip,zp(ipmin),xp(ipmin),uzp(ipmin),gaminv(ipmin),
 #     &                    -halfdt_s, halfdt_s, fulldt_s, sm(1), sq(1), time)

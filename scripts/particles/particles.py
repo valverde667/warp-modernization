@@ -13,7 +13,7 @@ getpid(): get particle identification number
 
 getxxpslope(), getyypslope(): get x-x' and y-y' slopes
 
-addparticles(): add particles to the simulation
+add_particles(): add particles to the simulation
 
 setup_subsets(): Create subsets for particle plots (negative window numbers)
 clear_subsets(): Clears the subsets for particle plots (negative window
@@ -1555,9 +1555,10 @@ def getvzrange(kwdict={}):
 
 #-------------------------------------------------------------------------
 #-------------------------------------------------------------------------
-def addparticles(x=0.,y=0.,z=0.,vx=0.,vy=0.,vz=0.,gi=1.,
+def add_particles(x=0.,y=0.,z=0.,vx=0.,vy=0.,vz=0.,gi=1.,
                  pid=0.,w=1.,ux=None,uy=None,uz=None,
-                 js=0,sid=None,lallindomain=None,
+                 js=0,species_number=None,sid=None,
+                 lallindomain=None,unique_particles=None,
                  xmmin=None,xmmax=None,
                  ymmin=None,ymmax=None,
                  zmmin=None,zmmax=None,
@@ -1585,7 +1586,7 @@ def addparticles(x=0.,y=0.,z=0.,vx=0.,vy=0.,vz=0.,gi=1.,
                      The assigment pid[:,id-1] = pidvalue is done.
     - w=1.: particle weight
             this is only used if top.wpid > 0 and if lnewparticles is true.
-    - js=0: species to which new particles will be added
+    - js=0, or species_number=0: species to which new particles will be added
     - lallindomain=false: Flags whether particles are within the parallel domains
                           When true, all particles are assumed to be with in the
                           extent of the domain so particle scraping is not done.
@@ -1593,6 +1594,11 @@ def addparticles(x=0.,y=0.,z=0.,vx=0.,vy=0.,vz=0.,gi=1.,
                           slice mode, i.e. after package('wxy'). Except if the
                           option is explicitly set. If false, the particles that
                           are outside the parallel domain are not added.
+    - unique_particles: Specifies whether all of the particles passed in are unique.
+                        If this is set, it overides lallindomain, and sets
+                        lallindomain=unique_particles. If this is False, then only
+                        particles within the parallel subdomains are added, otherwise
+                        all particles are added.
     - xmmin=top.xpminlocal,xmmax=top.xpmaxlocal
                        x extent of the domain - should only be set in unusual
                        circumstances.
@@ -1610,7 +1616,7 @@ def addparticles(x=0.,y=0.,z=0.,vx=0.,vy=0.,vz=0.,gi=1.,
     - lnewparticles=true: Flag whether the particles are treated as new.
                           If so, the ssn will be set if needed, and the
                           position saved as the birth location.
-                          Set this to false if using addparticles to restore
+                          Set this to false if using add_particles to restore
                           particles.
     - lusespaceabove=true: Flag where to put the particles in memory.
                            When true, the new particles are preferentially
@@ -1632,6 +1638,8 @@ def addparticles(x=0.,y=0.,z=0.,vx=0.,vy=0.,vz=0.,gi=1.,
     if pgroup is None: pgroup = top.pgroup
 
     # --- Check if this is a new species
+    if species_number is not None:
+        js = species_number
     if js+1 > top.ns: setnspecies(js+1,pgroup)
 
     # --- Set the sid if it hasn't already be done
@@ -1647,42 +1655,29 @@ def addparticles(x=0.,y=0.,z=0.,vx=0.,vy=0.,vz=0.,gi=1.,
         if uz is not None: vz = uz
 
     # --- Get length of arrays, set to one for scalars
-    try:              lenx = len(x)
-    except TypeError: lenx = 1
-    try:              leny = len(y)
-    except TypeError: leny = 1
-    try:              lenz = len(z)
-    except TypeError: lenz = 1
-    try:              lenvx = len(vx)
-    except TypeError: lenvx = 1
-    try:              lenvy = len(vy)
-    except TypeError: lenvy = 1
-    try:              lenvz = len(vz)
-    except TypeError: lenvz = 1
-    try:              lengi = len(gi)
-    except TypeError: lengi = 1
-    try:              lenpid = len(pid)
-    except TypeError: lenpid = 1
-    try:              lenex = len(ex)
-    except TypeError: lenex = 1
-    try:              leney = len(ey)
-    except TypeError: leney = 1
-    try:              lenez = len(ez)
-    except TypeError: lenez = 1
-    try:              lenbx = len(bx)
-    except TypeError: lenbx = 1
-    try:              lenby = len(by)
-    except TypeError: lenby = 1
-    try:              lenbz = len(bz)
-    except TypeError: lenbz = 1
+    lenx = size(x)
+    leny = size(y)
+    lenz = size(z)
+    lenvx = size(vx)
+    lenvy = size(vy)
+    lenvz = size(vz)
+    lengi = size(gi)
+    lenpid = size(pid)
+    lenex = size(ex)
+    leney = size(ey)
+    lenez = size(ez)
+    lenbx = size(bx)
+    lenby = size(by)
+    lenbz = size(bz)
 
     # --- If any of the inputs are arrays that are zero length, then return
-    if (lenx == 0 or leny == 0 or lenz == 0 or
-        lenvx == 0 or lenvy == 0 or lenvz == 0 or
-        lengi == 0 or lenpid == 0): return
+    if (lenx == 0 or leny == 0 or lenz == 0 or lenvx == 0 or lenvy == 0 or lenvz == 0 or
+        lengi == 0 or lenpid == 0 or
+        lenex == 0 or leney == 0 or lenez == 0 or lenbx == 0 or lenby == 0 or lenbz == 0):
+        return
 
     # --- Max length of input arrays
-    maxlen = max(lenx,leny,lenz,lenvx,lenvy,lenvz,lengi,lenpid)
+    maxlen = max(lenx,leny,lenz,lenvx,lenvy,lenvz,lengi,lenpid,lenex,leney,lenez,lenbx,lenby,lenbz)
     assert lenx==maxlen or lenx==1,"Length of x doesn't match len of others"
     assert leny==maxlen or leny==1,"Length of y doesn't match len of others"
     assert lenz==maxlen or lenz==1,"Length of z doesn't match len of others"
@@ -1750,6 +1745,9 @@ def addparticles(x=0.,y=0.,z=0.,vx=0.,vy=0.,vz=0.,gi=1.,
     if l4symtry is None: l4symtry = w3d.l4symtry
     if lrz is None: lrz = (w3d.solvergeom in [w3d.RZgeom,w3d.Rgeom])
 
+    if unique_particles is not None:
+        lallindomain = unique_particles
+
     # --- When running in slice mode, automatically set lallindomain to true.
     # --- It is assumed that all particles will be within the specified domain,
     # --- since in the slice mode, the z of the particles is ignored.
@@ -1761,7 +1759,7 @@ def addparticles(x=0.,y=0.,z=0.,vx=0.,vy=0.,vz=0.,gi=1.,
     # --- Do some error checking
     if not lallindomain and zmmin == zmmax:
         print "=================================================================="
-        print "Addparticles: warning - no particles will be loaded - you should"
+        print "Add_particles: warning - no particles will be loaded - you should"
         print "either set lallindomain=true or set zmmin and zmmax so they are"
         print "different from each other."
         print "=================================================================="
@@ -1769,7 +1767,7 @@ def addparticles(x=0.,y=0.,z=0.,vx=0.,vy=0.,vz=0.,gi=1.,
     # --- Get the number of particles before adding the new ones.
     if lreturndata: nbefore = pgroup.nps[js]
 
-    # --- Now data can be passed into the fortran addparticles routine.
+    # --- Now data can be passed into the fortran add_particles routine.
     addpart(pgroup,maxlen,top.npid,x,y,z,vx,vy,vz,gi,ex,ey,ez,bx,by,bz,pid,js+1,
             lallindomain,xmmin,xmmax,ymmin,ymmax,zmmin,zmmax,
             l2symtry,l4symtry,lrz,
@@ -1807,3 +1805,5 @@ def addparticles(x=0.,y=0.,z=0.,vx=0.,vy=0.,vz=0.,gi=1.,
                 return (x[:nn],y[:nn],z[:nn],vx[:nn],vy[:nn],vz[:nn],gi[:nn],pid[:nn],ex[:nn],ey[:nn],ez[:nn],bx[:nn],by[:nn],bz[:nn])
             else:
                 return (x[:nn],y[:nn],z[:nn],vx[:nn],vy[:nn],vz[:nn],gi[:nn],pid[:nn])
+
+addparticles = add_particles

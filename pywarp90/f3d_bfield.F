@@ -203,7 +203,6 @@ c --- all of the particles, otherwise the specified particles are loaded.
       real(kind=8):: substarttime,wtime
       real(kind=8),dimension(:,:,:,:),pointer::jpcopy
       real(kind=8),pointer:: pidtmp(:)
-      integer(ISZ):: allocerror
 
       if (lf3dtimesubs) substarttime = wtime()
 

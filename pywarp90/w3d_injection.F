@@ -72,7 +72,6 @@ c injection.  The third part is for space-charge limited injection.
       real(kind=8),pointer:: xx(:),yy(:),zz(:),ux(:),uy(:),uz(:),id(:),gg(:)
       real(kind=8),pointer:: ex(:),ey(:),ez(:),bx(:),by(:),bz(:)
       real(kind=8),pointer:: bendres(:),bendradi(:),mask(:),dtp(:)
-      integer(ISZ):: allocerror
       real(kind=8):: substarttime,wtime
       real(kind=8):: uztemp,uztempfloor,invclightsq,uzboost,vzboost
       real(kind=8),allocatable:: exlab(:),eylab(:),ezlab(:),
@@ -80,6 +79,7 @@ c injection.  The third part is for space-charge limited injection.
      &                           zlab(:),uxlab(:),uylab(:),
      &                           uzlab(:),ginvlab(:),tlab(:),dtmaps(:),zend(:),
      &                           tstart(:),tend(:),zbeam_maps(:),zbeamend_maps(:)
+      integer:: alloc_status
       if (lw3dtimesubs) substarttime = wtime()
       call printentering("inject3d", 2)
 
@@ -331,6 +331,9 @@ c               default: injection rate is shifted Maxwellian
                 enddo
               endif
 
+              if (l_inj_addtempz_abs) then
+                  uzt(ip) = abs(uzt(ip))
+              endif
 
 c             --- Initialize positions as rectangular or elliptical depending on linj_rectangle
               if(linj_rectangle) then
@@ -406,7 +409,7 @@ c                 --- calculate injection surface axial location exactly
 
 c             --- Only save particle if it is within the injection region.
               if (.not. l_inj_zmminmmaxglobal) then
-                if (vzinj > 0. .or. l_inj_user_particles) then
+                if (vzinj > 0. .or. uzt(ip) > 0. .or. l_inj_user_particles) then
 c                 --- Note that normally, particles are allowed to be exactly
 c                 --- aligned to the lower extent of the grid but not the upper extent.
                   if (zpminlocal+zgrid > zs+zinj .or.
@@ -418,7 +421,7 @@ c                 --- the grid boundary or they will never be accelerated.
      &                zs+zinj > zpmaxlocal+zgrid) cycle
                 endif
               else
-                if (vzinj > 0.) then
+                if (vzinj > 0. .or. uzt(ip) > 0.) then
                   if (zpmin+zgrid > zs+zinj .or. zs+zinj >= zpmax+zgrid) cycle
                 else
                   if (zpmin+zgrid >= zs+zinj .or. zs+zinj > zpmax+zgrid) cycle
@@ -444,11 +447,7 @@ c             --- Save the particle data
                 vty = vzinj*0.5*emity_s(jsid+1)*binji + vthperp_s(jsid+1)
                 pgroup%uxp(ii) = vzinj*(apinj*pgroup%xp(ii)*ainji + xpinj) + vtx*uxt(ip)
                 pgroup%uyp(ii) = vzinj*(bpinj*pgroup%yp(ii)*binji + ypinj) + vty*uyt(ip)
-                if(l_inj_addtempz_abs) then
-                  pgroup%uzp(ii) = vzinj + abs(vthz_s(jsid+1)*uzt(ip))
-                else
-                  pgroup%uzp(ii) = vzinj + vthz_s(jsid+1)*uzt(ip)
-                endif
+                pgroup%uzp(ii) = vzinj + vthz_s(jsid+1)*uzt(ip)
               endif
 
 c             --- Save the particle weight
@@ -627,13 +626,17 @@ c           --- The reusing of variable makes for very confusing naming!
             bendradi = 1.
             if (boost_gamma==1.) then
               call exteb3d(nn,xx,yy,zz,uz,gg,0.,fulldt_s*0.5,bx,by,bz,ex,ey,ez,
-     &                     pgroup%sm(is),pgroup%sq(is),bendres,bendradi,1.,fulldt_s)
+     &                     pgroup%sm(is),pgroup%sq(is),bendres,bendradi,fulldt_s)
             else
               if (boost_gamma>1.) then
-                allocate(exlab(nn),eylab(nn),ezlab(nn))
-                allocate(bxlab(nn),bylab(nn),bzlab(nn))
-                allocate(zlab(nn),uxlab(nn),uylab(nn),uzlab(nn),ginvlab(nn),tlab(nn))
-                allocate(tstart(nn),tend(nn))
+                allocate(exlab(nn),eylab(nn),ezlab(nn),
+     &                   bxlab(nn),bylab(nn),bzlab(nn),
+     &                   zlab(nn),uxlab(nn),uylab(nn),uzlab(nn),ginvlab(nn),tlab(nn),
+     &                   tstart(nn),tend(nn), stat=alloc_status)
+                if (alloc_status /= 0) then
+                  print*,"Error:inject3d: exlab et al could not be allocated"
+                  stop
+                endif
                 invclightsq = 1./(clight*clight)
               endif
               uzboost=clight*sqrt(boost_gamma*boost_gamma-1.)
@@ -661,7 +664,7 @@ c             --- Add in ears and uniform focusing E field pieces
 c             --- Set quad, dipole E and B; All: Bz
               call exteb3d(nn,xx,yy,zlab,uzlab,ginvlab,0.,fulldt_s*0.5,
      &                     bxlab,bylab,bzlab,exlab,eylab,ezlab,
-     &                     pgroup%sm(is),pgroup%sq(is),bendres,bendradi,1.,fulldt_s)
+     &                     pgroup%sm(is),pgroup%sq(is),bendres,bendradi,fulldt_s)
               call seteb_in_boosted_frame(nn,exlab,eylab,ezlab,bxlab,bylab,bzlab,
      &                                    0.,0.,uzboost,boost_gamma)
               ex = ex + exlab
@@ -712,7 +715,11 @@ c             --- do half velocity advance with B fields
             end if
 c           --- apply linear maps
             if (nn>0 .and. pgroup%l_maps(is-1)) then
-              allocate(dtmaps(nn),zbeam_maps(nn),zbeamend_maps(nn),tlab(nn),zend(nn))
+              allocate(dtmaps(nn),zbeam_maps(nn),zbeamend_maps(nn),tlab(nn),zend(nn), stat=alloc_status)
+              if (alloc_status /= 0) then
+                print*,"Error:inject3d: dtmaps et al could not be allocated"
+                stop
+              endif
               if (boost_gamma==1.) then
                 zbeam_maps = zinject(ij)
                 zbeamend_maps = zinject(ij)+vbeam*dtp
@@ -1700,8 +1707,7 @@ c           --- get E self-field at initial positions
 
 c           --- get external fields at initial positions
             call exteb3d(nn,xx,yy,zz,uz,gg,0.,fulldt_s*0.5,bx,by,bz,ex,ey,ez,
-     &                   pgroup%sm(is),pgroup%sq(is),bendres,bendradi,1.,
-     &                   fulldt_s)
+     &                   pgroup%sm(is),pgroup%sq(is),bendres,bendradi,fulldt_s)
 
 c           --- Now that the B field is gathered, the l_inj_along_B option
 c           --- can be handled.
@@ -1808,12 +1814,11 @@ c           --- Skip this if no particles of this species were injected.
 #else
 c           --- Find particles that were freshly injected. These
 c           --- are particles which still have noninteger pid(:,injdatapid).
-            allocate(mask(pgroup%nps(is)),stat=allocerror)
-            if (allocerror /= 0) then
-              print*,"inject3d: allocation error ",allocerror,
+            allocate(mask(pgroup%nps(is)), stat=alloc_status)
+            if (alloc_status /= 0) then
+              print*,"inject3d: allocation error ",alloc_status,
      &               ": could not allocate mask to shape ",pgroup%nps(is)
-              call kaboom("inject3d: allocation error")
-              return
+              stop
             endif
 
             i1 = pgroup%ins(is)
@@ -1919,18 +1924,26 @@ c           --- calculate new E self-fields
 c           --- Get external fields at current positions.
             if (boost_gamma==1.) then
               call exteb3d(nn,xx,yy,zz,uz,gg,-fulldt_s*0.5,0.,bx,by,bz,ex,ey,ez,
-     &                     pgroup%sm(is),pgroup%sq(is),bendres,bendradi,1.,fulldt_s)
+     &                     pgroup%sm(is),pgroup%sq(is),bendres,bendradi,fulldt_s)
             else
               if (boost_gamma>1.) then
-                allocate(exlab(nn),eylab(nn),ezlab(nn))
-                allocate(bxlab(nn),bylab(nn),bzlab(nn))
-                allocate(zlab(nn),uxlab(nn),uylab(nn),
-     &                   uzlab(nn),ginvlab(nn),tlab(nn))
-                allocate(tstart(nn),tend(nn))
+                allocate(exlab(nn),eylab(nn),ezlab(nn),
+     &                   bxlab(nn),bylab(nn),bzlab(nn),
+     &                   zlab(nn),uxlab(nn),uylab(nn),
+     &                   uzlab(nn),ginvlab(nn),tlab(nn),
+     &                   tstart(nn),tend(nn), stat=alloc_status)
+                if (alloc_status /= 0) then
+                  print*,"Error:inject3d: exlab et al could not be allocated"
+                  stop
+                endif
                 invclightsq = 1./(clight*clight)
               endif
               if (any(pgroup%l_maps)) then
-                allocate(dtmaps(nn),zbeam_maps(nn),zbeamend_maps(nn))
+                allocate(dtmaps(nn),zbeam_maps(nn),zbeamend_maps(nn), stat=alloc_status)
+                if (alloc_status /= 0) then
+                  print*,"Error:inject3d: dtmaps et al could not be allocated"
+                  stop
+                endif
                 allspecl = .true.
               end if
 
@@ -1954,7 +1967,7 @@ c           --- Get external fields at current positions.
 c             --- Set quad, dipole E and B; All: Bz
               call exteb3d(nn,xx,yy,zlab,uzlab,ginvlab,-fulldt_s*0.5,0.,
      &                     bxlab,bylab,bzlab,exlab,eylab,ezlab,
-     &                     pgroup%sm(is),pgroup%sq(is),bendres,bendradi,1.,fulldt_s)
+     &                     pgroup%sm(is),pgroup%sq(is),bendres,bendradi,fulldt_s)
               call seteb_in_boosted_frame(nn,exlab,eylab,ezlab,bxlab,bylab,bzlab,
      &                                     0.,0.,uzboost,boost_gamma)
               ex = ex + exlab
@@ -2504,7 +2517,7 @@ c           --- get E self-field at initial positions
 
 c           --- get external fields at initial positions
             call exteb3d(nn,xx,yy,zz,uz,gg,0.,fulldt_s*0.5,bx,by,bz,ex,ey,ez,
-     &                   pgroup%sm(is),pgroup%sq(is),bendres,bendradi,1.,fulldt_s)
+     &                   pgroup%sm(is),pgroup%sq(is),bendres,bendradi,fulldt_s)
 
 c           --- Now that the B field is gathered, the l_inj_along_B option
 c           --- can be handled.
@@ -2586,12 +2599,11 @@ c           --- Skip this if no particles of this species were injected.
 #else
 c           --- Find particles that were freshly injected. These
 c           --- are particles which still have noninteger pid(:,injdatapid).
-            allocate(mask(pgroup%nps(is)),stat=allocerror)
-            if (allocerror /= 0) then
-              print*,"inject3d: allocation error ",allocerror,
+            allocate(mask(pgroup%nps(is)), stat=alloc_status)
+            if (alloc_status /= 0) then
+              print*,"inject3d: allocation error ",alloc_status,
      &               ": could not allocate mask to shape ",pgroup%nps(is)
-              call kaboom("inject3d: allocation error")
-              return
+              stop
             endif
 
             if (pgroup%nps(is) == 0) cycle
@@ -2697,7 +2709,7 @@ c           --- calculate new E self-fields
 
 c           --- Get external fields at current positions.
             call exteb3d(nn,xx,yy,zz,uz,gg,-fulldt_s*0.5,0.,bx,by,bz,ex,ey,ez,
-     &                pgroup%sm(is),pgroup%sq(is),bendres,bendradi,1.,fulldt_s)
+     &                pgroup%sm(is),pgroup%sq(is),bendres,bendradi,fulldt_s)
 
 c           --- complete B advance
             call bpusht3d(nn,ux,uy,uz,gg,bx,by,bz,pgroup%sq(is),pgroup%sm(is),
@@ -3615,6 +3627,7 @@ c to get zp.
       real(kind=8),allocatable:: xx(:),yy(:),zz(:),pp(:)
       integer(ISZ),allocatable:: xi(:),yi(:),in(:)
       integer(ISZ):: nn,ii,i1,i2
+      integer:: alloc_status
       real(kind=8):: substarttime,wtime
       if (lw3dtimesubs) substarttime = wtime()
 
@@ -3622,13 +3635,17 @@ c to get zp.
       if (inject < 1 .or. inject > 8 .or. inject == 6) return
       if (inject == 1 .and. linj_efromgrid) return
 
-      allocate(xx((1+inj_nx)*(1+inj_ny)*ninject))
-      allocate(yy((1+inj_nx)*(1+inj_ny)*ninject))
-      allocate(zz((1+inj_nx)*(1+inj_ny)*ninject))
-      allocate(xi((1+inj_nx)*(1+inj_ny)*ninject))
-      allocate(yi((1+inj_nx)*(1+inj_ny)*ninject))
-      allocate(in((1+inj_nx)*(1+inj_ny)*ninject))
-      allocate(pp((1+inj_nx)*(1+inj_ny)*ninject))
+      allocate(xx((1+inj_nx)*(1+inj_ny)*ninject),
+     &         yy((1+inj_nx)*(1+inj_ny)*ninject),
+     &         zz((1+inj_nx)*(1+inj_ny)*ninject),
+     &         xi((1+inj_nx)*(1+inj_ny)*ninject),
+     &         yi((1+inj_nx)*(1+inj_ny)*ninject),
+     &         in((1+inj_nx)*(1+inj_ny)*ninject),
+     &         pp((1+inj_nx)*(1+inj_ny)*ninject), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:getinj_phi: xx et al could not be allocated"
+        stop
+      endif
 
       dxi = 1./inj_dx
       dyi = 1./inj_dy
@@ -3972,6 +3989,7 @@ c any conductor surface.
       real(kind=8):: sx,sy
       real(kind=8):: fourthirds,onethird
       integer(ISZ):: spreadx,spready
+      integer:: alloc_status
       real(kind=8):: substarttime,wtime
       if (lw3dtimesubs) substarttime = wtime()
 
@@ -3980,9 +3998,13 @@ c     --- E fields for particles behind the virtual surface.
       if (linj_efromgrid) return
       if (injdatapid == 0) return
 
-      allocate(xx(npart),yy(npart),zz(npart))
-      allocate(tex(npart),tey(npart),tez(npart))
-      allocate(ijp(npart))
+      allocate(xx(npart),yy(npart),zz(npart),
+     &         tex(npart),tey(npart),tez(npart),
+     &         ijp(npart), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:inj_sete3d: xx et al could not be allocated"
+        stop
+      endif
 
       if(inj_nz>1) call inj_sete_3darray(npart,xp,yp,zp,pid,inj_dz,ex,ey,ez)
 
@@ -4012,7 +4034,11 @@ c     --- E fields for particles behind the virtual surface.
       fourthirds = 4./3.
       onethird = 1./3.
 
-      allocate(zii(ninject),inj_di(ninject),rinjecti(ninject))
+      allocate(zii(ninject),inj_di(ninject),rinjecti(ninject), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:inj_sete3d: zii et al could not be allocated"
+        stop
+      endif
       zii = 1./(inj_dz*inj_d)
       inj_di = 1./inj_d
       rinjecti = 1./rinject
@@ -4208,6 +4234,7 @@ c is used to flag particles that not have had temperature added yet.
       real(kind=8):: dzi,inj_di
       real(kind=8):: rnorm
 c     real(kind=8):: wrandomgauss
+      integer:: alloc_status
       real(kind=8):: substarttime,wtime
       if (lw3dtimesubs) substarttime = wtime()
 
@@ -4215,9 +4242,13 @@ c     real(kind=8):: wrandomgauss
       if (.not. l_inj_delay_temp) return
       if (injdatapid == 0) return
 
-      allocate(xx(npart),yy(npart),zz(npart))
-      allocate(vx(npart),vy(npart),vz(npart))
-      allocate(ijp(npart))
+      allocate(xx(npart),yy(npart),zz(npart),
+     &         vx(npart),vy(npart),vz(npart),
+     &         ijp(npart), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:inj_addtemp3d: xx et al could not be allocated"
+        stop
+      endif
 
       dzi = 1./dz
 
@@ -4361,10 +4392,15 @@ c the grid cell.
       real(kind=8):: rinj,rinji,rr2,dd
       real(kind=8):: aa,az,px,py,wx1,wy1,wx0,wy0,ww
       real(kind=8):: dxi,dyi,dzi
+      integer:: alloc_status
       real(kind=8):: substarttime,wtime
       if (lw3dtimesubs) substarttime = wtime()
 
-      allocate(ijp(pgroup%npmax))
+      allocate(ijp(pgroup%npmax), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:inj_setrho3d: ijp could not be allocated"
+        stop
+      endif
 
       dxi = 1./inj_dx
       dyi = 1./inj_dy
@@ -4513,10 +4549,15 @@ c the grid cell.
       real(kind=8):: dd
       real(kind=8):: ww
       real(kind=8):: dzi
+      integer:: alloc_status
       real(kind=8):: substarttime,wtime
       if (lw3dtimesubs) substarttime = wtime()
 
-      allocate(ijp(pgroup%npmax))
+      allocate(ijp(pgroup%npmax), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:inj_setrho3d_z: ijp could not be allocated"
+        stop
+      endif
 
       dzi = 1./dz
 
@@ -4608,15 +4649,20 @@ c to get zp.
       real(kind=8):: xg(0:inj_nx),yg(0:inj_ny),zg(0:inj_nz)
       real(kind=8):: zinj_grid,onethird,dz0,dz1,dzmin,zdist
       integer(ISZ):: nn,ii,i1,i2
+      integer:: alloc_status
 
-      allocate(xx((1+inj_nx)*(1+inj_ny)*(1+inj_nz)*ninject))
-      allocate(yy((1+inj_nx)*(1+inj_ny)*(1+inj_nz)*ninject))
-      allocate(zz((1+inj_nx)*(1+inj_ny)*(1+inj_nz)*ninject))
-      allocate(xi((1+inj_nx)*(1+inj_ny)*(1+inj_nz)*ninject))
-      allocate(yi((1+inj_nx)*(1+inj_ny)*(1+inj_nz)*ninject))
-      allocate(zi((1+inj_nx)*(1+inj_ny)*(1+inj_nz)*ninject))
-      allocate(in((1+inj_nx)*(1+inj_ny)*(1+inj_nz)*ninject))
-      allocate(pp((1+inj_nx)*(1+inj_ny)*(1+inj_nz)*ninject))
+      allocate(xx((1+inj_nx)*(1+inj_ny)*(1+inj_nz)*ninject),
+     &         yy((1+inj_nx)*(1+inj_ny)*(1+inj_nz)*ninject),
+     &         zz((1+inj_nx)*(1+inj_ny)*(1+inj_nz)*ninject),
+     &         xi((1+inj_nx)*(1+inj_ny)*(1+inj_nz)*ninject),
+     &         yi((1+inj_nx)*(1+inj_ny)*(1+inj_nz)*ninject),
+     &         zi((1+inj_nx)*(1+inj_ny)*(1+inj_nz)*ninject),
+     &         in((1+inj_nx)*(1+inj_ny)*(1+inj_nz)*ninject),
+     &         pp((1+inj_nx)*(1+inj_ny)*(1+inj_nz)*ninject), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:getinj_phi_3d: xx et al could not be allocated"
+        stop
+      endif
 
       dxi = 1./inj_dx
       dyi = 1./inj_dy
@@ -4760,11 +4806,15 @@ c Calculate the charge density in the region of the injector mesh refinement.
       real(kind=8):: deltaz(ninject)
       integer(ISZ):: ix,iy,iz,is,ij,ij1,ip
       real(kind=8):: wws,ww
+      integer:: alloc_status
       real(kind=8):: substarttime,wtime
       if (lw3dtimesubs) substarttime = wtime()
 
-      allocate(ijp(pgroup%npmax))
-      allocate(dz_local(0:inj_nz))
+      allocate(ijp(pgroup%npmax), dz_local(0:inj_nz), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:inj_setrhomr: ijp and dz_local could not be allocated"
+        stop
+      endif
 
       if(solvergeom==XYZgeom) then
         sx = 1
@@ -5100,13 +5150,17 @@ c of Poisson's equation along lines normal to the emitting surface.
       real(kind=8), allocatable, dimension(:) :: ex_tmp, ey_tmp, ez_tmp
       real(kind=8), allocatable, dimension(:) :: bx_tmp, by_tmp, bz_tmp
       real(kind=8), allocatable, dimension(:) :: dz_local
-      integer(ISZ):: allocerror
+      integer:: alloc_status
       real(kind=8):: substarttime,wtime
       if (lw3dtimesubs) substarttime = wtime()
 
-      allocate(ex_tmp(nn),ey_tmp(nn),ez_tmp(nn))
-      allocate(bx_tmp(nn),by_tmp(nn),bz_tmp(nn))
-      allocate(dz_local(0:inj_nz))
+      allocate(ex_tmp(nn),ey_tmp(nn),ez_tmp(nn),
+     &         bx_tmp(nn),by_tmp(nn),bz_tmp(nn),
+     &         dz_local(0:inj_nz), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:getinj_phi_mr: ex_tmp et al could not be allocated"
+        stop
+      endif
 
       onethird = 1./3.
 
@@ -5140,9 +5194,9 @@ c     --- incorrect values block inj_phi_3d from being updated in
 c     --- the call to parallelnonzerorealarray below.
 c     call getinj_phi_3d()
 
-      allocate(rhs(1:inj_nz-1,nn),ab(2,1:inj_nz-1),stat=allocerror)
-      if (allocerror /= 0) then
-        print*,"getinj_phi_mr: allocation error ",allocerror,
+      allocate(rhs(1:inj_nz-1,nn),ab(2,1:inj_nz-1), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"getinj_phi_mr: allocation error ",alloc_status,
      &         ": could not allocate rhs and ab to shape ",inj_nz,nn
         call kaboom("getinj_phi_mr: allocation error")
         return
@@ -5356,11 +5410,16 @@ c any conductor surface.
       integer(ISZ):: spreadx,spready
       real(kind=8):: dz0, dz1, zinj_grid
       real(kind=8), dimension(0:inj_nz) :: dz_local
+      integer:: alloc_status
       if (lw3dtimesubs) substarttime = wtime()
 
-      allocate(xx(npart),yy(npart),zz(npart))
-      allocate(tex(npart),tey(npart),tez(npart))
-      allocate(ijp(npart))
+      allocate(xx(npart),yy(npart),zz(npart),
+     &         tex(npart),tey(npart),tez(npart),
+     &         ijp(npart), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:inj_sete_3darray: xx et al could not be allocated"
+        stop
+      endif
 
       if(solvergeom==XYZgeom) then
         spreadx = 1

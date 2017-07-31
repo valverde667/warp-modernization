@@ -100,7 +100,7 @@ def mpirecv(source = 0, tag = 0, comm = None):
     if lpyMPIactive:
         result, status = comm.recv(source, tag)
     elif lmpi4pyactive:
-        data_shape, data_dtype = comm_world.recv(source = source, tag = (tag + 99))
+        data_shape, data_dtype = comm.recv(source = source, tag = (tag + 99))
         if data_shape is not None:
             data = empty(data_shape, dtype = data_dtype)
             comm.Recv(data, source = source, tag = tag)
@@ -201,7 +201,7 @@ def mpicommcreate(group = None, comm = None):
     if lpyMPIactive:
         result = comm.comm_create(group)
     elif lmpi4pyactive:
-        oldgroup = comm_world.Get_group()
+        oldgroup = comm.Get_group()
         newgroup = oldgroup.Incl(ranks = group)
         result = comm.Create(newgroup)
     else:

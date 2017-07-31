@@ -61,8 +61,8 @@ export hdf5_cv_system_scope_threads=no
 # perform a cobalt-mpirun or a bg_run, respectively.
 #
 
-export RUNSERIAL="runjob --np 1 -p 16 --block $COBALT_PARTNAME --verbose=INFO : "
-export RUNPARALLEL="runjob --np 4 -p 16 --block $COBALT_PARTNAME --verbose=INFO : "
+export RUNSERIAL="runjob --np 1 -p 16 --block \$(COBALT_PARTNAME) --verbose=INFO : "
+export RUNPARALLEL="runjob --np 4 -p 16 --block \$(COBALT_PARTNAME) --verbose=INFO : "
 
 # echo "****Using do-mpirun.configure"
 # cp -f do-mpirun.configure do-mpirun

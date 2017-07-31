@@ -639,11 +639,10 @@ def getappliedfields(x,y,z,time=0.,js=0):
     q = top.pgroup.sq[js]
     bendres = ones(n,'d')
     bendradi = ones(n,'d')
-    gammabar = 1.
     dt = top.dt
 
     exteb3d(n,x,y,z,uzp,gaminv,dtl,dtr,
-            bx,by,bz,ex,ey,ez,m,q,bendres,bendradi,gammabar,dt)
+            bx,by,bz,ex,ey,ez,m,q,bendres,bendradi,dt)
 
     # --- Restore these quantities
     top.dzl = dzlsave
@@ -664,7 +663,6 @@ def getappliedfieldsforspecies(species):
     dtr = +0.5*top.dt
     bendres = ones(species.nps,'d')
     bendradi = ones(species.nps,'d')
-    gammabar = 1.
 # --- getbend not available in Python yet
 # getbend(species.nps,species.nps,
 #         species.zp,species.uzp,species.gaminv,
@@ -681,7 +679,7 @@ def getappliedfieldsforspecies(species):
             species.uzp,species.gaminv,dtl,dtr,
             species.bx,species.by,species.bz,
             species.ex,species.ey,species.ez,
-            species.sm,species.sq,bendres,bendradi,gammabar,top.dt)
+            species.sm,species.sq,bendres,bendradi,top.dt)
 
 def getparticleextent(xmmin=None,xmmax=None,ymmin=None,ymmax=None,
                       l2symtry=None,l4symtry=None,solvergeom=None):
@@ -1283,9 +1281,9 @@ def printtimers(file=None,lminmax=0,mintime=0.,icontrollers=2):
         _doprint('Moments time',       top.momentstime, 1)
         _doprint('Field Solve time',   top.fstime,      1)
         _doprint('Load rho time',      top.lrtime,      1)
+        _doprint('Applied field time', top.latticetime, 1)
         _doprint('Depose time',        top.deposetime,  0)
         _doprint('Gather time',        top.gathertime,  0)
-        _doprint('Applied field time', top.latticetime, 1)
         _doprint('Dump time',          top.dumptime,    0)
 
     # --- Print the subroutine timers

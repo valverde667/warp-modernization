@@ -111,9 +111,11 @@ completion of the following steps:
 - Edit files `do-configure-hdf5`, `do-make-hdf5`, `do-make-final-hdf5` and modify the second line by adding your email to '-M' option and your allocation to the -A option. This will be required
 by the job scheduling system (e.g if you are a user of the PICSSAR INCITE project, use "-A PICSSAR_INCITE").
 
+- Apply the patch in `INSTALL_MIRA/file-lock-removal.diff` by typing `patch -p0 < file-lock-removal.diff`
+
 - Configure HDF5 lib by typing: `qsub do-configure-hdf5`
 
-- Build HDF5 lib by typing: `qsub do-make-final-hdf5`
+- Build HDF5 lib by typing: `qsub do-make-hdf5`
 
 - Finalize install by typing: `qsub do-make-final-hdf5`  
 
@@ -370,7 +372,7 @@ ${PYTHON} setup.py install  2>&1 | tee linecache2.log.mira
 - Finally type `chmod 700 install_mira; ./install_mira` to install the python
 package in site-packages
 
-## Install unitest2
+## Install unittest2
 
 - In your `$HOME` directory download the pbr package by typing the following command:
 `wget --no-check-certificate
@@ -388,7 +390,7 @@ export PYTHON=${PYTHONHOME}/bin/python
 buildir=build
 
 rm -rf ${builddir}
-${PYTHON} setup.py install  2>&1 | tee linecache2.log.mira
+${PYTHON} setup.py install  2>&1 | tee unittest2.log.mira
 ```
 - Finally type `chmod 700 install_mira; ./install_mira` to install the python
 package in site-packages
@@ -411,7 +413,7 @@ export PYTHON=${PYTHONHOME}/bin/python
 buildir=build
 
 rm -rf ${builddir}
-${PYTHON} setup.py install  2>&1 | tee linecache2.log.mira
+${PYTHON} setup.py install  2>&1 | tee python-dateutil.log.mira
 ```
 - Finally type `chmod 700 install_mira; ./install_mira` to install the python
 

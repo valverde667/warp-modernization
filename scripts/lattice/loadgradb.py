@@ -95,7 +95,7 @@ def setbsqgrad(nx=0,ny=0,nz=0,xmin=0,xmax=0,ymin=0,ymax=0,zmin=0,
         print shape(bx),shape(ex)
         w3d.exteb3d(npuse,x,y,z,uzd,gaminv,dtl,dtr,
                     bx,by,bz,ex,ey,ez,top.pgroup.sm[0],
-                    top.pgroup.sq[0],bendres,bendradi,gaminv,dt)
+                    top.pgroup.sq[0],bendres,bendradi,dt)
         print "called exteb3d"
     bx.shape=(nx1,ny1,nz1)
     by.shape=(nx1,ny1,nz1)

@@ -215,7 +215,7 @@ c This keeps (max(dz,dx) - min(dz,dx))/dx < 1/3.
       real(kind=8),allocatable:: phisave(:,:)
       real(kind=8):: xminodx
       character(72):: errline
-      integer(ISZ):: allocerror
+      integer(ISZ):: alloc_status
       real(kind=8):: substarttime,wtime
       if (lfrztimesubs) substarttime = wtime()
 
@@ -246,9 +246,9 @@ c     --- Note that it needs to be a real number in case xmminlocal is not an
 c     --- integer multiple of dx.
       xminodx = xmminlocal/dx
 
-      allocate(phisave(0:nxlocal,0:nzlocal),stat=allocerror)
-      if (allocerror /= 0) then
-        print*,"multigridrzsolve: allocation error ",allocerror,
+      allocate(phisave(0:nxlocal,0:nzlocal), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"multigridrzsolve: allocation error ",alloc_status,
      &         ": could not allocate phisave to shape ",nxlocal,nzlocal
         call kaboom("multigridrzsolve: allocation error")
         return
@@ -383,7 +383,7 @@ c Routine that does the v-cycle for multigrid. Note that it is recursive.
       type(Decomposition):: whosendingdown,whosendingup
       type(Decomposition):: whosendingdownc,whosendingupc
       type(Decomposition):: coarsedecomp
-      integer(ISZ):: allocerror
+      integer(ISZ):: alloc_status
       integer(ISZ):: i1,i2,ic,ix,iz
 
       delx = 1
@@ -442,33 +442,33 @@ c     --- already calculated.
         rzoffset = 0
 
 c       --- Alloate new work space
-        allocate(phicoarse(-1:nxlocalcoarse+1,-1:nzlocalcoarse+1),stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"vcycleberz: allocation error ",allocerror,
+        allocate(phicoarse(-1:nxlocalcoarse+1,-1:nzlocalcoarse+1), stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"vcycleberz: allocation error ",alloc_status,
      &           ": could not allocate phicoarse to shape ",
      &           nxlocalcoarse,nzlocalcoarse
           call kaboom("vcycleberz: allocation error")
           return
         endif
-        allocate(rhocoarse(0:nxlocalcoarse,0:nzlocalcoarse),stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"vcycleberz: allocation error ",allocerror,
+        allocate(rhocoarse(0:nxlocalcoarse,0:nzlocalcoarse), stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"vcycleberz: allocation error ",alloc_status,
      &           ": could not allocate rhocoarse to shape ",
      &           nxlocalcoarse,nzlocalcoarse
           call kaboom("vcycleberz: allocation error")
           return
         endif
 
-        allocate(Lphi(-1:nxlocal+1,-1:nzlocal+1),stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"vcycleberz: allocation error ",allocerror,
+        allocate(Lphi(-1:nxlocal+1,-1:nzlocal+1), stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"vcycleberz: allocation error ",alloc_status,
      &           ": could not allocate Lphi to shape ",nxlocal,nzlocal
           call kaboom("vcycleberz: allocation error")
           return
         endif
-        allocate(Lphicoarse(-1:nxlocalcoarse+1,-1:nzlocalcoarse+1),stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"vcycleberz: allocation error ",allocerror,
+        allocate(Lphicoarse(-1:nxlocalcoarse+1,-1:nzlocalcoarse+1), stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"vcycleberz: allocation error ",alloc_status,
      &           ": could not allocate Lphicoarse to shape ",
      &           nxlocalcoarse,nzlocalcoarse
           call kaboom("vcycleberz: allocation error")
@@ -476,10 +476,9 @@ c       --- Alloate new work space
         endif
  
 c     --- Create and setup array which holds the BE region ids
-        allocate(regionidcoarse(0:nxlocalcoarse,0:nzlocalcoarse),
-     &           stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"vcycleberz: allocation error ",allocerror,
+        allocate(regionidcoarse(0:nxlocalcoarse,0:nzlocalcoarse), stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"vcycleberz: allocation error ",alloc_status,
      &           ": could not allocate regionidcoarse to shape ",
      &           nxlocalcoarse,nzlocalcoarse
           call kaboom("vcycleberz: allocation error")
@@ -501,7 +500,7 @@ c       --- Calculate the coarsened phi
      &                                 1,localbounds,.true.,.false.)
 c       if (mglevel == 1) then
 c       if (.not. associated(ppp)) then
-c       allocate(ppp(-1:nxlocal+1,-1:nzlocal+1),stat=allocerror)
+c       allocate(ppp(-1:nxlocal+1,-1:nzlocal+1), stat=alloc_status)
 c       endif
 c       ppp = phi
 c       endif
@@ -514,7 +513,7 @@ c       --- Calculate the coarsened Lphi, putting it into rhocoarse
      &                                 1,localbounds,.true.,.false.)
 c       if (mglevel == 1) then
 c       if (.not. associated(rrr)) then
-c       allocate(rrr(-1:nxlocal+1,-1:nzlocal+1),stat=allocerror)
+c       allocate(rrr(-1:nxlocal+1,-1:nzlocal+1), stat=alloc_status)
 c       endif
 c       rrr = Lphi
 c       endif
@@ -537,9 +536,9 @@ c       --- Calculate L(R phi), adding it into rhocoarse
 
 c       --- Save the current coarsened phi since it is needed to apply
 c       --- the corrections after relaxations.
-        allocate(phicoarsesave(-1:nxlocalcoarse+1,-1:nzlocalcoarse+1),stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"vcycleberz: allocation error ",allocerror,
+        allocate(phicoarsesave(-1:nxlocalcoarse+1,-1:nzlocalcoarse+1), stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"vcycleberz: allocation error ",alloc_status,
      &           ": could not allocate phicoarsesave to shape ",
      &           nxlocalcoarse,nzlocalcoarse
           call kaboom("vcycleberz: allocation error")

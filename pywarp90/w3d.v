@@ -943,7 +943,7 @@ exteb3d(np:integer,xp(np):real,yp(np):real,zp(np):real,uzp(np):real,
         gaminv(np):real,dtl:real,dtr:real,
         bx(np):real,by(np):real,bz(np):real,
         ex(np):real,ey(np):real,ez(np):real,
-        m:real,q:real,bendres(np):real,bendradi(np):real,gammabar:real,dt:real)
+        m:real,q:real,bendres(np):real,bendradi(np):real,dt:real)
              subroutine # Sets external E and B fields
 othere3d(np:integer,xp(np):real,yp(np):real,zp(np):real,
          zbeam:real,zimax:real,zimin:real,

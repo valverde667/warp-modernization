@@ -6,6 +6,7 @@ import numpy as np
 from scipy.constants import c, m_e, e
 from scipy.interpolate import RegularGridInterpolator
 from scipy.special import genlaguerre
+from scipy.misc import factorial
 import h5py
 # Try importing parallel functions, in order to broadcast
 # the experimental laser file, if required
@@ -88,7 +89,7 @@ class GaussianProfile( object ):
     """Class that calculates a Gaussian laser pulse."""
 
     def __init__( self, k0, waist, tau, t_peak, a0, dim,
-        focal_length=0, temporal_order=2, boost=None, source_v=0 ):
+        focal_length=0, temporal_order=2, boost=None, source_v=0, cep=0. ):
         """
         Define a Gaussian laser profile.
         (Gaussian transversally, hypergaussian longitudinally)
@@ -134,6 +135,9 @@ class GaussianProfile( object ):
 
         source_v: float (meters/second)
             The speed of the antenna in the direction normal to its plane
+            
+        cep: float (rad)
+            Carrier-Envelope Phase
         """
         # Set a number of parameters for the laser
         E0 = a0*m_e*c**2*k0/e
@@ -150,6 +154,7 @@ class GaussianProfile( object ):
         self.focal_length = focal_length
         self.boost = boost
         self.temporal_order = temporal_order
+        self.cep = cep
 
         # Geometric coefficient (for the evolution of the amplitude)
         self.geom_coeff = get_geometric_coeff( dim )
@@ -197,7 +202,7 @@ class GaussianProfile( object ):
         diffract_factor = 1 - 1j*focal_length*self.inv_zr
 
         # Calculate the argument of the complex exponential
-        exp_argument = 1j * self.k0*c*( t - self.t_peak ) \
+        exp_argument = 1j * self.k0*c*( t - self.t_peak - z_source/c ) + 1j * self.cep \
           - (x**2 + y**2) * self.inv_waist2 / diffract_factor \
           - ((t - self.t_peak - z_source/c ) * self.inv_tau)**self.temporal_order
 
@@ -402,6 +407,12 @@ class LaguerreGaussianProfile(object):
     Be careful, a new Gouy phase is defined such as :
                 \psi_{LG}  = (2m + n+ 1) \psi_{G}
 
+    In order to keep a normalized energy, it is necessary to divide the LG
+    pulse energy expression by a coefficient alpha (depending on m and n). This
+    coefficient can be found analytically and is equal to (m+n)!/m!.
+    To take it into account, we divide the electric field by sqrt(alpha).
+
+
     Note than when n and m are both equal to 0, this function returns the same
     results as GaussianProfile.
     """
@@ -533,6 +544,9 @@ class LaguerreGaussianProfile(object):
         # Generate the Laguerre function via the scipy function
         L_mn = genlaguerre(self.m, self.n)
 
+        # Calculate alpha, the normalisation coefficient (cf docstring)
+        alpha = factorial( self.n + self.m ) / factorial( self.m )
+
         # - Propagation phase at the position of the source
         propag_phase = self.k0*c*( t - self.t_peak ) \
              + self.k0 * r2 / (2*R) \
@@ -540,15 +554,18 @@ class LaguerreGaussianProfile(object):
              - phi * self.n
 
         # - Longitudinal and transverse profile
-        trans_profile = np.exp( - r2 / w**2 )
+        trans_profile = np.exp( - r2 / w**2 ) \
+                        * (r*np.sqrt(2)/w)**self.n * L_mn(2*(r/w)**2)
+
         long_profile = np.exp(
         - ((t - self.t_peak - z_source/c ) * self.inv_tau)**self.temporal_order)
+
         # -Curvature oscillations
         curvature_oscillations = np.cos( propag_phase )
 
         # - Prefactor
-        prefactor = (self.waist/w)**self.geom_coeff \
-                     * (r*np.sqrt(2)/w)**self.n * L_mn(2*(r/w)**2)
+        prefactor = (self.waist/w)**self.geom_coeff / np.sqrt(alpha)
+
 
         # - Combine profiles
         profile =  prefactor * long_profile * trans_profile \

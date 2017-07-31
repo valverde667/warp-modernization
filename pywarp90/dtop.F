@@ -950,6 +950,7 @@ c   labxe        X location of bend ends in lab frame
       real(kind=8):: bendlateicentl,bendlatsicentr
       integer(ISZ):: i,ib,numb,icentl,icentr,id,ibendl,ibendr,il,ir
       integer(ISZ):: ibendmn,ibendmx
+      integer:: alloc_status
 
 c Return if there are no bends
       if (.not. bends) return
@@ -998,10 +999,14 @@ c Make array to index lattice elements.
         numb = numb + nint((nbend+1)*(offsetmx - offsetmn)/zlatperi)
       endif
 
-      allocate(ibend(numb),bendlats(numb),bendlate(numb),bend_a(numb))
-      allocate(bends_sum(numb),cosbssum(numb),sinbssum(numb))
-      allocate(bende_sum(numb),cosbesum(numb),sinbesum(numb))
-      allocate(labzs(numb),labxs(numb),labze(numb),labxe(numb))
+      allocate(ibend(numb),bendlats(numb),bendlate(numb),bend_a(numb),
+     &         bends_sum(numb),cosbssum(numb),sinbssum(numb),
+     &         bende_sum(numb),cosbesum(numb),sinbesum(numb),
+     &         labzs(numb),labxs(numb),labze(numb),labxe(numb), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:tolabfrm: ibend et al could not be allocated"
+        stop
+      endif
 
       ibend(1) = ibendl
       do i=2,numb
@@ -1808,6 +1813,7 @@ c                        grid(nz,nr) is at (zmax,rmax)
       integer(ISZ):: ip,iz,ir
       real(kind=8):: gz,gr,dz,dr,dzi,dri,wz,wr
       real(kind=8),pointer:: cdens(:)
+      integer:: alloc_status
 
       if (nr < 0 .or. nz < 0) then
         call kaboom("setgrid2dcylindrical: the grid sizes must be >= 0")
@@ -1828,7 +1834,11 @@ c     --- set grid cell inverse sizes
       dri = 1./dr
       dzi = 1./dz
 
-      allocate(cdens(0:nr))
+      allocate(cdens(0:nr), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:setgrid2dcylindrical: cdens could not be allocated"
+        stop
+      endif
 
       if (rmin == 0.) then
 c       --- The factor 0.75 corrects for overdeposition due to linear
@@ -1891,6 +1901,7 @@ c                        grid(nz,nr) is at (zmax,rmax)
       integer(ISZ):: ip,iz,ir
       real(kind=8):: gz,gr,dz,dr,dzi,dri,wz,wr
       real(kind=8),pointer:: cdens(:)
+      integer:: alloc_status
 
       if (nr < 0 .or. nz < 0) then
         call kaboom("setgrid2dcylindrical: the grid sizes must be >= 0")
@@ -1911,7 +1922,11 @@ c     --- set grid cell inverse sizes
       dri = 1./dr
       dzi = 1./dz
 
-      allocate(cdens(0:nr))
+      allocate(cdens(0:nr), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:setgrid2dcylindricalw: cdens could not be allocated"
+        stop
+      endif
 
       if (rmin == 0.) then
 c       --- The factor 0.75 corrects for overdeposition due to linear
@@ -4578,6 +4593,7 @@ c ssn1 and ssn2 are SORTED social security numbers
       integer(ISZ) :: i1, i2, i, j
       real(kind=8) :: w,fw,df,w0,fmin,fmax
       real(kind=8), allocatable :: newf(:), fbins(:)
+      integer:: alloc_status
       
       i1 = 1
       i2 = 1
@@ -4620,7 +4636,11 @@ c ssn1 and ssn2 are SORTED social security numbers
             if (j<0 .or. j>(nf-1)) then
               if (autoscale) then
                 l_auto=1
-                allocate(newf(0:nf),fbins(0:nf))
+                allocate(newf(0:nf),fbins(0:nf), stat=alloc_status)
+                if (alloc_status /= 0) then
+                  print*,"Error:deposeintersect: newf and fbins could not be allocated"
+                  stop
+                endif
                 newf = 0.
                 df = (fmax-fmin)/nf
                 do i = 0, nf

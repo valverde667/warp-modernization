@@ -305,9 +305,6 @@ cc Add whatever "Use" statements as needed here
       integer i,ip,ix,iy,ix1,iy1,ncint,nx1ny1,ixbc,izbc
       integer i1,i2,np1,np2,nxp,nyp
 
-      integer :: istat1, istat2, istat3, istat4, istat
-      integer :: istat5, istat6, istat7, istat8
-
       real escale,eta,vthmisqa,vthmisqb,aiona,ziona,aionb,zionb
       real vthmisqhyd,vtha,vthb,na,nb,vth1,lx,ly
       real ke1tot,ke2tot,delke12,twopi,wxa,wxb,wya,wyb,s0i
@@ -340,20 +337,14 @@ cc Declare Allocatable new variables
       real, allocatable, dimension(:,:) :: svy             ! y-momentum array
       real, allocatable, dimension(:,:) :: svz             ! z-momentum array
       real, allocatable, dimension(:,:) :: se             ! energy array
+      integer:: alloc_status
 
-
-
-      allocate(pdmy1(np1), stat=istat1)
-      allocate(pdmy2(np2), stat=istat2)
-      allocate(vxmi(np1), stat=istat2)
-      allocate(vymi(np1), stat=istat2)
-      allocate(vzmi(np1), stat=istat2)
-
-      allocate(s0(0:nxp,0:nyp), stat=istat3)
-      allocate(se(0:nxp,0:nyp), stat=istat4)
-      allocate(svx(0:nxp,0:nyp), stat=istat5)
-      allocate(svy(0:nxp,0:nyp), stat=istat6)
-      allocate(svz(0:nxp,0:nyp), stat=istat7)
+      allocate(pdmy1(np1), pdmy2(np2), vxmi(np1), vymi(np1), vzmi(np1),
+     &         s0(0:nxp,0:nyp), se(0:nxp,0:nyp),
+     &         svx(0:nxp,0:nyp), svy(0:nxp,0:nyp), svz(0:nxp,0:nyp), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:ijcoll2d: pdmy1 et al could not be allocated"
+      endif
 
 cc The strategy to use here is to pass the velocity and position
 cc arrays for both species needed in the collisions
@@ -666,17 +657,8 @@ ccpaws
 
 cc Deallocate arrays
 
-      deallocate(pdmy1, stat=istat1)
-      deallocate(pdmy2, stat=istat2)
-      deallocate(vxmi, stat=istat1)
-      deallocate(vymi, stat=istat1)
-      deallocate(vzmi, stat=istat1)
-
-      deallocate(s0, stat=istat3)
-      deallocate(se, stat=istat4)
-      deallocate(svx, stat=istat5)
-      deallocate(svy, stat=istat6)
-      deallocate(svz, stat=istat7)
+      deallocate(pdmy1, pdmy2, vxmi, vymi, vzmi)
+      deallocate(s0, se, svx, svy, svz)
 
 
 

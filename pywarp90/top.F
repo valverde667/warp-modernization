@@ -577,6 +577,7 @@ c  time in any location.
 #ifdef J90
       real(kind=8):: pmmnts(NUMZMMNT,np)
 #endif
+      integer:: alloc_status
 
       timetemp = wtime()
 
@@ -629,7 +630,11 @@ c        --- the work arrays to be thread private when called with itask==2.
 
       if (itask == 2) then
 
-        allocate(pp(0:18,np),iz(np))
+        allocate(pp(0:18,np),iz(np), stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"Error:getzmmnt: pp and iz could not be allocated"
+          stop
+        endif
 
 c       --- Save the mass and weight
         zmmntsq(js) = q
@@ -1821,6 +1826,7 @@ c  time in any location.
 #ifdef J90
       real(kind=8):: pmmnts(NUMZMMNT,np)
 #endif
+      integer:: alloc_status
 
       timetemp = wtime()
 
@@ -1845,7 +1851,11 @@ c     --- done afterwards. Otherwise, only calculate the combined moments.
 
       if (itask == 2) then
 
-        allocate(pp(0:18,np),iz(np))
+        allocate(pp(0:18,np),iz(np), stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"Error:getzmmnt_weights: pp and iz could not be allocated"
+          stop
+        endif
 
 c       --- Save the mass and weight
 c       --- Note that the charge is not needed and should be removed from the
@@ -3870,9 +3880,14 @@ c=============================================================================
 c Impose particles boundary conditions
 
       real(kind=8),allocatable:: r(:),ri(:),ur(:),ut(:)
+      integer:: alloc_status
 
       if (lrz) then
-        allocate(r(n),ri(n),ur(n),ut(n))
+        allocate(r(n),ri(n),ur(n),ut(n), stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"Error:particleboundarieswithdata: r et al could not be allocated"
+          stop
+        endif
         r = sqrt(x**2 + y**2)
         ri = 1./r
         ur = ux*x*ri + uy*y*ri
@@ -5079,12 +5094,21 @@ c space.
       integer(ISZ):: is,ip,iy,iz,pindexmin
       integer(ISZ),pointer:: pindex(:)
       integer(ISZ),pointer:: npblock(:)
+      integer:: alloc_status
 
-      allocate(npblock((1+ny)*(1+nz)))
+      allocate(npblock((1+ny)*(1+nz)), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:particlesortyzwithcopy: npblock could not be allocated"
+        stop
+      endif
 
 c     --- Treat the particles in each species separately
       do is=1,pgroup%ns
-        allocate(pindex(pgroup%nps(is)))
+        allocate(pindex(pgroup%nps(is)), stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"Error:particlesortyzwithcopy: pindex could not be allocated"
+          stop
+        endif
 
 c       --- First, find which block each particle goes into and count how
 c       --- many are in each block
@@ -5123,12 +5147,21 @@ c space.
       integer(ISZ):: is,ip,ix,iy,iz,pindexmin
       integer(ISZ),pointer:: pindex(:)
       integer(ISZ),pointer:: npblock(:)
+      integer:: alloc_status
 
-      allocate(npblock((1+nx)*(1+ny)*(1+nz)))
+      allocate(npblock((1+nx)*(1+ny)*(1+nz)), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:particlesortxyzwithcopy: npblock could not be allocated"
+        stop
+      endif
 
 c     --- Treat the particles in each species separately
       do is=1,pgroup%ns
-        allocate(pindex(pgroup%nps(is)))
+        allocate(pindex(pgroup%nps(is)), stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"Error:particlesortxyzwithcopy: pindex could not be allocated"
+          stop
+        endif
 
 c       --- First, find which block each particle goes into and count how
 c       --- many are in each block
@@ -5168,8 +5201,13 @@ c=============================================================================
       integer(ISZ):: ip,ipb,ipid
       integer(ISZ),pointer:: ipblock(:)
       real(kind=8),pointer:: pdata(:)
+      integer:: alloc_status
 
-      allocate(ipblock(nn))
+      allocate(ipblock(nn), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:particlesortbyindex: ipblock could not be allocated"
+        stop
+      endif
 
       npblock = 0
 
@@ -5193,7 +5231,11 @@ c     --- Replace pindex with the new array index.
       enddo
 
 c     --- Now, the sort can be done.
-      allocate(pdata(np))
+      allocate(pdata(np), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:particlesortbyindex: pdata could not be allocated"
+        stop
+      endif
       call particlecopysorteddata(np,pgroup%xp(ipmin:ipmin+np-1),pdata,pindex)
       call particlecopysorteddata(np,pgroup%yp(ipmin:ipmin+np-1),pdata,pindex)
       call particlecopysorteddata(np,pgroup%zp(ipmin:ipmin+np-1),pdata,pindex)
@@ -5258,18 +5300,25 @@ c Sorts particles, moving only those particles that need to be moved.
       integer(ISZ),pointer:: ipmove(:)
       integer(ISZ),pointer:: pimove(:)
       real(kind=8),pointer:: pdata(:)
+      integer:: alloc_status
 
       nn = (1+nx)*(1+ny)*(1+nz)
-      allocate(npblock(nn),ipblock(nn+1))
+      allocate(npblock(nn),ipblock(nn+1), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:particlesortxyzwithcopynew: npblock could not be allocated"
+        stop
+      endif
 
 c     --- Treat the particles in each species separately
       do is=1,pgroup%ns
         np = pgroup%nps(is)
         i1 = pgroup%ins(is)
         i2 = i1 + np - 1
-        allocate(pindex(np))
-        allocate(ipmove(np))
-        allocate(ipfree(np))
+        allocate(pindex(np), ipmove(np), ipfree(np), stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"Error:particlesortxyzwithcopynew: pindex et al could not be allocated"
+          stop
+        endif
 
 c       --- First, find which block each particle goes into and count how
 c       --- many are in each block.
@@ -5321,7 +5370,11 @@ c         --- where particles can be moved to.
           endif
         enddo
 
-        allocate(pimove(nmove))
+        allocate(pimove(nmove), stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"Error:particlesortxyzwithcopynew: pimove could not be allocated"
+          stop
+        endif
         do ip=1,nmove
           ii = pindex(ipmove(ip))
           npblock(ii) = npblock(ii) - 1
@@ -5329,7 +5382,11 @@ c         --- where particles can be moved to.
         enddo
 
 c       --- Now, the sort can be done.
-        allocate(pdata(nmove))
+        allocate(pdata(nmove), stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"Error:particlesortxyzwithcopynew: pdata could not be allocated"
+          stop
+        endif
         call particlemovesorteddata(np,pgroup%xp(i1:i2),nmove,ipmove,pimove,pdata)
         call particlemovesorteddata(np,pgroup%yp(i1:i2),nmove,ipmove,pimove,pdata)
         call particlemovesorteddata(np,pgroup%zp(i1:i2),nmove,ipmove,pimove,pdata)
@@ -7367,14 +7424,12 @@ c=============================================================================
         integer(ISZ) :: i, ii, izmin, izmax
 
         integer(ISZ), allocatable :: ntsloc(:,:)
-        integer(ISZ):: allocerror
+        integer:: alloc_status
 
-        allocate(ntsloc(nztlocator,nztslices),stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"set_tslice_locator: allocation error ",allocerror,
-     &           ": could not allocate ntsloc to shape ",nztlocator,nztslices
-          call kaboom("set_tslice_locator: allocation error")
-          return
+        allocate(ntsloc(nztlocator,nztslices), stat=alloc_status)
+        if (alloc_status /= 0) then
+          print*,"Error:set_tslice_locator: ntsloc could not be allocated to shape ",nztlocator,nztslices
+          stop
         endif
 
         ntsloc = 0

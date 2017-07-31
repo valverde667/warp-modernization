@@ -246,11 +246,16 @@ c  Calculates the line charge density from the rho argument.
       real(kind=8),pointer:: workz(:)
       real(kind=8):: zz,zg,wzg,dzi
       integer(ISZ):: iz,izg
+      integer:: alloc_status
       real(kind=8):: substarttime,wtime
       if (lw3dtimesubs) substarttime = wtime()
       if (.not. lgtlchg3d) return
 
-      allocate(workz(0:nzlocal))
+      allocate(workz(0:nzlocal), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:gtlchg3dfromrho: workz could not be allocated"
+        stop
+      endif
 
       if (nzlocal == 0) then
         dzi = 0.
@@ -348,12 +353,16 @@ c  Calculates the line charge density from the rho argument.
       real(kind=8),pointer:: cellarea(:)
       real(kind=8):: zz,zg,wzg,dzi
       integer(ISZ):: ix,iz,izg
+      integer:: alloc_status
       real(kind=8):: substarttime,wtime
       if (lw3dtimesubs) substarttime = wtime()
       if (.not. lgtlchg3d) return
 
-      allocate(workz(0:nzlocal))
-      allocate(cellarea(0:nxlocal))
+      allocate(workz(0:nzlocal), cellarea(0:nxlocal), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:gtlchgrzfromrho: workz and cellarea could not be allocated"
+        stop
+      endif
 
       if (nzlocal == 0) then
         dzi = 0.
@@ -611,6 +620,7 @@ c This does it in a partially vectorized manner.
       real(kind=8),pointer:: workxy(:,:)
       integer(ISZ):: ix,iy,iz,izb
       real(kind=8):: zm,zz,phiextun,wzb
+      integer:: alloc_status
       real(kind=8):: substarttime,wtime
       if (lw3dtimesubs) substarttime = wtime()
 
@@ -628,7 +638,11 @@ c This does it in a partially vectorized manner.
 c     conversion factor to go from grid frame to beam frame
       zz = zmminlocal + zgrid - zbeam
 
-      allocate(workxy(0:nxlocal,0:nylocal))
+      allocate(workxy(0:nxlocal,0:nylocal), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:getese3d: workxy could not be allocated"
+        stop
+      endif
       workxy = 0.
 
 c     --- Loop order switched for the OpenMP parallel version - this
@@ -725,10 +739,15 @@ c This does it in a partially vectorized manner.
 
       integer(ISZ):: ix,iy,iz
       real(kind=8),pointer:: workxy(:,:)
+      integer:: alloc_status
       real(kind=8):: substarttime,wtime
       if (lw3dtimesubs) substarttime = wtime()
 
-      allocate(workxy(0:nxlocal,0:nylocal))
+      allocate(workxy(0:nxlocal,0:nylocal), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:getese3dfromrhophi: workxy could not be allocated"
+        stop
+      endif
       workxy = 0.0
 
 c     --- Note that the z planes iz=0 and nzlocal may need skipping depending
@@ -797,10 +816,15 @@ c This does it in a partially vectorized manner.
       integer(ISZ):: ix,iz
       real(kind=8):: r
       real(kind=8),pointer:: workx(:)
+      integer:: alloc_status
       real(kind=8):: substarttime,wtime
       if (lw3dtimesubs) substarttime = wtime()
 
-      allocate(workx(0:nxlocal))
+      allocate(workx(0:nxlocal), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:gtlchg3dfromrho: workz could not be allocated"
+        stop
+      endif
       workx = 0.0
 
 c     --- Note that the z planes iz=0 and nzlocal may need skipping depending

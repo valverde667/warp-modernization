@@ -6,6 +6,7 @@ Major features:
   as much as possible, through class inheritance
 - The class implements memory buffering of the slices, so as
   not to write to disk at every timestep
+- The boosted frame diagnostics cannot use parallel HDF5 output
 """
 import os
 import numpy as np
@@ -28,13 +29,15 @@ class BoostedParticleDiagnostic(ParticleDiagnostic):
                  Ntot_snapshots_lab, gamma_boost, period,
                  em, top, w3d, comm_world=None,
                  particle_data=["position", "momentum", "weighting"],
-                 select=None, write_dir=None, lparallel_output=False,
-                 species={"electrons": None}):
+                 select=None, write_dir=None, species={"electrons": None}):
         """
         Initialize diagnostics that retrieve the data in the lab frame,
         as a series of snapshot (one file per snapshot),
         within a virtual moving window defined by zmin_lab, zmax_lab, v_lab.
 
+        Note: In the current implementation, these diagnostics do not
+        use parallel HDF5 output. Rank 0 creates and writes all the files.
+        
         Parameters
         ----------
         zmin_lab, zmax_lab: floats (meters)
@@ -65,7 +68,8 @@ class BoostedParticleDiagnostic(ParticleDiagnostic):
         # Initialize Particle diagnostic normal attributes
         ParticleDiagnostic.__init__(self, period, top, w3d, comm_world,
             species=species, particle_data=particle_data, select=select,
-            write_dir=write_dir, lparallel_output=lparallel_output)
+            write_dir=write_dir, lparallel_output=False)
+        # Note: The boosted frame diagnostics cannot use parallel HDF5 output
 
         # Register the boost quantities
         self.gamma_boost = gamma_boost
@@ -90,12 +94,11 @@ class BoostedParticleDiagnostic(ParticleDiagnostic):
         for i in range( Ntot_snapshots_lab ):
             t_lab = i*dt_snapshots_lab
             snapshot = LabSnapshot( t_lab, zmin_lab + v_lab*t_lab,
-                                    top.dt, zmax_lab + v_lab*t_lab,
-                                    self.write_dir, i, self.species_dict,
-                                    self.lparallel_output, self.rank )
+                            top.dt, zmax_lab + v_lab*t_lab,
+                            self.write_dir, i, self.species_dict, self.rank )
             self.snapshots.append( snapshot )
             # Initialize a corresponding empty file
-            if self.lparallel_output == False and self.rank == 0:
+            if self.rank == 0:
                 self.create_file_empty_particles(
                     snapshot.filename, i, snapshot.t_lab, self.top.dt)
 
@@ -288,7 +291,7 @@ class LabSnapshot:
     in the lab frame (i.e. one given *time* in the lab frame)
     """
     def __init__(self, t_lab, zmin_lab, dt, zmax_lab, write_dir, i,
-        species_dict, lparallel_output, rank):
+        species_dict, rank):
         """
         Initialize a LabSnapshot
 
@@ -312,7 +315,7 @@ class LabSnapshot:
             (inherited from Warp)
         """
         # Deduce the name of the filename where this snapshot writes
-        if lparallel_output == False and rank == 0:
+        if rank == 0:
             self.filename = os.path.join( write_dir, 'hdf5/data%08d.h5' %i)
         self.iteration = i
         self.dt = dt

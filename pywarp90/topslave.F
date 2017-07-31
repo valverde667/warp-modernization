@@ -902,7 +902,7 @@ c at once.
       integer(MPIISZ):: mpierror,comm_world_mpiisz
       integer(MPIISZ):: sendcounts(0:nprocs-1),sdispls(0:nprocs-1)
       integer(MPIISZ):: recvcounts(0:nprocs-1),rdispls(0:nprocs-1)
-      integer(MPIISZ):: allocerror
+      integer(MPIISZ):: alloc_status
       logical(ISZ):: skipx,skipy,skipz
       real(kind=8):: substarttime,wtime
       if (ltoptimesubs) substarttime = wtime()
@@ -944,9 +944,9 @@ c       --- Set nyp to 1, so that ipy2 is OK.
         skipz = .true.
       endif
 
-      allocate(xprocs(0:nxp),yprocs(0:nyp),zprocs(0:nzp),stat=allocerror)
-      if (allocerror /= 0) then
-        print*,"reorgparticles_parallel: allocation error ",allocerror,
+      allocate(xprocs(0:nxp),yprocs(0:nyp),zprocs(0:nzp), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"reorgparticles_parallel: allocation error ",alloc_status,
      &         ": could not allocate x,y,zprocs to shape ",nxp,nyp,nzp
         call kaboom("reorgparticles_parallel: allocation error")
         return
@@ -983,9 +983,9 @@ c     --- Next, create temporary arrays to hold the sorted particles.
       pnp = sum(pgroup%nps)
       ncoords = 13 + pgroup%npid
       pnpmax = max(int(1,MPIISZ),pnp)
-      allocate(ptemp(0:ncoords-1,pnpmax),pprocs(pnpmax),stat=allocerror)
-      if (allocerror /= 0) then
-        print*,"reorgparticles_parallel: allocation error ",allocerror,
+      allocate(ptemp(0:ncoords-1,pnpmax),pprocs(pnpmax), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"reorgparticles_parallel: allocation error ",alloc_status,
      &         ": could not allocate ptemp and pprocs to shape ",ncoords,pnpmax
         call kaboom("reorgparticles_parallel: allocation error")
         return
@@ -1129,9 +1129,9 @@ c     --- done.
       
 c     --- Create space for incoming data
       pnpmax = max(int(1,MPIISZ),pnp)
-      allocate(precv(0:ncoords-1,pnpmax),stat=allocerror)
-      if (allocerror /= 0) then
-        print*,"reorgparticles_parallel: allocation error ",allocerror,
+      allocate(precv(0:ncoords-1,pnpmax), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"reorgparticles_parallel: allocation error ",alloc_status,
      &         ": could not allocate precv to shape ",ncoords,pnpmax
         call kaboom("reorgparticles_parallel: allocation error")
         return

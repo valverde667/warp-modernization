@@ -6,11 +6,7 @@ Major features:
   as much as possible, through class inheritance
 - The class implements memory buffering of the slices, so as
   not to write to disk at every timestep
-
-Remaining questions:
-- Should one use the IO collectives when only a few proc modify a given file?
-- Should we just have the proc writing directly to the file ?
-  Should we gather on the first proc ?
+- The boosted frame diagnostics cannot use parallel HDF5 output
 """
 import os
 import numpy as np
@@ -34,11 +30,14 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
     def __init__(self, zmin_lab, zmax_lab, v_lab, dt_snapshots_lab,
                  Ntot_snapshots_lab, gamma_boost, period, em, top, w3d,
                  comm_world=None, fieldtypes=["rho", "E", "B", "J"],
-                 z_subsampling=1, write_dir=None, lparallel_output=False ) :
+                 z_subsampling=1, write_dir=None ) :
         """
         Initialize diagnostics that retrieve the data in the lab frame,
         as a series of snapshot (one file per snapshot),
         within a virtual moving window defined by zmin_lab, zmax_lab, v_lab.
+
+        Note: In the current implementation, these diagnostics do not
+        use parallel HDF5 output. Rank 0 creates and writes all the files.
 
         Parameters
         ----------
@@ -74,7 +73,8 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
         # Initialize the normal attributes of a FieldDiagnostic
         FieldDiagnostic.__init__(self, period, em, top, w3d,
                 comm_world, fieldtypes=fieldtypes, write_dir=write_dir,
-                lparallel_output=lparallel_output)
+                lparallel_output=False)
+        # Note: The boosted frame diagnostics cannot use parallel HDF5 output
 
         # Gather the indices that correspond to the positions
         # of each subdomain within full domain
@@ -115,7 +115,7 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
                                     self.write_dir, i, self.rank)
             self.snapshots.append( snapshot )
             # Initialize a corresponding empty file
-            if self.lparallel_output == False and self.rank == 0:
+            if self.rank == 0:
                 self.create_file_empty_meshes( snapshot.filename, i,
                 snapshot.t_lab, Nz, snapshot.zmin_lab, dz_lab, self.top.dt )
 
@@ -385,24 +385,13 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
         indices = self.global_indices
 
         # Write the fields depending on the geometry
-        if self.lparallel_output:
-            if self.dim == "2d":
-                dset[ indices[0,0]:indices[1,0], iz_min:iz_max ] = data
-            elif self.dim == "3d":
-                dset[ indices[0,0]:indices[1,0],
-                indices[0,1]:indices[1,1], iz_min:iz_max ] = data
-            elif self.dim == "circ":
-                # The first index corresponds to the azimuthal mode
-                dset[ :, indices[0,0]:indices[1,0], iz_min:iz_max ] = data
-
-        else:
-            if self.dim == "2d":
-                dset[ :, iz_min:iz_max ] = data
-            elif self.dim == "3d":
-                dset[ :, :, iz_min:iz_max ] = data
-            elif self.dim == "circ":
-                # The first index corresponds to the azimuthal mode
-                dset[ :, :, iz_min:iz_max ] = data
+        if self.dim == "2d":
+            dset[ :, iz_min:iz_max ] = data
+        elif self.dim == "3d":
+            dset[ :, :, iz_min:iz_max ] = data
+        elif self.dim == "circ":
+            # The first index corresponds to the azimuthal mode
+            dset[ :, :, iz_min:iz_max ] = data
 
 class LabSnapshot:
     """
