@@ -292,18 +292,10 @@ c     --- Also setup parallel arrays.
 
         allocate(res(-nxguardres:nxlocal+nxguardres,
      &               -nyguardres:nylocal+nyguardres,
-<<<<<<< HEAD
-     &               -nzguardres:nzlocal+nzguardres),stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"multigrid3dsolve: allocation error ",allocerror,
-     &           ": could not allocate res to shape ",
-     &           nxlocal,nylocal,nzlocal
-=======
-     &               -nzguardres:nzlocal+nzguardres), stat=alloc_status)
+     &               -nzguardres:nzlocal+nzguardres),stat=alloc_status)
         if (alloc_status /= 0) then
           print*,"multigrid3dsolve: allocation error ",alloc_status,
      &           ": could not allocate res to shape ",nxlocal,nylocal,nzlocal
->>>>>>> remotes/berkeleylab/warp/master
           call kaboom("multigrid3dsolve: allocation error")
           return
         endif
@@ -311,19 +303,10 @@ c     --- Also setup parallel arrays.
         rhosave = rho(0:nxlocal,0:nylocal,0:nzlocal)
       endif
 
-<<<<<<< HEAD
-      allocate(phisave(-1:nxlocal+1,-1:nylocal+1,-1:nzlocal+1),
-     &         stat=allocerror)
-      if (allocerror /= 0) then
-        print*,"multigrid3dsolve: allocation error ",allocerror,
-     &         ": could not allocate phisave to shape ",
-     &         nxlocal,nylocal,nzlocal
-=======
       allocate(phisave(-1:nxlocal+1,-1:nylocal+1,-1:nzlocal+1), stat=alloc_status)
       if (alloc_status /= 0) then
         print*,"multigrid3dsolve: allocation error ",alloc_status,
      &         ": could not allocate phisave to shape ",nxlocal,nylocal,nzlocal
->>>>>>> remotes/berkeleylab/warp/master
         call kaboom("multigrid3dsolve: allocation error")
         return
       endif
@@ -795,18 +778,9 @@ c       --- Alloate new work space
           call kaboom("vcycle: allocation error")
           return
         endif
-<<<<<<< HEAD
-        allocate(rhocoarse(0:nxlocalcoarse,
-     &                     0:nylocalcoarse,
-     &                     0:nzlocalcoarse),
-     &                     stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"vcycle: allocation error ",allocerror,
-=======
         allocate(rhocoarse(0:nxlocalcoarse,0:nylocalcoarse,0:nzlocalcoarse), stat=alloc_status)
         if (alloc_status /= 0) then
           print*,"vcycle: allocation error ",alloc_status,
->>>>>>> remotes/berkeleylab/warp/master
      &           ": could not allocate rhocoarse to shape ",
      &           nxlocalcoarse,nylocalcoarse,nzlocalcoarse
           call kaboom("vcycle: allocation error")
@@ -890,19 +864,10 @@ c     --- Make sure guard planes have sensible values before beginning.
 
       if (mglevel == 0) then
 c       --- The convergence error is only calculated at the finest mglevel
-<<<<<<< HEAD
-        allocate(phisave(-1:nxlocal+1,-1:nylocal+1,-1:nzlocal+1),
-     &           stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"multigrid3dsolve: allocation error ",allocerror,
-     &         ": could not allocate phisave to shape ",
-     &         nxlocal,nylocal,nzlocal
-=======
         allocate(phisave(-1:nxlocal+1,-1:nylocal+1,-1:nzlocal+1), stat=alloc_status)
         if (alloc_status /= 0) then
           print*,"multigrid3dsolve: allocation error ",alloc_status,
      &         ": could not allocate phisave to shape ",nxlocal,nylocal,nzlocal
->>>>>>> remotes/berkeleylab/warp/master
           call kaboom("multigrid3dsolve: allocation error")
           return
         endif
@@ -1366,18 +1331,10 @@ c     --- coarsening. This is the same check that is done in getmglevels.
 
         allocate(res(-nxguardres:nxlocal+nxguardres,
      &               -nyguardres:nylocal+nyguardres,
-<<<<<<< HEAD
-     &               -nzguardres:nzlocal+nzguardres),stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"vcycle: allocation error ",allocerror,
-     &           ": could not allocate res to shape ",
-     &           nxlocal,nylocal,nzlocal
-=======
-     &               -nzguardres:nzlocal+nzguardres), stat=alloc_status)
+     &               -nzguardres:nzlocal+nzguardres),stat=alloc_status)
         if (alloc_status /= 0) then
           print*,"vcycle: allocation error ",alloc_status,
      &           ": could not allocate res to shape ",nxlocal,nylocal,nzlocal
->>>>>>> remotes/berkeleylab/warp/master
           call kaboom("vcycle: allocation error")
           return
         endif
@@ -1501,18 +1458,10 @@ c       --- Alloate new work space
           call kaboom("vcycle: allocation error")
           return
         endif
-<<<<<<< HEAD
-        allocate(rhocoarse(0:nxlocalcoarse,
-     &                     0:nylocalcoarse,
-     &                     0:nzlocalcoarse),
-     &           stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"vcycle: allocation error ",allocerror,
-=======
+
         allocate(rhocoarse(0:nxlocalcoarse,0:nylocalcoarse,0:nzlocalcoarse), stat=alloc_status)
         if (alloc_status /= 0) then
           print*,"vcycle: allocation error ",alloc_status,
->>>>>>> remotes/berkeleylab/warp/master
      &           ": could not allocate rhocoarse to shape ",
      &           nxlocalcoarse,nylocalcoarse,nzlocalcoarse
           call kaboom("vcycle: allocation error")
@@ -4159,7 +4108,6 @@ c the extra guard cells should alway be zero.
       if (lf3dtimesubs) timeapplyboundaryconditions3d =
      &                  timeapplyboundaryconditions3d 
      &                  + wtime() - substarttime
-
       return
       end
 c=============================================================================
@@ -4194,7 +4142,6 @@ c various mesh resolutions needed by the MG solver.
 c     --- Make sure the coarsening levels are setup.
       call getmglevels(nx,ny,nz,nxlocal,nylocal,nzlocal,
      &                 dx,dy,dz,conductors,fsdecomp)
-
 c     --- Call the work routine for each level
       do il=0,conductors%levels-1
         nxlocal1 = conductors%levelnx(il)
@@ -4214,18 +4161,10 @@ c     --- Call the work routine for each level
 c     --- Sort the conductor data by level number
 c     --- First, sort conductor points
       if (conductors%interior%n > 0) then
-<<<<<<< HEAD
-        allocate(isort(conductors%interior%n),stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"checkconductors: allocation error ",allocerror,
-     &           ": could not allocate isort to shape ",
-     &           conductors%interior%n
-=======
         allocate(isort(conductors%interior%n), stat=alloc_status)
         if (alloc_status /= 0) then
           print*,"checkconductors: allocation error ",alloc_status,
      &           ": could not allocate isort to shape ",conductors%interior%n
->>>>>>> remotes/berkeleylab/warp/master
           call kaboom("checkconductors: allocation error")
           return
         endif
@@ -4243,18 +4182,10 @@ c     --- First, sort conductor points
 
 c     --- Sort even subgrid points
       if (conductors%evensubgrid%n > 0) then
-<<<<<<< HEAD
-        allocate(isort(conductors%evensubgrid%n),stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"checkconductors: allocation error ",allocerror,
-     &           ": could not allocate isort to shape ",
-     &           conductors%evensubgrid%n
-=======
         allocate(isort(conductors%evensubgrid%n), stat=alloc_status)
         if (alloc_status /= 0) then
           print*,"checkconductors: allocation error ",alloc_status,
      &           ": could not allocate isort to shape ",conductors%evensubgrid%n
->>>>>>> remotes/berkeleylab/warp/master
           call kaboom("checkconductors: allocation error")
           return
         endif
@@ -4274,18 +4205,10 @@ c     --- Sort even subgrid points
 
 c     --- Sort odd subgrid points
       if (conductors%oddsubgrid%n > 0) then
-<<<<<<< HEAD
-        allocate(isort(conductors%oddsubgrid%n),stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"checkconductors: allocation error ",allocerror,
-     &           ": could not allocate isort to shape ",
-     &           conductors%oddsubgrid%n
-=======
         allocate(isort(conductors%oddsubgrid%n), stat=alloc_status)
         if (alloc_status /= 0) then
           print*,"checkconductors: allocation error ",alloc_status,
      &           ": could not allocate isort to shape ",conductors%oddsubgrid%n
->>>>>>> remotes/berkeleylab/warp/master
           call kaboom("checkconductors: allocation error")
           return
         endif
@@ -4405,18 +4328,10 @@ c     is will not be the same as a subgrid point
       nmax = max(evensubgrid%nmax,oddsubgrid%nmax)
 
 c     --- Set the conductor points.
-<<<<<<< HEAD
-      allocate(iii(0:nxlocal,0:nylocal,0:nzlocal),stat=allocerror)
-      if (allocerror /= 0) then
-        print*,"checkconductors_work: allocation error ",allocerror,
-     &         ": could not allocate iii to shape ",
-     &         nxlocal,nylocal,nzlocal
-=======
       allocate(iii(0:nxlocal,0:nylocal,0:nzlocal), stat=alloc_status)
       if (alloc_status /= 0) then
         print*,"checkconductors_work: allocation error ",alloc_status,
      &         ": could not allocate iii to shape ",nxlocal,nylocal,nzlocal
->>>>>>> remotes/berkeleylab/warp/master
         call kaboom("checkconductors_work: allocation error")
         return
       endif
@@ -6573,16 +6488,10 @@ c       --- Alloate new work space
           call kaboom("vcycle2d: allocation error")
           return
         endif
-<<<<<<< HEAD
-        allocate(rhocoarse(0:nxlocalcoarse,0:nzlocalcoarse),
-     &           stat=allocerror)
-        if (allocerror /= 0) then
-          print*,"vcycle2d: allocation error ",allocerror,
-=======
+		
         allocate(rhocoarse(0:nxlocalcoarse,0:nzlocalcoarse), stat=alloc_status)
         if (alloc_status /= 0) then
           print*,"vcycle2d: allocation error ",alloc_status,
->>>>>>> remotes/berkeleylab/warp/master
      &           ": could not allocate rhocoarse to shape ",
      &           nxlocalcoarse,nzlocalcoarse
           call kaboom("vcycle2d: allocation error")
@@ -7895,16 +7804,9 @@ c     --- Make sure guard planes have sensible values before beginning.
      &                               nxguardphi,0,nzguardphi,phi,1,
      &                               localbounds,.false.,.false.)
 
-<<<<<<< HEAD
-      allocate(phisave(-1:nxlocal+1,-1:nzlocal+1),stat=allocerror)
-      if (allocerror /= 0) then
-        print*,"multigrid2ddielectricsolve: allocation error "
-     &        ,allocerror,
-=======
       allocate(phisave(-1:nxlocal+1,-1:nzlocal+1), stat=alloc_status)
       if (alloc_status /= 0) then
         print*,"multigrid2ddielectricsolve: allocation error ",alloc_status,
->>>>>>> remotes/berkeleylab/warp/master
      &         ": could not allocate phisave to shape ",nxlocal,nzlocal
         call kaboom("multigrid2ddielectricsolve: allocation error")
         return
@@ -8137,39 +8039,27 @@ c     --- Check if this is the finest level. If so, then don't do any further
 c     --- coarsening. This is the same check that is done in getmglevels.
 C     changed to stop coarsening at 6 (was 4) to prevent failure of periodic boundary exchange
 C     epsilon has n - 1 cells compared to n for phi and will not be able to exchange boudnaries if n <= 3
-      if (nx >= NMGMIN .and. nz >= NMGMIN .and.
-     &    mglevel < mgmaxlevels) then
+      if (nx >= NMGMIN .and. nz >= NMGMIN .and. mglevel < mgmaxlevels) then
 
         nxguardres = 1
         nzguardres = 1
         if (nx > nxlocal) nxguardres = 3
         if (nz > nzlocal) nzguardres = 3
 
-<<<<<<< HEAD
         if (.not.ALLOCATED(rescache(mglevel)%arr)) then
 #ifdef DEBUG
           print*,"vcycle2ddielectric: allocating res to shape ",
      &        nxlocal,nzlocal
 #endif
-          allocate(rescache(mglevel)%arr(-nxguardres:nxlocal+nxguardres,
-     &                                  -nzguardres:nzlocal+nzguardres),
-     &                                  stat=allocerror)
-          if (allocerror /= 0) then
-            print*,"vcycle2ddielectric: allocation error ",allocerror,
-     &             ": could not allocate res to shape ",nxlocal,nzlocal
+          allocate(res(-nxguardres:nxlocal+nxguardres,
+     &               -nzguardres:nzlocal+nzguardres),
+     &           stat=alloc_status)
+          if (alloc_status /= 0) then
+            print*,"vcycle2ddielectric: allocation error ",alloc_status,
+     &           ": could not allocate res to shape ",nxlocal,nzlocal
             call kaboom("vcycle2ddielectric: allocation error")
             return
           endif
-=======
-        allocate(res(-nxguardres:nxlocal+nxguardres,
-     &               -nzguardres:nzlocal+nzguardres),
-     &           stat=alloc_status)
-        if (alloc_status /= 0) then
-          print*,"vcycle2ddielectric: allocation error ",alloc_status,
-     &           ": could not allocate res to shape ",nxlocal,nzlocal
-          call kaboom("vcycle2ddielectric: allocation error")
-          return
->>>>>>> remotes/berkeleylab/warp/master
         endif
         
 c       Point to preallocated array
@@ -8303,7 +8193,7 @@ c       --- Calculate the xmminlocal of the coarse grid
         test_lzoffset = 0
         xmminlocalcoarse = xmminlocal
 #endif
-<<<<<<< HEAD
+
 c       Allocate array space on first time through
         if (.not.ALLOCATED(phicoarsecache(mglevel)%arr)) then
 c         --- Allocate new work space
@@ -8313,9 +8203,9 @@ c         --- Allocate new work space
 #endif
           allocate(phicoarsecache(mglevel)%arr(-1:nxlocalcoarse+1,
      &                                         -1:nzlocalcoarse+1),
-     &                                         stat=allocerror)
-          if (allocerror /= 0) then
-            print*,"vcycle2ddielectric: allocation error ",allocerror,
+     &                                         stat=alloc_status)
+          if (alloc_status /= 0) then
+            print*,"vcycle2ddielectric: allocation error ",alloc_status,
      &             ": could not allocate phicoarse to shape ",
      &             nxlocalcoarse,nzlocalcoarse
             call kaboom("vcycle2ddielectric: allocation error")
@@ -8332,18 +8222,18 @@ c         --- Allocate new work space
 #endif
           allocate(rhocoarsecache(mglevel)%arr(0:nxlocalcoarse,
      &                                         0:nzlocalcoarse),
-     &                                         stat=allocerror)
-          if (allocerror /= 0) then
-            print*,"vcycle2ddielectric: allocation error ",allocerror,
+     &                                         stat=alloc_status)
+          if (alloc_status /= 0) then
+            print*,"vcycle2ddielectric: allocation error ",alloc_status,
      &             ": could not allocate rhocoarse to shape ",
      &             nxlocalcoarse,nzlocalcoarse
             call kaboom("vcycle2ddielectric: allocation error")
             return
           endif
         endif
-        
+    
         rhocoarse => rhocoarsecache(mglevel)%arr
-        
+     
         if (.not.ALLOCATED(epscoarsecache(mglevel)%arr)) then
 #ifdef DEBUG
           print*,"vcycle2ddielectric: allocating epscoarse to shape ",
@@ -8351,9 +8241,9 @@ c         --- Allocate new work space
 #endif
           allocate(epscoarsecache(mglevel)%arr(0:nxlocalcoarse+1,
      &                                         0:nzlocalcoarse+1),
-     &                                         stat=allocerror)
-          if (allocerror /= 0) then
-            print*,"vcycle2ddielectric: allocation error ",allocerror,
+     &                                         stat=alloc_status)
+          if (alloc_status /= 0) then
+            print*,"vcycle2ddielectric: allocation error ",alloc_status,
      &             ": could not allocate epsiloncoarse to shape ",
      &             nxlocalcoarse,nzlocalcoarse
             call kaboom("vcycle2ddielectric: allocation error")
@@ -8391,7 +8281,7 @@ C           print*,"Before Exch",ixproc,izproc,epsiloncoarse
 #endif
         else
           epsiloncoarse => epscoarsecache(mglevel)%arr
-=======
+	  	endif
 
 c       --- Alloate new work space
         allocate(phicoarse(-1:nxlocalcoarse+1,-1:nzlocalcoarse+1), stat=alloc_status)
@@ -8417,7 +8307,6 @@ c       --- Alloate new work space
      &           nxlocalcoarse,nzlocalcoarse
           call kaboom("vcycle2ddielectric: allocation error")
           return
->>>>>>> remotes/berkeleylab/warp/master
         endif
 
         rhocoarse = 0.
@@ -8479,8 +8368,7 @@ c       --- Continue at the next coarsest level.
         endif
 
 #ifdef MPIPARALLEL
-        if (any(coarsedecomp%mpistatex == 1) .or.
-     &      any(coarsedecomp%mpistatez == 1)) then
+        if (any(coarsedecomp%mpistatex == 1) .or. any(coarsedecomp%mpistatez == 1)) then
           call mgexchange_phiupdate(1,nxlocalcoarse,0,nzlocalcoarse,
      &                        phicoarse,nxguardphi,0,nzguardphi,
      &                        -1,-1,coarsedecomp)
@@ -8519,7 +8407,7 @@ c       --- Add in resulting error.
      &             position="append", action="write")
         else
           open(12, file=filename, status="new", action="write")
-        end if
+        endif
 
         write(12,*) "PROCSSOR X",ixproc,"PROCESSOR Z",izproc
         write(12,*) "NX",nx,"NZ",nz
@@ -9424,7 +9312,7 @@ c This keeps (max(dz,dx) - min(dz,dx))/dx < 1/3.
       integer(ISZ):: lzoffset(0:fsdecomp%nzprocs-1)
       integer(ISZ):: rzoffset(0:fsdecomp%nzprocs-1)
       character(72):: errline
-      integer(ISZ):: allocerror
+      integer(ISZ):: alloc_status
       real(kind=8):: substarttime,wtime
       if (lf3dtimesubs) substarttime = wtime()
 
@@ -9462,10 +9350,10 @@ c     --- Make sure guard planes have sensible values before beginning.
      &                               localbounds,.false.,.false.)
 
       allocate(phisave(-1:nxlocal+1,-1:nylocal+1,-1:nzlocal+1),
-     &         stat=allocerror)
-      if (allocerror /= 0) then
+     &         stat=alloc_status)
+      if (alloc_status /= 0) then
         print*,"multigrid3ddielectricsolve: allocation error ",
-     &         allocerror,
+     &         alloc_status,
      &         ": could not allocate phisave to shape ",
      &         nxlocal,nylocal,nzlocal
         call kaboom("multigrid2ddielectricsolve: allocation error")
@@ -9634,7 +9522,7 @@ c Routine that does the v-cycle for multigrid. Note that it is recursive.
       integer(ISZ):: lyoffset,ryoffset
       integer(ISZ):: lzoffset,rzoffset
       type(Decomposition):: coarsedecomp
-      integer(ISZ):: allocerror
+      integer(ISZ):: alloc_status
       integer(ISZ):: nxguardres,nyguardres,nzguardres
       logical(ISZ):: lpe0
       real(kind=8):: sss(2)
@@ -9771,9 +9659,9 @@ C     epsilon has n - 1 cells compared to n for phi and will not be able to exch
           allocate(rescache(mglevel)%arr(-nxguardres:nxlocal+nxguardres,
      &                                   -nyguardres:nylocal+nyguardres,
      &                                  -nzguardres:nzlocal+nzguardres),
-     &                                  stat=allocerror)
-          if (allocerror /= 0) then
-            print*,"vcycle3ddielectric: allocation error ",allocerror,
+     &                                  stat=alloc_status)
+          if (alloc_status /= 0) then
+            print*,"vcycle3ddielectric: allocation error ",alloc_status,
      &             ": could not allocate res to shape ",
      &             nxlocal,nylocal,nzlocal
             call kaboom("vcycle3ddielectric: allocation error")
@@ -9932,9 +9820,9 @@ c         --- Allocate new work space
           allocate(phicoarsecache(mglevel)%arr(-1:nxlocalcoarse+1,
      &                                         -1:nylocalcoarse+1,
      &                                         -1:nzlocalcoarse+1),
-     &                                         stat=allocerror)
-          if (allocerror /= 0) then
-            print*,"vcycle3ddielectric: allocation error ",allocerror,
+     &                                         stat=alloc_status)
+          if (alloc_status /= 0) then
+            print*,"vcycle3ddielectric: allocation error ",alloc_status,
      &             ": could not allocate phicoarse to shape ",
      &             nxlocalcoarse,nylocalcoarse,nzlocalcoarse
             call kaboom("vcycle3ddielectric: allocation error")
@@ -9952,9 +9840,9 @@ c         --- Allocate new work space
           allocate(rhocoarsecache(mglevel)%arr(0:nxlocalcoarse,
      &                                         0:nylocalcoarse,
      &                                         0:nzlocalcoarse),
-     &                                         stat=allocerror)
-          if (allocerror /= 0) then
-            print*,"vcycle3ddielectric: allocation error ",allocerror,
+     &                                         stat=alloc_status)
+          if (alloc_status /= 0) then
+            print*,"vcycle3ddielectric: allocation error ",alloc_status,
      &             ": could not allocate rhocoarse to shape ",
      &             nxlocalcoarse,nylocalcoarse,nzlocalcoarse
             call kaboom("vcycle2ddielectric: allocation error")
@@ -9972,9 +9860,9 @@ c         --- Allocate new work space
           allocate(epscoarsecache(mglevel)%arr(0:nxlocalcoarse+1,
      &                                         0:nylocalcoarse+1,
      &                                         0:nzlocalcoarse+1),
-     &                                         stat=allocerror)
-          if (allocerror /= 0) then
-            print*,"vcycle3ddielectric: allocation error ",allocerror,
+     &                                         stat=alloc_status)
+          if (alloc_status /= 0) then
+            print*,"vcycle3ddielectric: allocation error ",alloc_status,
      &             ": could not allocate epsiloncoarse to shape ",
      &             nxlocalcoarse,nylocalcoarse,nzlocalcoarse
             call kaboom("vcycle2ddielectric: allocation error")
