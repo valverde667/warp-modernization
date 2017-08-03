@@ -415,7 +415,8 @@ class MultiGrid2DDielectric(MultiGrid2D):
         self._rho = self.source
         if isinstance(self.potential,float): return
 
-        if self.epsilon is not None:self.epsilon_decomp(self.epsilon)
+        # --- Commenting out this line. Decomposition is now handled correctly by dielectric solver
+        #if self.epsilon is not None:self.epsilon_decomp(self.epsilon)
 
         mgverbose = self.getmgverbose()
         mgiters = zeros(1,'l')
