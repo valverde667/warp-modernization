@@ -1544,6 +1544,9 @@ class Dielectric_Particles(object):
 Class handling Particles captured by dielectrics.
     """
     def __init__(self):
+        # --- turn flag on to ensure that top.npslost is reset to 0 at every time step.
+        top.lresetlostpart=true
+
         # --- create pgroup for dielectric macroparticles
         self.pgroup = ParticleGroup()
         spg = self.pgroup
@@ -1567,21 +1570,38 @@ Class handling Particles captured by dielectrics.
         top.depos='none'
         installbeforefs(self.loadrho_dielectric)
 
+        self.nconds = 0
+
     def generate(self):
+        # --- if needed, update list of dielectrics_id (is true if cond is a dielectric,
+        # --- false otherwise).
+        if self.nconds<>len(listofallconductors):
+            self.dielectrics_id = []
+            for ic in arange(len(listofallconductors)):
+                self.dielectrics_id.append(listofallconductors[ic].permittivity<>None)
+                
+            self.nconds=len(listofallconductors)
+    
         for js in range(self.pgroup.ns):
             if top.npslost[js]==0:continue
             i1 = top.inslost[js] - 1
             i2 = top.inslost[js] + top.npslost[js] - 1
-            add_particles(x=top.xplost[i1:i2],
-                          y=top.yplost[i1:i2],
-                          z=top.zplost[i1:i2],
+            # --- treat only particles that were scraped by dielectrics
+            # --- if also used with Secondaries, will need to add similar check there 
+            # --- is not some sort of double counting.
+            ii = compress(take(self.dielectrics_id,nint(top.pidlost[i1:i2,-1])-1),arange(i1,i2))
+            x = take(top.xplost[i1:i2],ii)
+            y = take(top.yplost[i1:i2],ii)
+            z = take(top.zplost[i1:i2],ii)
+            # --- add particles scraped by dielectrics to local particle group.
+            add_particles(x=x,
+                          y=y,
+                          z=z,
                           vx=0.,vy=0.,vz=0.,gi=1.,
                           pid=0.,
                           w=1.,
                           js=js,
                           pgroup=self.pgroup)
-
-            top.npslost[js]=0
         
     def loadrho_dielectric(self):
         # --- first ensure that npid array sizes match
