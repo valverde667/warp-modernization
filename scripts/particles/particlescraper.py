@@ -194,7 +194,7 @@ class ParticleScraper(object):
     def installscraper(self):
         """
     Install the scraper so that it is called during at the appropriate place
-    in a time step. This is normally done automically."""
+    in a time step. This is normally done automatically."""
         if not self.install: return
         # --- Install the call to scrape particles
         if self.lbeforescraper:
@@ -500,6 +500,7 @@ class ParticleScraper(object):
     def scrape(self,js):
         """Apply scraping to species js. It is better to call scrapeall. This will normally be called automatically."""
         # --- If there are no particles in this species, that nothing needs to be done
+        
         if top.pgroup.nps[js] == 0: return
 
         if self.surfacespecies != None:
@@ -1537,3 +1538,61 @@ class ParticleScraper(object):
         ppgeneric(gridt=data,
                   xmin=self.grid.zmminlocal,xmax=self.grid.zmmaxlocal,
                   ymin=self.grid.ymminlocal,ymax=self.grid.ymmaxlocal,**kw)
+
+class Dielectric_Particles(object):
+    """
+Class handling Particles captured by dielectrics.
+    """
+    def __init__(self):
+        # --- create pgroup for dielectric macroparticles
+        self.pgroup = ParticleGroup()
+        spg = self.pgroup
+        tpg = top.pgroup
+        spg.ns = tpg.ns
+        spg.npid = tpg.npid
+        spg.gchange()
+        spg.sm = tpg.sm
+        spg.sq = tpg.sq
+        spg.sw = tpg.sw
+        spg.sid = tpg.sid
+        spg.ndts = tpg.ndts
+        spg.ldts = tpg.ldts
+        spg.lvdts = tpg.lvdts
+
+        # --- install subroutines that transfer lost particles to self.pgroup
+        installafterscraper(self.generate)
+
+        # --- disable default loadrho() call and replace with call to loadrho_dielectric() 
+        self.depos=top.depos.copy()
+        top.depos='none'
+        installbeforefs(self.loadrho_dielectric)
+
+    def generate(self):
+        for js in range(self.pgroup.ns):
+            if top.npslost[js]==0:continue
+            i1 = top.inslost[js] - 1
+            i2 = top.inslost[js] + top.npslost[js] - 1
+            add_particles(x=top.xplost[i1:i2],
+                          y=top.yplost[i1:i2],
+                          z=top.zplost[i1:i2],
+                          vx=0.,vy=0.,vz=0.,gi=1.,
+                          pid=0.,
+                          w=1.,
+                          js=js,
+                          pgroup=self.pgroup)
+
+            top.npslost[js]=0
+        
+    def loadrho_dielectric(self):
+        # --- first ensure that npid array sizes match
+        if self.pgroup.npid != top.pgroup.npid:
+            self.pgroup.npid = top.pgroup.npid
+            self.pgroup.gchange()
+
+        # --- perform charge deposition on main group of particles (top.pgroup) 
+        # --- and 'dielectric macroparticles' (self.pgroup).
+        fs=getregisteredsolver()
+        top.depos=self.depos
+        fs.loadrho(pgroups=[top.pgroup,self.pgroup])
+        top.depos='none'
+
