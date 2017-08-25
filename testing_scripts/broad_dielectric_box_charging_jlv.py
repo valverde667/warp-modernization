@@ -215,7 +215,7 @@ plt.savefig('eps_broad_box.png',bbox_inches='tight')
 
 #### Specify emission
 
-electrons_tracked_t0 = Species(type=Electron, weight=1.0e6)
+electrons_tracked_t0 = Species(type=Electron, weight=5.0e6)
 ntrack = 20
 Z_PART_MIN = w3d.dz/8 #Add a minimum z coordinate to prevent absorption
 
@@ -245,7 +245,9 @@ DPart = Dielectric_Particles()
 if l_liveplots:
     def liveplots():
         if top.it%10==0:
-            fma();pcphizx(filled=1);
+            fma()
+            pcphizx(filled=1)
+            pcphizx(filled=0)
             # --- plot main macroparticles
             ppzx(msize=10,color=red)
             # --- plot 'dielectric macroparticles'
