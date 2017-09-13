@@ -1561,7 +1561,7 @@ Class handling Particles captured by dielectrics.
         spg.ndts = tpg.ndts
         spg.ldts = tpg.ldts
         spg.lvdts = tpg.lvdts
-
+        
         # --- install subroutines that transfer lost particles to self.pgroup
         installafterscraper(self.generate)
 
@@ -1581,6 +1581,11 @@ Class handling Particles captured by dielectrics.
                 self.dielectrics_id.append(listofallconductors[ic].permittivity<>None)
                 
             self.nconds=len(listofallconductors)
+            
+        # --- initialize birth pid columns if needed.
+        if top.xbirthpid==0:top.xbirthpid=nextpid()
+        if top.ybirthpid==0:top.ybirthpid=nextpid()
+        if top.zbirthpid==0:top.zbirthpid=nextpid()
     
         for js in range(self.pgroup.ns):
             if top.npslost[js]==0:continue
@@ -1589,10 +1594,11 @@ Class handling Particles captured by dielectrics.
             # --- treat only particles that were scraped by dielectrics
             # --- if also used with Secondaries, will need to add similar check there 
             # --- is not some sort of double counting.
-            ii = compress(take(self.dielectrics_id,nint(top.pidlost[i1:i2,-1])-1),arange(i1,i2))
-            x = take(top.xplost[i1:i2],ii)
-            y = take(top.yplost[i1:i2],ii)
-            z = take(top.zplost[i1:i2],ii)
+            mymask = take(self.dielectrics_id,nint(top.pidlost[i1:i2,-1])-1)
+            x = compress(mymask,top.xplost[i1:i2])
+            y = compress(mymask,top.yplost[i1:i2])
+            z = compress(mymask,top.zplost[i1:i2])
+            
             # --- add particles scraped by dielectrics to local particle group.
             add_particles(x=x,
                           y=y,
@@ -1616,3 +1622,27 @@ Class handling Particles captured by dielectrics.
         fs.loadrho(pgroups=[top.pgroup,self.pgroup])
         top.depos='none'
 
+    def getxbirth(self,js=0):
+        """
+        Return x position at birth.
+        """
+        il = self.pgroup.ins[js] - 1
+        iu = self.pgroup.ins[js] + self.pgroup.nps[js] - 1
+        return self.pgroup.pid[il:iu,top.xbirthpid-1]
+        
+    def getybirth(self,js=0):
+        """
+        Return y position at birth.
+        """
+        il = self.pgroup.ins[js] - 1
+        iu = self.pgroup.ins[js] + self.pgroup.nps[js] - 1
+        return self.pgroup.pid[il:iu,top.ybirthpid-1]
+        
+    def getzbirth(self,js=0):
+        """
+        Return z position at birth.
+        """
+        il = self.pgroup.ins[js] - 1
+        iu = self.pgroup.ins[js] + self.pgroup.nps[js] - 1
+        return self.pgroup.pid[il:iu,top.zbirthpid-1]
+        
