@@ -833,7 +833,7 @@ compton_scatter_electrons(photon_energy:real,
                           electrongroup:ParticleGroup, electrons:integer,
                           photongroup:ParticleGroup, photons:integer,
                           tbirthpid:integer, scattercountpid:integer,
-                          withgammaeffective:logical) subroutine
+                          withgammaeffective:logical, scatterelectron:logical) subroutine
           # Scatters electrons off of a background photon density
 
 *********** AMR dump:

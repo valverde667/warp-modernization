@@ -21,6 +21,8 @@ def histplot(**kw):
     hpthermale(logplot=1, kwdict=kw); fma()
     hplinechg(iz=w3d.iz_axis, kwdict=kw); fma()
     hpbmlen(kwdict=kw); fma()
+    hpnpsim(iw=0, kwdict=kw); fma()
+    hpnpsim(iw=-1, kwdict=kw)
     hppnum(iw=0, kwdict=kw); fma()
     hppnum(iw=-1, kwdict=kw)
     hpepsz(kwdict=kw); fma()

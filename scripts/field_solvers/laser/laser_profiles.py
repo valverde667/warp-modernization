@@ -3,7 +3,7 @@ This file defines a set of standard laser profiles, that can be passed
 as `laser_func` to the EM3D class or to the `LaserAntenna` class
 """
 import numpy as np
-from scipy.constants import c, m_e, e
+from scipy.constants import c, m_e, e, epsilon_0
 from scipy.interpolate import RegularGridInterpolator
 from scipy.special import genlaguerre
 from scipy.misc import factorial
@@ -20,45 +20,129 @@ except ImportError:
 class ExperimentalProfile( object ):
     """Class that calculates the laser from a data file."""
 
-    def __init__( self, k0, laser_file, laser_file_energy ):
+    def __init__( self, k0, laser_file, laser_file_energy, dim, boost=None, source_v=0 ):
+
+        """
+        k0: float (in rad/m)
+            wavenumber of the laser
+           
+        laser_file: string, optional
+            name of the hdf5 file containing the data. The file objects names should be:
+            - x <vector> for 2d and 3d
+            - y <vector> for 3d
+            - r <vector> for circ
+            - t <vector> time vector for 2d, 3d and circ
+            - Ereal <2d or 3d matrix> real part of the envelope of the laser field:
+                2d matrix (t, x) for 2d
+                2d matrix (t, r) for circles
+                3d matrix (t, x, y) for 3d
+            - Eimag: same as Ereal with the imaginary part of E
+
+        laser_file_energy: float (in J)
+            pulse energy (in Joules). The laser field is rescaled using this factor
+            
+        dim: string '2d', '3d' or 'circ'
+            geometry used for the simulation
+
+        boost: a BoostConverter object
+            If not None, the laser is emitted in the corresponding boosted-frame
+            (even though all parameters are passed in the lab frame)
+
+        source_v: float (in meters/second)
+            The speed of the antenna in the direction normal to its plane    
+        """
 
         # The first processor loads the file and sends it to the others
         # (This prevents all the processors from accessing the same file,
         # which can substantially slow down the simulation)
+        
+        self.v_antenna = source_v
+        self.boost = boost
+        self.dim = dim
+                
         if me==0:
             with h5py.File(laser_file) as f:
-                x = f['x'][:]
-                y = f['y'][:]
-                t = f['t'][:]
-                Ereal = f['Ereal'][:,:]
-                Eimag = f['Eimag'][:,:]
+                if self.dim == '2d':
+                    t = f['t'][:]
+                    x = f['x'][:]
+                    Ereal = f['Ereal'][:,:]
+                    Eimag = f['Eimag'][:,:]
+                elif self.dim == 'circ':
+                    t = f['t'][:]
+                    r = f['r'][:]
+                    Ereal = f['Ereal'][:,:]
+                    Eimag = f['Eimag'][:,:]
+                elif self.dim == '3d':
+                    t = f['t'][:]
+                    x = f['x'][:]
+                    y = f['y'][:]
+                    Ereal = f['Ereal'][:,:,:]
+                    Eimag = f['Eimag'][:,:,:]
         else:
-            r = None
+            x = None
+            y = None
             t = None
             Ereal = None
             Eimag = None
         # Broadcast the data to all procs
-        r = mpibcast( r )
+        if self.dim == '2d':
+            x = mpibcast( x )
+        elif self.dim == 'circ':
+            r = mpibcast( r )
+        elif self.dim == '3d':
+            x = mpibcast( x )
+            y = mpibcast( y )
         t = mpibcast( t )
         Ereal = mpibcast( Ereal )
         Eimag = mpibcast( Eimag )
 
         # Recover the complex field
         E_data = Ereal + 1.j*Eimag
-
-        # Change the value of the field (by default it is 1J)
-        E_norm = np.sqrt( laser_file_energy )
-        E_data = E_data*E_norm
-        self.E0 = abs(E_data).max()
-
+        
         # Register the wavevector
         self.k0 = k0
 
-        # Interpolation object
-        self.interp_func = RegularGridInterpolator( (t, r), E_data,
-                            bounds_error=False, fill_value=0. )
+        # Rescale field to energy = laser_file_energy and define interpolation function
+        # We do the Slowly-Varying Envelope Approximation. That explains the factor 1/2 
+        # We also assume that B = E/c           
+        if self.dim == '2d':
+            # Calculate the pulse energy in laser_file
+            dt = t[1] - t[0]
+            dx = x[1] - x[0]
+            # In 2d, the energy must be given in J/m
+            # This is equivalent to assuming that the pulse is 1m-long in y
+            energy_data = epsilon_0*dx*c*dt*np.sum(Ereal**2+Eimag**2) / 2
+            # Rescale E
+            E_data = E_data * np.sqrt(laser_file_energy/energy_data)
+            # Interpolation object
+            self.interp_func = RegularGridInterpolator( (t, x), E_data,
+                                bounds_error=False, fill_value=0. )
+        elif self.dim == 'circ':
+            # Calculate the pulse energy in laser_file
+            dt = t[1] - t[0]
+            dr = r[1] - r[0]
+            r_matrix = r.reshape(1, r.shape[0])
+            energy_data = np.pi*epsilon_0*dr*c*dt*np.sum(r_matrix*(Ereal**2+Eimag**2))
+            # Rescale E
+            E_data = E_data * np.sqrt(laser_file_energy/energy_data)
+            # Interpolation object
+            self.interp_func = RegularGridInterpolator( (t, r), E_data,
+                                bounds_error=False, fill_value=0. )
+        if self.dim == '3d':
+            # Calculate the pulse energy in laser_file
+            dt = t[1] - t[0]
+            dx = x[1] - x[0]
+            dy = y[1] - y[0]
+            energy_data = epsilon_0*dx*dy*c*dt*np.sum(Ereal**2+Eimag**2) / 2
+            # Rescale E
+            E_data = E_data * np.sqrt(laser_file_energy/energy_data)
+            # Interpolation object
+            self.interp_func = RegularGridInterpolator( (t, x, y), E_data,
+                                bounds_error=False, fill_value=0. )
 
-    def __call__( self, x, y, t ):
+        self.E0 = np.abs( E_data ).max()
+
+    def __call__( self, x, y, t_modified ):
         """
         Return the transverse profile of the laser at the position
         of the antenna
@@ -71,19 +155,48 @@ class ExperimentalProfile( object ):
         y: float or ndarray
             Second transverse direction in meters
 
-        t: float
-            Time in seconds
+        t_modified: float
+            Time in seconds, multiplied by (1-v_antenna/c)
+            This multiplication is done in em3dsolver.py, when
+            calling the present function.
         """
-        # Calculate the array of radius
-        r = np.sqrt( x**2 + y**2 )
-
+        # Get the true time
+        # (The top.time has been multiplied by (1-v_antenna/c)
+        # in em3dsolver.py, before calling the present function)        
+        t = t_modified/(1.-self.v_antenna/c)
+        # Get the position of the antenna at this time
+        z_source = self.v_antenna * t
+        # When running in the boosted frame, convert these position to
+        # the lab frame, so as to use the lab-frame formula of the laser
+        if self.boost is not None:
+            zlab_source = self.boost.gamma0*( z_source + self.boost.beta0*c*t )
+            tlab_source = self.boost.gamma0*( t + self.boost.beta0*z_source/c )
+            # Overwrite boosted frame values, within the scope of this function
+            z_source = zlab_source
+            t = tlab_source
+            
+        # Boosted-frame: convert the laser amplitude
+        # These formula assume that the antenna is motionless in the lab frame
+        conversion_factor = 1.
+        if self.boost is not None:
+            conversion_factor = 1./self.boost.gamma0
+            # The line below is to compensate the fact that the laser
+            # amplitude is multiplied by (1-v_antenna/c) in em3dsolver.py
+            conversion_factor *= 1./(1. - self.v_antenna/c)
+            
         # Interpolate to find the complex amplitude
-        Ecomplex = self.interp_func( (t, r) )
+        if self.dim == '2d':
+            Ecomplex = self.interp_func( (t, x) )
+        elif self.dim == 'circ':
+            # x is used as the radial coordinate r
+            Ecomplex = self.interp_func( (t, x) )
+        elif self.dim == '3d':
+            Ecomplex = self.interp_func( (t, x, y) )
+        # Add laser oscillations and temporal chirp
 
-        # Add laser oscillations
         Eosc = ( Ecomplex * np.exp( -1.j*self.k0*c*t ) ).real
 
-        return( Eosc )
+        return( Eosc * conversion_factor )
 
 class GaussianProfile( object ):
     """Class that calculates a Gaussian laser pulse."""

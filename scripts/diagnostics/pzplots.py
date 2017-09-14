@@ -79,7 +79,8 @@ Miscellaneous:
   pzphiax: Plots electrostatic potential on axis versus Z
   pzegap: Plots gap electric field versus Z
   pzezax: Plots Z electric field on axis versus Z
-  pzpnum: Plots no. of simulation particles versus Z
+  pznpsim: Plots no. of simulation particles versus Z
+  pzpnum: Plots no. of physical particles versus Z
   pzppcell: Plots no. of simulation particles per cell versus Z
 """
 
@@ -135,6 +136,43 @@ def _gettitler(js):
     else:        return "Species %d"%js
 
 ##########################################################################
+def pznpsim(js=-1,zoffset=None,zscale=1.,scale=1.,color="fg",linetype="solid",
+            marks=0,marker=None,msize=1.,width=1.,lframe=0,
+            titleb=None,titles=1,varsuffix=None,ff=None):
+    """Plots npsimz along z-axis
+    - js=-1: species number, zero based. When -1, plots data combined from all
+             species
+    - zoffset=zbeam: offset added to axis
+    - zscale=1: scale of axis
+      plots versus (zoffset + zmntmesh)/zscale
+    - scale=1.: factor to scale data by
+    - color='fg': curve color
+    - linetype='solid': line type
+    - marks=0: turns on identifying marks on the curve
+    - marker=None: marker type (see gist manual for the list)
+    - msize=1: marker size
+    - width=1: line width
+    - lframe=0: specifies whether or not to set plot limits
+    - titleb="Z": bottom title
+    - titles=1: specifies whether or not to plot titles
+    - varsuffix=None: When specified, variables with that suffix are used
+                      instead of the fortran variables
+    - ff=None: An opened file object can be specified as the place from which to
+               get the data to plot."""
+    if zscale == 0.: raise Exception("zscale must be nonzero")
+    if titleb is None:
+        if zscale == 1.: titleb = "Z (m)"
+        else: titleb = "Z"
+    npsimz = _extractvar('npsimz',varsuffix,'top',ff)[...,js]*scale
+    zmntmesh = _extractvar('zmntmesh',varsuffix,'top',ff)
+    if zoffset is None: zoffset = _extractvar('zbeam',varsuffix,'top',ff)
+    plg(npsimz,(zoffset+zmntmesh)/zscale,color=color,linetype=linetype,
+        marks=marks,marker=marker,msize=msize,width=width)
+    if titles:
+        ptitles("No. of simulation particles versus Z",titleb,"(number)",
+                _gettitler(js))
+
+##########################################################################
 def pzpnum(js=-1,zoffset=None,zscale=1.,scale=1.,color="fg",linetype="solid",
            marks=0,marker=None,msize=1.,width=1.,lframe=0,
            titleb=None,titles=1,varsuffix=None,ff=None):
@@ -168,14 +206,14 @@ def pzpnum(js=-1,zoffset=None,zscale=1.,scale=1.,color="fg",linetype="solid",
     plg(pnumz,(zoffset+zmntmesh)/zscale,color=color,linetype=linetype,
         marks=marks,marker=marker,msize=msize,width=width)
     if titles:
-        ptitles("No. of simulation particles versus Z",titleb,"(number)",
+        ptitles("No. of physical particles versus Z",titleb,"(number)",
                 _gettitler(js))
 
 ##########################################################################
 def pzppcell(js=-1,zoffset=None,zscale=1.,scale=1.,color="fg",linetype="solid",
              marks=0,marker=None,msize=1.,width=1.,lframe=0,
              titleb=None,titles=1,varsuffix=None,ff=None):
-    """Plots number of particles per cell versus z
+    """Plots number of simulation particles per cell versus z
     - js=-1: species number, zero based. When -1, plots data combined from all
              species
     - zoffset=zbeam: offset added to axis
@@ -199,7 +237,7 @@ def pzppcell(js=-1,zoffset=None,zscale=1.,scale=1.,color="fg",linetype="solid",
     if titleb is None:
         if zscale == 1.: titleb = "Z (m)"
         else: titleb = "Z"
-    pnumz = _extractvar('pnumz',varsuffix,'top',ff)[...,js]
+    npsimz = _extractvar('npsimz',varsuffix,'top',ff)[...,js]
     xrmsz = _extractvar('xrmsz',varsuffix,'top',ff)[...,js]
     yrmsz = _extractvar('yrmsz',varsuffix,'top',ff)[...,js]
     rrmsz = _extractvar('rrmsz',varsuffix,'top',ff)[...,js]
@@ -209,18 +247,18 @@ def pzppcell(js=-1,zoffset=None,zscale=1.,scale=1.,color="fg",linetype="solid",
     if w3d.ny > 0:
         beamarea = 4.*pi*xrmsz*yrmsz
         beamarea = where(beamarea==0.,1.,beamarea)
-        ppcell = pnumz/(beamarea/(dx*dy))*scale
+        ppcell = npsimz/(beamarea/(dx*dy))*scale
         if w3d.l2symtry: ppcell = 2.*ppcell
         if w3d.l4symtry: ppcell = 4.*ppcell
     else:
         beamradius = sqrt(2.)*rrmsz
         beamradius = where(beamradius==0.,1.,beamradius)
-        ppcell = pnumz/(beamradius/dx)*scale
+        ppcell = npsimz/(beamradius/dx)*scale
     if zoffset is None: zoffset = _extractvar('zbeam',varsuffix,'top',ff)
     plg(ppcell,(zoffset+zmntmesh)/zscale,color=color,linetype=linetype,
         marks=marks,marker=marker,msize=msize,width=width)
     if titles:
-        ptitles("No. of particles per cell versus Z",titleb,"(number)",
+        ptitles("No. of simulation particles per cell versus Z",titleb,"(number)",
                 _gettitler(js))
 
 ##########################################################################
@@ -2996,6 +3034,7 @@ def pzplotstest(**kw):
     """
   Test all pzplots routines.
     """
+    pznpsim(**kw);fma()
     pzpnum(**kw);fma()
     pzppcell(**kw);fma()
     pzxbar(**kw);fma()

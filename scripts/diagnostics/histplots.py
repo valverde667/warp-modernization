@@ -765,10 +765,19 @@ def hpepsnh(iw=0,kwdict={},**kw):
 hpepsnh.__doc__ = hpepsnh.__doc__ + hpbasicwintext
 
 
-def hppnum(iw=0,kwdict={},**kw):
-    "Number of particles."
+def hpnpsim(iw=0,kwdict={},**kw):
+    "Number of simlation particles."
     kw.update(kwdict)
-    kw['titlet']="Number of particles"
+    kw['titlet']="Number of simulation particles"
+    kw['titlel']=""
+    hpbasicwin('hnpsim',iw,kw)
+hpnpsim.__doc__ = hpnpsim.__doc__ + hpbasicwintext
+
+
+def hppnum(iw=0,kwdict={},**kw):
+    "Number of physical particles."
+    kw.update(kwdict)
+    kw['titlet']="Number of physical particles"
     kw['titlel']=""
     hpbasicwin('hpnum',iw,kw)
 hppnum.__doc__ = hppnum.__doc__ + hpbasicwintext
@@ -1641,11 +1650,10 @@ def hpthermale(iw=0,kwdict={},**kw):
     kw['titlet']="Z Thermal Energy"
     kw['titlel']="(J)"
     sm = _extractvarkw('sm',kw,attr='pgroup')
-    sw = _extractvarkw('sw',kw,attr='pgroup')
     sp_fract = _extractvarkw('sp_fract',kw)
     hpnum = _extractvarkw('hpnum',kw)
     hvzrms = _extractvarkw('hvzrms',kw)
-    hpbasicwin(0.5*sum(sm*sw*sp_fract)*hpnum*hvzrms**2,iw,kw)
+    hpbasicwin(0.5*sum(sm*sp_fract)*hpnum*hvzrms**2,iw,kw)
 hpthermale.__doc__ = hpthermale.__doc__ + hpbasicwintext
 
 
@@ -2004,6 +2012,11 @@ def hzepsnh(iw=0,kwdict={},**kw):
     kw.update(kwdict)
     kw['lhzbeam'] = 1
     hpepsnh(iw=iw,kwdict=kw)
+def hznpsim(iw=0,kwdict={},**kw):
+    'Same as plot with prefix of hp but lhzbeam defaults to true'
+    kw.update(kwdict)
+    kw['lhzbeam'] = 1
+    hpnpsim(iw=iw,kwdict=kw)
 def hzpnum(iw=0,kwdict={},**kw):
     'Same as plot with prefix of hp but lhzbeam defaults to true'
     kw.update(kwdict)
@@ -2565,7 +2578,8 @@ def histplotsdoc():
   hpepsnr(): Generalized axisymmetric normalized emittance
   hpepsng(): Generalized normalized emittance
   hpepsnh(): Generalized normalized emittance
-  hppnum(): Number of particles
+  hpnpsim(): Number of simlation particles
+  hppnum(): Number of physical particles
   hprhomid(): Charge density on axis
   hprhomax(): Charge density max
   hpxbar(): True mean x
@@ -2733,6 +2747,8 @@ def histplotstest(**kw):
     hpepsng(**kw); fma()
     print 'hpepsnh'
     hpepsnh(**kw); fma()
+    print 'hpnpsim'
+    hpnpsim(**kw); fma()
     print 'hppnum'
     hppnum(**kw); fma()
     print 'hprhomid'

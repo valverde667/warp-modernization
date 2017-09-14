@@ -205,14 +205,12 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
 
             if (self.comm_world is None) or (self.comm_world.size == 1):
                 # Serial simulation
-
                 global_field_array = field_array
                 global_iz_min = iz_min
                 global_iz_max = iz_max
 
             else:
                 # Parallel simulation
-
                 # Gather objects into lists (one element per proc)
                 field_array_list = gather( field_array, comm=self.comm_world )
                 iz_min_list = gather( iz_min, comm=self.comm_world )
@@ -238,6 +236,7 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
                         global_field_array, global_iz_min, global_iz_max = \
                           self.gather_slices(
                               field_array_list, iz_min_list, iz_max_list )
+
 
             # Write the gathered slices to disk
             if (self.rank == 0) and (global_field_array is not None):
@@ -265,7 +264,7 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
         global_iz_min = min([n for n in iz_min_list if n is not None])
         global_iz_max = max([n for n in iz_max_list if n is not None])
 
-        # Allocate a the global field array, with the proper size
+        # Allocate the global field array, with the proper size
         nslice = global_iz_max - global_iz_min
         # Circ case
         if self.dim == "circ":

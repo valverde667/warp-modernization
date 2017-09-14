@@ -756,6 +756,8 @@ def fma(legend=1):
         except (IndexError, KeyError):
             pass
         pyplot.clf()
+    # --- Reset the right label location
+    _right_label_height[0] = None
     # --- Increment frame number
     numframeslist[active_window()] = numframeslist[active_window()] + 1
     controllers.callbeforeplotfuncs()
@@ -1591,6 +1593,16 @@ def ptitles(titlet="",titleb="",titlel="",titler="",v=None,height=None,
 def ptitlebottom(text="",**kw):
     if with_gist:
         plt(text,0.3950,0.37,justify="CC",local=1,**kw)
+
+_right_label_height = [None]
+def right_label(text='', start_height=None, step_size=0.02, x_position=0.63, **kw):
+    if _right_label_height[0] is None:
+        if start_height is None:
+            _right_label_height[0] = 0.85
+        else:
+            _right_label_height[0] = start_height
+    plt(text, x_position, _right_label_height[0], **kw)
+    _right_label_height[0] -= step_size
 
 ##########################################################################
 ##########################   UTILITY ROUTINES  ###########################

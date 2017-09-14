@@ -3,7 +3,8 @@
 addlabwindow: adds a new lab window
 getlw: returns the data for a given moment
 
-ppnumlw: Plots number of particles as a function of time
+pnpsimlw: Plots number of simlation particles as a function of time
+ppnumlw: Plots number of physical particles as a function of time
 pxbarlw: Plots X bar as a function of time
 pybarlw: Plots Y bar as a function of time
 pzbarlw: Plots Z bar as a function of time
@@ -143,9 +144,37 @@ def getlw(name, ilw, js=-1, varsuffix=None, ff=None):
 
 ##########################################################################
 
+def pnpsimlw(ilw, js=-1, toffset=0., tscale=1., scale=1.,
+            titleb=None, titles=True, varsuffix=None, ff=None, **kw):
+    """Plots npsimlw, number of simlation particles, as a function of time
+    - ilw: lab window number to plot, must be specified
+    - js=-1: species number, zero based. When -1, plots data combined from all
+             species
+    - toffset=0: offset added to time axis
+    - tscale=1: scale of time axis - plots versus (timelw+toffset)*tscale
+    - scale=1.: factor to scale data by - plots data*scale
+    - titleb="t": bottom title
+    - titles=True: specifies whether or not to plot titles
+    - varsuffix=None: When specified, variables with that suffix are used
+                      instead of the fortran variables
+    - ff=None: An opened file object can be specified as the place from which to
+               get the data to plot.
+    - Takes any additional keyword arguments that can be passed into plg.
+    """
+    if titleb is None:
+        if tscale == 1.: titleb = "t (s)"
+        else: titleb = "t"
+    ilabwn = _extractvar('ilabwn', varsuffix, 'top', ff)[ilw,js]
+    s = s_[:ilabwn]
+    npsimlw = _extractvar('npsimlw', varsuffix, 'top', ff)[s,ilw,js]
+    timelw = _extractvar('timelw', varsuffix, 'top', ff)[s,ilw,js]
+    plg(npsimlw*scale,(toffset+timelw)*tscale, **kw)
+    if titles:
+        ptitles("number of simulation particles versus time", titleb, "(number)", _gettitler(ilw, js))
+
 def ppnumlw(ilw, js=-1, toffset=0., tscale=1., scale=1.,
             titleb=None, titles=True, varsuffix=None, ff=None, **kw):
-    """Plots pnumlw, number of particles, as a function of time
+    """Plots pnumlw, number of physical particles, as a function of time
     - ilw: lab window number to plot, must be specified
     - js=-1: species number, zero based. When -1, plots data combined from all
              species
@@ -169,7 +198,7 @@ def ppnumlw(ilw, js=-1, toffset=0., tscale=1., scale=1.,
     timelw = _extractvar('timelw', varsuffix, 'top', ff)[s,ilw,js]
     plg(pnumlw*scale,(toffset+timelw)*tscale, **kw)
     if titles:
-        ptitles("number of particles versus time", titleb, "(number)", _gettitler(ilw, js))
+        ptitles("number of physical particles versus time", titleb, "(number)", _gettitler(ilw, js))
 
 def pxbarlw(ilw, js=-1, toffset=0., tscale=1., scale=1.,
             titleb=None, titles=True, varsuffix=None, ff=None, **kw):
@@ -1651,6 +1680,7 @@ def lwplotstest(ilw, **kw):
     """
 Test all lwplots routines.
     """
+    pnpsimlw(ilw, **kw); fma()
     ppnumlw(ilw, **kw); fma()
     pxbarlw(ilw, **kw); fma()
     pybarlw(ilw, **kw); fma()
@@ -1741,7 +1771,8 @@ _func =\
 """
 
 _lwlist = [
-["pnumlw","number of particles","number"],
+["npsimlw","number of simulation particles","number"],
+["pnumlw","number of physical particles","number"],
 ["xbarlw","X bar","m"],
 ["ybarlw","Y bar","m"],
 ["zbarlw","Z bar","m"],

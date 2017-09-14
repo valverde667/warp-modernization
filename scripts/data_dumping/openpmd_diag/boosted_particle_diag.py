@@ -215,8 +215,8 @@ class BoostedParticleDiagnostic(ParticleDiagnostic):
                     self.write_slices(p_array, species_name, snapshot,
                         self.particle_catcher.particle_to_index)
 
-            # Erase the buffers
-            snapshot.buffered_slices[species_name] = []
+                # Erase the buffers
+                snapshot.buffered_slices[species_name] = []
 
     def write_boosted_dataset(self, species_grp, path, data, quantity):
         """

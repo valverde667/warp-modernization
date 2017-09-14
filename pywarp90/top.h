@@ -13,7 +13,7 @@
 ! Max number of diagnostic windows
 #define NWINDOWS 9
 ! Number of z moments
-#define NUMZMMNT 33
+#define NUMZMMNT 34
 ! Max number of lab windows
 #define MAXNUMLW 50
 ! Used only for data statements

@@ -1556,7 +1556,7 @@ def getvzrange(kwdict={}):
 #-------------------------------------------------------------------------
 #-------------------------------------------------------------------------
 def add_particles(x=0.,y=0.,z=0.,vx=0.,vy=0.,vz=0.,gi=1.,
-                 pid=0.,w=1.,ux=None,uy=None,uz=None,
+                 pid=None,w=None,ux=None,uy=None,uz=None,
                  js=0,species_number=None,sid=None,
                  lallindomain=None,unique_particles=None,
                  xmmin=None,xmmax=None,
@@ -1637,6 +1637,12 @@ def add_particles(x=0.,y=0.,z=0.,vx=0.,vy=0.,vz=0.,gi=1.,
 
     if pgroup is None: pgroup = top.pgroup
 
+    # --- Keep track if pid was input. If not, set it to the default value.
+    # --- This is needed to fix a possible conflict with the w input argument
+    pid_unset = (pid is None)
+    if pid is None:
+        pid = 0.
+
     # --- Check if this is a new species
     if species_number is not None:
         js = species_number
@@ -1662,13 +1668,16 @@ def add_particles(x=0.,y=0.,z=0.,vx=0.,vy=0.,vz=0.,gi=1.,
     lenvy = size(vy)
     lenvz = size(vz)
     lengi = size(gi)
-    lenpid = size(pid)
     lenex = size(ex)
     leney = size(ey)
     lenez = size(ez)
     lenbx = size(bx)
     lenby = size(by)
     lenbz = size(bz)
+    try:
+       lenpid = len(pid)
+    except TypeError:
+       lenpid = 1
 
     # --- If any of the inputs are arrays that are zero length, then return
     if (lenx == 0 or leny == 0 or lenz == 0 or lenvx == 0 or lenvy == 0 or lenvz == 0 or
@@ -1685,13 +1694,13 @@ def add_particles(x=0.,y=0.,z=0.,vx=0.,vy=0.,vz=0.,gi=1.,
     assert lenvy==maxlen or lenvy==1,"Length of vy doesn't match len of others"
     assert lenvz==maxlen or lenvz==1,"Length of vz doesn't match len of others"
     assert lengi==maxlen or lengi==1,"Length of gi doesn't match len of others"
-    assert lenpid==maxlen or lenpid==1,"Length of pid doesn't match len of others"
     assert lenex==maxlen or lenex==1,"Length of ex doesn't match len of others"
     assert leney==maxlen or leney==1,"Length of ey doesn't match len of others"
     assert lenez==maxlen or lenez==1,"Length of ez doesn't match len of others"
     assert lenbx==maxlen or lenbx==1,"Length of bx doesn't match len of others"
     assert lenby==maxlen or lenby==1,"Length of by doesn't match len of others"
     assert lenbz==maxlen or lenbz==1,"Length of bz doesn't match len of others"
+    assert lenpid==maxlen or lenpid==1,"Length of pid doesn't match len of others"
 
     # --- Convert all to arrays of length maxlen, broadcasting scalars
     x = array(x)*ones(maxlen,'d')
@@ -1701,13 +1710,13 @@ def add_particles(x=0.,y=0.,z=0.,vx=0.,vy=0.,vz=0.,gi=1.,
     vy = array(vy)*ones(maxlen,'d')
     vz = array(vz)*ones(maxlen,'d')
     gi = array(gi)*ones(maxlen,'d')
-    pid = array(pid)*ones([maxlen,top.npid],'d')
     ex = array(ex)*ones(maxlen,'d')
     ey = array(ey)*ones(maxlen,'d')
     ez = array(ez)*ones(maxlen,'d')
     bx = array(bx)*ones(maxlen,'d')
     by = array(by)*ones(maxlen,'d')
     bz = array(bz)*ones(maxlen,'d')
+    pid = array(pid)*ones([maxlen,top.npid],'d')
 
     if lnewparticles:
         # --- Set time of creation
@@ -1715,6 +1724,11 @@ def add_particles(x=0.,y=0.,z=0.,vx=0.,vy=0.,vz=0.,gi=1.,
             pid[:,top.tbirthpid-1] = top.time
 
         # --- Set weights
+        # --- The weights can be set either by passing in a pid array or by the w argument.
+        # --- The w argument takes precedence. If neither are supplied, a default value
+        # --- of 1 is used.
+        if pid_unset and w is None:
+            w = 1.
         if w is not None and top.wpid > 0:
             pid[:,top.wpid-1] = array(w)*ones(maxlen,'d')
         # --- Note that ssn is set in addpart
@@ -1802,8 +1816,8 @@ def add_particles(x=0.,y=0.,z=0.,vx=0.,vy=0.,vz=0.,gi=1.,
             # --- and new data compressed to the bottom of the arrays.
             nn = nafter - nbefore
             if lfields:
-                return (x[:nn],y[:nn],z[:nn],vx[:nn],vy[:nn],vz[:nn],gi[:nn],pid[:nn],ex[:nn],ey[:nn],ez[:nn],bx[:nn],by[:nn],bz[:nn])
+                return (x[:nn],y[:nn],z[:nn],vx[:nn],vy[:nn],vz[:nn],gi[:nn],pid[:nn,:],ex[:nn],ey[:nn],ez[:nn],bx[:nn],by[:nn],bz[:nn])
             else:
-                return (x[:nn],y[:nn],z[:nn],vx[:nn],vy[:nn],vz[:nn],gi[:nn],pid[:nn])
+                return (x[:nn],y[:nn],z[:nn],vx[:nn],vy[:nn],vz[:nn],gi[:nn],pid[:nn,:])
 
 addparticles = add_particles

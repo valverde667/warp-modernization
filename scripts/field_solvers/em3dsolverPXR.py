@@ -736,6 +736,13 @@ class EM3DPXR(EM3DFFT):
         pxr.jy = self.fields.Jy
         pxr.jz = self.fields.Jz
 
+        pxr.ex_p = self.fields.Exp
+        pxr.ey_p = self.fields.Eyp
+        pxr.ez_p = self.fields.Ezp
+        pxr.bx_p = self.fields.Bxp
+        pxr.by_p = self.fields.Byp
+        pxr.bz_p = self.fields.Bzp
+
         pxr.l_nodalgrid = self.l_nodalgrid
 
         pxr.nxs = 0

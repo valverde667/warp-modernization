@@ -100,13 +100,15 @@ class PlasmaInjector( object ):
         dx = w3d.dx / p_nx  # Spacing between particles
         nx_local = (w3d.xmmaxlocal - w3d.xmminlocal) / dx
         x_reg = w3d.xmminlocal + dx*( np.arange( nx_local ) + 0.5 )
-        self.x_reg = x_reg[ (x_reg>=p_xmin) & (x_reg<=p_xmax) ]
+        self.x_reg = x_reg[ (x_reg>=p_xmin) & (x_reg<=p_xmax) \
+                            & (x_reg < w3d.xmmaxlocal) ]
         # - Positions along y, in the 3d case
         if dim == "3d":
             dy = w3d.dy / p_ny
             ny_local = (w3d.ymmaxlocal - w3d.ymminlocal) / dy
             y_reg = w3d.ymminlocal + dy*( np.arange( ny_local ) + 0.5 )
-            self.y_reg = y_reg[ (y_reg>=p_ymin) & (y_reg<=p_ymax) ]
+            self.y_reg = y_reg[ (y_reg>=p_ymin) & (y_reg<=p_ymax) \
+                                & (y_reg < w3d.ymmaxlocal)]
         # - Angular positions, in the circ case
         elif dim == "circ":
             dtheta = 2*np.pi / p_ny

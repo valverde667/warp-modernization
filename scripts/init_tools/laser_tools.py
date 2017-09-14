@@ -7,8 +7,8 @@ from warp import openbc
 
 def add_laser( em, dim, a0, w0, ctau, z0, zf=None, lambda0=0.8e-6,
                theta_pol=0., source_z=0., zeta=0, beta=0, phi2=0,
-               gamma_boost=None, laser_file=None, laser_file_energy=None, 
-               cep=0. ):
+               gamma_boost=None, cep=0., 
+               laser_file=None, laser_file_energy=None):
     """
     Add a linearly-polarized, Gaussian laser pulse in the em object,
     by setting the correct laser_func, laser_emax, laser_source_z
@@ -76,17 +76,24 @@ def add_laser( em, dim, a0, w0, ctau, z0, zf=None, lambda0=0.8e-6,
         When initializing the laser in a boosted frame, set the value of
         `gamma_boost` to the corresponding Lorentz factor. All the other
         quantities (ctau, zf, source_z, etc.) are to be given in the lab frame.
+        
+    cep: float (in rad), optional
+        Carrier-Envelope Phase
 
-    laser_file: str or None
-       If None, the laser will be initialized as Gaussian
-       Otherwise, the laser_file should point to a standardized HDF5 file
-       which contains the following datasets:
-       - 't' and 'r': 1D datasets of coordinates, in SI
-       - 'Ereal' and 'Eimag': 2D datasets in SI, so that the laser energy is 1J
+    laser_file: string, optional
+        name of the hdf5 file containing the data. The file objects names should be:
+        - x <vector> for 2d and 3d
+        - y <vector> for 3d
+        - r <vector> for circ
+        - t <vector> time vector for 2d, 3d and circ
+        - Ereal <2d or 3d matrix> real part of the envelope of the laser field:
+            2d matrix (t, x) for 2d
+            2d matrix (t, r) for circles
+            3d matrix (t, x, y) for 3d
+        - Eimag: same as Ereal with the imaginary part of E
 
-    laser_file_energy: float or None
-       *Used only if a laser_file is provided*
-       Total energy of the pulse, in Joules
+    laser_file_energy: float (in J), optional
+        pulse energy (in Joules). The laser field is rescaled using this factor
     """
     # Wavevector and speed of the antenna
     k0 = 2*np.pi/lambda0
@@ -105,17 +112,16 @@ def add_laser( em, dim, a0, w0, ctau, z0, zf=None, lambda0=0.8e-6,
     # problem of the EM solver not being picklable if laser_func were an
     # instance method, which is not picklable.
 
+    # When running a simulation in boosted frame, convert these parameters
+    boost = None
+    if (gamma_boost is not None):
+        boost = BoostConverter( gamma_boost )
+        source_z, = boost.copropag_length([ source_z ],
+                                          beta_object=source_v/c)
+        source_v, = boost.velocity([ source_v ])
+
     # - Case of a Gaussian pulse
     if laser_file is None:
-
-        # When running a simulation in boosted frame, convert these parameters
-        boost = None
-        if (gamma_boost is not None):
-            boost = BoostConverter( gamma_boost )
-            source_z, = boost.copropag_length([ source_z ],
-                                              beta_object=source_v/c)
-            source_v, = boost.velocity([ source_v ])
-
         # Create a laser profile object to store these parameters
         if (beta == 0) and (zeta == 0) and (phi2 == 0):
             # Without spatio-temporal correlations
@@ -129,15 +135,10 @@ def add_laser( em, dim, a0, w0, ctau, z0, zf=None, lambda0=0.8e-6,
 
     # - Case of an experimental profile
     else:
-
-        # Reject boosted frame
-        if (gamma_boost is not None) and (gamma_boost != 1.):
-            raise ValueError('Boosted frame not implemented for '
-                             'arbitrary laser profile.')
-
         # Create a laser profile object
-        laser_profile = ExperimentalProfile( k0, laser_file,
-                                             laser_file_energy )
+        laser_profile = ExperimentalProfile( k0, laser_file, laser_file_energy, dim,
+                                             boost=boost, source_v=source_v 
+                                           )
 
     # Link its profile function the em object
     em.laser_func = laser_profile
@@ -152,7 +153,6 @@ def add_laser( em, dim, a0, w0, ctau, z0, zf=None, lambda0=0.8e-6,
     em.laser_depos_order_x=1
     em.laser_depos_order_y=1
     em.laser_depos_order_z=1
-
 
 #===============================================================================
 def retropropagation(em, w3d, negative_propagation=False):

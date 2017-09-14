@@ -32,7 +32,7 @@ NELEMENT = 100             # Default length of arrays describing lattice
 NPARPGRP = 256             # Number of particle per group
 NSUBSETS = 3               # Max number of ptcl "subsets" for scatter plots
 NWINDOWS = 9               # Max number of diagnostic windows
-NUMZMMNT = 33              # Number of z moments
+NUMZMMNT = 34              # Number of z moments
 TNWINM  = 2*NWINDOWS               # Used only for data statements
 NWPNSP1 = NWINDOWS + NSUBSETS + 1  # Used only for data statements
 NEVER   = 0
@@ -1666,7 +1666,8 @@ nswind       integer /0/ # Number of species window moments data is calculated
                          # for. Defaults to zero, unless lspeciesmoments is
                          # true, then it defaults to top.ns.
                          # Should always be same as nszmmnt.
-pnum(0:nzwind,0:nswind)    _real [1]     # Total no. of (physical) ions in window
+npsim(0:nzwind,0:nswind)   _real [1]     # Total no. of simulation particles in window
+pnum(0:nzwind,0:nswind)    _real [1]     # Total no. of physical particles in window
 xbar(0:nzwind,0:nswind)    _real [m]     # Mean X coordinate in window
 ybar(0:nzwind,0:nswind)    _real [m]     # Mean Y coordinate in window
 zbar(0:nzwind,0:nswind)    _real [m]     # Mean axial location in window
@@ -1754,7 +1755,8 @@ zmmntsw(0:nszmmnt)  _real [kg]   # Particle weight of species associated with
                                  # the moments
 zmomentscalculated(0:nszmmnt) _logical     # Set to true if the moments for
                                            # that species has been calculated
-pnumz(0:nzmmnt,0:nszmmnt)    _real [1]     # No. of (physical) ions at grid point
+npsimz(0:nzmmnt,0:nszmmnt)   _real [1]     # No. of simulation particles at grid point
+pnumz(0:nzmmnt,0:nszmmnt)    _real [1]     # No. of physical particles at grid point
 xbarz(0:nzmmnt,0:nszmmnt)    _real [m]     # Mean X coordinate at grid point
 ybarz(0:nzmmnt,0:nszmmnt)    _real [m]     # Mean Y coordinate at grid point
 zbarz(0:nzmmnt,0:nszmmnt)    _real [m]     # Mean axial location at grid point
@@ -1830,7 +1832,8 @@ itlabwn integer /0/ # Sets how often the lab moments are calculated
 ntlabwn integer     # Maximum number of times lab frame moments are calculated
 ilabwn(nlabwn,0:nslabwn) _integer # Number of times lab frame moments have been calculated
 timelw(ntlabwn,nlabwn,0:nslabwn)    _real # Time in lab frame
-pnumlw(ntlabwn,nlabwn,0:nslabwn)    _real # Number of particles in lab frame
+npsimlw(ntlabwn,nlabwn,0:nslabwn)   _real # Number of simulation particles in lab frame
+pnumlw(ntlabwn,nlabwn,0:nslabwn)    _real # Number of physical particles in lab frame
 xbarlw(ntlabwn,nlabwn,0:nslabwn)    _real # X bar in lab frame
 ybarlw(ntlabwn,nlabwn,0:nslabwn)    _real # Y bar in lab frame
 zbarlw(ntlabwn,nlabwn,0:nslabwn)    _real # Z bar in lab frame
@@ -2005,9 +2008,12 @@ hepsng(0:nzwind,0:lenhist,0:nshist)    _real [mm-mr]
 hepsnh(0:nzwind,0:lenhist,0:nshist)    _real [mm-mr]
    limited (0:nzwind,0:jhist,0:nshist) +winhist
    # Generalized normalized emittance by window as a function of time
+hnpsim(0:nzwind,0:lenhist,0:nshist)    _real [1]
+   limited (0:nzwind,0:jhist,0:nshist) +winhist
+   # Number of simulation particles in each z window (species 1,0:nshist)
 hpnum(0:nzwind,0:lenhist,0:nshist)     _real [1]
    limited (0:nzwind,0:jhist,0:nshist) +winhist
-   # Number of particles in each z window (species 1,0:nshist)
+   # Number of physical particles in each z window (species 1,0:nshist)
 hrhomid(0:nzwind,0:lenhist)            _real [C/m^3]
    limited (0:nzwind,0:jhist)          +winhist
    # Charge density on axis at center of z window as a fcn of time
@@ -2140,11 +2146,16 @@ ihcurrz integer /-1/          # Multiplier for hcurrz memory size (autoset)
 hcurrz(0:nzzarr*ihcurrz,0:lenhist,0:nszarr)  _real [m/s]
             limited (0:nzzarr,0:jhist,0:nszarr)
             +zhist           # Current versus space and time
-lhpnumz logical /.false./    # Turns on history of particle number
+lhnpsimz logical /.false./    # Turns on history of simulation particle number
+ihnpsimz integer /-1/         # Multiplier for hnpsimz memory size (autoset)
+hnpsimz(0:nzmmnt*ihnpsimz,0:lenhist,0:nshist)  _real [m-r]
+            limited (0:nzmmnt,0:jhist,0:nshist)
+            +zhist           # Simulation particle number
+lhpnumz logical /.false./    # Turns on history of physical particle number
 ihpnumz integer /-1/         # Multiplier for hpnumz memory size (autoset)
 hpnumz(0:nzmmnt*ihpnumz,0:lenhist,0:nshist)  _real [m-r]
             limited (0:nzmmnt,0:jhist,0:nshist)
-            +zhist           # Simulation particle number
+            +zhist           # Physical particle number
 lhepsxz logical /.false./    # Turns on history of X emittance
 ihepsxz integer /-1/         # Multiplier for hepsxz memory size (autoset)
 hepsxz(0:nzmmnt*ihepsxz,0:lenhist,0:nshist)  _real [m-r]

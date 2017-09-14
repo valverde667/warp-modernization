@@ -128,7 +128,7 @@ class FieldDiagnostic(OpenPMDDiagnostic):
 
         # In the x direction
         # Indices within [global_indices[0,0],global_indices[1,0][ are dumped
-        if self.dim in ["2d","3d"]:
+        if self.dim in ["2d","circ","3d"]:
             global_indices[0,0] = istartx[top.iprocgrid[0]]
             global_indices[1,0] = global_indices[0,0] + nxsub[top.iprocgrid[0]] + 1
 
@@ -249,7 +249,7 @@ class FieldDiagnostic(OpenPMDDiagnostic):
         if self.lparallel_output == False:
             F = get_circ_dataset( self.em, quantity, lgather=True, sub_sampling=self.sub_sampling, start=self.start )
             if self.rank == 0:
-    	        dset[:,:,:] = F
+                dset[:,:,:] = F
         # Parallel mode
         else:
             F = get_circ_dataset( self.em, quantity, lgather=False, sub_sampling=self.sub_sampling, start=self.start )
@@ -271,7 +271,7 @@ class FieldDiagnostic(OpenPMDDiagnostic):
             F = get_cart1d_dataset( self.em, quantity, lgather=True,
                     sub_sampling=self.sub_sampling, start=self.start )
             if self.rank == 0:
-    	        dset[:] = F
+                dset[:] = F
         # Parallel mode
         else:
             F = get_cart1d_dataset( self.em, quantity, lgather=False,
@@ -290,7 +290,7 @@ class FieldDiagnostic(OpenPMDDiagnostic):
             F = get_cart2d_dataset( self.em, quantity, lgather=True,
                     sub_sampling=self.sub_sampling, start=self.start )
             if self.rank == 0:
-    	        dset[:,:] = F
+                dset[:,:] = F
         # Parallel mode
         else:
             F = get_cart2d_dataset( self.em, quantity, lgather=False,
@@ -310,7 +310,7 @@ class FieldDiagnostic(OpenPMDDiagnostic):
             F = get_cart3d_dataset( self.em, quantity, lgather=True,
                     sub_sampling=self.sub_sampling, start=self.start )
             if self.rank == 0:
-    	        dset[:,:,:] = F
+                dset[:,:,:] = F
         # Parallel mode
         else:
             F = get_cart3d_dataset( self.em, quantity, lgather=False,

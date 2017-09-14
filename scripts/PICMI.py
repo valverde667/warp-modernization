@@ -42,7 +42,7 @@ class Grid(PICMI_Base.PICMI_Grid):
         if self.moving_window_velocity is not None:
             top.vbeam = top.vbeamfrm = self.moving_window_velocity[2]
             top.lgridqnt = true
-            
+
     def getdims(self, **kw):
         return array([w3d.dx, w3d.dy, w3d.dz])
 
@@ -57,9 +57,27 @@ class EM_solver(PICMI_Base.PICMI_EM_solver):
 
     def init(self, **kw):
 
-        self.solver = EM3D()
+        if self.laser is not None:
+            laser_func = self.laser.laser
+        else:
+            laser_func = None
+
+        self.solver = EM3D(laser_func=laser_func)
         registersolver(self.solver)
-    
+
+
+class Gaussian_laser(PICMI_Base.PICMI_Gaussian_laser):
+    def init(self, **kw):
+        dim = '3d'
+        if self.em_solver is None:
+            from .field_solvers.laser.laser_profiles import GaussianProfile
+            self.laser = GaussianProfile(self.k0, self.waist, self.duration, self.t_peak, self.a0, dim,
+                                         focal_length=-self.focal_length, temporal_order=2, boost=None, source_v=0)
+        else:
+            from .init_tools import add_laser
+            add_laser(self.em_solver.solver, dim, self.a0, self.waist, self.duration*warp.clight, self.z0, self.focal_position, lambda0=self.wavelength,
+                      theta_pol=self.pol_angle, source_z=self.antenna_z0, zeta=0, beta=0, phi2=0, gamma_boost=None, laser_file=None, laser_file_energy=None )
+
 
 class Species(warp.Species):
 
@@ -105,8 +123,8 @@ class Simulation(PICMI_Base.PICMI_Simulation):
 
     def step(self, nsteps=1):
         step(nsteps)
-        
+
     def finalize(self):
         uninstallafterstep(self.makedumps)
 
-        
+

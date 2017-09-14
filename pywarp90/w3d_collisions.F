@@ -907,7 +907,7 @@ c=============================================================================
      &                                     nx, ny, nz, dx, dy, dz, xmmin, ymmin, zmmin, zgrid0, dt,
      &                                     boost_gamma, time, weightingmethod, anglethreshold,
      &                                     electrongroup, electrons, photongroup, photons, tbirthpid, scattercountpid,
-     &                                     withgammaeffective)
+     &                                     withgammaeffective, scatterelectron)
       use Constant
       use ParticleGroupModule
       use Particles,Only: wpid
@@ -928,6 +928,7 @@ c=============================================================================
       integer(ISZ):: electrons
       integer(ISZ):: tbirthpid, scattercountpid
       logical(ISZ):: withgammaeffective
+      logical(ISZ):: scatterelectron
 
 c zgrid0 is the location of the grid at time = 0
 
@@ -1308,7 +1309,7 @@ c         --- Note that Aamp is the unnormalized vector potential
 
         enddo
 
-        if (rn1 < prob) then
+        if (rn1 < prob .and. scatterelectron) then
 
           ! --- For weighting method 1, only a subset of electrons at
           ! --- this point are scattered.

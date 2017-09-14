@@ -170,7 +170,7 @@ recalculated on a finer mesh to give better balancing.
             nplive = globalsum(top.pgroup.nps)
         else:
             # --- Use the value already calculated.
-            nplive = top.pnum[0,-1]
+            nplive = top.npsim[0,-1]
 
         # --- Check if there are any particles anywhere, and return if not.
         if nplive == 0:
@@ -527,43 +527,43 @@ recalculated on a finer mesh to give better balancing.
             # --- loadbalancing.
             # --- Also, calculate the distribution if the moments were not
             # --- calculated on the most recent step.
-            pnum = zeros(1001,'d')
+            npsim = zeros(1001,'d')
             pmin = max(0.,minp-dd)
             pmax = min(mmax-mmin,maxp+dd)
             for js in range(top.pgroup.ns):
                 if top.pgroup.nps[js] == 0: continue
                 i1 = top.pgroup.ins[js] - 1
                 i2 = i1 + top.pgroup.nps[js]
-                setgrid1d(top.pgroup.nps[js],pp[i1:i2],1000,pnum,
+                setgrid1d(top.pgroup.nps[js],pp[i1:i2],1000,npsim,
                           pmin+beam+mmin,pmax+beam+mmin)
-            pnum = parallelsum(pnum)
+            npsim = parallelsum(npsim)
             pdd = (pmax - pmin)/1000.
         else:
             # --- Otherwise use the already calculated z-moment
-            pnum = top.pnumz[:,-1]
+            npsim = top.npsimz[:,-1]
             pmin = 0.
             pdd = w3d.dz
 
-        #assert max(pnum) > 0.,"No particles found during decomposition"
-        if pnum.max() == 0.: return
+        #assert max(npsim) > 0.,"No particles found during decomposition"
+        if npsim.max() == 0.: return
 
         # --- Add fictitious data so that actual work is spread only to the
         # --- requested fraction of the processors.
         assert (0. < spread <= 1.),"spread must be between 0 and 1 or 1."
-        avepnum = ave(pnum)
-        pnum = pnum + avepnum*(1./spread - 1.)
+        avenpsim = ave(npsim)
+        npsim = npsim + avenpsim*(1./spread - 1.)
 
-        self.dodecompositionusingpnum(pnum,axis,ii,minp,maxp,
+        self.dodecompositionusingnpsim(npsim,axis,ii,minp,maxp,
                                       mmin,mmax,dd,pdd,pmin,nprocs,uu,
                                       nnglobal,npextra,ppdecompmin,ppdecompmax,
                                       ppdecompii,ppdecompnn,usemoments,laligntogrid)
 
-    def dodecompositionusingpnum(self,pnum,axis,ii,minp,maxp,
+    def dodecompositionusingnpsim(self,npsim,axis,ii,minp,maxp,
                                  mmin,mmax,dd,pdd,pmin,nprocs,uu,
                                  nnglobal,npextra,ppdecompmin,ppdecompmax,
                                  ppdecompii,ppdecompnn,usemoments,laligntogrid):
         # --- Convert the number of particles to a decomposition
-        domain = self.decompose(pnum,nprocs,lfullcoverage=0)
+        domain = self.decompose(npsim,nprocs,lfullcoverage=0)
         domain = domain*pdd + pmin
         domain[0] = min(domain[0],minp)
         domain[-1] = max(domain[-1],maxp)

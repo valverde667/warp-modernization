@@ -63,6 +63,7 @@ c       --- If so, space needs to be allocated for them.
         lgchange = checkzhistarray(lhlinechg,ihlinechg) .or. lgchange
         lgchange = checkzhistarray(lhvzofz,ihvzofz) .or. lgchange
         lgchange = checkzhistarray(lhcurrz,ihcurrz) .or. lgchange
+        lgchange = checkzhistarray(lhnpsimz,ihnpsimz) .or. lgchange
         lgchange = checkzhistarray(lhpnumz,ihpnumz) .or. lgchange
         lgchange = checkzhistarray(lhepsxz,ihepsxz) .or. lgchange
         lgchange = checkzhistarray(lhepsyz,ihepsyz) .or. lgchange
@@ -213,6 +214,7 @@ c       --- option, or when rewriting the code thusly.
           hepsnr(iw,jhist,js)   = epsnr(iw,js)
           hepsng(iw,jhist,js)   = epsng(iw,js)
           hepsnh(iw,jhist,js)   = epsnh(iw,js)
+          hnpsim(iw,jhist,js)   = npsim(iw,js)
           hpnum(iw,jhist,js)    = pnum(iw,js)
           hxbar(iw,jhist,js)    = xbar(iw,js)
           hybar(iw,jhist,js)    = ybar(iw,js)
@@ -257,6 +259,7 @@ c       --- Making the hcurrz loop implicit gets around a problem
 c       --- with the intel compiler.
         if (lhcurrz) hcurrz(:,jhist,js) = curr(:,js)
         do iz=0,nzmmnt
+          if (lhnpsimz)   hnpsimz(iz,jhist,js)   = npsimz(iz,js)
           if (lhpnumz)    hpnumz(iz,jhist,js)    = pnumz(iz,js)
           if (lhepsxz)    hepsxz(iz,jhist,js)    = epsxz(iz,js)
           if (lhepsyz)    hepsyz(iz,jhist,js)    = epsyz(iz,js)

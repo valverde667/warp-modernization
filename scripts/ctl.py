@@ -5,38 +5,42 @@ import signal
 
 #############################################################################
 # --- Setup signal handler to capture Control-C
+# --- To use, first call setinterupt(). Then at the place where the interrupt
+# --- is allowed, call ruthere(). This will raise a KeyboardInterrupt if
+# --- Control-C had been pressed.
 # --- When a interrupt request is received, all this handler does is set a
 # --- flag to that effect. Then, a subsequent call to ruthere will check
 # --- that flag, and if set, raise an exception. This allows a graceful
 # --- stop with the current time step completed.
 # --- Set the following two in case ruthere is called before setinterrupt.
 _defaultcontrolC = signal.getsignal(signal.SIGINT)
-_controlCrecieved = 0
+_controlCrecieved = False
 
 
 def _handlecontrolC(signum, frame):
     global _controlCrecieved
-    _controlCrecieved = 1
+    _controlCrecieved = True
 
 
-def ruthere():
+def ruthere(reset=True):
     """
 Checks if an interrupt was requested (usually control-C). If so, then raise
-an exception. This always restores the original interrupt handler so that the
+an exception. If reset is True, restore the original interrupt handler so that the
 calling code does not have to, and so that, if there is an exception, it gets
 restored (since the calling code is not returned to).
     """
     global _controlCrecieved
-    oldsignal = signal.signal(signal.SIGINT, _defaultcontrolC)
     if _controlCrecieved:
-        _controlCrecieved = 0
-        raise Exception("Interrupt requested")
+        if reset:
+            signal.signal(signal.SIGINT, _defaultcontrolC)
+        _controlCrecieved = False
+        raise KeyboardInterrupt("Interrupt requested")
 
 
 def setinterrupt():
-    global _controlCrecieved, _defaultcontrolC
-    _controlCrecieved = 0
-    _defaultcontrolC = signal.signal(signal.SIGINT, _handlecontrolC)
+    global _controlCrecieved
+    _controlCrecieved = False
+    signal.signal(signal.SIGINT, _handlecontrolC)
 
 
 def _getcommand(ext1, ext2):
