@@ -788,7 +788,7 @@ def gunmg(iter=1, itersub=None, ipsave=None, save_same_part=None, maxtime=None,
                        particles that were saved (set top.npslost = 0)
     Note that ipsave and save_same_part are preserved in between calls
     """
-    global rhonext, nrnex, nznext, dxnext, dznext
+    global rhonext, nrnex, nxnext, nynext, nznext, dxnext, dynext, dznext
     global zd, egundata_curr, egundata_xrmsz, egundata_yrmsz
     global egundata_xprmsz, egundata_yprmsz, egundata_epsnxz, egundata_epsnyz
     # if nmg=0, do a normal gun solve
@@ -812,9 +812,44 @@ def gunmg(iter=1, itersub=None, ipsave=None, save_same_part=None, maxtime=None,
     # This is used needed on the last iteration at a given level so that
     # the charge density is transmitted to the next level.
     def setrhonext():
-        global rhonext, nrnex, nznext, dxnext, dznext
-        frz.dep_rho_rz(1, rhonext, nrnext, nznext, drnext, dznext, 0.,
-                       w3d.zmmin)
+        global rhonext, nrnex, nxnext, nynext, nznext, dxnext, dynext, dznext
+
+        if w3d.solvergeom==w3d.XYZgeom:
+
+            js = 0
+            pgroup = top.pgroup
+            n  = pgroup.nps[js]
+            if n == 0: return
+            i  = pgroup.ins[js] - 1
+            x  = pgroup.xp[i:i+n]
+            y  = pgroup.yp[i:i+n]
+            z  = pgroup.zp[i:i+n]
+            q  = pgroup.sq[js]
+            w  = pgroup.sw[js]*pgroup.dtscale[js]
+            if top.wpid==0:
+                wfact = zeros((0,), 'd')
+            else:
+                wfact = pgroup.pid[i:i+n,top.wpid-1]
+            depos_order = top.depos_order[:,js]
+
+            if top.wpid==0:
+                setrho3d(rhonext,n,x,y,z,top.zgrid,q,w,top.depos,depos_order,
+                         nxnext,nynext, nznext,
+                         w3d.nxguardrho,w3d.nyguardrho,w3d.nzguardrho,
+                         dxnext, dynext, dznext,
+                         w3d.xmminp,w3d.ymminp,w3d.zmminp,w3d.l2symtry,w3d.l4symtry,
+                         w3d.solvergeom==w3d.RZgeom)
+            else:
+                setrho3dw(rhonext,n,x,y,z,top.zgrid,wfact,q,w,top.depos,depos_order,
+                         nxnext,nynext, nznext,
+                         w3d.nxguardrho,w3d.nyguardrho,w3d.nzguardrho,
+                         dxnext, dynext, dznext,
+                         w3d.xmminp,w3d.ymminp,w3d.zmminp,w3d.l2symtry,w3d.l4symtry,
+                         w3d.solvergeom==w3d.RZgeom)
+
+        if w3d.solvergeom==w3d.RZgeom:
+            frz.dep_rho_rz(1, rhonext, nrnext, nznext, drnext, dznext, 0.,
+                           w3d.zmmin)
 
     # declare arrays containing size grids for each mg level
     gunnx = zeros(nmg+1, 'l')
@@ -836,7 +871,7 @@ def gunmg(iter=1, itersub=None, ipsave=None, save_same_part=None, maxtime=None,
         gunnz[i] = int(gunnz[i+1]/2)
         gundt[i] = gundt[i+1]*2
         gunnpinject[i] = int(gunnpinject[i+1]/2)
-    if w3d.solvergeom != w3d.RZgeom:
+    if w3d.solvergeom not in [w3d.RZgeom,w3d.XYZgeom]:
         raise Exception('function not yet implemented')
     else:
         # mg loop
@@ -855,12 +890,17 @@ def gunmg(iter=1, itersub=None, ipsave=None, save_same_part=None, maxtime=None,
             top.rnpinje_s[:] = 0
             top.npinject = gunnpinject[i]
             # resize the mesh and associated arrays
-            adjustmesh3d.resizemesh(gunnx[i], 0, gunnz[i], 0, 0, 1, 1, 1, conductors)
-            # Except at the coarser level (i=0), the charge density is
+            if i>0:print ' *** Multigrid level %g [nx, ny, nz] = [%g,%g,%g] done.\n'%(i,w3d.nx,w3d.ny,w3d.nz)
+            adjustmesh3d.resizemesh(gunnx[i], gunny[i], gunnz[i], 0, 0, 1, 1, 1, 1, conductors)
+            print ' *** Multigrid level %g [nx, ny, nz] = [%g,%g,%g] starts:'%(i+1,w3d.nx,w3d.ny,w3d.nz)
             # copied from rhonext where it was stored from at last
             # iteration at the previous level.
             if i > 0:
-                frz.basegrid.rho[:, :] = rhonext[:, :]
+                if w3d.solvergeom==w3d.XYZgeom:
+                    solver = getregisteredsolver()
+                    solver.rho[...] = rhonext[...]
+                if w3d.solvergeom==w3d.RZgeom:
+                    frz.basegrid.rho[:, :] = rhonext[:, :]
                 rhoprevious = [rhonext]
             # update phi and inj_phi
             fieldsol(-1, lbeforefs=1, lafterfs=1)
@@ -905,11 +945,20 @@ def gunmg(iter=1, itersub=None, ipsave=None, save_same_part=None, maxtime=None,
             # installed so that rhonext is eveluated during last
             # iteration at current level.
             if i < nmg:
-                nrnext = gunnx[i+1]
-                nznext = gunnz[i+1]
-                drnext = (w3d.xmmax-w3d.xmmin)/nrnext
-                dznext = (w3d.zmmax-w3d.zmmin)/nznext
-                rhonext = fzeros([nrnext+1, nznext+1], 'd')
+                if w3d.solvergeom==w3d.XYZgeom:
+                    nxnext = gunnx[i+1]
+                    nynext = gunny[i+1]
+                    nznext = gunnz[i+1]
+                    dxnext = (w3d.xmmax-w3d.xmmin)/nxnext
+                    dynext = (w3d.ymmax-w3d.ymmin)/nynext
+                    dznext = (w3d.zmmax-w3d.zmmin)/nznext
+                    rhonext = fzeros([nxnext+1, nynext+1, nznext+1], 'd')
+                if w3d.solvergeom==w3d.RZgeom:
+                    nrnext = gunnx[i+1]
+                    nznext = gunnz[i+1]
+                    drnext = (w3d.xmmax-w3d.xmmin)/nrnext
+                    dznext = (w3d.zmmax-w3d.zmmin)/nznext
+                    rhonext = fzeros([nrnext+1, nznext+1], 'd')
                 installafterstep(setrhonext)
             # perform last iteration
             gun(1, ipsave, save_same_part, maxtime,

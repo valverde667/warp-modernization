@@ -5,7 +5,7 @@ as `laser_func` to the EM3D class or to the `LaserAntenna` class
 import numpy as np
 from scipy.constants import c, m_e, e, epsilon_0
 from scipy.interpolate import RegularGridInterpolator
-from scipy.special import genlaguerre
+from scipy.special import genlaguerre, j1
 from scipy.misc import factorial
 import h5py
 # Try importing parallel functions, in order to broadcast
@@ -37,6 +37,12 @@ class ExperimentalProfile( object ):
                 2d matrix (t, r) for circles
                 3d matrix (t, x, y) for 3d
             - Eimag: same as Ereal with the imaginary part of E
+            
+            Note that the longitudinal coordinate used here is time, so the front of the 
+            pulse is in the first elements of Ereal and Eimag along the first dimension.
+            
+            To calculate the laser field from this envelope, we use the '+' convention: 
+            E(t) = ( Ereal + i*Eimag ) * exp( +i*omega0*t )
 
         laser_file_energy: float (in J)
             pulse energy (in Joules). The laser field is rescaled using this factor
@@ -61,7 +67,7 @@ class ExperimentalProfile( object ):
         self.dim = dim
                 
         if me==0:
-            with h5py.File(laser_file) as f:
+            with h5py.File(laser_file, 'r') as f:
                 if self.dim == '2d':
                     t = f['t'][:]
                     x = f['x'][:]
@@ -194,7 +200,7 @@ class ExperimentalProfile( object ):
             Ecomplex = self.interp_func( (t, x, y) )
         # Add laser oscillations and temporal chirp
 
-        Eosc = ( Ecomplex * np.exp( -1.j*self.k0*c*t ) ).real
+        Eosc = ( Ecomplex * np.exp( 1.j*self.k0*c*t ) ).real
 
         return( Eosc * conversion_factor )
 
@@ -336,6 +342,153 @@ class GaussianProfile( object ):
         # Return the combination of profile and field amplitude
         return( E0 * profile.real )
 
+class JincGaussianAngleProfile( object ):
+    """Class that calculates a laser pulse with transverse Jinc profile, longitudinal
+       Gaussian profile and propagating at an arbitrary angle with respect to z."""
+
+    def __init__( self, k0, waist, tau, t_peak, a0, dim,
+        temporal_order=2, boost=None, source_v=0, theta_zx=0., x_center=0. ):
+        """
+        Define a laser profile with is a Jinc function transversely and a 
+        supergaussian function longitudinally. The antenna is orthogonal to z, but 
+        this profile supports a non-zero angle in the (z, x) plane, and is compatible
+        with the boosted frame and a moving window.
+        
+        Note 1: The focal plane is the plane of the antenna. No general analytical formula 
+        exist otherwise.
+        Note2: This profile only works for small angles theta_zx.
+
+        This object can then be passed to the `EM3D` class, as the argument
+        `laser_func`, in order to have a Gaussian laser emitted by the antenna.
+
+        Parameters:
+        -----------
+        k0: float (in meters^-1)
+            Laser wavevector (in the lab frame)
+
+        waist: float (in meters)
+            Laser waist in the focal plane (in the lab frame)
+
+        tau: float (in seconds)
+            Laser temporal waist (in the lab frame)
+
+        t_peak: float (in seconds)
+            The time at which the peak of the laser pulse is emitted
+            by the antenna (in the lab frame)
+
+        a0: float (dimensionless)
+            The peak normalized vector potential, in the focal plane
+
+        dim: string
+            The dimension of the simulation. Either "1d", "2d", "circ", or "3d"
+
+        temporal order: int
+            The order of the hypergaussian temporal profile
+            (Use 2 for a Gaussian temporal profile)
+
+        boost: a BoostConverter object
+            If not None, the laser is emitted in the corresponding boosted-frame
+            (even though all parameters are passed in the lab frame)
+
+        source_v: float (meters/second)
+            The speed of the antenna in the direction normal to its plane
+            
+        theta_zx: fload (rad)
+            Angle of the k vector in the (z,x) plane with respect to the z axis.
+            For instance, 
+              theta_zx = 0: along +z
+              theta_zx = pi/2: along +x
+              
+        x_center: float (m)
+            Laser centroid position in the transverse direction x.
+            Used to inject a laser pulse off-axis.
+        """
+        # Set a number of parameters for the laser
+        E0 = a0*m_e*c**2*k0/e
+
+        # Store the parameters
+        self.k0 = k0
+        self.waist = waist
+        self.inv_tau = 1./tau
+        self.t_peak = t_peak
+        self.E0 = E0
+        self.v_antenna = source_v
+        self.boost = boost
+        self.temporal_order = temporal_order
+        self.theta_zx = theta_zx
+        self.x_center = x_center
+
+        # Geometric coefficient (for the evolution of the amplitude)
+        self.geom_coeff = get_geometric_coeff( dim )
+
+    def __call__( self, x, y, t_modified ):
+        """
+        Return the transverse profile of the laser at the position
+        of the antenna
+
+        Parameters:
+        -----------
+        x: float or ndarray
+            First transverse direction in meters
+
+        y: float or ndarray
+            Second transverse direction in meters
+
+        t_modified: float
+            Time in seconds, multiplied by (1-v_antenna/c)
+            This multiplication is done in em3dsolver.py, when
+            calling the present function.
+        """
+        # Get the true time
+        # (The top.time has been multiplied by (1-v_antenna/c)
+        # in em3dsolver.py, before calling the present function)
+        t = t_modified/(1.-self.v_antenna/c)
+        # Get the position of the antenna at this time
+        z_source = self.v_antenna * t
+
+        # When running in the boosted frame, convert these position to
+        # the lab frame, so as to use the lab-frame formula of the laser
+        if self.boost is not None:
+            zlab_source = self.boost.gamma0*( z_source + self.boost.beta0*c*t )
+            tlab_source = self.boost.gamma0*( t + self.boost.beta0*z_source/c )
+            # Overwrite boosted frame values, within the scope of this function
+            z_source = zlab_source
+            t = tlab_source
+#         Rotated coordinate, to allow for propagation angle
+#         x_rotated = (x-self.x_center)*np.cos(self.theta_zx) + c*t*np.sin(self.theta_zx)
+#         t_rotated = t*np.cos(self.theta_zx) - (x-self.x_center)/c * np.sin(self.theta_zx)
+#         Define spatio-temporal profile
+#         r = np.maximum(np.sqrt(x_rotated**2+y**2), self.waist*1.e-8)
+#         space_profile = 2*j1(r/self.waist) / (r/self.waist)
+#         time_profile  = np.exp(-((t_rotated - self.t_peak - z_source/c ) * self.inv_tau)
+#                                       **self.temporal_order)
+#         phase         = self.k0*c*(t_rotated-self.t_peak-z_source/c )
+
+        # Rotated coordinate, to allow for propagation angle
+        x_rotated = (x-self.x_center)*np.cos(self.theta_zx) + \
+                     c*(t-self.t_peak-z_source/c)*np.sin(self.theta_zx)
+        t_rotated = (t-self.t_peak-z_source/c)*np.cos(self.theta_zx) -\
+                    (x-self.x_center)/c * np.sin(self.theta_zx)
+        # Define spatio-temporal profile
+        r = np.maximum(np.sqrt(x_rotated**2+y**2), self.waist*1.e-8)
+        space_profile = 2*j1(r/self.waist) / (r/self.waist)
+        time_profile  = np.exp(-(t_rotated * self.inv_tau)
+                                      **self.temporal_order)
+        phase         = self.k0*c*t_rotated
+        
+        # Boosted-frame: convert the laser amplitude
+        # These formula assume that the antenna is motionless in the lab frame
+        if self.boost is not None:
+            conversion_factor = 1./self.boost.gamma0
+            # The line below is to compensate the fact that the laser
+            # amplitude is multiplied by (1-v_antenna/c) in em3dsolver.py
+            conversion_factor *= 1./(1. - self.v_antenna/c)
+            E0 = conversion_factor * self.E0            
+        else:
+            E0 = self.E0
+        
+        # Return the combination of profile and field amplitude
+        return( E0 * space_profile * time_profile * np.cos(phase) )
 
 class GaussianSTCProfile( object ):
     """Class that calculates a Gaussian laser pulse with spatio-temporal

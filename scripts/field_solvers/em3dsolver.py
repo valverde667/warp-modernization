@@ -420,6 +420,9 @@ class EM3D(SubcycledPoissonSolver):
 #     if self.ymmin>w3d.ymmaxlocal or self.ymmax<w3d.ymminlocal:return
 #   if self.zmmin>w3d.zmmaxlocal or self.zmmax<w3d.zmminlocal:return
 
+        # --- Handle laser inputs
+        self.setuplaser()
+
         self.initializeconductors()
 
         # ---- install 2nd part of field solve (only for root)
@@ -512,9 +515,6 @@ class EM3D(SubcycledPoissonSolver):
         # --- Create field and source arrays and other arrays.
         self.allocatefieldarrays()
 
-        # --- Handle laser inputs
-        self.setuplaser()
-
         w3d.lfinalizerhofsapi=True
 
         self.finalized = True
@@ -597,22 +597,22 @@ class EM3D(SubcycledPoissonSolver):
         else:
             dim = "3d"
 
-        # If the user does not require a laser, laser_antenna is None
-        if self.laser_func is None:
-            self.laser_antenna = None
-            return
-        # Otherwise, initialize the laser antenna
-        else:
-            self.laser_antenna = LaserAntenna(
+        # Initialize the list of antennas
+        self.laser_antenna = []
+
+        # Add a new antenna to the list if self.laser_func is not None
+        if self.laser_func is not None:
+            self.laser_antenna.append(LaserAntenna(
                 self.laser_func, self.laser_vector,
                 self.laser_polvector, self.laser_spot,
                 self.laser_emax, self.laser_source_z,
                 self.laser_source_v,
                 self.laser_polangle,
-                w3d, dim, self.circ_m)
+                w3d, dim, self.circ_m))
+
 
 #===============================================================================
-    def add_laser(self,field):
+    def add_laser(self,field, laser_antenna_i):
         """
         Calculate the parameters of the corresponding antenna and depose the
         corresponding current on the grid.
@@ -629,19 +629,22 @@ class EM3D(SubcycledPoissonSolver):
         field : EM3D_YEEFIELD
             The self.fields object, whose attributes are the field arrays
             Ex, Ey, etc ...
+
+        laser_antenna_i: LaserAntenna
+            ith component of the object self.laser_antenna
         """
         # If the user did not request a laser antenna,
         # this function should not be executed
-        if self.laser_antenna is None:
+        if laser_antenna_i is None:
             return
 
         f = self.block.core.yf
 
         # Push particles accordingly to laser_func
-        self.laser_antenna.push_virtual_particles(top, f, clight)
-        self.laser_antenna.select_particles_in_local_box( w3d, self.zgrid )
+        laser_antenna_i.push_virtual_particles(top, f, clight)
+        laser_antenna_i.select_particles_in_local_box( w3d, self.zgrid )
         # Skip current deposition when no laser particles are in the local box
-        if self.laser_antenna.nn == 0:
+        if laser_antenna_i.nn == 0:
             return
 
         # Current and charge deposition
@@ -660,16 +663,16 @@ class EM3D(SubcycledPoissonSolver):
         l_particles_weight = True
         for q in [1.,-1.]:
             # Current deposition
-            self.depose_current_density(self.laser_antenna.nn, f,
-                           self.laser_antenna.xx + q*self.laser_antenna.xdx,
-                           self.laser_antenna.yy + q*self.laser_antenna.ydy,
-                           self.laser_antenna.zz + q*self.laser_antenna.zdz,
-                           self.laser_antenna.vx + q*self.laser_antenna.ux,
-                           self.laser_antenna.vy + q*self.laser_antenna.uy,
-                           self.laser_antenna.vz + q*self.laser_antenna.uz,
-                           self.laser_antenna.gi,
+            self.depose_current_density(laser_antenna_i.nn, f,
+                           laser_antenna_i.xx + q*laser_antenna_i.xdx,
+                           laser_antenna_i.yy + q*laser_antenna_i.ydy,
+                           laser_antenna_i.zz + q*laser_antenna_i.zdz,
+                           laser_antenna_i.vx + q*laser_antenna_i.ux,
+                           laser_antenna_i.vy + q*laser_antenna_i.uy,
+                           laser_antenna_i.vz + q*laser_antenna_i.uz,
+                           laser_antenna_i.gi,
                            top.dt,
-                           self.laser_antenna.weights,
+                           laser_antenna_i.weights,
                            self.zgrid, q, 1.,
                            self.laser_depos_order_x,
                            self.laser_depos_order_y,
@@ -678,16 +681,16 @@ class EM3D(SubcycledPoissonSolver):
 
             if self.l_getrho :
                 # Charge deposition
-                self.depose_charge_density(self.laser_antenna.nn, f,
-                           self.laser_antenna.xx + q*self.laser_antenna.xdx,
-                           self.laser_antenna.yy + q*self.laser_antenna.ydy,
-                           self.laser_antenna.zz + q*self.laser_antenna.zdz,
-                           self.laser_antenna.vx + q*self.laser_antenna.ux,
-                           self.laser_antenna.vy + q*self.laser_antenna.uy,
-                           self.laser_antenna.vz + q*self.laser_antenna.uz,
-                           self.laser_antenna.gi,
+                self.depose_charge_density(laser_antenna_i.nn, f,
+                           laser_antenna_i.xx + q*laser_antenna_i.xdx,
+                           laser_antenna_i.yy + q*laser_antenna_i.ydy,
+                           laser_antenna_i.zz + q*laser_antenna_i.zdz,
+                           laser_antenna_i.vx + q*laser_antenna_i.ux,
+                           laser_antenna_i.vy + q*laser_antenna_i.uy,
+                           laser_antenna_i.vz + q*laser_antenna_i.uz,
+                           laser_antenna_i.gi,
                            top.dt,
-                           self.laser_antenna.weights,
+                           laser_antenna_i.weights,
                            self.zgrid, q, 1.,
                            self.laser_depos_order_x,
                            self.laser_depos_order_y,
@@ -696,7 +699,7 @@ class EM3D(SubcycledPoissonSolver):
 
         # Call a function of the class em3dsolverFFT
         if hasattr( self, 'current_cor' ) and self.current_cor:
-            self.depose_rho_old_laser(f)
+            self.depose_rho_old_laser(f, laser_antenna_i)
 
 
 ################################################################################
@@ -1249,8 +1252,9 @@ class EM3D(SubcycledPoissonSolver):
         # --- add slices
         self.add_source_ndts_slices()
         self.aftersetsourcep()
-        # -- add laser
-        self.add_laser(self.block.core.yf)
+        # -- add laser, loop on the different antennas
+        for i in range(len(self.laser_antenna)):
+            self.add_laser(self.block.core.yf, self.laser_antenna[i])
         # --- smooth current density
         if any(self.npass_smooth>0):self.smoothdensity()
         if self.l_nodalgrid:self.Jyee2node3d()
@@ -6615,13 +6619,13 @@ def pyinit_3dem_block(nx, ny, nz,
     f.jzmaxg = f.izmaxg-f.izming
     f.xmin = xmin
     f.ymin = ymin
-    f.zmin = zmin 
+    f.zmin = zmin
     f.dx = dx
     f.dy = dy
     f.dz = dz
     f.xmax = xmin+dx*nx
     f.ymax = ymin+dy*ny
-    f.zmax = zmin+dz*nz 
+    f.zmax = zmin+dz*nz
     f.dxi = 1./dx
     f.dyi = 1./dy
     f.dzi = 1./dz

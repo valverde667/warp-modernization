@@ -212,9 +212,10 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
             else:
                 # Parallel simulation
                 # Gather objects into lists (one element per proc)
-                field_array_list = gather( field_array, comm=self.comm_world )
-                iz_min_list = gather( iz_min, comm=self.comm_world )
-                iz_max_list = gather( iz_max, comm=self.comm_world )
+                mpi_comm = self.comm_world
+                field_array_list = mpi_comm.gather( field_array )
+                iz_min_list = mpi_comm.gather( iz_min )
+                iz_max_list = mpi_comm.gather( iz_max )
 
                 # First proc: merge the field arrays from each proc
                 if self.rank == 0:

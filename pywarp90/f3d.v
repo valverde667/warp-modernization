@@ -594,6 +594,8 @@ multigridbe3df(iwhich:integer,nx:integer,ny:integer,nzlocal:integer,nz:integer,
    # from the f3d package to control the iterations and conductors.
 multigridbe3dsolve(iwhich:integer,
              nx:integer,ny:integer,nz:integer,
+             nxguardphi:integer,nyguardphi:integer,nzguardphi:integer,
+             nxguardrho:integer,nyguardrho:integer,nzguardrho:integer,
              dx:real,dy:real,dz:real,phi:real,rho:real,
              rstar:real,linbend:logical,bounds(0:5):integer,
              xmmin:real,ymmin:real,zmmin:real,

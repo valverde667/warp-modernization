@@ -19,6 +19,8 @@ build:
     - mpirun -np 4 python restart_after_lpa_script.py -p 2 1 2
     - rm -rf ./diags
     - mpirun -np 2 python lpa_boostedframe_script.py
+    - rm -rf ./diags
+    - mpirun -np 4 python test_antenna.py -p 2 1 2
 
     # Finally, check that warp can be imported by itself, without
     # depending on scipy or h5py

@@ -62,6 +62,9 @@ RUN git clone https://bitbucket.org/dpgrote/pygist.git \
     && cd .. \
     && rm -rf pygist
 
+# Install the openPMD-viewer (mainly for tests)
+RUN pip install openPMD-viewer
+
 # Prepare the run directory
 RUN mkdir run/
 WORKDIR /home/warp_user/run/

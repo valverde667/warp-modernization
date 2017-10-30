@@ -914,6 +914,8 @@ class MultiGrid3D(SubcycledPoissonSolver):
                                   self._rho,iondensitygrid3d)
             self.iondensitygrid3d = iondensitygrid3d
             multigridbe3dsolve(iwhich,self.nx,self.ny,self.nz,
+                               self.nxguardphi,self.nyguardphi,self.nzguardphi,
+                               self.nxguardrho,self.nyguardrho,self.nzguardrho,
                                self.dx,self.dy,self.dz*zfact,
                                self.potential,self.source,
                                rstar,self.linbend,self.bounds,
@@ -1265,6 +1267,8 @@ class FullMultiGrid3D(MultiGrid3D):
                                   self._rho,iondensitygrid3d)
             self.iondensitygrid3d = iondensitygrid3d
             multigridbe3dsolve(iwhich,self.nx,self.ny,self.nz,
+                               self.nxguardphi,self.nyguardphi,self.nzguardphi,
+                               self.nxguardrho,self.nyguardrho,self.nzguardrho,
                                self.dx,self.dy,self.dz*zfact,
                                self.potential,self.source,
                                rstar,self.linbend,self.bounds,

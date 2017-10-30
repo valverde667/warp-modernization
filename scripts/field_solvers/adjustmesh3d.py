@@ -93,8 +93,18 @@ def resizemesh(nx=None,ny=None,nz=None,lloadrho=True,lfieldsol=True,
     try:
         gallot("SelfFieldGrid3d")
     except:
-        gallot("Fields3d")
+        gallot("Fields3dSolver")
+        gallot("Mesh3d")
     setupFields3dParticles()
+    if w3d.solvergeom is w3d.XYZgeom:
+        if top.fstype==12:
+            solver = getregisteredsolver()
+            solverclass = solver.__class__
+            unregistersolver(solver)
+            solver = solverclass()
+            registersolver(solver)
+            solver.setparticledomains()
+            solver.allocatedataarrays()
     if w3d.solvergeom is w3d.RZgeom:
         try:
             frz.del_base()
@@ -207,7 +217,8 @@ def resizemeshxy(nx=None,ny=None,xmmin=None,xmmax=None,ymmin=None,ymmax=None,
         w3d.dy = (w3d.ymmax - w3d.ymmin)/w3d.ny
 
     # --- Reallocate the fields
-    gallot("Fields3d")
+    gallot("Fields3dSolver")
+    gallot("Mesh3d")
     setupFields3dParticles()
     if w3d.solvergeom is w3d.RZgeom:
         try:

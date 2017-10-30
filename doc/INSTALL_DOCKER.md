@@ -10,12 +10,6 @@ Docker can be installed from [here](https://www.docker.com/products/overview).
 
 The Docker image of Warp (which contains a compiled version of Warp and all of its dependencies), can be obtained by downloading it from [DockerHub](https://hub.docker.com/).
 
-On Mac OSX, in both cases, you will need to first start a Docker machine. This can be done by the following sets of commands:
-```
-docker-machine start default
-eval $(docker-machine env default)
-```
-
 To download the image, type
 ```
 docker pull rlehe/warp
