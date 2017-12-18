@@ -1,4 +1,7 @@
 
+# Ignore IDE files 
+.idea/*
+
 # Ignore Mac extra files
 .DS_Store
 
