@@ -15,7 +15,12 @@ from scipy.constants import c
 from field_diag import FieldDiagnostic
 from field_extraction import get_dataset
 from data_dict import z_offset_dict
-from parallel import gather
+from parallel import gather, me, mpiallgather
+try:
+    from mpi4py import MPI
+except ImportError:
+    MPI = None
+    pass
 
 class BoostedFieldDiagnostic(FieldDiagnostic):
     """
@@ -30,7 +35,7 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
     def __init__(self, zmin_lab, zmax_lab, v_lab, dt_snapshots_lab,
                  Ntot_snapshots_lab, gamma_boost, period, em, top, w3d,
                  comm_world=None, fieldtypes=["rho", "E", "B", "J"],
-                 z_subsampling=1, write_dir=None ) :
+                 z_subsampling=1, write_dir=None, boost_dir=1 ) :
         """
         Initialize diagnostics that retrieve the data in the lab frame,
         as a series of snapshot (one file per snapshot),
@@ -62,6 +67,10 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
             A factor which is applied on the resolution of the lab frame
             reconstruction.
 
+        boost_dir: int (1 or -1)
+            The direction of the Lorentz transformation from the lab frame
+            to the boosted frame (along the z axis)
+
         See the documentation of FieldDiagnostic for the other parameters
         """
         # Do not leave write_dir as None, as this may conflict with
@@ -83,16 +92,21 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
             self.global_indices_list = gather( self.global_indices,
                                                comm=self.comm_world )
 
+        # Check user input
+        boost_dir = int(boost_dir)
+        assert boost_dir in [1,-1]
+
         # Register the boost quantities
         self.gamma_boost = gamma_boost
+        self.boost_dir = boost_dir
         self.inv_gamma_boost = 1./gamma_boost
-        self.beta_boost = np.sqrt( 1. - self.inv_gamma_boost**2 )
+        self.beta_boost = np.sqrt( 1. - self.inv_gamma_boost**2 ) * boost_dir
         self.inv_beta_boost = 1./self.beta_boost
 
         # Find the z resolution and size of the diagnostic *in the lab frame*
         # (Needed to initialize metadata in the openPMD file)
-        dz_lab = c*self.top.dt * self.inv_beta_boost*self.inv_gamma_boost
-        Nz = int( (zmax_lab - zmin_lab)/dz_lab )
+        dz_lab = np.abs(c*self.top.dt * self.inv_beta_boost*self.inv_gamma_boost)
+        Nz = int(round( (zmax_lab - zmin_lab)/dz_lab ))
         # In case of subsampling along z, increase dz and reduce Nz
         if z_subsampling > 1:
             dz_lab = dz_lab * z_subsampling
@@ -112,7 +126,7 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
             snapshot = LabSnapshot( t_lab,
                                     zmin_lab + v_lab*t_lab,
                                     zmax_lab + v_lab*t_lab,
-                                    self.write_dir, i, self.rank)
+                                    self.write_dir, i, self.rank, boost_dir)
             self.snapshots.append( snapshot )
             # Initialize a corresponding empty file
             if self.rank == 0:
@@ -202,50 +216,63 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
             snapshot.buffer_z_indices = []
 
             # Gather the compacted slices from several proc
-
             if (self.comm_world is None) or (self.comm_world.size == 1):
                 # Serial simulation
                 global_field_array = field_array
                 global_iz_min = iz_min
                 global_iz_max = iz_max
-
             else:
-                # Parallel simulation
-                # Gather objects into lists (one element per proc)
-                mpi_comm = self.comm_world
-                field_array_list = mpi_comm.gather( field_array )
-                iz_min_list = mpi_comm.gather( iz_min )
-                iz_max_list = mpi_comm.gather( iz_max )
-
+                # Create new communicator with procs that have non-empty data to send
+                in_list = 0
+                if (field_array is not None) or (me == 0):
+                    in_list = me
+                ranks_group_list = mpiallgather( in_list )
+                ranks_group_list = list(set(ranks_group_list))
+                mpi_group = self.comm_world.Get_group()
+                self.ranks_group_list = ranks_group_list
+                newgroup = mpi_group.Incl(ranks_group_list)
+                dump_comm = self.comm_world.Create(newgroup)
+                # Gather data on proc 0 into this communicator
+                if dump_comm != MPI.COMM_NULL:
+                    field_array_list_comm = dump_comm.gather( field_array )
+                    iz_min_list_comm = dump_comm.gather( iz_min )
+                    iz_max_list_comm = dump_comm.gather( iz_max )
+                
                 # First proc: merge the field arrays from each proc
                 if self.rank == 0:
-
                     # Check whether any processor had some slices
                     no_slices = True
-                    for i_proc in xrange(self.top.nprocs):
-                        if field_array_list[i_proc] is not None:
+                    for i_proc in xrange(dump_comm.Get_size()):
+                        if field_array_list_comm[i_proc] is not None:
                             no_slices = False
-
                     # If there are no slices, set global quantities to None
                     if no_slices:
                         global_field_array = None
                         global_iz_min = None
                         global_iz_max = None
-
                     # If there are some slices, gather them
                     else:
                         global_field_array, global_iz_min, global_iz_max = \
-                          self.gather_slices(
-                              field_array_list, iz_min_list, iz_max_list )
+                          self.gather_slices(field_array_list_comm, 
+                              iz_min_list_comm, iz_max_list_comm, dump_comm.Get_size())
 
+                # Free the dump communicator
+                mpi_group.Free()
+                newgroup.Free()
+                if dump_comm != MPI.COMM_NULL:
+                    dump_comm.Free()
 
             # Write the gathered slices to disk
             if (self.rank == 0) and (global_field_array is not None):
                 self.write_slices( global_field_array, global_iz_min,
                 global_iz_max, snapshot, self.slice_handler.field_to_index )
 
+            # Free gathered arrays
+            field_array_list_comm = []
+            iz_min_list_comm = []
+            iz_max_list_comm = []
 
-    def gather_slices( self, field_array_list, iz_min_list, iz_max_list ):
+    def gather_slices( self, field_array_list, iz_min_list, iz_max_list, size_list ):
         """
         Merge the arrays in field_array_list (one array per proc) into
         a single array
@@ -280,17 +307,19 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
 
         # Loop through all the processors
         # Fit the field arrays one by one into the global_array
-        for i_proc in xrange(self.top.nprocs):
+        for i_proc in xrange(size_list):
+
+            i_proc_commworld = self.ranks_group_list[ i_proc ]
 
             # If this proc has no data, skip it
             if field_array_list[ i_proc ] is None:
                 continue
 
             # Find the indices where the array will be fitted
-            ix_min = self.global_indices_list[ i_proc ][0,0]
-            ix_max = self.global_indices_list[ i_proc ][1,0]
-            iy_min = self.global_indices_list[ i_proc ][0,1]
-            iy_max = self.global_indices_list[ i_proc ][1,1]
+            ix_min = self.global_indices_list[ i_proc_commworld ][0,0]
+            ix_max = self.global_indices_list[ i_proc_commworld ][1,0]
+            iy_min = self.global_indices_list[ i_proc_commworld ][0,1]
+            iy_max = self.global_indices_list[ i_proc_commworld ][1,1]
             # Longitudinal indices within the array global_array
             s_min = iz_min_list[ i_proc ] - global_iz_min
             s_max = iz_max_list[ i_proc ] - global_iz_min
@@ -398,7 +427,9 @@ class LabSnapshot:
     Class that stores data relative to one given snapshot
     in the lab frame (i.e. one given *time* in the lab frame)
     """
-    def __init__(self, t_lab, zmin_lab, zmax_lab, write_dir, i, rank):
+
+    def __init__(self, t_lab, zmin_lab, zmax_lab,
+                 write_dir, i, rank, boost_dir):
         """
         Initialize a LabSnapshot
 
@@ -419,6 +450,10 @@ class LabSnapshot:
 
         rank: int
             Index number of the processor
+
+        boost_dir: int (1 or -1)
+            The direction of the Lorentz transformation from the lab frame
+            to the boosted frame (along the z axis)
         """
         # Deduce the name of the filename where this snapshot writes
         if rank == 0:
@@ -429,6 +464,7 @@ class LabSnapshot:
         self.zmin_lab = zmin_lab
         self.zmax_lab = zmax_lab
         self.t_lab = t_lab
+        self.boost_dir = boost_dir
 
         # Positions where the fields are to be registered
         # (Change at every iteration)
@@ -438,6 +474,8 @@ class LabSnapshot:
         # Buffered field slice and corresponding array index in z
         self.buffered_slices = []
         self.buffer_z_indices = []
+
+        self.boost_dir = boost_dir
 
     def update_current_output_positions( self, t_boost, inv_gamma, inv_beta ):
         """
@@ -476,7 +514,7 @@ class LabSnapshot:
             Inverse of the grid spacing in z, *in the lab frame*
         """
         # Find the index of the slice in the lab frame
-        iz_lab = int( (self.current_z_lab - self.zmin_lab)*inv_dz_lab )
+        iz_lab = int(round( (self.current_z_lab - self.zmin_lab)*inv_dz_lab ))
 
         # Store the slice, if it was not already previously stored
         # (when dt is small and dz is large, this can happen)
@@ -514,7 +552,7 @@ class LabSnapshot:
         # of inv_dz_lab.)
         iz_old = self.buffer_z_indices[0]
         for iz in self.buffer_z_indices[1:]:
-            if iz != iz_old - 1:
+            if iz != iz_old - self.boost_dir:
                 raise UserWarning('In the boosted frame diagnostic, '
                         'the buffered slices are not contiguous in z.\n'
                         'The boosted frame diagnostics may be inaccurate.')
@@ -522,23 +560,38 @@ class LabSnapshot:
             iz_old = iz
 
         # Pack the different slices together
-        # Reverse the order of the slices when stacking the array,
-        # since the slices where registered for right to left
-        try:
-            field_array = np.stack( self.buffered_slices[::-1], axis=-1 )
-        except AttributeError:
-            # If the version of numpy is older than 1.10, stack does
-            # not exist. In this case, do it by hand:
-            index  = np.array(np.shape( self.buffered_slices[::-1] ))
-            rolled_index = np.roll(index, -1)
-            field_array = np.dstack( self.buffered_slices[::-1] )
-            field_array = field_array.reshape( (rolled_index), order="F" )
+        if self.boost_dir == 1:
+            # Reverse the order of the slices when stacking the array,
+            # since the slices where registered for right to left
+            try:
+                field_array = np.stack( self.buffered_slices[::-1], axis=-1 )
+            except AttributeError:
+                # If the version of numpy is older than 1.10, stack does
+                # not exist. In this case, do it by hand:
+                index  = np.array(np.shape( self.buffered_slices[::-1] ))
+                rolled_index = np.roll(index, -1)
+                field_array = np.dstack( self.buffered_slices[::-1] )
+                field_array = field_array.reshape( (rolled_index), order="F" )
+        elif self.boost_dir == -1:
+            try:
+                field_array = np.stack( self.buffered_slices, axis=-1 )
+            except AttributeError:
+                # If the version of numpy is older than 1.10, stack does
+                # not exist. In this case, do it by hand:
+                index  = np.array(np.shape( self.buffered_slices ))
+                rolled_index = np.roll(index, -1)
+                field_array = np.dstack( self.buffered_slices )
+                field_array = field_array.reshape( (rolled_index), order="F" )
 
         # Get the first and last index in z
         # (Following Python conventions, iz_min is inclusive,
         # iz_max is exclusive)
-        iz_min = self.buffer_z_indices[-1]
-        iz_max = self.buffer_z_indices[0] + 1
+        if self.boost_dir == 1:
+            iz_min = self.buffer_z_indices[-1]
+            iz_max = self.buffer_z_indices[0] + 1
+        elif self.boost_dir == -1:
+            iz_min = self.buffer_z_indices[0]
+            iz_max = self.buffer_z_indices[-1] + 1
 
         return( field_array, iz_min, iz_max )
 

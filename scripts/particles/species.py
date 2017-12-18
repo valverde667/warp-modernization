@@ -1402,7 +1402,7 @@ class Species(object):
                 y = r*sin(t)*deltay
                 w = rmax*r*exp(-0.5*r**2)
                 if top.wpid==0:top.wpid=nextpid()
-                
+
             z = SpRandom(0., deltaz, np)
             vx = SpRandom(0., vthx, np)
             vy = SpRandom(0., vthy, np)
@@ -2327,7 +2327,7 @@ class Species(object):
                 return getw(jslist=self.jslist, pgroup=self.pgroup, **kw)*self.sw
         else:
             # Otherwise, return an array of uniform weights
-            return ones_like(self.getx())*self.sw
+            return ones_like(self.getx(**kw))*self.sw
 
     def getke(self, **kw):
         """Calls :py:func:`~particles.getke` for this species."""

@@ -81,7 +81,9 @@ def resizemesh(nx=None,ny=None,nz=None,lloadrho=True,lfieldsol=True,
     w3d.nx = nx
     w3d.ny = ny
     w3d.nz = nz
-    w3d.nzlocal = w3d.nz
+    setupdecompositionw3d()
+#    gchange("Fields3d")
+#    setupgridextent()
     w3d.nmxy  = max(w3d.nx,w3d.ny)
     w3d.nmxyz = max(w3d.nx,w3d.ny,w3d.nz)
     w3d.dx = (w3d.xmmax - w3d.xmmin)/w3d.nx
@@ -108,7 +110,7 @@ def resizemesh(nx=None,ny=None,nz=None,lloadrho=True,lfieldsol=True,
     if w3d.solvergeom is w3d.RZgeom:
         try:
             frz.del_base()
-            frz.init_base(w3d.nx,w3d.nz,w3d.dx,w3d.dz,w3d.xmmin,w3d.zmminlocal)
+            frz.init_base(w3d.nx,w3d.nz,w3d.dx,w3d.dz,w3d.xmmin,w3d.zmminlocal,lparallel)
         except:
             pass
 

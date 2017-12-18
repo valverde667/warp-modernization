@@ -4,7 +4,7 @@ FCOMP =
 SO = so
 VERBOSE = #-v
 FORTHON = Forthon
-PYTHON = python
+PYTHON = python2
 BUILDBASEDIR = buildparallel
 INSTALLOPTIONS = #--user
 -include Makefile.local.pympi

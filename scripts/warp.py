@@ -74,7 +74,7 @@ try:
         gist.pyg_unhook()
         from .diagnostics.gistdummy import *
 except ImportError:
-    if not warpoptions.quietImport:
+    if me == 0 and not warpoptions.quietImport:
         import warnings
         warnings.warn("there was an error importing gist; if this is a problem, restart python and type 'import gist' for details, otherwise Warp will run OK but with no graphics")
     from .diagnostics.gistdummy import *

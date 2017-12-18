@@ -37,11 +37,13 @@ def init_parser():
         add_help=False if quietImport else True)
 
     parser.add_argument('-p', '--decomp', type=int, nargs=3, dest='decomp',
-                      help='Set the 3-D decomposition, nxprocs nyprocs nzprocs')
-    parser.add_argument('-l', '--localflags', dest='localflags',
-                      help='localflags file to execfile')
-    parser.add_argument('--pnumb', dest='pnumb', type=str, default=None,
-                      help='Run number, used in the plot and other output file names.')
+                        help='Set the 3-D decomposition, nxprocs nyprocs nzprocs')
+    parser.add_argument('-l', '--localflags',
+                        help='localflags file to execfile')
+    parser.add_argument('--pnumb', type=str, default=None,
+                        help='Run number, used in the plot and other output file names.')
+    parser.add_argument('--serial', action='store_true',
+                        help='When specified, does not try to import mpi packages')
 
 def parse_args():
     global options, args

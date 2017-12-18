@@ -18,7 +18,7 @@ well-adapted for system-specific installation, whereas the
 
 Then enter the following lines in the file `.bashrc.ext` that resides in the `$HOME` directory. (This automatically loads a few modules used by Warp, whenever a simulation is run.)
 ```
-if [ "$NERSC_HOST" == "cori" ] 
+if [ "$NERSC_HOST" == "cori" ]
 then
    module swap PrgEnv-intel PrgEnv-gnu
    module load python/2.7-anaconda
@@ -50,7 +50,7 @@ As explained on the Warp website, in order to install Forthon :
 FCOMP = -F gfortran --fcompexec ftn --fargs "-fPIC" --cargs "-fPIC"
 INSTALLOPTIONS = --home=$(SCRATCH)/warp_install/
 ```
-  
+
 - Then, in the directory `warp/pywarp90`, enter `make pinstall`. The compilation then lasts for a few minutes.
 
 ### In order to install Warp with the Intel compiler
@@ -64,20 +64,20 @@ If you want to compile for Haswell Architecture, enter the following lines in th
 FCOMP = -F intel --fcompexec ftn --fargs "-fPIC -O3 -xCORE-AVX2" --cargs "-fPIC"
 INSTALLOPTIONS = --home=$(SCRATCH)/warp_install/
 ```
-  
+
 For MIC architecture, such as Intel Xeon Phi KNL, replace `-xCORE-AVX2` by `-xMIC-AVX512`.
 This activates the use of AVX512 instructions for best performance on KNL.
-However, note that KNL supports previous Intel instructions and your code will 
+However, note that KNL supports previous Intel instructions and your code will
 work even compiled for Haswell (Cori phase 1) or Ivy Bridge (Edison) architectures.
 
 ```
 FCOMP = -F intel --fcompexec ftn --fargs "-fPIC -O3 -xMIC-AVX512" --cargs "-fPIC"
 INSTALLOPTIONS = --home=$(SCRATCH)/warp_install/
 ```
-  
+
 - Be sure you are using the intel compiler: `module load PrgEnv-intel`  
-  
-- Then, in the directory `warp/pywarp90`, enter `make -f Makefile.Forthon.pympi install`. 
+
+- Then, in the directory `warp/pywarp90`, enter `make -f Makefile.Forthon.pympi install`.
 The compilation then lasts for a few minutes.
 
 ### Running simulations
@@ -113,7 +113,7 @@ srun -n 32 python-mpi -i warp_script.py -p 2 1 16
 ```
 
 Then submit the simulation by typing `sbatch submission_script`.  The
-progress of the simulation can be seen by typing ```squeue -u `whoami` ```. 
+progress of the simulation can be seen by typing ```squeue -u `whoami` ```.
 
 ## Using Shifter
 
@@ -160,19 +160,18 @@ several examples of input scripts.)
 Then create a submission script named `submission_script`. Here is an
 example of a typical submission script.
 ```
-#!/bin/bash -l
-#SBATCH --job-name=test_simulation
-#SBATCH --time=00:30:00
-#SBATCH -n 64
-#SBATCH -C haswell
+#!/bin/csh
+#SBATCH --job-name=test_cori_shifter
+#SBATCH --time=00:10:00
+#SBATCH -N 1
 #SBATCH --partition=debug
-#SBATCH -e test_simulation.err
-#SBATCH -o test_simulation.out
+#SBATCH -e test_cori_shifter.err
+#SBATCH -o test_cori_shifter.out
+#SBATCH -C haswell
 #SBATCH --image=docker:rlehe/warp:latest
 #SBATCH --volume=<your$SCRATCH>:/home/warp_user/run
 
-export mydir="$SCRATCH/test_simulation"
-
+setenv mydir "$SCRATCH/test_simulation"
 rm -fr $mydir
 mkdir -p $mydir
 
@@ -181,13 +180,14 @@ cd $SLURM_SUBMIT_DIR
 cp ./* $mydir/.
 cd $mydir
 
-shifter mpirun -np 64 -launcher ssh python -i warp_script.py -p 4 1 16
+setenv OMP_NUM_THREADS 1
+srun -n 32 -c 2 shifter python warp_script.py -p 4 1 8
 ```
-Note that the options `--image=docker:rlehe/warp:latest`, `--
-volume=<your$SCRATCH>:/home/warp_user/run` and `-launcher ssh` are essential
+Note that the options `--image=docker:rlehe/warp:latest` and `--
+volume=<your$SCRATCH>:/home/warp_user/run` are essential
 and should be copied exactly (**do not** replace `warp_user` or
 `rlehe` by your username), with the exception of `<your$SCRATCH>`,
 which should be replaced by the full path to your SCRATCH directory.
 
 Then submit the simulation by typing `sbatch submission_script`.  The
-progress of the simulation can be seen by typing ```squeue -u `whoami` ```. 
+progress of the simulation can be seen by typing ```squeue -u `whoami` ```.

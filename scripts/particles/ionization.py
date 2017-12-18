@@ -1,4 +1,4 @@
-"""Ionization: class for generating particles from impact ionization and other inelestic collisions.
+"""Ionization: class for generating particles from impact ionization and other inelastic collisions.
 """
 __all__ = ['Ionization']
 from ..warp import *
@@ -32,26 +32,16 @@ Class for generating particles from impact ionization
  - l_timing=False: Turns on timing of the ionization events
   """
   def __init__(self,l_verbose=False,stride=100,nx=None,ny=None,nz=None,xmin=None,xmax=None,ymin=None,ymax=None,zmin=None,zmax=None,l_timing=False):
-    self.nx = int(where(nx is None,w3d.nx,nx))
-    self.ny = int(where(ny is None,w3d.ny,ny))
-    self.nz = int(where(nz is None,w3d.nzlocal,nz))
-    self.xmin = float(where(xmin is None,w3d.xmmin,xmin))
-    self.xmax = float(where(xmax is None,w3d.xmmax,xmax))
-    self.zmin = float(where(zmin is None,w3d.zmminlocal,zmin))
-    self.zmax = float(where(zmax is None,w3d.zmmaxlocal,zmax))
-    self.dx=(self.xmax-self.xmin)/self.nx
-    self.dz=(self.zmax-self.zmin)/self.nz
-    if w3d.solvergeom == w3d.RZgeom:
-      self.ymin=self.xmin
-      self.ymax=self.xmax
-      self.dy=self.dx
-      self.ny=self.nx
-    else:
-      self.ymin = float(where(ymin is None,w3d.ymmin,ymin))
-      self.ymax = float(where(ymax is None,w3d.ymmax,ymax))
-      self.dy=(self.ymax-self.ymin)/self.ny
-    self.ndensc=fzeros((self.nx+1,self.ny+1,self.nz+1),'d')
-    self.invvol=1./(self.dx*self.dy*self.dz)
+    self.nx=nx
+    self.ny=ny
+    self.nz=nz
+    self.xmin=xmin
+    self.xmax=xmax
+    self.ymin=ymin
+    self.ymax=ymax
+    self.zmin=zmin
+    self.zmax=zmax
+    self.l_init_grid=False
     self.l_verbose=l_verbose
     self.stride=stride
     self.inter={}
@@ -76,6 +66,36 @@ Class for generating particles from impact ionization
     self.emitted_id = None
     self.l_timing=l_timing
     self.install()
+
+  def init_grid(self):
+    if self.l_init_grid: return
+    self.l_init_grid=True
+    self.nx = int(where(self.nx is None,w3d.nxlocal,self.nx))
+    self.ny = int(where(self.ny is None,w3d.nylocal,self.ny))
+    self.nz = int(where(self.nz is None,w3d.nzlocal,self.nz))
+    self.xmin = float(where(self.xmin is None,w3d.xmminlocal,self.xmin))
+    self.xmax = float(where(self.xmax is None,w3d.xmmaxlocal,self.xmax))
+    self.zmin = float(where(self.zmin is None,w3d.zmminlocal,self.zmin))
+    self.zmax = float(where(self.zmax is None,w3d.zmmaxlocal,self.zmax))
+    self.dx=(self.xmax-self.xmin)/self.nx
+    self.dz=(self.zmax-self.zmin)/self.nz
+    if w3d.solvergeom == w3d.RZgeom:
+      self.ymin=self.xmin
+      self.ymax=self.xmax
+      self.dy=self.dx
+      self.ny=self.nx
+    else:
+      self.ymin = float(where(self.ymin is None,w3d.ymmin,self.ymin))
+      self.ymax = float(where(self.ymax is None,w3d.ymmax,self.ymax))
+      self.dy=(self.ymax-self.ymin)/self.ny
+    self.ndensc=fzeros((self.nx+1,self.ny+1,self.nz+1),'d')
+    self.invvol=1./(self.dx*self.dy*self.dz)
+
+    for dd in self.target_dens.values():
+      if dd['ndens'] == 'uninitialized':
+        dd['ndens'] = fzeros((self.nx+1,self.ny+1,self.nz+1),'d')
+      if dd['target_fluidvel'] == 'uninitialized':
+        dd['target_fluidvel'] = fzeros((self.nx+1,self.ny+1,self.nz+1,3),'d')
 
   def setupcross_section(self,incident_species,emitted_species,cross_section,target_species):
     """If the cross section was specified, this method does nothing. Otherwise
@@ -199,8 +219,8 @@ a value given a velocity. This returns the Appropriate value.
         self.target_dens[target_species]={}
         for key in ['ndens','ndens_updated']:
           self.target_dens[target_species][key]=[]
-        self.target_dens[target_species]['ndens']           =fzeros((self.nx+1,self.ny+1,self.nz+1),'d')
-        self.target_dens[target_species]['target_fluidvel'] =fzeros((self.nx+1,self.ny+1,self.nz+1,3),'d')
+        self.target_dens[target_species]['ndens']           ='uninitialized'
+        self.target_dens[target_species]['target_fluidvel'] ='uninitialized'
         self.target_dens[target_species]['ndens_updated']   =0
 
     for e in e_species:
@@ -480,6 +500,7 @@ velocity of the incident particle.
 #printall(io,l_cgm=1)
 
   def generate(self,dt=None):
+    self.init_grid()
     if dt is None:dt=top.dt
     if self.l_timing:t1 = time.clock()
     for target_species in self.target_dens:
@@ -787,6 +808,9 @@ velocity of the incident particle.
         processlostpart(top.pgroup,js+1,top.clearlostpart,top.time,top.zbeam)
 
     if self.l_timing:print 'time ionization = ',time.clock()-t1,'s'
+
+class GridNotInitialized(Exception):
+    pass
 
 class CrossSectionNotSupport(Exception):
     pass

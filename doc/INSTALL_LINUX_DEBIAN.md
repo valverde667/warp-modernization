@@ -8,7 +8,7 @@ from Debian (including Ubuntu for instance).
 Please make sure that you have `gfortran`, `git` and `make` installed.
 On Ubuntu/Debian, this can be done as follows:
 ```
-sudo apt-get update && sudo apt-get install wget mpich make git libx11-dev
+sudo apt-get update && sudo apt-get install wget make git gcc libx11-dev
 ```
 
 ## Installing Anaconda
@@ -29,8 +29,7 @@ Open a new terminal and make sure that the default `python` is the Anaconda vers
 
 Run 
 ```
-conda install numpy scipy h5py
-pip install mpi4py
+conda install -c conda-forge numpy scipy h5py gcc mpi4py
 ```
 
 ## Installing Forthon
@@ -41,10 +40,7 @@ Run `pip install Forthon`
 
 Use the following commands 
 ```
-git clone https://bitbucket.org/dpgrote/pygist.git
-cd pygist
-python setup.py config
-python setup.py install
+pip install pygist
 ```
 
 ## Installing Warp

@@ -13,7 +13,12 @@ import numpy as np
 import time
 from scipy.constants import c
 from particle_diag import ParticleDiagnostic
-from parallel import gatherarray
+from parallel import me, mpiallgather
+try:
+    from mpi4py import MPI
+except ImportError:
+    MPI = None
+    pass
 
 class BoostedParticleDiagnostic(ParticleDiagnostic):
     """
@@ -29,7 +34,8 @@ class BoostedParticleDiagnostic(ParticleDiagnostic):
                  Ntot_snapshots_lab, gamma_boost, period,
                  em, top, w3d, comm_world=None,
                  particle_data=["position", "momentum", "weighting"],
-                 select=None, write_dir=None, species={"electrons": None}):
+                 select=None, write_dir=None,
+                 species={"electrons": None}, boost_dir=1 ):
         """
         Initialize diagnostics that retrieve the data in the lab frame,
         as a series of snapshot (one file per snapshot),
@@ -37,7 +43,7 @@ class BoostedParticleDiagnostic(ParticleDiagnostic):
 
         Note: In the current implementation, these diagnostics do not
         use parallel HDF5 output. Rank 0 creates and writes all the files.
-        
+
         Parameters
         ----------
         zmin_lab, zmax_lab: floats (meters)
@@ -57,6 +63,10 @@ class BoostedParticleDiagnostic(ParticleDiagnostic):
             Number of iterations for which the data is accumulated in memory,
             before finally writing it to the disk.
 
+        boost_dir: int (1 or -1)
+            The direction of the Lorentz transformation from the lab frame
+            to the boosted frame (along the z axis)
+
         See the documentation of ParticleDiagnostic for the other parameters
         """
         # Do not leave write_dir as None, as this may conflict with
@@ -71,10 +81,14 @@ class BoostedParticleDiagnostic(ParticleDiagnostic):
             write_dir=write_dir, lparallel_output=False)
         # Note: The boosted frame diagnostics cannot use parallel HDF5 output
 
+        # Check user input
+        boost_dir = int(boost_dir)
+        assert boost_dir in [1,-1]
+        
         # Register the boost quantities
         self.gamma_boost = gamma_boost
         self.inv_gamma_boost = 1./gamma_boost
-        self.beta_boost = np.sqrt(1. - self.inv_gamma_boost**2)
+        self.beta_boost = np.sqrt(1. - self.inv_gamma_boost**2) * boost_dir
         self.inv_beta_boost = 1./self.beta_boost
 
         # Create the list of LabSnapshot objects
@@ -167,54 +181,40 @@ class BoostedParticleDiagnostic(ParticleDiagnostic):
             # Compact the successive slices that have been buffered
             # over time into a single array
             for species_name in self.species_dict:
-
                 particle_array = snapshot.compact_slices(species_name)
-
                 if self.comm_world is not None:
-                    # In MPI mode: gather and an array containing the number
-                    # of particles on each process
-                    n_rank = self.comm_world.allgather(
-                        np.shape(particle_array)[1])
+                    # Create a communicator containing ranks that have
+                    # particles to dump
+                    in_list = 0
+                    if (np.shape(particle_array)[1] != 0) or (me == 0):
+                        in_list = me
+                    ranks_group_list = mpiallgather( in_list )
+                    ranks_group_list = list(set(ranks_group_list))
+                    mpi_group = self.comm_world.Get_group()
+                    self.ranks_group_list = ranks_group_list
+                    # Create group
+                    newgroup = mpi_group.Incl(ranks_group_list)
+                    # Create communicator
+                    dump_comm = self.comm_world.Create(newgroup)
+                    # Gather data on proc 0 into this communicator
+                    if dump_comm != MPI.COMM_NULL:
+                        list_part_array = dump_comm.gather( particle_array )
+                    # Free the dump communicator
+                    mpi_group.Free()
+                    newgroup.Free()
+                    if dump_comm != MPI.COMM_NULL:
+                        dump_comm.Free()
 
-                    # Note that gatherarray routine in parallel.py only works
-                    # with 1D array. Here we flatten the 2D particle arrays
-                    # before gathering.
-                    g_curr = gatherarray(particle_array.flatten(), root=0,
-                        comm=self.comm_world)
-
+                    # Rank 0 concatenates all lists into an array with all particles
                     if self.rank == 0:
-                        # Get the number of quantities
-                        nquant = np.shape(
-                            self.particle_catcher.particle_to_index.keys())[0]
-
-                        # Prepare an empty array for reshaping purposes. The
-                        # final shape of the array is (8, total_num_particles)
-                        p_array = np.empty((nquant, 0))
-
-                        # Index needed in reshaping process
-                        n_ind = 0
-
-                        # Loop over all the processors, if the processor
-                        # contains particles, we reshape the gathered_array
-                        # and reconstruct by concatenation
-                        for i in xrange(self.top.nprocs):
-
-                            if n_rank[i] != 0:
-                                p_array = np.concatenate((p_array, np.reshape(
-                                    g_curr[n_ind:n_ind+nquant*n_rank[i]],
-                                    (nquant,n_rank[i]))),axis=1)
-
-                                # Update the index
-                                n_ind += nquant*n_rank[i]
-
+                        p_array = np.concatenate(list_part_array, axis=1)
                 else:
                     p_array = particle_array
-
+                    
                 # Write this array to disk (if this snapshot has new slices)
                 if self.rank == 0 and p_array.size:
                     self.write_slices(p_array, species_name, snapshot,
                         self.particle_catcher.particle_to_index)
-
                 # Erase the buffers
                 snapshot.buffered_slices[species_name] = []
 
@@ -705,23 +705,17 @@ class ParticleCatcher:
         # Or at previous timestep
         else:
             if quantity == "x":
-                quantity_array = species.getpid( id=self.top.xoldpid-1,
-                    gather=0, bcast=0)
+                quantity_array = species.getxold( gather=False )
             elif quantity == "y":
-                quantity_array = species.getpid( id=self.top.yoldpid-1,
-                    gather=0, bcast=0)
+                quantity_array = species.getyold( gather=False )
             elif quantity == "z":
-                quantity_array = species.getpid( id=self.top.zoldpid-1,
-                    gather=0, bcast=0)
+                quantity_array = species.getzold( gather=False )
             elif quantity == "ux":
-                quantity_array = species.getpid( id=self.top.uxoldpid-1,
-                    gather=0, bcast=0)
+                quantity_array = species.getuxold( gather=False )
             elif quantity == "uy":
-                quantity_array = species.getpid( id=self.top.uyoldpid-1,
-                    gather=0, bcast=0)
+                quantity_array = species.getuyold( gather=False )
             elif quantity == "uz":
-                quantity_array = species.getpid( id=self.top.uzoldpid-1,
-                    gather=0, bcast=0)
+                quantity_array = species.getuzold( gather=False )
 
         return( quantity_array )
 

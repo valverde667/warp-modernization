@@ -859,9 +859,9 @@ def gunmg(iter=1, itersub=None, ipsave=None, save_same_part=None, maxtime=None,
     gunnpinject = zeros(nmg+1, 'l')
     # save last level sizes
     i = nmg
-    gunnx[nmg] = w3d.nx
-    gunny[nmg] = w3d.ny
-    gunnz[nmg] = w3d.nz
+    gunnx[nmg] = w3d.nxlocal
+    gunny[nmg] = w3d.nylocal
+    gunnz[nmg] = w3d.nzlocal
     gundt[nmg] = top.dt
     gunnpinject[nmg] = top.npinject
     # compute sublevels sizes
