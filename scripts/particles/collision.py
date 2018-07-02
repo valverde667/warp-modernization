@@ -348,8 +348,17 @@ class LangevinCollisions(object):
                         # --- Use the equations from the NRL plasma formulary for
                         # --- electron-electron collisions
                         Te = vthsqfield*mf/jperev
+                        # --- Protect Te, ensuring that it is > 0. It could be zero if there
+                        # --- is onl only field particle in the cell.
+                        Te = Te.clip(1.e-20)
+                        # --- Protect density, ensuring that it is > 0.
+                        density = density.clip(1.-20)
                         loglambda = (23.5 - log(sqrt(density*1.e-6)*Te**(-5./4.)) -
                                      sqrt(1.e-5 + (log(Te)-2.)**2/16.))
+                        # --- In those places where vthsqfield or density <= 0., zero out the log lambda,
+                        # --- which turns the collisions off.
+                        loglambda = where(vthsqfield > 0., loglambda, 0.)
+                        loglambda = where(density > 0., loglambda, 0.)
                     else:
                         q2 = (abs(top.pgroup.sq[test]*top.pgroup.sq[field])/echarge**2)
                         qto3 = q2**(3./2.)
@@ -357,10 +366,12 @@ class LangevinCollisions(object):
                             Te = vthsqfield*mf/jperev
                         else:
                             Te = self.getvthsq(test)*mt/jperev
-                        T3 = Te**(-3./2.)
+                        # --- Make sure that Te > 0.
+                        T3 = Te.clip(1.e-20)**(-3./2.)
                         # --- This expression was grabbed from the scatterParticleGroup
                         # --- routine of LSP.
                         loglambda = 23.0 - log(1.0 + sqrt(2.*density*1.e-6)*qto3*T3)
+                        loglambda = where(Te > 0., loglambda, 0.)
 
                 #   zpc = q2
                 #   rpc = top.pgroup.sm[test]/top.pgroup.sm[field]

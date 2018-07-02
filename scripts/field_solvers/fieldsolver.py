@@ -1989,7 +1989,7 @@ def getdecomposedarray(arr,ix=None,iy=None,iz=None,bcast=1,local=0,
             result = resultglobal[ix,iy,iz]
 
         if bcast:
-            result = parallel.broadcast(result)
+            result = warp_parallel.broadcast(result)
         else:
             if me > 0: return None
 

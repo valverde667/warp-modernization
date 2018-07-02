@@ -1,15 +1,77 @@
 # Possible targets: (install is the default)
-# install, debug, clean, cleandebug: for serial, python2
-# pinstall, pdebug, pclean, pcleandebug: for parallel, python2
-# install3, debug3, clean3, clean3debug: for serial, python3
-# pinstall3, pdebug3, pclean3, pclean3debug: for parallel, python3
-# installall, debugall, cleanall
+#     install, debug, clean, cleandebug: for serial, python2 or 3
+#     pinstall, pdebug, pclean, pcleandebug: for parallel, python2 or 3
+#     installall, debugall, cleanall: for serial and parallel, python2 or 3
+#     install3, debug3, clean3, clean3debug: for serial, python3 (obsolete, saved for backward compatibility)
+#     pinstall3, pdebug3, pclean3, pclean3debug: for parallel, python3 (obsolete, saved for backward compatibility)
+
+PYTHON = python
+-include Makefile.local
+
+PYTHON_VERSION=$(shell $(PYTHON) -c "import sys;print(sys.version_info.major)")
 
 install:
-	make -f Makefile.Forthon install
+ifeq ($(PYTHON_VERSION), 2)
+	make -f Makefile.Forthon install PYTHON=$(PYTHON)
+else
+	make -f Makefile.Forthon3 install PYTHON=$(PYTHON)
+endif
 
 pinstall:
-	make -f Makefile.Forthon.pympi install
+ifeq ($(PYTHON_VERSION), 2)
+	make -f Makefile.Forthon.pympi install PYTHON=$(PYTHON)
+else
+	make -f Makefile.Forthon3.pympi install PYTHON=$(PYTHON)
+endif
+
+debug:
+ifeq ($(PYTHON_VERSION), 2)
+	make -f Makefile.Forthon install DEBUG='-g --farg "-O0"' BUILDBASEDIR=builddebug PYTHON=$(PYTHON)
+else
+	make -f Makefile.Forthon3 install DEBUG='-g --farg "-O0"' BUILDBASEDIR=build3debug PYTHON=$(PYTHON)
+endif
+
+pdebug:
+ifeq ($(PYTHON_VERSION), 2)
+	make -f Makefile.Forthon.pympi install DEBUG='-g --farg "-O0"' BUILDBASEDIR=buildparalleldebug PYTHON=$(PYTHON)
+else
+	make -f Makefile.Forthon3.pympi install DEBUG='-g --farg "-O0"' BUILDBASEDIR=build3paralleldebug PYTHON=$(PYTHON)
+endif
+
+clean:
+ifeq ($(PYTHON_VERSION), 2)
+	make -f Makefile.Forthon clean
+else
+	make -f Makefile.Forthon3 clean
+endif
+
+pclean:
+ifeq ($(PYTHON_VERSION), 2)
+	make -f Makefile.Forthon.pympi clean
+else
+	make -f Makefile.Forthon3.pympi clean
+endif
+
+cleandebug:
+ifeq ($(PYTHON_VERSION), 2)
+	make -f Makefile.Forthon clean BUILDBASEDIR=builddebug
+else
+	make -f Makefile.Forthon3 clean BUILDBASEDIR=build3debug
+endif
+
+pcleandebug:
+ifeq ($(PYTHON_VERSION), 2)
+	make -f Makefile.Forthon.pympi clean BUILDBASEDIR=buildparalleldebug
+else
+	make -f Makefile.Forthon3.pympi clean BUILDBASEDIR=build3paralleldebug
+endif
+
+installall: install pinstall
+
+debugall: debug pdebug
+
+cleanall: clean pclean cleandebug pcleandebug
+	rm -rf build* ../scripts/build*
 
 install3:
 	make -f Makefile.Forthon3 install
@@ -17,23 +79,11 @@ install3:
 pinstall3:
 	make -f Makefile.Forthon3.pympi install
 
-debug:
-	make -f Makefile.Forthon DEBUG='-g --farg "-O0"' BUILDBASEDIR=builddebug install
-
-pdebug:
-	make -f Makefile.Forthon.pympi DEBUG='-g --farg "-O0"' BUILDBASEDIR=buildparalleldebug install
-
 debug3:
-	make -f Makefile.Forthon3 DEBUG='-g --farg "-O0"' BUILDBASEDIR=build3debug install
+	make -f Makefile.Forthon3 install DEBUG='-g --farg "-O0"' BUILDBASEDIR=build3debug
 
 pdebug3:
-	make -f Makefile.Forthon3.pympi DEBUG='-g --farg "-O0"' BUILDBASEDIR=build3paralleldebug install
-
-clean:
-	make -f Makefile.Forthon clean
-
-pclean:
-	make -f Makefile.Forthon.pympi clean
+	make -f Makefile.Forthon3.pympi install DEBUG='-g --farg "-O0"' BUILDBASEDIR=build3paralleldebug
 
 clean3:
 	make -f Makefile.Forthon3 clean
@@ -41,31 +91,16 @@ clean3:
 pclean3:
 	make -f Makefile.Forthon3.pympi clean
 
-cleandebug:
-	make -f Makefile.Forthon BUILDBASEDIR=builddebug clean
-
-pcleandebug:
-	make -f Makefile.Forthon.pympi BUILDBASEDIR=buildparalleldebug clean
-
 clean3debug:
-	make -f Makefile.Forthon3 BUILDBASEDIR=build3debug clean
+	make -f Makefile.Forthon3 clean BUILDBASEDIR=build3debug
 
 pclean3debug:
-	make -f Makefile.Forthon3.pympi BUILDBASEDIR=build3paralleldebug clean
-
-installall: install pinstall install3 pinstall3
-
-debugall: debug pdebug debug3 pdebug3
-
-cleanall: clean pclean clean3 pclean3 cleandebug pcleandebug clean3debug pclean3debug
-	rm -rf build*
+	make -f Makefile.Forthon3.pympi clean BUILDBASEDIR=build3paralleldebug
 
 help:
 	@echo "Possible targets: (install is the default)"
-	@echo "install, debug, clean, cleandebug: for serial, python2"
-	@echo "pinstall, pdebug, pclean, pcleandebug: for parallel, python2"
-	@echo "install3, debug3, clean3, clean3debug: for serial, python3"
-	@echo "pinstall3, pdebug3, pclean3, pclean3debug: for parallel, python3"
-	@echo "installall, debugall, cleanall"
-	@echo "help"
+	@echo "    install, debug, clean, cleandebug: for serial"
+	@echo "    pinstall, pdebug, pclean, pcleandebug: for parallel"
+	@echo "    installall, debugall, cleanall: for serial and parallel"
+	@echo "    help: this message"
 

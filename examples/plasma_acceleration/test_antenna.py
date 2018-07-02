@@ -74,10 +74,10 @@ w3d.xmmax = w3d.xmmin + w3d.nx*w3d.dx
 w3d.ymmax = w3d.ymmin + w3d.ny*w3d.dy
 w3d.zmmax = w3d.zmmin + w3d.nz*w3d.dz
 
-print 'w3d.dx, w3d.dy, w3d.dz =', w3d.dx, w3d.dy, w3d.dz
-print 'w3d.nx, w3d.ny, w3d.nz =', w3d.nx, w3d.ny, w3d.nz
-print 'w3d.xmmin, w3d.ymmin, w3d.zmmin =', w3d.xmmin, w3d.ymmin, w3d.zmmin
-print 'w3d.xmmax, w3d.ymmax, w3d.zmmax =', w3d.xmmax, w3d.ymmax, w3d.zmmax
+print('w3d.dx, w3d.dy, w3d.dz = %f %f %f'%(w3d.dx, w3d.dy, w3d.dz))
+print('w3d.nx, w3d.ny, w3d.nz = %d %d %d'%(w3d.nx, w3d.ny, w3d.nz))
+print('w3d.xmmin, w3d.ymmin, w3d.zmmin = %f %f %f'%(w3d.xmmin, w3d.ymmin, w3d.zmmin))
+print('w3d.xmmax, w3d.ymmax, w3d.zmmax = %f %f %f'%(w3d.xmmax, w3d.ymmax, w3d.zmmax))
 
 # --- sets field boundary conditions
 # --- longitudinal
@@ -122,9 +122,9 @@ laser_vector    = np.array([- np.sin(theta), 0., np.cos(theta)])
 laser_polvector = np.array([+ np.cos(theta), 0., np.sin(theta)])
 laser_spot      = np.array([x0,y0,z0])
 
-print "n = ", laser_vector
-print "P = ", laser_polvector
-print "r = ", laser_spot
+print("n = ", laser_vector)
+print("P = ", laser_polvector)
+print("r = ", laser_spot)
 
 zf = - w3d.zmmax/2.
 
@@ -136,8 +136,8 @@ laser_func = GaussianProfile(k0, laser_waist, tau, t_peak,
 # ------------------------------------------------------------------------------
 
 em = EM3D( laser_func      = laser_func,
-		   laser_vector    = laser_vector,
-		   laser_polvector = laser_polvector,
+           laser_vector    = laser_vector,
+           laser_polvector = laser_polvector,
            laser_spot      = laser_spot,
            laser_emax      = Eamp,
            stencil         = stencil,
@@ -147,11 +147,11 @@ em = EM3D( laser_func      = laser_func,
            l_getrho        = 0,
            l_verbose       = 0)
 
-print 'register solver'
+print('register solver')
 registersolver(em)
 em.finalize()
 loadrho()
-print 'done'
+print('done')
 
 # ------------------------------------------------------------------------------
 # Diagnostics
@@ -183,7 +183,7 @@ if(me==0):
 # Test Diagnostics
 # ------------------------------------------------------------------------------
 
-print "=== Test waist, ctau and a0 ==="
+print("=== Test waist, ctau and a0 ===")
 
 # Load the diags OpenPMD
 ts = LpaDiagnostics('./diags/hdf5/')
@@ -196,8 +196,8 @@ a0_simu          = ts.get_a0( iteration=ts.iterations[0], pol='x' )
 # Compare the values and crash the code if not equal
 
 assert np.isclose( laser_waist, laser_waist_simu, 5.e-2 ), "waist error. "
-print "waist checked. "
+print("waist checked. ")
 assert np.isclose(    ctau    ,     ctau_simu   , 5.e-2 ), "ctau error. "
-print "ctau checked. "
+print("ctau checked. ")
 assert np.isclose(     a0     ,      a0_simu    , 5.e-2 ), "a0 error. "
-print "a0 checked. "
+print("a0 checked. ")

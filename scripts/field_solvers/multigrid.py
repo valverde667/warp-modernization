@@ -907,12 +907,12 @@ class MultiGrid3D(SubcycledPoissonSolver):
                              f3d.gridmode,conductorobject,self.lprecalccoeffs,
                              self.fsdecomp)
         else:
-            iondensitygrid3d = Grid3dtype()
+            self.iondensitygrid3d = Grid3dtype()
             setupiondensitygrid3d(self.xmmin,self.ymmin,self.zmmin,
                                   self.dx,self.dy,self.dz,
                                   self.nxlocal,self.nylocal,self.nzlocal,
-                                  self._rho,iondensitygrid3d)
-            self.iondensitygrid3d = iondensitygrid3d
+                                  self.nxguardrho,self.nyguardrho,self.nzguardrho,
+                                  self._rho,self.iondensitygrid3d)
             multigridbe3dsolve(iwhich,self.nx,self.ny,self.nz,
                                self.nxguardphi,self.nyguardphi,self.nzguardphi,
                                self.nxguardrho,self.nyguardrho,self.nzguardrho,
@@ -925,7 +925,7 @@ class MultiGrid3D(SubcycledPoissonSolver):
                                self.downpasses,self.uppasses,
                                self.lcndbndy,self.laddconductor,self.icndbndy,
                                f3d.gridmode,conductorobject,
-                               iondensitygrid3d,
+                               self.iondensitygrid3d,
                                self.fsdecomp)
         self.mgiters = mgiters[0]
         self.mgerror = mgerror[0]

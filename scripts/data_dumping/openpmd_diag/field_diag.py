@@ -378,6 +378,7 @@ class FieldDiagnostic(OpenPMDDiagnostic):
             self.setup_openpmd_file( f, iteration, time, dt )
 
             # Setup the meshes group (contains all the fields)
+            f.attrs["meshesPath"] = np.string_("fields/")
             field_path = "/data/%d/fields/" %iteration
             field_grp = f.require_group(field_path)
             self.setup_openpmd_meshes_group(field_grp)
@@ -502,25 +503,25 @@ class FieldDiagnostic(OpenPMDDiagnostic):
             dset.attrs['geometryParameters'] = \
               np.string_("m=%d;imag=+" %(self.em.circ_m + 1))
             dset.attrs['gridSpacing'] = np.array([ self.dx, dz ])
-            dset.attrs['axisLabels'] = np.array([ 'r', 'z' ])
+            dset.attrs['axisLabels'] = np.array([ b'r', b'z' ])
             dset.attrs["gridGlobalOffset"] = np.array([self.w3d.xmmin, zmin])
         # - 1D Cartesian
         elif self.dim == "1d":
             dset.attrs['geometry'] = np.string_("cartesian")
             dset.attrs['gridSpacing'] = np.array([ dz ])
-            dset.attrs['axisLabels'] = np.array([ 'z' ])
+            dset.attrs['axisLabels'] = np.array([ b'z' ])
             dset.attrs["gridGlobalOffset"] = np.array([zmin])
         # - 2D Cartesian
         elif self.dim == "2d":
             dset.attrs['geometry'] = np.string_("cartesian")
             dset.attrs['gridSpacing'] = np.array([ self.dx, dz ])
-            dset.attrs['axisLabels'] = np.array([ 'x', 'z' ])
+            dset.attrs['axisLabels'] = np.array([ b'x', b'z' ])
             dset.attrs["gridGlobalOffset"] = np.array([self.w3d.xmmin, zmin])
         # - 3D Cartesian
         elif self.dim == "3d":
             dset.attrs['geometry'] = np.string_("cartesian")
             dset.attrs['gridSpacing'] = np.array([ self.dx, self.dy, dz ])
-            dset.attrs['axisLabels'] = np.array([ 'x', 'y', 'z' ])
+            dset.attrs['axisLabels'] = np.array([ b'x', b'y', b'z' ])
             dset.attrs["gridGlobalOffset"] = np.array([ self.w3d.xmmin,
                                                     self.w3d.ymmin, zmin])
         # Generic attributes

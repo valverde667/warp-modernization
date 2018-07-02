@@ -13,33 +13,38 @@ except ImportError:
 ##############################################################################
 class MagnetostaticMG(SubcycledPoissonSolver):
 
-    __bfieldinputs__ = ['mgparam','downpasses','uppasses',
-                        'mgmaxiters','mgtol','mgmaxlevels','mgform','mgverbose',
-                        'lcndbndy','icndbndy','laddconductor',
-                        'lcylindrical','lanalyticbtheta']
-    __f3dinputs__ = ['gridmode','mgparam','downpasses','uppasses',
-                     'mgmaxiters','mgtol','mgmaxlevels','mgform','mgverbose',
-                     'lcndbndy','icndbndy','laddconductor','lprecalccoeffs']
+    __bfieldinputs__ = ['mgparam', 'downpasses', 'uppasses',
+                        'mgmaxiters', 'mgtol', 'mgmaxlevels', 'mgform', 'mgverbose',
+                        'lcndbndy', 'icndbndy', 'laddconductor',
+                        'lcylindrical', 'lanalyticbtheta']
+    __f3dinputs__ = ['gridmode', 'mgparam', 'downpasses', 'uppasses',
+                     'mgmaxiters', 'mgtol', 'mgmaxlevels', 'mgform', 'mgverbose',
+                     'lcndbndy', 'icndbndy', 'laddconductor', 'lprecalccoeffs']
 
-    def __init__(self,luse2D=false,**kw):
+    def __init__(self, luse2D=True, **kw):
         self.grid_overlap = 2
         self.luse2D = luse2D
 
         # --- Save input parameters
-        self.processdefaultsfrompackage(MagnetostaticMG.__f3dinputs__,f3d,kw)
+        self.processdefaultsfrompackage(MagnetostaticMG.__f3dinputs__, f3d, kw)
         self.processdefaultsfrompackage(MagnetostaticMG.__bfieldinputs__,
-                                        f3d.bfield,kw)
+                                        f3d.bfield, kw)
 
         # --- Check for cylindrical geometry
-        if self.lcylindrical: self.solvergeom = w3d.RZgeom
-
-        SubcycledPoissonSolver.__init__(self,kwdict=kw)
-        if self.ny == 0 and self.solvergeom not in [w3d.RZgeom,w3d.XZgeom]:
+        if self.lcylindrical:
             self.solvergeom = w3d.RZgeom
-        if self.solvergeom in [w3d.RZgeom,w3d.XZgeom]:
+        elif 'solvergeom' in kw:
+            self.solvergeom = kw['solvergeom']
+        else:
+            self.solvergeom = w3d.solvergeom
+
+        if self.solvergeom in [w3d.RZgeom, w3d.XZgeom]:
+            self.ny = 0
             self.nyguardphi = 0
             self.nyguardrho = 0
             self.nyguarde   = 0
+
+        SubcycledPoissonSolver.__init__(self, kwdict=kw)
 
         self.ncomponents = 3
         self.lusevectorpotential = true
@@ -49,7 +54,7 @@ class MagnetostaticMG(SubcycledPoissonSolver):
         f3d.gridmode = 1
 
         # --- If there are any remaning keyword arguments, raise an error.
-        assert len(kw.keys()) == 0,"Bad keyword arguemnts %s"%kw.keys()
+        assert len(kw.keys()) == 0, "Bad keyword arguemnts %s"%kw.keys()
 
         # --- Create a conductor object, which by default is empty.
         self.conductors = ConductorType()
@@ -57,8 +62,8 @@ class MagnetostaticMG(SubcycledPoissonSolver):
         self.newconductorlist = []
 
         # --- Give these variables dummy initial values.
-        self.mgiters = zeros(3,'l')
-        self.mgerror = zeros(3,'d')
+        self.mgiters = zeros(3, 'l')
+        self.mgerror = zeros(3, 'd')
 
         # --- Make sure that these are arrays
         self.mgmaxiters = ones(3)*self.mgmaxiters
@@ -82,8 +87,8 @@ class MagnetostaticMG(SubcycledPoissonSolver):
             dict['conductorlist'] = []
         return dict
 
-    def __setstate__(self,dict):
-        SubcycledPoissonSolver.__setstate__(self,dict)
+    def __setstate__(self, dict):
+        SubcycledPoissonSolver.__setstate__(self, dict)
         if 'newconductorlist' not in self.__dict__:
             self.newconductorlist = self.conductorlist
             self.conductorlist = []
@@ -139,15 +144,16 @@ class MagnetostaticMG(SubcycledPoissonSolver):
                                 self.nyguardphi:-self.nyguardphi or None,
                                 self.nzguardphi:-self.nzguardphi or None]
 
-    def loadj(self,lzero=None,lfinalize_rho=None,**kw):
-        SubcycledPoissonSolver.loadsource(self,lzero,lfinalize_rho,**kw)
+    def loadj(self, lzero=None, lfinalize_rho=None, **kw):
+        SubcycledPoissonSolver.loadsource(self, lzero, lfinalize_rho, **kw)
 
-    def fetchb(self,*args):
-        SubcycledPoissonSolver.fetchfield(self,*args)
+    def fetchb(self, *args):
+        SubcycledPoissonSolver.fetchfield(self, *args)
 
-    def setsourcep(self,js,pgroup,zgrid):
+    def setsourcep(self, js, pgroup, zgrid):
         n  = pgroup.nps[js]
-        if n == 0: return
+        if n == 0:
+            return
         i  = pgroup.ins[js] - 1
         x  = pgroup.xp[i:i+n]
         y  = pgroup.yp[i:i+n]
@@ -158,91 +164,97 @@ class MagnetostaticMG(SubcycledPoissonSolver):
         gaminv = pgroup.gaminv[i:i+n]
         q  = pgroup.sq[js]
         w  = pgroup.sw[js]*top.pgroup.dtscale[js]
-        if top.wpid > 0: wght = top.pgroup.pid[i:i+n,top.wpid-1]
-        else:            wght = zeros((0,),'d')
-        self.setsourcepatposition(x,y,z,ux,uy,uz,gaminv,wght,zgrid,q,w)
+        if top.wpid > 0:
+            wght = top.pgroup.pid[i:i+n,top.wpid-1]
+        else:
+            wght = zeros((0,), 'd')
+        self.setsourcepatposition(x, y, z, ux, uy, uz, gaminv, wght, zgrid, q, w)
 
-    def setsourcepatposition(self,x,y,z,ux,uy,uz,gaminv,wght,zgrid,q,w):
+    def setsourcepatposition(self, x, y, z, ux, uy, uz, gaminv, wght, zgrid, q, w):
         n = len(x)
-        if n == 0: return
+        if n == 0:
+            return
         if len(wght) > 0:
             nw = len(wght)
         else:
             nw = 0.
-            wght = zeros(1,'d')
-        setj3d(self.sourcep,self.sourcep,n,x,y,z,zgrid,ux,uy,uz,gaminv,
-               q,w,nw,wght,top.depos,
-               self.nxp,self.nyp,self.nzp,
-               self.nxguardrho,self.nyguardrho,self.nzguardrho,
-               self.dx,self.dy,self.dz,
-               self.xmminp,self.ymminp,self.zmminp,
-               self.l2symtry,self.l4symtry,self.solvergeom==w3d.RZgeom)
+            wght = zeros(1, 'd')
+        setj3d(self.sourcep, self.sourcep, n, x, y, z, zgrid, ux, uy, uz, gaminv,
+               q, w, nw, wght, top.depos,
+               self.nxp, self.nyp, self.nzp,
+               self.nxguardrho, self.nyguardrho, self.nzguardrho,
+               self.dx, self.dy, self.dz,
+               self.xmminp, self.ymminp, self.zmminp,
+               self.l2symtry, self.l4symtry, self.solvergeom==w3d.RZgeom)
 
-    def fetchfieldfrompositions(self,x,y,z,ex,ey,ez,bx,by,bz,js=0,pgroup=None):
+    def fetchfieldfrompositions(self, x, y, z, ex, ey, ez, bx, by, bz, js=0, pgroup=None):
         n = len(x)
-        if n == 0: return
-        setb3d(self.fieldp,n,x,y,z,self.getzgridprv(),bx,by,bz,
-               self.nxp,self.nyp,self.nzp,
-               self.nxguarde,self.nyguarde,self.nzguarde,
-               self.dx,self.dy,self.dz,
-               self.xmminp,self.ymminp,self.zmminp,
-               self.l2symtry,self.l4symtry,self.solvergeom==w3d.RZgeom)
+        if n == 0:
+            return
+        setb3d(self.fieldp, n, x, y, z, self.getzgridprv(), bx, by, bz,
+               self.nxp, self.nyp, self.nzp,
+               self.nxguarde, self.nyguarde, self.nzguarde,
+               self.dx, self.dy, self.dz,
+               self.xmminp, self.ymminp, self.zmminp,
+               self.l2symtry, self.l4symtry, self.solvergeom==w3d.RZgeom)
 
-    def fetchpotentialfrompositions(self,x,y,z,a):
+    def fetchpotentialfrompositions(self, x, y, z, a):
         n = len(x)
-        if n == 0: return
-        fetchafrompositions3d(self.potentialp,n,x,y,z,a,self.getzgrid(),
-                              self.nxp,self.nyp,self.nzp,
-                              self.nxguardphi,self.nyguardphi,self.nzguardphi,
-                              self.dx,self.dy,self.dz,
-                              self.xmminp,self.ymminp,self.zmminp,
-                              self.l2symtry,self.l4symtry,
+        if n == 0:
+            return
+        fetchafrompositions3d(self.potentialp, n, x, y, z, a, self.getzgrid(),
+                              self.nxp, self.nyp, self.nzp,
+                              self.nxguardphi, self.nyguardphi, self.nzguardphi,
+                              self.dx, self.dy, self.dz,
+                              self.xmminp, self.ymminp, self.zmminp,
+                              self.l2symtry, self.l4symtry,
                               self.solvergeom==w3d.RZgeom)
 
-    def setsourceforfieldsolve(self,*args):
-        SubcycledPoissonSolver.setsourceforfieldsolve(self,*args)
+    def setsourceforfieldsolve(self, *args):
+        SubcycledPoissonSolver.setsourceforfieldsolve(self, *args)
         if self.lparallel:
-            SubcycledPoissonSolver.setsourcepforparticles(self,*args)
-            setjforfieldsolve3d(self.nxlocal,self.nylocal,self.nzlocal,self.source,
-                                self.nxp,self.nyp,self.nzp,self.sourcep,
-                                self.nxguardrho,self.nyguardrho,self.nzguardrho,
-                                self.fsdecomp,self.ppdecomp)
+            SubcycledPoissonSolver.setsourcepforparticles(self, *args)
+            setjforfieldsolve3d(self.nxlocal, self.nylocal, self.nzlocal, self.source,
+                                self.nxp, self.nyp, self.nzp, self.sourcep,
+                                self.nxguardrho, self.nyguardrho, self.nzguardrho,
+                                self.fsdecomp, self.ppdecomp)
 
-    def getpotentialpforparticles(self,*args):
+    def getpotentialpforparticles(self, *args):
         """Despite the name, this actually gets the field instead, since that is
            always used in the magnetostatic solver"""
         if not self.lparallel:
-            SubcycledPoissonSolver.getfieldpforparticles(self,*args)
+            SubcycledPoissonSolver.getfieldpforparticles(self, *args)
         else:
             self.setfieldpforparticles(*args)
-            getphipforparticles3d(3,self.nxlocal,self.nylocal,self.nzlocal,
-                                  self.nxguarde,self.nyguarde,self.nzguarde,
+            getphipforparticles3d(3, self.nxlocal, self.nylocal, self.nzlocal,
+                                  self.nxguarde, self.nyguarde, self.nzguarde,
                                   self.field,
-                                  self.nxp,self.nyp,self.nzp,self.fieldp,
-                                  self.fsdecomp,self.ppdecomp)
+                                  self.nxp, self.nyp, self.nzp, self.fieldp,
+                                  self.fsdecomp, self.ppdecomp)
 
     def applysourceboundaryconditions(self):
         applyrhoboundaryconditions3d(self.ncomponents,
-                                 self.nxlocal,self.nylocal,self.nzlocal,
-                                 self.nxguardrho,self.nyguardrho,self.nzguardrho,
-                                 self.source,self.bounds,self.fsdecomp,
+                                 self.nxlocal, self.nylocal, self.nzlocal,
+                                 self.nxguardrho, self.nyguardrho, self.nzguardrho,
+                                 self.source, self.bounds, self.fsdecomp,
                                  self.solvergeom==w3d.RZgeom)
 
-    def installconductor(self,conductor,
-                              xmin=None,xmax=None,
-                              ymin=None,ymax=None,
-                              zmin=None,zmax=None,
+    def installconductor(self, conductor,
+                              xmin=None, xmax=None,
+                              ymin=None, ymax=None,
+                              zmin=None, zmax=None,
                               dfill=None):
-        if conductor in self.conductorlist: return
+        if conductor in self.conductorlist:
+            return
         self.conductorlist.append(conductor)
-        installconductors(conductor,xmin,xmax,ymin,ymax,zmin,zmax,dfill,
+        installconductors(conductor, xmin, xmax, ymin, ymax, zmin, zmax, dfill,
                           self.getzgrid(),
-                          self.nx,self.ny,self.nz,
-                          self.nxlocal,self.nylocal,self.nzlocal,
-                          self.xmmin,self.xmmax,self.ymmin,self.ymmax,
-                          self.zmmin,self.zmmax,1.,self.l2symtry,self.l4symtry,
+                          self.nx, self.ny, self.nz,
+                          self.nxlocal, self.nylocal, self.nzlocal,
+                          self.xmmin, self.xmmax, self.ymmin, self.ymmax,
+                          self.zmmin, self.zmmax, 1., self.l2symtry, self.l4symtry,
                           solvergeom=self.solvergeom,
-                          conductors=self.conductors,decomp=self.fsdecomp)
+                          conductors=self.conductors, decomp=self.fsdecomp)
 
     def hasconductors(self):
         conductorobject = self.getconductorobject()
@@ -255,23 +267,23 @@ class MagnetostaticMG(SubcycledPoissonSolver):
         self.conductors.evensubgrid.n = 0
         self.conductors.oddsubgrid.n = 0
 
-    def find_mgparam(self,lsavephi=false,resetpasses=1):
-        find_mgparam(lsavephi=lsavephi,resetpasses=resetpasses,
-                     solver=self,pkg3d=self)
+    def find_mgparam(self, lsavephi=false, resetpasses=1):
+        find_mgparam(lsavephi=lsavephi, resetpasses=resetpasses,
+                     solver=self, pkg3d=self)
 
-    def dosolve(self,iwhich=0,*args):
+    def dosolve(self, iwhich=0, *args):
         # --- Setup data for bends.
-        rstar = fzeros(3+self.nzlocal,'d')
+        rstar = fzeros(3+self.nzlocal, 'd')
         if top.bends:
-            setrstar(rstar,self.nzlocal,self.dz,self.zmminlocal,self.getzgrid())
+            setrstar(rstar, self.nzlocal, self.dz, self.zmminlocal, self.getzgrid())
             self.linbend = min(rstar) < largepos
 
         self.source[...] = self.source*mu0*eps0
         conductorobject = self.getconductorobject()
 
         if self.solvergeom == w3d.RZgeom and not self.luse2D:
-            init_bworkgrid(self.nxlocal,self.nzlocal,self.dx,self.dz,
-                           self.xmminlocal,self.zmminlocal,self.bounds,
+            init_bworkgrid(self.nxlocal, self.nzlocal, self.dx, self.dz,
+                           self.xmminlocal, self.zmminlocal, self.bounds,
                            self.lparallel)
 
         # --- Note that the arrays being passed in are not contiguous, which means
@@ -280,11 +292,13 @@ class MagnetostaticMG(SubcycledPoissonSolver):
         # --- routine only needs to be called once. Proper arrays are still passed
         # --- though they should never be needed during initialization.
         idmax = 2
-        if iwhich == 1: idmax = 0
+        if iwhich == 1:
+            idmax = 0
         for id in range(idmax+1):
             if (self.lanalyticbtheta and
-                ((self.lusevectorpotential and (id == 0 or id == 2)) or
-                (not self.lusevectorpotential and id == 1))): continue
+               ((self.lusevectorpotential and (id == 0 or id == 2)) or
+               (not self.lusevectorpotential and id == 1))):
+                continue
 
             if ((self.luse2D and self.solvergeom == w3d.RZgeom) or
                 self.solvergeom == w3d.XZgeom):
@@ -295,76 +309,75 @@ class MagnetostaticMG(SubcycledPoissonSolver):
                     self.potential[id,:self.nxguardphi+1,:,:] = 0.
                 else:
                     lmagnetostaticrz = false
-                multigrid2dsolve(iwhich,self.nx,self.nz,self.nxlocal,self.nzlocal,
-                                 self.nxguardphi,self.nzguardphi,
-                                 self.nxguardrho,self.nzguardrho,
-                                 self.dx,self.dz,
+                multigrid2dsolve(iwhich, self.nx, self.nz, self.nxlocal, self.nzlocal,
+                                 self.nxguardphi, self.nzguardphi,
+                                 self.nxguardrho, self.nzguardrho,
+                                 self.dx, self.dz,
                                  self.potential[id,:,self.nyguardphi,:],
                                  self.source[id,:,self.nyguardrho,:],
-                                 bounds,self.xmminlocal,
-                                 self.mgparam[id],self.mgform[id],
-                                 self.mgiters[id],self.mgmaxiters[id],
-                                 self.mgmaxlevels[id],self.mgerror[id],
-                                 self.mgtol[id],self.mgverbose[id],
-                                 self.downpasses[id],self.uppasses[id],
-                                 self.lcndbndy,self.laddconductor,self.icndbndy,
-                                 self.gridmode,conductorobject,self.solvergeom==w3d.RZgeom,
-                                 lmagnetostaticrz,self.fsdecomp)
+                                 bounds, self.xmminlocal,
+                                 self.mgparam[id], self.mgform[id],
+                                 self.mgiters[id], self.mgmaxiters[id],
+                                 self.mgmaxlevels[id], self.mgerror[id],
+                                 self.mgtol[id], self.mgverbose[id],
+                                 self.downpasses[id], self.uppasses[id],
+                                 self.lcndbndy, self.laddconductor, self.icndbndy,
+                                 self.gridmode, conductorobject, self.solvergeom==w3d.RZgeom,
+                                 lmagnetostaticrz, self.fsdecomp)
             elif (not self.luse2D) and self.solvergeom == w3d.RZgeom:
-                multigridrzb(iwhich,id,self.potential[id,
+                multigridrzb(iwhich, id, self.potential[id,
                                       self.nxguardphi-1:(1-self.nxguardphi) or None,self.nyguardphi,
                                       self.nzguardphi-1:(1-self.nzguardphi) or None],
                            self.source[id,self.nxguardrho:-self.nxguardrho or None,self.nyguardrho,
                                           self.nzguardrho:-self.nzguardrho or None],
-                           self.nxlocal,self.nzlocal,self.mgtol[id])
+                           self.nxlocal, self.nzlocal, self.mgtol[id])
             else:
-                multigrid3dsolve(iwhich,self.nx,self.ny,self.nz,
-                                 self.nxlocal,self.nylocal,self.nzlocal,
-                                 self.nxguardphi,self.nyguardphi,self.nzguardphi,
-                                 self.nxguardrho,self.nyguardrho,self.nzguardrho,
-                                 self.dx,self.dy,self.dz,
+                multigrid3dsolve(iwhich, self.nx, self.ny, self.nz,
+                                 self.nxlocal, self.nylocal, self.nzlocal,
+                                 self.nxguardphi, self.nyguardphi, self.nzguardphi,
+                                 self.nxguardrho, self.nyguardrho, self.nzguardrho,
+                                 self.dx, self.dy, self.dz,
                                  self.potential[id,:,:,:],
                                  self.source[id,:,:,:],
-                                 rstar,self.linbend,self.bounds,
-                                 self.xmmin,self.ymmin,self.zmmin,
-                                 self.mgparam[id],self.mgform[id],
-                                 self.mgiters[id],self.mgmaxiters[id],
-                                 self.mgmaxlevels[id],self.mgerror[id],
-                                 self.mgtol[id],self.mgverbose[id],
-                                 self.downpasses[id],self.uppasses[id],
-                                 self.lcndbndy,self.laddconductor,self.icndbndy,
-                                 self.gridmode,conductorobject,self.lprecalccoeffs,
+                                 rstar, self.linbend, self.bounds,
+                                 self.xmmin, self.ymmin, self.zmmin,
+                                 self.mgparam[id], self.mgform[id],
+                                 self.mgiters[id], self.mgmaxiters[id],
+                                 self.mgmaxlevels[id], self.mgerror[id],
+                                 self.mgtol[id], self.mgverbose[id],
+                                 self.downpasses[id], self.uppasses[id],
+                                 self.lcndbndy, self.laddconductor, self.icndbndy,
+                                 self.gridmode, conductorobject, self.lprecalccoeffs,
                                  self.fsdecomp)
 
     # # --- This is slightly inefficient in some cases, since for example, the
     # # --- MG solver already takes care of the longitudinal BC's.
-    # setaboundaries3d(self.potential,self.nx,self.ny,self.nzlocal,
-    #                  self.zmminlocal,self.zmmaxlocal,self.zmmin,self.zmmax,
-    #                  self.bounds,self.solvergeom==w3d.RZgeom,false)
+    # setaboundaries3d(self.potential, self.nx, self.ny, self.nzlocal,
+    #                  self.zmminlocal, self.zmmaxlocal, self.zmmin, self.zmmax,
+    #                  self.bounds, self.solvergeom==w3d.RZgeom, false)
 
         # --- Now take the curl of A to get B.
-        getbfroma3d(self.potential,self.field,
-                    self.nxlocal,self.nylocal,self.nzlocal,
-                    self.nxguardphi,self.nyguardphi,self.nzguardphi,
-                    self.nxguarde,self.nyguarde,self.nzguarde,
-                    self.dx,self.dy,self.dz,self.xmminlocal,
-                    self.solvergeom==w3d.RZgeom,self.lusevectorpotential)
+        getbfroma3d(self.potential, self.field,
+                    self.nxlocal, self.nylocal, self.nzlocal,
+                    self.nxguardphi, self.nyguardphi, self.nzguardphi,
+                    self.nxguarde, self.nyguarde, self.nzguarde,
+                    self.dx, self.dy, self.dz, self.xmminlocal,
+                    self.solvergeom==w3d.RZgeom, self.lusevectorpotential)
 
         # --- If using the analytic form of Btheta, calculate it here.
         if self.lanalyticbtheta:
-            getanalyticbtheta(self.field,self.source,
-                              self.nxlocal,self.nylocal,self.nzlocal,
-                              self.nxguarde,self.nyguarde,self.nzguarde,
-                              self.nxguardrho,self.nyguardrho,self.nzguardrho,
-                              self.dx,self.xmminlocal)
+            getanalyticbtheta(self.field, self.source,
+                              self.nxlocal, self.nylocal, self.nzlocal,
+                              self.nxguarde, self.nyguarde, self.nzguarde,
+                              self.nxguardrho, self.nyguardrho, self.nzguardrho,
+                              self.dx, self.xmminlocal)
 
         # --- Unscale the current density
         self.source[...] = self.source/(mu0*eps0)
 
-
     ##########################################################################
     # Define the basic plot commands
-    def genericpf(self,kw,pffunc):
+    def genericpf(self, kw, pffunc):
         #kw['conductors'] = self.getconductorobject()
         kw['solver'] = self
         # --- This is a temporary kludge until the plot routines are updated to
@@ -376,33 +389,35 @@ class MagnetostaticMG(SubcycledPoissonSolver):
         del self.j
         del self.b
         del self.a
-    def pcjzy(self,**kw): self.genericpf(kw,pcjzy)
-    def pcjzx(self,**kw): self.genericpf(kw,pcjzx)
-    def pcjxy(self,**kw): self.genericpf(kw,pcjxy)
-    def pcbzy(self,**kw): self.genericpf(kw,pcbzy)
-    def pcbzx(self,**kw): self.genericpf(kw,pcbzx)
-    def pcbxy(self,**kw): self.genericpf(kw,pcbxy)
-    def pcazy(self,**kw): self.genericpf(kw,pcazy)
-    def pcazx(self,**kw): self.genericpf(kw,pcazx)
-    def pcaxy(self,**kw): self.genericpf(kw,pcaxy)
+
+    def pcjzy(self, **kw): self.genericpf(kw, pcjzy)
+    def pcjzx(self, **kw): self.genericpf(kw, pcjzx)
+    def pcjxy(self, **kw): self.genericpf(kw, pcjxy)
+    def pcbzy(self, **kw): self.genericpf(kw, pcbzy)
+    def pcbzx(self, **kw): self.genericpf(kw, pcbzx)
+    def pcbxy(self, **kw): self.genericpf(kw, pcbxy)
+    def pcazy(self, **kw): self.genericpf(kw, pcazy)
+    def pcazx(self, **kw): self.genericpf(kw, pcazx)
+    def pcaxy(self, **kw): self.genericpf(kw, pcaxy)
+
 
 ##############################################################################
 class MagnetostaticFFT(MagnetostaticMG):
 
-    def __init__(self,**kw):
+    def __init__(self, **kw):
 
         # --- Force periodic boundary conditions in z, since that is the only
         # --- boundary conditions currently supported.
         self.bound0 = periodic
         self.boundnz = periodic
 
-        MagnetostaticMG.__init__(self,**kw)
+        MagnetostaticMG.__init__(self, **kw)
 
         # --- Only cylindrical geometry is supported
         if self.solvergeom != w3d.RZgeom:
             raise Exception("MagnetostaticFFT only supports cylindrial geometry")
 
-    def dosolve(self,iwhich=0,*args):
+    def dosolve(self, iwhich=0, *args):
 
         self.source[...] = self.source*mu0*eps0
 
@@ -410,50 +425,52 @@ class MagnetostaticFFT(MagnetostaticMG):
         lz = self.zmmax - self.zmmin
         kzsq = fzeros(1+self.nz)
         attz = fzeros(1+self.nz/2)
-        filt = w3d.filt[:,2]
-        rfsmat = fzeros((1+self.nx,3,1+self.nz))
+        filt = w3d.filt[:, 2]
+        rfsmat = fzeros((1+self.nx, 3, 1+self.nz))
         scrtch2 = fzeros((1+self.nz))
 
         # --- Initialize kzsq and attz.
-        vpoisrzb(1,self.potential[0,...],kzsq,attz,filt,lr,lz,self.nx,self.nz,
-                 rfsmat,scrtch2,0)
-        if iwhich == 1: return
+        vpoisrzb(1, self.potential[0,...], kzsq, attz, filt, lr, lz, self.nx, self.nz,
+                 rfsmat, scrtch2, 0)
+        if iwhich == 1:
+            return
 
         for axis in range(3):
             if (self.lanalyticbtheta and
-                ((self.lusevectorpotential and (axis == 0 or axis == 2)) or
-                (not self.lusevectorpotential and axis == 1))): continue
+               ((self.lusevectorpotential and (axis == 0 or axis == 2)) or
+               (not self.lusevectorpotential and axis == 1))):
+                continue
             # --- vpoisrzb converts J to A in place.
             a = self.source[axis,self.nxguardrho:-self.nxguardrho or None,
                                  self.nyguardrho:-self.nyguardrho or None,
                                  self.nzguardrho:-self.nzguardrho or None].copy()
-            vpoisrzb(-1,a,kzsq,attz,filt,lr,lz,self.nx,self.nz,
-                     rfsmat,scrtch2,axis)
+            vpoisrzb(-1, a, kzsq, attz, filt, lr, lz, self.nx, self.nz,
+                     rfsmat, scrtch2, axis)
             self.potential[axis,self.nxguardphi:-self.nxguardphi or None,
                                 self.nyguardrho:-self.nyguardrho or None,
                                 self.nzguardphi:-self.nzguardphi or None] = a
 
             # --- This is needed since vpoisrzb doesn't have access to the guard cells.
-            applyboundaryconditions3d(self.nx,self.ny,self.nz,
-                                      self.nxguardphi,self.nyguardphi,self.nzguardphi,
-                                      self.potential[axis,...],1,
-                                      array([1,0,1,1,2,2]),true,false)
+            applyboundaryconditions3d(self.nx, self.ny, self.nz,
+                                      self.nxguardphi, self.nyguardphi, self.nzguardphi,
+                                      self.potential[axis,...], 1,
+                                      array([1,0,1,1,2,2]), true, false)
 
         # --- Now take the curl of A to get B.
-        getbfroma3d(self.potential,self.field,
-                    self.nxlocal,self.nylocal,self.nzlocal,
-                    self.nxguardphi,self.nyguardphi,self.nzguardphi,
-                    self.nxguarde,self.nyguarde,self.nzguarde,
-                    self.dx,self.dy,self.dz,self.xmminlocal,
-                    self.solvergeom==w3d.RZgeom,self.lusevectorpotential)
+        getbfroma3d(self.potential, self.field,
+                    self.nxlocal, self.nylocal, self.nzlocal,
+                    self.nxguardphi, self.nyguardphi, self.nzguardphi,
+                    self.nxguarde, self.nyguarde, self.nzguarde,
+                    self.dx, self.dy, self.dz, self.xmminlocal,
+                    self.solvergeom==w3d.RZgeom, self.lusevectorpotential)
 
         # --- If using the analytic form of Btheta, calculate it here.
         if self.lanalyticbtheta:
-            getanalyticbtheta(self.field,self.source,
-                              self.nxlocal,self.nylocal,self.nzlocal,
-                              self.nxguarde,self.nyguarde,self.nzguarde,
-                              self.nxguardrho,self.nyguardrho,self.nzguardrho,
-                              self.dx,self.xmminlocal)
+            getanalyticbtheta(self.field, self.source,
+                              self.nxlocal, self.nylocal, self.nzlocal,
+                              self.nxguarde, self.nyguarde, self.nzguarde,
+                              self.nxguardrho, self.nyguardrho, self.nzguardrho,
+                              self.dx, self.xmminlocal)
 
         # --- Unscale the current density
         self.source[...] = self.source/(mu0*eps0)

@@ -1,6 +1,7 @@
 #Boa:Dialog:LatticeGUI
 
-from wx import *
+import wx
+#from wx import *
 from wx.lib.anchors import LayoutAnchors
 from warp import *
 import sortlattice
@@ -52,7 +53,7 @@ class LatticeGUI(wx.Dialog):
               style=wx.TAB_TRAVERSAL | wx.TE_PROCESS_TAB | wx.TE_PROCESS_ENTER,
               value='0')
         self.SetElementNum.SetToolTipString('Sets element number')
-        EVT_TEXT_ENTER(self.SetElementNum, wxID_LATTICEGUISETELEMENTNUM,
+        wx.EVT_TEXT_ENTER(self.SetElementNum, wxID_LATTICEGUISETELEMENTNUM,
               self.OnSetelementnumTextEnter)
 
         self.ElemNumLabel1 = wx.StaticText(id=wxID_LATTICEGUIELEMNUMLABEL1,
@@ -68,9 +69,9 @@ class LatticeGUI(wx.Dialog):
               size=wx.Size(15, 34),
               style=wx.DOUBLE_BORDER | wx.SP_HORIZONTAL | wx.SIMPLE_BORDER)
         self.ElementSpin.SetToolTipString('Change element number')
-        EVT_SPIN_DOWN(self.ElementSpin, wxID_LATTICEGUIELEMENTSPIN,
+        wx.EVT_SPIN_DOWN(self.ElementSpin, wxID_LATTICEGUIELEMENTSPIN,
               self.OnElementspinSpinDown)
-        EVT_SPIN_UP(self.ElementSpin, wxID_LATTICEGUIELEMENTSPIN,
+        wx.EVT_SPIN_UP(self.ElementSpin, wxID_LATTICEGUIELEMENTSPIN,
               self.OnElementspinSpinUp)
 
         self.Quad = wx.Panel(id=wxID_LATTICEGUIQUAD, name='Quad', parent=self,
@@ -122,28 +123,28 @@ class LatticeGUI(wx.Dialog):
               name='GetQuadzs', parent=self.Quad, pos=wx.Point(72, 24),
               size=wx.Size(80, 22), style=wx.TE_PROCESS_TAB | wx.TE_PROCESS_ENTER,
               value='')
-        EVT_TEXT_ENTER(self.GetQuadzs, wxID_LATTICEGUIGETQUADZS,
+        wx.EVT_TEXT_ENTER(self.GetQuadzs, wxID_LATTICEGUIGETQUADZS,
               self.OnGetelemzsTextEnter)
 
         self.GetQuadze = wx.TextCtrl(id=wxID_LATTICEGUIGETQUADZE,
               name='GetQuadze', parent=self.Quad, pos=wx.Point(72, 48),
               size=wx.Size(80, 22), style=wx.TE_PROCESS_TAB | wx.TE_PROCESS_ENTER,
               value='')
-        EVT_TEXT_ENTER(self.GetQuadze, wxID_LATTICEGUIGETQUADZE,
+        wx.EVT_TEXT_ENTER(self.GetQuadze, wxID_LATTICEGUIGETQUADZE,
               self.OnGetelemzeTextEnter)
 
         self.GetQuadde = wx.TextCtrl(id=wxID_LATTICEGUIGETQUADDE,
               name='GetQuadde', parent=self.Quad, pos=wx.Point(72, 72),
               size=wx.Size(80, 22), style=wx.TE_PROCESS_TAB | wx.TE_PROCESS_ENTER,
               value='')
-        EVT_TEXT_ENTER(self.GetQuadde, wxID_LATTICEGUIGETQUADDE,
+        wx.EVT_TEXT_ENTER(self.GetQuadde, wxID_LATTICEGUIGETQUADDE,
               self.OnGetQuaddeTextEnter)
 
         self.GetQuaddb = wx.TextCtrl(id=wxID_LATTICEGUIGETQUADDB,
               name='GetQuaddb', parent=self.Quad, pos=wx.Point(72, 96),
               size=wx.Size(80, 22), style=wx.TE_PROCESS_TAB | wx.TE_PROCESS_ENTER,
               value='')
-        EVT_TEXT_ENTER(self.GetQuaddb, wxID_LATTICEGUIGETQUADDB,
+        wx.EVT_TEXT_ENTER(self.GetQuaddb, wxID_LATTICEGUIGETQUADDB,
               self.OnGetQuaddbTextEnter)
 
         self.Drft = wx.Panel(id=wxID_LATTICEGUIDRFT, name='Drft', parent=self,
@@ -187,21 +188,21 @@ class LatticeGUI(wx.Dialog):
               name='GetDrftzs', parent=self.Drft, pos=wx.Point(72, 24),
               size=wx.Size(80, 22), style=wx.TE_PROCESS_TAB | wx.TE_PROCESS_ENTER,
               value='')
-        EVT_TEXT_ENTER(self.GetDrftzs, wxID_LATTICEGUIGETDRFTZS,
+        wx.EVT_TEXT_ENTER(self.GetDrftzs, wxID_LATTICEGUIGETDRFTZS,
               self.OnGetelemzsTextEnter)
 
         self.GetDrftze = wx.TextCtrl(id=wxID_LATTICEGUIGETDRFTZE,
               name='GetDrftze', parent=self.Drft, pos=wx.Point(72, 48),
               size=wx.Size(80, 22), style=wx.TE_PROCESS_TAB | wx.TE_PROCESS_ENTER,
               value='')
-        EVT_TEXT_ENTER(self.GetDrftze, wxID_LATTICEGUIGETDRFTZE,
+        wx.EVT_TEXT_ENTER(self.GetDrftze, wxID_LATTICEGUIGETDRFTZE,
               self.OnGetelemzeTextEnter)
 
         self.GetDrftap = wx.TextCtrl(id=wxID_LATTICEGUIGETDRFTAP,
               name='GetDrftap', parent=self.Drft, pos=wx.Point(72, 72),
               size=wx.Size(80, 22), style=wx.TE_PROCESS_TAB | wx.TE_PROCESS_ENTER,
               value='')
-        EVT_TEXT_ENTER(self.GetDrftap, wxID_LATTICEGUIGETDRFTAP,
+        wx.EVT_TEXT_ENTER(self.GetDrftap, wxID_LATTICEGUIGETDRFTAP,
               self.OnGetelemapTextEnter)
 
         self.DoStep = wx.CheckBox(id=wxID_LATTICEGUIDOSTEP,
@@ -210,14 +211,14 @@ class LatticeGUI(wx.Dialog):
         self.DoStep.SetValue(false)
         self.DoStep.SetHelpText('When checked, execute step command on a change.')
         self.DoStep.SetToolTipString('Turns on code calculation on change')
-        EVT_CHECKBOX(self.DoStep, wxID_LATTICEGUIDOSTEP, self.OnDostepCheckbox)
+        wx.EVT_CHECKBOX(self.DoStep, wxID_LATTICEGUIDOSTEP, self.OnDostepCheckbox)
 
         self.SetMADLattice = wx.TextCtrl(id=wxID_LATTICEGUISETMADLATTICE,
               name='SetMADLattice', parent=self.ElementNum, pos=wx.Point(4, 168),
               size=wx.Size(104, 22), style=wx.TE_PROCESS_TAB | wx.TE_PROCESS_ENTER,
               value='')
         self.SetMADLattice.SetToolTipString('Specify MAD lattice to use')
-        EVT_TEXT_ENTER(self.SetMADLattice, wxID_LATTICEGUISETMADLATTICE,
+        wx.EVT_TEXT_ENTER(self.SetMADLattice, wxID_LATTICEGUISETMADLATTICE,
               self.OnSetmadlatticeTextEnter)
 
         self.SetMADLatticeLabel = wx.StaticText(id=wxID_LATTICEGUISETMADLATTICELABEL,
@@ -231,7 +232,7 @@ class LatticeGUI(wx.Dialog):
               style=wx.TAB_TRAVERSAL)
         self.MakeUnique.SetValue(False)
         self.MakeUnique.SetToolTipString('Make all elements of the lattice unique')
-        EVT_CHECKBOX(self.MakeUnique, wxID_LATTICEGUIMAKEUNIQUE,
+        wx.EVT_CHECKBOX(self.MakeUnique, wxID_LATTICEGUIMAKEUNIQUE,
               self.OnMakeuniqueCheckbox)
 
     def __init__(self, parent):

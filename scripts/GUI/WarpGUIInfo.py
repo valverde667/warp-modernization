@@ -1,7 +1,8 @@
 #Boa:Dialog:WarpGUIInfo
 
 #from wxPython.wx import *
-from wx import *
+#from wx import *
+import wx
 
 def create(parent):
     return WarpGUIInfo(parent)
@@ -21,7 +22,7 @@ class WarpGUIInfo(wx.Dialog):
         self.staticText1.SetFont(wx.wFont(20, wx.SWISS, wx.NORMAL, wx.NORMAL, false, ''))
 
         self.button1 = wx.Button(id = wxID_WXDIALOG1BUTTON1, label = 'Close', name = 'button1', parent = self, pos = wx.Point(24, 56), size = wx.Size(80, 22), style = 0)
-        EVT_BUTTON(self.button1, wxID_WXDIALOG1BUTTON1, self.OnButton1Button)
+        wx.EVT_BUTTON(self.button1, wxID_WXDIALOG1BUTTON1, self.OnButton1Button)
 
     def __init__(self, parent):
         self._init_ctrls(parent)

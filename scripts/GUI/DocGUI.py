@@ -1,6 +1,7 @@
 #Boa:MiniFrame:DocGUI
 
-from wx import *
+import wx
+#from wx import *
 from warp import *
 import sys
 
@@ -21,7 +22,7 @@ class DocGUI(wx.MiniFrame):
 
         self.GetName = wx.TextCtrl(id = wxID_DOCGUIGETNAME, name = 'GetName', parent = self, pos = wx.Point(8, 8), size = wx.Size(184, 22), style = wx.TE_PROCESS_ENTER | wx.TE_PROCESS_TAB, value = '')
         self.GetName.SetToolTipString('Enter name')
-        EVT_TEXT_ENTER(self.GetName, wxID_DOCGUIGETNAME, self.OnGetnameTextEnter)
+        wx.EVT_TEXT_ENTER(self.GetName, wxID_DOCGUIGETNAME, self.OnGetnameTextEnter)
 
         self.DocText = wx.TextCtrl(id = wxID_DOCGUIDOCTEXT, name = 'DocText', parent = self, pos = wx.Point(8, 64), size = wx.Size(608, 264), style = wx.TE_READONLY | wx.TE_MULTILINE, value = '')
         self.DocText.SetToolTipString('')

@@ -30,7 +30,7 @@ class panel(wx.Panel):
               style=wx.TAB_TRAVERSAL)
         self._init_utils()
         self.SetClientSize(wx.Size(334, 208))
-        EVT_ENTER_WINDOW(self, self.OnPanelEnterWindow)
+        wx.EVT_ENTER_WINDOW(self, self.OnPanelEnterWindow)
 
         self.staticText1 = wx.StaticText(id=wxID_PANELSTATICTEXT1, label='Color',
               name='staticText1', parent=self, pos=wx.Point(16, 68),
@@ -42,7 +42,7 @@ class panel(wx.Panel):
               21), style=0, validator=wx.DefaultValidator)
         self.Color.SetLabel('')
         self.Color.Show(True)
-        EVT_CHOICE(self.Color, wxID_PANELCOLOR, self.OnColorChoice)
+        wx.EVT_CHOICE(self.Color, wxID_PANELCOLOR, self.OnColorChoice)
 
         self.staticText2 = wx.StaticText(id=wxID_PANELSTATICTEXT2,
               label='Number', name='staticText2', parent=self, pos=wx.Point(16,
@@ -51,7 +51,7 @@ class panel(wx.Panel):
         self.element_spin = wx.SpinCtrl(id=wxID_PANELELEMENT_SPIN, initial=0,
               max=100, min=1, name='element_spin', parent=self, pos=wx.Point(68,
               16), size=wx.Size(40, 21), style=wx.SP_ARROW_KEYS)
-        EVT_SPINCTRL(self.element_spin, wxID_PANELELEMENT_SPIN,
+        wx.EVT_SPINCTRL(self.element_spin, wxID_PANELELEMENT_SPIN,
               self.OnElementSpinctrl)
 
         self.StaticText3 = wx.StaticText(id=wxID_PANELSTATICTEXT3, label='Width',
@@ -59,15 +59,15 @@ class panel(wx.Panel):
               size=wx.Size(44, 18), style=0)
 
         self.width_slider = wx.Slider(id=wxID_PANELWIDTH_SLIDER, maxValue=10,
-              minValue=1, name='width_slider', parent=self, point=wx.Point(68,
+              minValue=1, name='width_slider', parent=self, pos=wx.Point(68,
               92), size=wx.Size(90, 21), style=wx.SL_HORIZONTAL,
               validator=wx.DefaultValidator, value=0)
-        EVT_SCROLL(self.width_slider, self.OnWidthSliderScroll)
+        wx.EVT_SCROLL(self.width_slider, self.OnWidthSliderScroll)
 
         self.Hide = wx.CheckBox(id=wxID_PANELHIDE, label='Hide', name='Hide',
               parent=self, pos=wx.Point(112, 18), size=wx.Size(50, 20), style=0)
         self.Hide.SetValue(False)
-        EVT_CHECKBOX(self.Hide, wxID_PANELHIDE, self.OnHideCheckbox)
+        wx.EVT_CHECKBOX(self.Hide, wxID_PANELHIDE, self.OnHideCheckbox)
 
         self.staticText3 = wx.StaticText(id=wxID_PANELSTATICTEXT3, label='Type',
               name='staticText3', parent=self, pos=wx.Point(16, 44),
@@ -77,7 +77,7 @@ class panel(wx.Panel):
               'dashdotdot', 'none'], id=wxID_PANELTYPE, name='Type',
               parent=self, pos=wx.Point(68, 40), size=wx.Size(90, 21), style=0,
               validator=wx.DefaultValidator)
-        EVT_CHOICE(self.Type, wxID_PANELTYPE, self.OnTypeChoice)
+        wx.EVT_CHOICE(self.Type, wxID_PANELTYPE, self.OnTypeChoice)
 
         self.staticText4 = wx.StaticText(id=wxID_PANELSTATICTEXT4,
               label='Marker', name='staticText4', parent=self, pos=wx.Point(16,
@@ -86,12 +86,12 @@ class panel(wx.Panel):
         self.Marks = wx.CheckBox(id=wxID_PANELMARKS, label='Marks', name='Marks',
               parent=self, pos=wx.Point(104, 116), size=wx.Size(56, 20), style=0)
         self.Marks.SetValue(False)
-        EVT_CHECKBOX(self.Marks, wxID_PANELMARKS, self.OnMarksCheckbox)
+        wx.EVT_CHECKBOX(self.Marks, wxID_PANELMARKS, self.OnMarksCheckbox)
 
         self.marker_letter = wx.TextCtrl(id=wxID_PANELMARKER_LETTER,
               name='marker_letter', parent=self, pos=wx.Point(68, 116),
               size=wx.Size(24, 21), style=0, value='textCtrl1')
-        EVT_TEXT(self.marker_letter, wxID_PANELMARKER_LETTER,
+        wx.EVT_TEXT(self.marker_letter, wxID_PANELMARKER_LETTER,
               self.OnMarker_letterText)
 
         self.staticText5 = wx.StaticText(id=wxID_PANELSTATICTEXT5, label='Size',
@@ -107,16 +107,16 @@ class panel(wx.Panel):
               size=wx.Size(44, 16), style=0)
 
         self.msize = wx.Slider(id=wxID_PANELMSIZE, maxValue=10, minValue=1,
-              name='msize', parent=self, point=wx.Point(68, 136), size=wx.Size(90,
+              name='msize', parent=self, pos=wx.Point(68, 136), size=wx.Size(90,
               21), style=wx.SL_HORIZONTAL, validator=wx.DefaultValidator,
               value=0)
-        EVT_SCROLL(self.msize, self.OnMsizeScroll)
+        wx.EVT_SCROLL(self.msize, self.OnMsizeScroll)
 
         self.mspace = wx.Slider(id=wxID_PANELMSPACE, maxValue=100, minValue=1,
-              name='mspace', parent=self, point=wx.Point(68, 168),
+              name='mspace', parent=self, pos=wx.Point(68, 168),
               size=wx.Size(90, 21), style=wx.SL_HORIZONTAL,
               validator=wx.DefaultValidator, value=0)
-        EVT_SCROLL(self.mspace, self.OnMspaceScroll)
+        wx.EVT_SCROLL(self.mspace, self.OnMspaceScroll)
 
         self.staticText9 = wx.StaticText(id=wxID_PANELSTATICTEXT9, label='Font',
               name='staticText9', parent=self, pos=wx.Point(184, 20),
@@ -132,7 +132,7 @@ class panel(wx.Panel):
         self.BoldLabel.SetValue(False)
         self.BoldLabel.SetFont(wx.Font(8, wx.SWISS, wx.NORMAL, wx.BOLD, False,
               'MS Sans Serif'))
-        EVT_CHECKBOX(self.BoldLabel, wxID_PANELBOLDLABEL,
+        wx.EVT_CHECKBOX(self.BoldLabel, wxID_PANELBOLDLABEL,
               self.OnBoldlabelCheckbox)
 
         self.ItalicLabel = wx.CheckBox(id=wxID_PANELITALICLABEL, label='Italic',
@@ -141,7 +141,7 @@ class panel(wx.Panel):
         self.ItalicLabel.SetValue(False)
         self.ItalicLabel.SetFont(wx.Font(8, wx.SWISS, wx.ITALIC, wx.NORMAL, False,
               'MS Sans Serif'))
-        EVT_CHECKBOX(self.ItalicLabel, wxID_PANELITALICLABEL,
+        wx.EVT_CHECKBOX(self.ItalicLabel, wxID_PANELITALICLABEL,
               self.OnItaliclabelCheckbox)
 
         self.LabelAxis = wx.Choice(choices=['x', 'y', 'all'],
@@ -153,13 +153,13 @@ class panel(wx.Panel):
               'Symbol', 'New Century'], id=wxID_PANELFONTLABEL,
               name='FontLabel', parent=self, pos=wx.Point(224, 16),
               size=wx.Size(96, 21), style=0, validator=wx.DefaultValidator)
-        EVT_CHOICE(self.FontLabel, wxID_PANELFONTLABEL, self.OnFontlabelChoice)
+        wx.EVT_CHOICE(self.FontLabel, wxID_PANELFONTLABEL, self.OnFontlabelChoice)
 
         self.HeightLabel = wx.Slider(id=wxID_PANELHEIGHTLABEL, maxValue=100,
-              minValue=1, name='HeightLabel', parent=self, point=wx.Point(224,
+              minValue=1, name='HeightLabel', parent=self, pos=wx.Point(224,
               60), size=wx.Size(96, 20), style=wx.SL_HORIZONTAL,
               validator=wx.DefaultValidator, value=0)
-        EVT_SCROLL(self.HeightLabel, self.OnHeightlabelScroll)
+        wx.EVT_SCROLL(self.HeightLabel, self.OnHeightlabelScroll)
 
         self.staticText11 = wx.StaticText(id=wxID_PANELSTATICTEXT11,
               label='Axis', name='staticText11', parent=self, pos=wx.Point(184,
@@ -178,10 +178,10 @@ class panel(wx.Panel):
               'MS Sans Serif'))
 
         self.mphase = wx.Slider(id=wxID_PANELMPHASE, maxValue=100, minValue=0,
-              name='mphase', parent=self, point=wx.Point(68, 152),
+              name='mphase', parent=self, pos=wx.Point(68, 152),
               size=wx.Size(90, 21), style=wx.SL_HORIZONTAL,
               validator=wx.DefaultValidator, value=0)
-        EVT_SCROLL(self.mphase, self.OnMphaseScroll)
+        wx.EVT_SCROLL(self.mphase, self.OnMphaseScroll)
 
         self.staticBox3 = wx.StaticBox(id=wxID_PANELSTATICBOX3, label='Output',
               name='staticBox3', parent=self, pos=wx.Point(176, 112),
@@ -207,7 +207,7 @@ class panel(wx.Panel):
 
         self.Save = wx.Button(id=wxID_PANELSAVE, label='Save', name='Save',
               parent=self, pos=wx.Point(232, 176), size=wx.Size(88, 20), style=0)
-        EVT_BUTTON(self.Save, wxID_PANELSAVE, self.OnSaveButton)
+        wx.EVT_BUTTON(self.Save, wxID_PANELSAVE, self.OnSaveButton)
 
     def __init__(self, parent):
         self._init_ctrls(parent)

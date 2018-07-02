@@ -1665,7 +1665,7 @@ def plotcondn(yy,xx,zz,iz,ymmin,xmmin,dy,dx,mglevel,signy,signx,conductors,
     else:             nn = array([])
     nlist = gatherarray(nn)
     nlist = findunique(nlist)
-    nlist = parallel.broadcast(nlist)
+    nlist = warp_parallel.broadcast(nlist)
     for i in nlist:
         plotcond(yy,xx,zz,iz,i,ymmin,xmmin,dy,dx,color[i%ncolor],
                  mglevel,signy,signx,conductors,local)
@@ -1697,7 +1697,7 @@ def pfzxn(iy=None,numbs=None,colors=None,cmarker=point,smarker=circle,
     nlist = gatherarray(conductors.evensubgrid.numb[0,:conductors.evensubgrid.n])
     nlist = findunique(nlist)
     #nlist.remove(0)
-    nlist = parallel.broadcast(nlist)
+    nlist = warp_parallel.broadcast(nlist)
     for i in nlist:
         plotsubgrid(0,2,1,0,iy,i,xmmin,zmmin,dx,dz,
                     colors[i%ncolor],subgridlen,mglevel,1,1,inverted,conductors,local)
@@ -1706,7 +1706,7 @@ def pfzxn(iy=None,numbs=None,colors=None,cmarker=point,smarker=circle,
                         colors[i%ncolor],subgridlen,mglevel,-1,1,inverted,conductors,local)
     nlist = gatherarray(conductors.oddsubgrid.numb[0,:conductors.oddsubgrid.n])
     nlist = findunique(nlist)
-    nlist = parallel.broadcast(nlist)
+    nlist = warp_parallel.broadcast(nlist)
     for i in nlist:
         plotsubgrid(0,2,1,1,iy,i,xmmin,zmmin,dx,dz,
                     colors[i%ncolor],subgridlen,mglevel,1,1,inverted,conductors,local)
@@ -2473,9 +2473,9 @@ def updatemgconductorsold():
         icndlznew = icndlznew + list(llz[j]*ones(len(ii),'l'))
 
     # --- Find odd and even points
-    icndxnew = array(icndxnew,typecode='i')
-    icndynew = array(icndynew,typecode='i')
-    icndznew = array(icndznew,typecode='i')
+    icndxnew = array(icndxnew,dtype='i')
+    icndynew = array(icndynew,dtype='i')
+    icndznew = array(icndznew,dtype='i')
     ee = compress((icndxnew+icndynew+icndznew)%2==0,arange(len(icndxnew)))
     oo = compress((icndxnew+icndynew+icndznew)%2==1,arange(len(icndxnew)))
 

@@ -963,9 +963,9 @@ class ParticleScraper(object):
         x8 = take(xx,iscrape-i1)
         y8 = take(yy,iscrape-i1)
         z8 = take(zz,iscrape-i1)
-        xg = xmin+aint(abs(x8-xmin)/dx)*dx + array(nn/8*[0.,dx,0.,dx,0.,dx,0.,dx])
-        yg = ymin+aint(abs(y8-ymin)/dy)*dy + array(nn/8*[0.,0.,dy,dy,0.,0.,dy,dy])
-        zg = zmin+aint(abs(z8-zmin)/dz)*dz + array(nn/8*[0.,0.,0.,0.,dz,dz,dz,dz])
+        xg = xmin+aint(abs(x8-xmin)/dx)*dx + array(int(nn/8)*[0.,dx,0.,dx,0.,dx,0.,dx])
+        yg = ymin+aint(abs(y8-ymin)/dy)*dy + array(int(nn/8)*[0.,0.,dy,dy,0.,0.,dy,dy])
+        zg = zmin+aint(abs(z8-zmin)/dz)*dz + array(int(nn/8)*[0.,0.,0.,0.,dz,dz,dz,dz])
         pp = zeros(nn,'d')
 
         # --- The ixa etc are the location of the x=0 plane. This is needed

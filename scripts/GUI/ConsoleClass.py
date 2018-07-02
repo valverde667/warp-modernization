@@ -1,6 +1,7 @@
 #Boa:FramePanel:ConsoleClass
 
-from wx import *
+import wx
+#from wx import *
 from wx.lib.anchors import LayoutAnchors
 from warp import *
 
@@ -15,7 +16,8 @@ class ConsoleClass(wx.Panel):
     def _init_ctrls(self, prnt):
         # generated method, don't edit
         wx.Panel.__init__(self, id=wxID_CONSOLECLASS, name='', parent=prnt,
-              pos=wx.Point(355, 226), size=wx.Size(604, 339),
+#              pos=wx.Point(355, 226), size=wx.Size(604, 339),
+              pos=wx.Point(0, 350), size=wx.Size(604, 339),
               style=wx.MAXIMIZE_BOX | wx.TAB_TRAVERSAL)
         self._init_utils()
         self.SetClientSize(wx.Size(596, 315))
@@ -27,9 +29,9 @@ class ConsoleClass(wx.Panel):
         self.Console.SetFont(wx.Font(12, wx.MODERN, wx.NORMAL, wx.NORMAL, false,''))
         self.Console.SetConstraints(LayoutAnchors(self.Console, True, True,
               True, True))
-        EVT_CHAR(self.Console, self.OnconsoleChar)
-        EVT_RIGHT_DOWN(self.Console, self.OnConsoleRightDown)
-        EVT_LEFT_UP(self.Console, self.OnConsoleLeftUp)
+        wx.EVT_CHAR(self.Console, self.OnconsoleChar)
+        wx.EVT_RIGHT_DOWN(self.Console, self.OnConsoleRightDown)
+        wx.EVT_LEFT_UP(self.Console, self.OnConsoleLeftUp)
 
     def __init__(self, parent, inter, in_notebook=0):
         self._init_ctrls(parent)

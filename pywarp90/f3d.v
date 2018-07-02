@@ -610,6 +610,7 @@ multigridbe3dsolve(iwhich:integer,
    # Boltzmann electron term. All input is through the argument list.
 setupiondensitygrid3d(xmmin:real,ymmin:real,zmmin:real,dx:real,dy:real,dz:real,
                       nx:integer,ny:integer,nzlocal:integer,
+                      nxguardrho:integer,nyguardrho:integer,nzguardrho:integer,
                       rho:real,iondensitygrid3d:Grid3dtype)
    subroutine # Sets up the iondensity grid for the 3d Boltzman electron
               # field solver.

@@ -74,7 +74,11 @@ class Quasistatic(SubcycledPoissonSolver):
       try:
         self.mympigroup=comm_world.comm_create(mygroup)
       except:
-        self.mympigroup=comm_world.Create(mygroup)
+        ranks_group_list = list(mygroup)
+        mpi_group = comm_world.Get_group()
+        newgroup = mpi_group.Incl(ranks_group_list)
+        self.mympigroup=comm_world.Create(newgroup)
+
       self.gme = self.mympigroup.rank
       self.gnpes = self.mympigroup.size
     if ntgroups>1:
@@ -963,7 +967,7 @@ class Quasistatic(SubcycledPoissonSolver):
 #      for ip in range(npes-1):
 #        comm_world.send(tosend,ip)
       if self.l_verbose:print me,tosend
-    recved = parallel.broadcast(tosend,npes-1)
+    recved = warp_parallel.broadcast(tosend,npes-1)
     if self.l_verbose:print me,recved
     if me<npes-1:
 #     recved,status = comm_world.recv(npes-1)
@@ -2319,6 +2323,7 @@ class Quasistatic(SubcycledPoissonSolver):
 
        if self.l_gas_ionization:
             pgbf=self.pgelec.nps.copy()
+            top.pgroup = self.pgions
             self.ioniz[self.iz].generate(dt=self.dt)
 #            print 'Ioniz',pgbf,self.pgelec.nps
 

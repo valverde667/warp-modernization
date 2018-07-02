@@ -678,9 +678,19 @@ class EM3DFFT(EM3D):
 
         self.wrap_periodic_BC([f.Jx,f.Jy,f.Jz])
 
-        if emK.nx>1:JxF = emK.fft(squeeze(f.Jx[ixl:ixu,iyl:iyu,izl:izu]),axis=0)
+        if emK.planj_rfftn is None:
+            emK.planj_rfftn= emK.create_plan_rfftn(np.asarray(fields_shape))
+        if emK.planj_irfftn is None:
+            emK.planj_irfftn= emK.create_plan_irfftn(np.asarray(fields_shape))
+
+        if emK.nx>1:JxF = emK.rfftn(squeeze(f.Jx[ixl:ixu,iyl:iyu,izl:izu]),plan=emK.planj_rfftn)
 #        if emK.ny>1:JyF = emK.fft(squeeze(f.Jy[ixl:ixu,iyl:iyu,izl:izu]))
-        if emK.nz>1:JzF = emK.fft(squeeze(f.Jz[ixl:ixu,iyl:iyu,izl:izu]),axis=1)
+        if emK.nz>1:JzF = emK.rfftn(squeeze(f.Jz[ixl:ixu,iyl:iyu,izl:izu]),plan=emK.planj_rfftn)
+
+#         if emK.nx>1:JxF = emK.fft(squeeze(f.Jx[ixl:ixu,iyl:iyu,izl:izu]),axis=0)
+# #        if emK.ny>1:JyF = emK.fft(squeeze(f.Jy[ixl:ixu,iyl:iyu,izl:izu]))
+#         if emK.nz>1:JzF = emK.fft(squeeze(f.Jz[ixl:ixu,iyl:iyu,izl:izu]),axis=1)
+
 
         if self.l_spectral_staggered:
             JxF = 1j*JxF/where(emK.kx==0.,1j,emK.kx*exp(-j*emK.kx_unmod*self.dx/2))
@@ -713,15 +723,17 @@ class EM3DFFT(EM3D):
         # --- adjust average current values
         if emK.nx>1:
             Jxcs=ave(cumsum(f.Jx[ixl:ixu,iyl:iyu,izl:izu],0),0)
-            Jx = emK.ifft(JxF,axis=0)
+#             Jx = emK.ifft(JxF,axis=0)
+            Jx = emK.irfftn(JxF, np.asarray(np.shape(squeeze(f.Jx[ixl:ixu,iyl:iyu,izl:izu]))), plan=emK.planj_irfftn)#, field_out=squeeze(f.Jx[ixl:ixu,iyl:iyu,izl:izu]))
             Jx.resize(fields_shape)
             Jx=Jx.real
             for i in range(shape(Jx)[1]):
                 Jx[:,i]-=Jxcs[i]*self.dx
 
         if emK.nz>1:
-            Jzcs=ave(cumsum(f.Jz[ixl:ixu,iyl:iyu,izl:izu],1),1)
-            Jz = emK.ifft(JzF,axis=1)
+            Jzcs=ave(cumsum(f.Jz[ixl:ixu,iyl:iyu,izl:izu],2),2)
+#             Jz = emK.ifft(JzF,axis=1)
+            Jz = emK.irfftn(JzF, np.asarray(np.shape(squeeze(f.Jz[ixl:ixu,iyl:iyu,izl:izu]))), plan=emK.planj_irfftn)#, field_out=squeeze(f.Jz[ixl:ixu,iyl:iyu,izl:izu]))
             Jz.resize(fields_shape)
             Jz=Jz.real
             for i in range(shape(Jz)[0]):

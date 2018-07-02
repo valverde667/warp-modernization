@@ -1,6 +1,7 @@
 #Boa:Dialog:txtEditorDialog
 
-from wx import *
+import wx
+#from wx import *
 
 def create(parent):
     return txtEditorDialog(parent)

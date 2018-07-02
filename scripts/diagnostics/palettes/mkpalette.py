@@ -60,7 +60,7 @@ def gfpmaker(pname, br=None):
     b = where(s == 0, 1, b)
     s = where(s == 0, 3, s)
     if br is None:
-        t = 3*arange(n, typecode=Float)
+        t = 3*arange(n, dtype='f')
     else:
         br[1][0] = 0
         br[1][-1] = n-1

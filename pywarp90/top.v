@@ -3257,6 +3257,8 @@ load1drandom(np:integer,x(np):real,nx:integer,n(0:nx):real,dx:real)
              subroutine # Loads particles approximately into a 1-D distribution using a random load with the x prefilled
 load2d(np:integer,x(np):real,y(np):real,nx:integer,ny:integer,n(0:nx,0:ny):real,dx:real,dy:real)
              subroutine # Loads particles approximately into a 2-D distribution
+load2dfast(np:integer,x(np):real,y(np):real,nx:integer,ny:integer,n(0:nx,0:ny):real,dx:real,dy:real,xmin:real,ymin:real)
+             subroutine # Faster method loading particles approximately into a 2-D distribution
 shftpart(pgroup:ParticleGroup,is:integer,ishft:integer) subroutine
                         # Moves particle data to end of species group.
 copypart(pgroup:ParticleGroup,it:integer,nn:integer,ii:integer;istart:integer)

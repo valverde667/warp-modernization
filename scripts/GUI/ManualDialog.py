@@ -1,6 +1,7 @@
 #Boa:FramePanel:panel
 
-from wx import *
+import wx
+#from wx import *
 from wx.html import *
 from wx.lib.anchors import LayoutAnchors
 from wx.grid import *

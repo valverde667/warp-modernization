@@ -1,6 +1,7 @@
 #Boa:FramePanel:panel
 
-from wx import *
+import wx
+#from wx import *
 from wx.lib.anchors import LayoutAnchors
 from ..envelope import matchenv
 import newstdout
@@ -37,7 +38,7 @@ class panel(wx.Panel):
               pos=wx.Point(0, 0), size=wx.Size(556, 349), style=wx.TAB_TRAVERSAL)
         self._init_utils()
         self.SetClientSize(wx.Size(548, 315))
-        EVT_PAINT(self, self.OnMatchingguiPaint)
+        wx.EVT_PAINT(self, self.OnMatchingguiPaint)
 
         self.MatchingTypes = wx.Notebook(id=wxID_PANELMATCHINGTYPES,
               name='MatchingTypes', parent=self, pos=wx.Point(0, 0),
@@ -75,14 +76,14 @@ class panel(wx.Panel):
               style=wx.TAB_TRAVERSAL | wx.TE_PROCESS_TAB | wx.TE_PROCESS_ENTER,
               value='afinal')
         self.Finala.SetToolTipString('Final value of a to match to')
-        EVT_TEXT_ENTER(self.Finala, wxID_PANELFINALA, self.OnFinalaTextEnter)
+        wx.EVT_TEXT_ENTER(self.Finala, wxID_PANELFINALA, self.OnFinalaTextEnter)
 
         self.Finalb = wx.TextCtrl(id=wxID_PANELFINALB, name='Finalb',
               parent=self.panel2, pos=wx.Point(70, 34), size=wx.Size(80, 22),
               style=wx.TAB_TRAVERSAL | wx.TE_PROCESS_TAB | wx.TE_PROCESS_ENTER,
               value='bfinal')
         self.Finalb.SetToolTipString('Final value of b to match to')
-        EVT_TEXT_ENTER(self.Finalb, wxID_PANELFINALB, self.OnFinalbTextEnter)
+        wx.EVT_TEXT_ENTER(self.Finalb, wxID_PANELFINALB, self.OnFinalbTextEnter)
 
         self.FinalapLabel = wx.StaticText(id=wxID_PANELFINALAPLABEL,
               label="Final a'", name='FinalapLabel', parent=self.panel2,
@@ -99,14 +100,14 @@ class panel(wx.Panel):
               style=wx.TAB_TRAVERSAL | wx.TE_PROCESS_TAB | wx.TE_PROCESS_ENTER,
               value='apfinal')
         self.Finalap.SetToolTipString("Final value of a' to match to")
-        EVT_TEXT_ENTER(self.Finalap, wxID_PANELFINALAP, self.OnFinalapTextEnter)
+        wx.EVT_TEXT_ENTER(self.Finalap, wxID_PANELFINALAP, self.OnFinalapTextEnter)
 
         self.Finalbp = wx.TextCtrl(id=wxID_PANELFINALBP, name='Finalbp',
               parent=self.panel2, pos=wx.Point(70, 94), size=wx.Size(80, 22),
               style=wx.TAB_TRAVERSAL | wx.TE_PROCESS_TAB | wx.TE_PROCESS_ENTER,
               value='bpfinal')
         self.Finalbp.SetToolTipString("Final value of b' to match to")
-        EVT_TEXT_ENTER(self.Finalbp, wxID_PANELFINALBP, self.OnFinalbpTextEnter)
+        wx.EVT_TEXT_ENTER(self.Finalbp, wxID_PANELFINALBP, self.OnFinalbpTextEnter)
 
         self.VaryQuads = wx.StaticText(id=wxID_PANELVARYQUADS,
               label='Quads to vary', name='VaryQuads', parent=self.panel2,
@@ -116,14 +117,14 @@ class panel(wx.Panel):
               parent=self.panel2, pos=wx.Point(8, 140), size=wx.Size(30, 22),
               style=wx.TAB_TRAVERSAL | wx.TE_PROCESS_TAB | wx.TE_PROCESS_ENTER,
               value='')
-        EVT_TEXT_ENTER(self.SetQuad0, wxID_PANELSETQUAD0,
+        wx.EVT_TEXT_ENTER(self.SetQuad0, wxID_PANELSETQUAD0,
               self.OnSetquad0TextEnter)
 
         self.SetQuad1 = wx.TextCtrl(id=wxID_PANELSETQUAD1, name='SetQuad1',
               parent=self.panel2, pos=wx.Point(42, 140), size=wx.Size(30, 22),
               style=wx.TAB_TRAVERSAL | wx.TE_PROCESS_TAB | wx.TE_PROCESS_ENTER,
               value='')
-        EVT_TEXT_ENTER(self.SetQuad1, wxID_PANELSETQUAD1,
+        wx.EVT_TEXT_ENTER(self.SetQuad1, wxID_PANELSETQUAD1,
               self.OnSetquad1TextEnter)
 
         self.SetQuad2 = wx.TextCtrl(id=wxID_PANELSETQUAD2, name='SetQuad2',
@@ -131,7 +132,7 @@ class panel(wx.Panel):
               style=wx.TAB_TRAVERSAL | wx.TE_PROCESS_TAB | wx.TE_PROCESS_ENTER,
               value='')
         self.SetQuad2.SetToolTipString('')
-        EVT_TEXT_ENTER(self.SetQuad2, wxID_PANELSETQUAD2,
+        wx.EVT_TEXT_ENTER(self.SetQuad2, wxID_PANELSETQUAD2,
               self.OnSetquad2TextEnter)
 
         self.SetQuad3 = wx.TextCtrl(id=wxID_PANELSETQUAD3, name='SetQuad3',
@@ -139,7 +140,7 @@ class panel(wx.Panel):
               style=wx.TAB_TRAVERSAL | wx.TE_PROCESS_TAB | wx.TE_PROCESS_ENTER,
               value='')
         self.SetQuad3.SetToolTipString('')
-        EVT_TEXT_ENTER(self.SetQuad3, wxID_PANELSETQUAD3,
+        wx.EVT_TEXT_ENTER(self.SetQuad3, wxID_PANELSETQUAD3,
               self.OnSetquad3TextEnter)
 
         self.UseQuad = wx.RadioButton(id=wxID_PANELUSEQUAD, label='Quad',
@@ -147,7 +148,7 @@ class panel(wx.Panel):
               size=wx.Size(94, 24), style=wx.TAB_TRAVERSAL)
         self.UseQuad.SetValue(True)
         self.UseQuad.SetToolTipString('Use hard edged quadrupoles')
-        EVT_RADIOBUTTON(self.UseQuad, wxID_PANELUSEQUAD,
+        wx.EVT_RADIOBUTTON(self.UseQuad, wxID_PANELUSEQUAD,
               self.OnUsequadRadiobutton)
 
         self.UseHele = wx.RadioButton(id=wxID_PANELUSEHELE, label='Hele',
@@ -155,7 +156,7 @@ class panel(wx.Panel):
               size=wx.Size(94, 24), style=wx.TAB_TRAVERSAL)
         self.UseHele.SetValue(False)
         self.UseHele.SetToolTipString('Use hard edged elements')
-        EVT_RADIOBUTTON(self.UseHele, wxID_PANELUSEHELE,
+        wx.EVT_RADIOBUTTON(self.UseHele, wxID_PANELUSEHELE,
               self.OnUseheleRadiobutton)
 
         self.UseEmlt = wx.RadioButton(id=wxID_PANELUSEEMLT, label='Emlt',
@@ -163,7 +164,7 @@ class panel(wx.Panel):
               size=wx.Size(94, 24), style=wx.TAB_TRAVERSAL)
         self.UseEmlt.SetValue(False)
         self.UseEmlt.SetToolTipString('Use axially varying electric element')
-        EVT_RADIOBUTTON(self.UseEmlt, wxID_PANELUSEEMLT,
+        wx.EVT_RADIOBUTTON(self.UseEmlt, wxID_PANELUSEEMLT,
               self.OnUseemltRadiobutton)
 
         self.UseMmlt = wx.RadioButton(id=wxID_PANELUSEMMLT, label='Mmlt',
@@ -171,21 +172,21 @@ class panel(wx.Panel):
               size=wx.Size(94, 24), style=wx.TAB_TRAVERSAL)
         self.UseMmlt.SetValue(False)
         self.UseMmlt.SetToolTipString('Use axially varying magnetic elements')
-        EVT_RADIOBUTTON(self.UseMmlt, wxID_PANELUSEMMLT,
+        wx.EVT_RADIOBUTTON(self.UseMmlt, wxID_PANELUSEMMLT,
               self.OnUsemmltRadiobutton)
 
         self.MatchEnd = wx.Button(id=wxID_PANELMATCHEND, label='Match',
               name='MatchEnd', parent=self.panel2, pos=wx.Point(12, 236),
               size=wx.Size(80, 22), style=wx.TAB_TRAVERSAL)
         self.MatchEnd.SetToolTipString('')
-        EVT_BUTTON(self.MatchEnd, wxID_PANELMATCHEND, self.OnMatchendButton)
+        wx.EVT_BUTTON(self.MatchEnd, wxID_PANELMATCHEND, self.OnMatchendButton)
 
         self.PlotEndMatch = wx.CheckBox(id=wxID_PANELPLOTENDMATCH,
               label='Plot envelope after match', name='PlotEndMatch',
               parent=self.panel2, pos=wx.Point(12, 258), size=wx.Size(168, 24),
               style=wx.TAB_TRAVERSAL)
         self.PlotEndMatch.SetValue(True)
-        EVT_CHECKBOX(self.PlotEndMatch, wxID_PANELPLOTENDMATCH,
+        wx.EVT_CHECKBOX(self.PlotEndMatch, wxID_PANELPLOTENDMATCH,
               self.OnPlotendmatchCheckbox)
 
         self.EndMatchOutput = wx.TextCtrl(id=wxID_PANELENDMATCHOUTPUT,

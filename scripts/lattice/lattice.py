@@ -2772,9 +2772,23 @@ def addnewegrddataset(dx=None,dy=None,zlength=None,ex=None,ey=None,ez=None,
     top.egrdns = top.egrdns + 1
 
     # --- Get array size
-    if ex is not None: nx,ny,nz = array(shape(ex)) - array([1,1,1])
-    if ey is not None: nx,ny,nz = array(shape(ey)) - array([1,1,1])
-    if ez is not None: nx,ny,nz = array(shape(ez)) - array([1,1,1])
+    # --- If the number of dimensions is 2 (as with rz), add a middle dimension.
+    # --- A copy is made so that the original e[xyz] is not modified.
+    if ex is not None:
+        if len(shape(ex)) == 2:
+            ex = array(ex).copy()
+            ex.shape = (ex.shape[0], 1, ex.shape[1])
+        nx,ny,nz = array(shape(ex)) - array([1,1,1])
+    if ey is not None:
+        if len(shape(ey)) == 2:
+            ey = array(ey).copy()
+            ey.shape = (ey.shape[0], 1, ey.shape[1])
+        nx,ny,nz = array(shape(ey)) - array([1,1,1])
+    if ez is not None:
+        if len(shape(ez)) == 2:
+            ez = array(ez).copy()
+            ez.shape = (ez.shape[0], 1, ez.shape[1])
+        nx,ny,nz = array(shape(ez)) - array([1,1,1])
 
     # --- Make sure that the arrays are big enough
     top.egrdnx = max(nx,top.egrdnx)
@@ -2932,9 +2946,23 @@ def addnewbgrddataset(dx=None,dy=None,zlength=None,bx=None,by=None,bz=None,
     top.bgrdns = top.bgrdns + 1
 
     # --- Get array size
-    if bx is not None: nx,ny,nz = array(shape(bx)) - array([1,1,1])
-    if by is not None: nx,ny,nz = array(shape(by)) - array([1,1,1])
-    if bz is not None: nx,ny,nz = array(shape(bz)) - array([1,1,1])
+    # --- If the number of dimensions is 2 (as with rz), add a middle dimension.
+    # --- A copy is made so that the original b[xyz] is not modified.
+    if bx is not None:
+        if len(shape(bx)) == 2:
+            bx = array(bx).copy()
+            bx.shape = (bx.shape[0], 1, bx.shape[1])
+        nx,ny,nz = array(shape(bx)) - array([1,1,1])
+    if by is not None:
+        if len(shape(by)) == 2:
+            by = array(by).copy()
+            by.shape = (by.shape[0], 1, by.shape[1])
+        nx,ny,nz = array(shape(by)) - array([1,1,1])
+    if bz is not None:
+        if len(shape(bz)) == 2:
+            bz = array(bz).copy()
+            bz.shape = (bz.shape[0], 1, bz.shape[1])
+        nx,ny,nz = array(shape(bz)) - array([1,1,1])
 
     # --- Make sure that the arrays are big enough
     top.bgrdnx = max(nx,top.bgrdnx)

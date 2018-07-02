@@ -17,6 +17,7 @@ build3parallel
 *.so
 forthonf2c.h
 ranffortran.c
+__version__.py
 
 # Ignore local definitions for building
 Makefile.local

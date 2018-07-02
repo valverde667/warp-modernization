@@ -4,7 +4,7 @@ from wx import *
 from wx.lib.anchors import LayoutAnchors
 from wx.grid import *
 from warp import *
-from pyOpenDX import *
+from Opyndx import *
 import __main__
 
 [wxID_PANEL, wxID_PANELFILENAME, wxID_PANELFORMAT, wxID_PANELMODE, 
@@ -113,7 +113,7 @@ class panel(wx.Panel):
               size=wx.Size(21, 13), style=0)
 
         self.Xscale = wx.Slider(id=wxID_PANELXSCALE, maxValue=1000, minValue=0,
-              name='Xscale', parent=self, point=wx.Point(150, 122),
+              name='Xscale', parent=self, pos=wx.Point(150, 122),
               size=wx.Size(139, 20), style=wx.SL_HORIZONTAL,
               validator=wx.DefaultValidator, value=1)
         self.Xscale.SetLabel('')
@@ -134,7 +134,7 @@ class panel(wx.Panel):
               value='10.')
 
         self.Yscale = wx.Slider(id=wxID_PANELYSCALE, maxValue=1000, minValue=0,
-              name='Yscale', parent=self, point=wx.Point(150, 144),
+              name='Yscale', parent=self, pos=wx.Point(150, 144),
               size=wx.Size(139, 20), style=wx.SL_HORIZONTAL,
               validator=wx.DefaultValidator, value=1)
         self.Yscale.SetLabel('')
@@ -155,7 +155,7 @@ class panel(wx.Panel):
               value='10.')
 
         self.Zscale = wx.Slider(id=wxID_PANELZSCALE, maxValue=1000, minValue=0,
-              name='Zscale', parent=self, point=wx.Point(150, 166),
+              name='Zscale', parent=self, pos=wx.Point(150, 166),
               size=wx.Size(139, 20), style=wx.SL_HORIZONTAL,
               validator=wx.DefaultValidator, value=1)
         self.Zscale.SetLabel('')

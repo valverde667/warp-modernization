@@ -1,6 +1,7 @@
 #Boa:FramePanel:panel
 
-from wx import *
+import wx
+#from wx import *
 from warp import *
 
 [wxID_PANEL] = map(lambda _init_ctrls: wx.NewId(), range(1))

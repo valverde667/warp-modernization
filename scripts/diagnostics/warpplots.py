@@ -272,8 +272,8 @@ def setup(makepsfile=0,prefix=None,cgmlog=1,runcomments='',
 
     # --- Save the plotfile name and number, since its not retreivable
     # --- from gist. They are broadcast to the other processors if needed.
-    setup.pname = parallel.broadcast(pname)
-    setup.pnumb = parallel.broadcast(pnumb)
+    setup.pname = warp_parallel.broadcast(pname)
+    setup.pnumb = warp_parallel.broadcast(pnumb)
 
     # --- Only PE0 (or serial processor) should run the rest of this routine.
     if me > 0: return
@@ -393,11 +393,11 @@ def winon(winnum=None,dpi=100,prefix=None,suffix=None,xon=1,style='work.gs'):
             # --- The try/except construct takes care of the case where
             # --- the gist package was not compiled with X11.
             try:
-                window(winnum,dpi=dpi,display=os.environ['DISPLAY'],style=style)
+                window(winnum,dpi=dpi,display=os.environ.get('DISPLAY',''),style=style)
             except:
                 window(winnum,dpi=dpi,style=style)
         else:
-            if xon: window(winnum,dpi=dpi,style=style,display=os.environ['DISPLAY'])
+            if xon: window(winnum,dpi=dpi,style=style,display=os.environ.get('DISPLAY',''))
             else:   window(winnum,dpi=dpi,style=style,display='')
     else:
         # --- Get the next winnum if it wasn't passed in.
@@ -420,7 +420,7 @@ def winon(winnum=None,dpi=100,prefix=None,suffix=None,xon=1,style='work.gs'):
             assert winnum not in _matplotwindows,"Cannot redefine a window"
         # --- Open window
         if xon:
-            window(winnum,dpi=dpi,display=os.environ['DISPLAY'],
+            window(winnum,dpi=dpi,display=os.environ.get('DISPLAY',''),
                    dump=1,hcp=pname,style=style)
         else:
             window(winnum,dpi=dpi,display='',
@@ -2686,7 +2686,7 @@ def colorbar(zmin,zmax,uselog=None,ncolor=100,view=None,levs=None,
         # --- the range of the level relative to other levels.
         if (isinstance(zmin,types.IntType) and isinstance(zmax,types.IntType) and
             zmin >= 0 and zmax <=199):
-            plotval = arange(zmin,zmax+1,typecode=ubyte)[:,newaxis]*ones(2)
+            plotval = arange(zmin,zmax+1,dtype=ubyte)[:,newaxis]*ones(2)
         else:
             plotval = (arange(ncolor)/(ncolor-1.))[:,newaxis]*ones(2)
         pli(plotval,xmin,ymin,xmax,ymax,top=ctop,local=1)

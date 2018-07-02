@@ -5,9 +5,9 @@ import os
 import h5py
 import numpy as np
 from scipy import constants
-from generic_diag import OpenPMDDiagnostic
-from parallel import gatherarray, mpiallgather
-from data_dict import macro_weighted_dict, weighting_power_dict, \
+from .generic_diag import OpenPMDDiagnostic
+from warp_parallel import gatherarray, mpiallgather
+from .data_dict import macro_weighted_dict, weighting_power_dict, \
      particle_quantity_dict
 
 class ParticleDiagnostic(OpenPMDDiagnostic) :
@@ -122,7 +122,7 @@ class ParticleDiagnostic(OpenPMDDiagnostic) :
         # If the number of particles is unknown, set it to 1
         if N is None:
             N = 1
-        
+
         # Generic attributes
         grp.attrs["particleShape"] = float( self.top.depos_order[0][0] )
         grp.attrs["currentDeposition"] = np.string_("Esirkepov")
@@ -207,7 +207,7 @@ class ParticleDiagnostic(OpenPMDDiagnostic) :
         selected_nglobal_dict = {}
         # Loop over the different species, select the particles and fill
         # select_array_dict, selected_nlocals_dict, selected_nglobal_dict
-        for species_name in self.species_dict:
+        for species_name in sorted(self.species_dict.keys()):
             # Select the particles that will be written
             species = self.species_dict[species_name]
             select_array_dict[species_name] = self.apply_selection( species )
@@ -238,7 +238,7 @@ class ParticleDiagnostic(OpenPMDDiagnostic) :
         # (f is None if this processor does not participate in writing data)
 
         # Loop over the different species and write the requested quantities
-        for species_name in self.species_dict :
+        for species_name in sorted(self.species_dict.keys()) :
 
             # Get the HDF5 species group
             if f is not None:
@@ -383,10 +383,12 @@ class ParticleDiagnostic(OpenPMDDiagnostic) :
             # Setup the attributes of the top level of the file
             self.setup_openpmd_file( f, iteration, time, dt )
             # Setup the meshes group (contains all the particles)
+            f.attrs["particlesPath"] = np.string_("particles/")
             particle_path = "/data/%d/particles/" %iteration
             particle_grp = f.require_group(particle_path)
             # Loop through all particle species
-            for species_name, species in self.species_dict.iteritems():
+            for species_name in sorted(self.species_dict.keys()):
+                species = self.species_dict[species_name]
 
                 # Check the number of particles to write
                 if select_nglobal_dict is not None:
@@ -603,6 +605,7 @@ class ParticleDiagnostic(OpenPMDDiagnostic) :
         for keys in dict_keys_val.keys():
             string_to_exec=string_to_exec.replace(keys,"dict_keys_val[\'"+keys+"\']")
         string_to_exec='quantity_array = '+string_to_exec
-        exec(string_to_exec)
+        local_dict = {'dict_keys_val':dict_keys_val, 'quantity_array':None}
+        exec(string_to_exec, globals(), local_dict)
 
-        return( quantity_array )
+        return( local_dict['quantity_array'] )

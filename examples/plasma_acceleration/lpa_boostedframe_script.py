@@ -90,7 +90,7 @@ particle_pusher = 1
 # Current smoothing parameters
 # ----------------------------
 # Turn current smoothing on or off (0:off; 1:on)
-use_smooth = 1 
+use_smooth = 1
 # Number of passes of smoother and compensator in each direction (x, y, z)
 npass_smooth = array([[ 1 , 0 ], [ 1 , 0 ], [ 1 , 0 ]])
 # Smoothing coefficients in each direction (x, y, z)
@@ -160,7 +160,7 @@ plasma_ymax = 25.e-6
 def plasma_dens_func( x, y, z ):
     """
     User-defined function: density profile of the plasma
-    
+
     It should return the relative density with respect to n_plasma,
     at the position x, y, z (i.e. return a number between 0 and 1)
 
@@ -184,7 +184,7 @@ def plasma_dens_func( x, y, z ):
 # -----------------
 # Initialize beam electrons (0:off, 1:on)
 # (Please be aware that initializing a beam in 2D geometry makes very little
-# physical sense, because of the long range of its space-charge fields) 
+# physical sense, because of the long range of its space-charge fields)
 use_beam = 1
 # Longitudinal momentum of the beam
 beam_uz = 1000.
@@ -207,7 +207,7 @@ beam_rmax = beam_xmax
 def beam_dens_func(x, y, z):
     """
     User-defined function: density profile of the beam
-    
+
     It should return the relative density with respect to n_beam,
     at the position x, y, z (i.e. return a number between 0 and 1)
 
@@ -326,12 +326,12 @@ if use_beam:
 # Create an object to store the information about plasma injection
 plasma_injector = PlasmaInjector( elec, ions, w3d, top, dim,
         plasma_nx, plasma_ny, plasma_nz, plasma_zmin,
-        plasma_zmax, plasma_xmax, plasma_ymax, plasma_dens_func, 
+        plasma_zmax, plasma_xmax, plasma_ymax, plasma_dens_func,
         uz_m = plasma_uz_m )
 # Continuously inject the plasma, if the moving window is on
 if use_moving_window :
     installuserinjection( plasma_injector.continuous_injection )
-        
+
 # Setup the diagnostics
 # ---------------------
 remove_existing_directory( ['diags', 'lab_diags'] )
@@ -341,20 +341,20 @@ if write_fields == 1:
     installafterstep( diag1.write )
 if write_particles == 1:
     diag2 = ParticleDiagnostic( period=diag_period, top=top, w3d=w3d,
-            species={ species.name : species for species in listofallspecies }, 
+            species={ species.name : species for species in listofallspecies },
             comm_world=comm_world, lparallel_output=parallel_output )
     installafterstep( diag2.write )
 if (write_lab_frame == 1) and (gamma_boost>1):
     diag0 = BoostedFieldDiagnostic( zmin_lab, zmax_lab, clight,
-        dt_snapshot_lab, Ntot_snapshot_lab, gamma_boost, 
+        dt_snapshot_lab, Ntot_snapshot_lab, gamma_boost,
         period=diag_period, top=top, w3d=w3d, em=em, comm_world=comm_world )
     installafterstep( diag0.write )
     diag3 = BoostedParticleDiagnostic( zmin_lab, zmax_lab, clight,
-        dt_snapshot_lab, Ntot_snapshot_lab, gamma_boost, 
+        dt_snapshot_lab, Ntot_snapshot_lab, gamma_boost,
         period=diag_period, top=top, w3d=w3d, em=em, comm_world=comm_world,
         species={ species.name : species for species in listofallspecies })
     installafterstep(diag3.write)
-    
+
 print('\nInitialization complete\n')
 
 # -----------------------------------------------------------------------------
@@ -368,7 +368,7 @@ if interactive==0:
         step(10)
         n_stepped = n_stepped + 10
     printtimers()
-        
+
 # Interactive mode
 elif interactive==1:
-    print '<<< To execute n steps, type "step(n)" at the prompt >>>'
+    print('<<< To execute n steps, type "step(n)" at the prompt >>>')

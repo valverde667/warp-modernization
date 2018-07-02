@@ -76,7 +76,7 @@ c     --- Needed for Sherlock form of approximation
 c     --- Now loop over the test particles.
       do i=1,np
 
-        if (vthsqi2(i) < 1.e-6) continue
+        if (vthsqi2(i) < 1.e-6) cycle
 
         vthsq2 = epvth*vthsqi2(i) + (1. - epvth)*vthsqinit2
         nudt = nudtcoeff*density2(i)*loglambda(i)/vthsq2**1.5
@@ -123,7 +123,7 @@ c Compute 3D speed and some other speed normalizations for relative
 c angles in coordinate frame oriented parallel to local velocity
 
         uu  =  sqrt(uxf**2+uyf**2+uzf**2) + 1.e-06*sqrt(vthsqinit1)
-        if (uu == 0.) continue
+        if (uu == 0.) cycle
 
         if (lrelativ) then
           gamsq = 1. + (uxf*uxf + uyf*uyf + uzf*uzf)/clight**2

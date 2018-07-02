@@ -1,6 +1,7 @@
 #Boa:FramePanel:panel
 
-from wx import *
+import wx
+#from wx import *
 from warp import *
 from StringIO import *
 
@@ -25,18 +26,18 @@ class panel(wx.Panel):
               'cyan', 'magenta', 'yellow'], id=wxID_PANELCOLOR, name='Color',
               parent=self, pos=wx.Point(512, 0), size=wx.Size(80, 21), style=0,
               validator=wx.DefaultValidator)
-        EVT_CHOICE(self.Color, wxID_PANELCOLOR, self.OnColorChoice)
+        wx.EVT_CHOICE(self.Color, wxID_PANELCOLOR, self.OnColorChoice)
 
         self.LineType = wx.Choice(choices=['solid', 'dash', 'dot', 'dashdot',
               'dashdotdot', 'none'], id=wxID_PANELLINETYPE, name='LineType',
               parent=self, pos=wx.Point(512, 24), size=wx.Size(80, 21), style=0,
               validator=wx.DefaultValidator)
-        EVT_CHOICE(self.LineType, wxID_PANELLINETYPE, self.OnLinetypeChoice)
+        wx.EVT_CHOICE(self.LineType, wxID_PANELLINETYPE, self.OnLinetypeChoice)
 
         self.Marker = wx.TextCtrl(id=wxID_PANELMARKER, name='Marker',
               parent=self, pos=wx.Point(560, 72), size=wx.Size(22, 22),
               style=wx.TE_PROCESS_ENTER, value='A')
-        EVT_TEXT_ENTER(self.Marker, wxID_PANELMARKER, self.OnMarkerTextEnter)
+        wx.EVT_TEXT_ENTER(self.Marker, wxID_PANELMARKER, self.OnMarkerTextEnter)
 
         self.staticText1 = wx.StaticText(id=wxID_PANELSTATICTEXT1,
               label='Marker', name='staticText1', parent=self, pos=wx.Point(516,
@@ -49,12 +50,12 @@ class panel(wx.Panel):
 #        self.Size = wx.SpinCtrl(id=wxID_PANELSIZE, initial=1, max=10, min=1,
 #              name='Size', parent=self, pos=wx.Point(550, 48), 
 #              size=wx.Size(40,22), style=wx.SP_ARROW_KEYS)
-#        EVT_SPINCTRL(self.Size, wxID_PANELSIZE, self.OnSizeSpinctrl)
+#        wx.EVT_SPINCTRL(self.Size, wxID_PANELSIZE, self.OnSizeSpinctrl)
 
         self.MarkerSize = wx.SpinCtrl(id=wxID_PANELMARKERSIZE, initial=1, max=10,
               min=1, name='MarkerSize', parent=self, pos=wx.Point(550, 96),
               size=wx.Size(40, 22), style=wx.SP_ARROW_KEYS)
-        EVT_SPINCTRL(self.MarkerSize, wxID_PANELMARKERSIZE,
+        wx.EVT_SPINCTRL(self.MarkerSize, wxID_PANELMARKERSIZE,
               self.OnMarkersizeSpinctrl)
 
         self.staticText3 = wx.StaticText(id=wxID_PANELSTATICTEXT3, label='Size',
@@ -64,12 +65,12 @@ class panel(wx.Panel):
         self.Marks = wx.CheckBox(id=wxID_PANELMARKS, label='', name='Marks',
               parent=self, pos=wx.Point(496, 71), size=wx.Size(20, 20), style=0)
         self.Marks.SetValue(false)
-        EVT_CHECKBOX(self.Marks, wxID_PANELMARKS, self.OnMarksCheckbox)
+        wx.EVT_CHECKBOX(self.Marks, wxID_PANELMARKS, self.OnMarksCheckbox)
 
     def __init__(self, parent):
         self._init_ctrls(parent)
         self.Move(wx.Point(0,0))
-        import pzplots
+        import warp.diagnostics.pzplots as pzplots
         import string
         listpzplots = StringIO(pzplots.__doc__)
         self.pltcolor = 'fg'
@@ -130,7 +131,7 @@ class panel(wx.Panel):
         iy = iymin + (il-1)*iysize
         exec("self."+n+" = wx.Button(id=wxID_PANEL"+n+", label='"+n+"',name='"+n+"', parent=self, pos=wx.Point(%g, %g), size=wx.Size(%g,%g), style=0)"%(ix,iy,ixsize,iysize))
         exec('self.'+n+'.SetToolTipString("'+h+'")')
-        exec("EVT_BUTTON(self."+n+", wxID_PANEL"+n+", self.On"+n+"Button)")
+        exec("wx.EVT_BUTTON(self."+n+", wxID_PANEL"+n+", self.On"+n+"Button)")
 
     def addfunction(self,f1,f2):
         self.f1=f2

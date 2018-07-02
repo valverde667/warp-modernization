@@ -15,7 +15,7 @@ from scipy.constants import c
 from field_diag import FieldDiagnostic
 from field_extraction import get_dataset
 from data_dict import z_offset_dict
-from parallel import gather, me, mpiallgather
+from warp_parallel import gather, me, mpiallgather
 try:
     from mpi4py import MPI
 except ImportError:

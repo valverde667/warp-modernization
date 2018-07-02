@@ -7,7 +7,7 @@ class PlasmaInjector( object ):
     def __init__(self, elec, ions, w3d, top, dim, p_nx, p_ny, p_nz,
                  p_zmin, p_zmax, p_xmax, p_ymax, dens_func=None,
                  ux_m=0., uy_m=0., uz_m=0., ux_th=0., uy_th=0., uz_th=0.,
-                 ncells_from_edge=2, injection_direction=1, 
+                 ncells_from_edge=None, injection_direction=1,
                  p_xmin=None, p_ymin=None ):
         """
         Initialize an injector for the plasma.
@@ -49,20 +49,14 @@ class PlasmaInjector( object ):
            Only the electrons have these momenta added to their mean momentum.
 
         ncells_from_edge: int
-           The number of cells between the initial injection position and
-           the right end of the simulation box.
-           For periodic simulations, it is advised to use ncells_from_edge=0
-           so that the plasma fills the whole.
-           For simulations with moving window and continuous injection, it is
-           advised to keep the default (ncells_from_edge=2) so that the 
-           injector never leaves the plasma
+           Unused: this is only kept for backward compatibility
 
         injection_direction: int
            The direction of the continuous injection.
-           For injection_direction = 1: plasma is continuously 
-           injected at the right end 
-           of the simulation box. 
-           For injection_direction = -1: plasma is continuously 
+           For injection_direction = 1: plasma is continuously
+           injected at the right end
+           of the simulation box.
+           For injection_direction = -1: plasma is continuously
            injected at the left end
         """
         # Register the species to be injected
@@ -77,7 +71,6 @@ class PlasmaInjector( object ):
         self.w3d = w3d
         self.top = top
         self.p_nz = p_nz
-        self.ncells_from_edge = ncells_from_edge
 
         # Momenta parameters
         self.ux_m = ux_m
@@ -116,21 +109,17 @@ class PlasmaInjector( object ):
 
         # For the continuous injection:
         self.injection_direction = injection_direction
-        # Continuously varying injection position (moves with moving window)
-        if injection_direction > 0:
-            zmmax =  w3d.zmmax + top.zgrid
-            self.z_inject = zmmax - ncells_from_edge*w3d.dz
-        elif injection_direction < 0:
-            zmmin =  w3d.zmmin + top.zgrid
-            self.z_inject = zmmin + ncells_from_edge*w3d.dz
+
         # Maximum position after which the plasma stops being injected
         # (moves with the plasma) and position of the edge of the plasma
         if injection_direction > 0:
             self.p_zmax = p_zmax
-            self.z_end_plasma = min( p_zmax, zmmax - ncells_from_edge*w3d.dz )
+            zmmax =  w3d.zmmax + top.zgrid
+            self.z_end_plasma = min( p_zmax, zmmax )
         elif injection_direction < 0:
             self.p_zmin = p_zmin
-            self.z_end_plasma = max( p_zmin, zmmin + ncells_from_edge*w3d.dz )
+            zmmin =  w3d.zmmin + top.zgrid
+            self.z_end_plasma = max( p_zmin, zmmin )
         # Mean speed of the end of the plasma
         self.v_plasma = c * uz_m * self.gamma_inv_m
 
@@ -139,6 +128,10 @@ class PlasmaInjector( object ):
                           max(p_zmin, w3d.zmminlocal + top.zgrid),
                           min(p_zmax, w3d.zmmaxlocal + top.zgrid) )
 
+        # Handle unused parameters
+        if ncells_from_edge is not None:
+            import warnings
+            warnings.warn("ncells_from_edge is not used.", DeprecationWarning)
 
     def load_plasma( self, z_end_plasma, zmin, zmax ):
         """
@@ -275,35 +268,38 @@ class PlasmaInjector( object ):
         # (It moves along with the plasma because the user gives p_zmax at t=0)
         if self.injection_direction > 0:
             self.p_zmax += self.v_plasma * self.top.dt
+            # If the plasma has been injected over its full length,
+            # shut down the injection
+            if self.z_end_plasma > self.p_zmax:
+                return
         elif self.injection_direction < 0:
-            self.p_zmin += self.v_plasma * self.top.dt 
-        # Move the injection position with the moving window
-        if self.injection_direction > 0:
-            zmmax = self.w3d.zmmax + self.top.zgrid
-            self.z_inject = zmmax - self.ncells_from_edge*self.w3d.dz
-        else:            
-            zmmin = self.w3d.zmmin + self.top.zgrid
-            self.z_inject = zmmin + self.ncells_from_edge*self.w3d.dz
+            self.p_zmin += self.v_plasma * self.top.dt
+            # If the plasma has been injected over its full length,
+            # shut down the injection
+            if self.z_end_plasma < self.p_zmin:
+                return
 
         # Add slices filled with plasma
         if self.injection_direction > 0:
-            while (self.z_end_plasma < self.z_inject) and \
-                (self.z_end_plasma < self.p_zmax) :
-                # Add one slice
-                self.load_plasma( self.z_end_plasma + self.w3d.dz,
+            zmmax = self.w3d.zmmax + self.top.zgrid
+            nslices = int((zmmax-self.z_end_plasma)/self.w3d.dz)
+            if nslices>0:
+                # Add slices
+                self.load_plasma( self.z_end_plasma + nslices*self.w3d.dz,
                                 self.z_end_plasma,
-                                self.z_end_plasma + self.w3d.dz )
-                # One slice has been added ; increment position of plasma end
-                self.z_end_plasma += self.w3d.dz            
+                                self.z_end_plasma + nslices*self.w3d.dz )
+                # Slices have been added ; increment position of plasma end
+                self.z_end_plasma += nslices*self.w3d.dz
         elif self.injection_direction < 0:
-            while (self.z_end_plasma > self.z_inject) and \
-                (self.z_end_plasma > self.p_zmin) :
-                # Add one slice
-                self.load_plasma( self.z_end_plasma - self.w3d.dz,
-                                self.z_end_plasma - self.w3d.dz,
+            zmmin = self.w3d.zmmin + self.top.zgrid
+            nslices = int((self.z_end_plasma-zmmin)/self.w3d.dz)
+            if nslices>0:
+                # Add slices
+                self.load_plasma( self.z_end_plasma - nslices*self.w3d.dz,
+                                self.z_end_plasma - nslices*self.w3d.dz,
                                 self.z_end_plasma )
-                # One slice has been added ; increment position of plasma end
-                self.z_end_plasma -= self.w3d.dz
+                # Slices have been added ; increment position of plasma end
+                self.z_end_plasma -= nslices*self.w3d.dz
 
 
 def unalign_angles( thetap ) :

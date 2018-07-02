@@ -1,6 +1,7 @@
 #Boa:Dialog:wxDialog1
 
-from wx import *
+import wx
+#from wx import *
 import WarpPanel
 
 def create(parent):
@@ -21,7 +22,7 @@ class wxDialog1(wx.Dialog):
               style=wx.DEFAULT_DIALOG_STYLE, title='wx.Dialog1')
         self._init_utils()
         self.SetClientSize(wx.Size(630, 410))
-        EVT_CLOSE(self, self.OnWxdialog1Close)
+        wx.EVT_CLOSE(self, self.OnWxdialog1Close)
 
         self.window1 = wx.Window(id=wxID_WXDIALOG1WINDOW1, name='window1',
               parent=self, pos=wx.Point(0, 24), size=wx.Size(640, 416), style=0)
@@ -31,7 +32,7 @@ class wxDialog1(wx.Dialog):
               pos=wx.Point(0, 0), size=wx.Size(75, 23), style=0)
         self.tonotebook.SetBackgroundColour(wx.Colour(128, 128, 128))
         self.tonotebook.SetForegroundColour(wx.Colour(255, 255, 255))
-        EVT_BUTTON(self.tonotebook, wxID_WXDIALOG1TONOTEBOOK,
+        wx.EVT_BUTTON(self.tonotebook, wxID_WXDIALOG1TONOTEBOOK,
               self.OnTonotebookButton)
 
     def __init__(self, parent, child, title):
@@ -71,7 +72,7 @@ class wxFrame1(wx.Frame):
         self._init_utils()
         self.SetClientSize(wx.Size(630, 410))
         self.SetAutoLayout(True)
-        EVT_CLOSE(self, self.OnWxframe1Close)
+        wx.EVT_CLOSE(self, self.OnWxframe1Close)
 
         self.window1 = wx.Window(id=wxID_WXDIALOG1WINDOW1, name='window1',
               parent=self, pos=wx.Point(0, 24), size=wx.Size(640, 416), style=0)
@@ -81,7 +82,7 @@ class wxFrame1(wx.Frame):
               pos=wx.Point(0, 0), size=wx.Size(75, 23), style=0)
         self.tonotebook.SetBackgroundColour(wx.Colour(128, 128, 128))
         self.tonotebook.SetForegroundColour(wx.Colour(255, 255, 255))
-        EVT_BUTTON(self.tonotebook, wxID_WXDIALOG1TONOTEBOOK,
+        wx.EVT_BUTTON(self.tonotebook, wxID_WXDIALOG1TONOTEBOOK,
               self.OnTonotebookButton)
 
     def __init__(self, parent, child, title):

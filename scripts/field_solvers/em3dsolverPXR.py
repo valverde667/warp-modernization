@@ -256,6 +256,9 @@ def addparticlesPXR(self,x=0.,y=0.,z=0.,vx=0.,vy=0.,vz=0.,gi=1.,w=None,
         gi = gi[cond]
         pids = compress(cond,pids,0)
 
+        # Update also the number of particles
+        nps0 = x.size
+
     if lnewparticles:
         # --- Set time of creation
         if top.tbirthpid > 0:

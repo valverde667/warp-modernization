@@ -1,6 +1,7 @@
 #Boa:Dialog:wxDialog1
 
-from wx import *
+import wx
+#from wx import *
 from warp import *
 
 def create(parent):
@@ -38,7 +39,7 @@ class wxDialog1(wx.Dialog):
         self.Browser = wx.Button(id=wxID_WXDIALOG1BROWSER, label='Browse',
               name='Browser', parent=self, pos=wx.Point(230, 8), size=wx.Size(80,
               22), style=0)
-        EVT_BUTTON(self.Browser, wxID_WXDIALOG1BROWSER, self.OnBrowserButton)
+        wx.EVT_BUTTON(self.Browser, wxID_WXDIALOG1BROWSER, self.OnBrowserButton)
 
         self.staticText2 = wx.StaticText(id=wxID_WXDIALOG1STATICTEXT2,
               label='Attributes:', name='staticText2', parent=self,
@@ -52,7 +53,7 @@ class wxDialog1(wx.Dialog):
               label='Save python variables', name='Pyvars', parent=self,
               pos=wx.Point(170, 38), size=wx.Size(140, 22), style=0)
         self.Pyvars.SetValue(true)
-        EVT_TOGGLEBUTTON(self.Pyvars, wxID_WXDIALOG1PYVARS,
+        wx.EVT_TOGGLEBUTTON(self.Pyvars, wxID_WXDIALOG1PYVARS,
               self.OnPyvarsTogglebutton)
 
         self.Text3 = wx.StaticText(id=wxID_WXDIALOG1TEXT3, label='Suffix:',
@@ -67,7 +68,7 @@ class wxDialog1(wx.Dialog):
               parent=self, pos=wx.Point(170, 68), size=wx.Size(140, 22), style=0)
         self.Dump.SetFont(wx.Font(12, wx.SWISS, wx.NORMAL, wx.BOLD, false, ''))
         self.Dump.SetForegroundColour(wx.Colour(230, 0, 0))
-        EVT_BUTTON(self.Dump, wxID_WXDIALOG1DUMP, self.OnDumpButton)
+        wx.EVT_BUTTON(self.Dump, wxID_WXDIALOG1DUMP, self.OnDumpButton)
 
     def __init__(self, parent):
         self._init_ctrls(parent)

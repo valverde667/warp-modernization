@@ -14,7 +14,7 @@ import numpy as np
 import time
 from scipy.constants import c
 from particle_diag import ParticleDiagnostic
-from parallel import gatherarray, mpiallgather
+from warp_parallel import gatherarray, mpiallgather
 from data_dict import particle_quantity_dict
 
 class ParticleAccumulator(ParticleDiagnostic):

@@ -4841,12 +4841,10 @@ c           --- Calculate linear weights
      &                          u0*w1*egrdex(i  ,0  ,k+1,id) +
      &                          u1*w1*egrdex(i+1,0  ,k+1,id))
 
-              if (.not. egrdrz(id)) then
-                eyt = ysign*efac*(u0*w0*egrdey(i  ,0  ,k  ,id) +
-     &                            u1*w0*egrdey(i+1,0  ,k  ,id) +
-     &                            u0*w1*egrdey(i  ,0  ,k+1,id) +
-     &                            u1*w1*egrdey(i+1,0  ,k+1,id))
-              endif
+              eyt = ysign*efac*(u0*w0*egrdey(i  ,0  ,k  ,id) +
+     &                          u1*w0*egrdey(i+1,0  ,k  ,id) +
+     &                          u0*w1*egrdey(i  ,0  ,k+1,id) +
+     &                          u1*w1*egrdey(i+1,0  ,k+1,id))
 
               ezt = zsign*efac*(u0*w0*egrdez(i  ,0  ,k  ,id) +
      &                          u1*w0*egrdez(i+1,0  ,k  ,id) +
@@ -4889,13 +4887,14 @@ c              eyt = temp
 c            endif
 
             if (egrdrz(id)) then
-c             --- For the RZ case, ext now holds Er. Convert it to Ex and Ey.
-c             --- Note that this ignores Etheta (in eyt) for now.
+c             --- For the RZ case, ext now holds Er and eyt holds Etheta. Convert to Ex and Ey.
               if (xt .ne. 0) then
-                eyt = ext*yt0/xt
-                ext = ext*xt0/xt
+                exsave = ext
+                eysave = eyt
+                ext = exsave*xt0/xt - eysave*yt0/xt
+                eyt = exsave*yt0/xt + eysave*xt0/xt
               else
-                eyt = 0.
+                eyt = eyt
                 ext = ext
               endif
             endif
@@ -5439,8 +5438,7 @@ c              byt = temp
 c            endif
 
             if (bgrdrz(id)) then
-c             --- For the RZ case, bxt now holds Br. Convert it to Bx and By.
-c             --- Note that this ignores Btheta (in byt) for now.
+c             --- For the RZ case, bxt now holds Br and byt holds Btheta. Convert to Bx and By.
               if (xt .ne. 0) then
                 bxsave = bxt
                 bysave = byt

@@ -29,7 +29,7 @@ Open a new terminal and make sure that the default `python` is the Anaconda vers
 
 Run 
 ```
-conda install -c conda-forge numpy scipy h5py gcc mpi4py
+conda install -c conda-forge numpy scipy h5py dateutil gcc mpi4py
 ```
 
 ## Installing Forthon
@@ -51,7 +51,7 @@ then `cd` into the repository `warp/pywarp90` and create two files:
 
 - A file named `Makefile.local.pympi` which contains the following text:
 
-```FCOMP= -F gfortran --fcompex mpif90```
+```FCOMP= -F gfortran```
 
 - A file named `setup.local.py` which contains the following text:
 

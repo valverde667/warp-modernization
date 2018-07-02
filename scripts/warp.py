@@ -63,8 +63,8 @@ del imp
 # --- This also creates a number of routines which are needed for parallel
 # --- data handling. These routines all have sensible default results when
 # --- not running in parallel.
-from parallel import *
-import parallel
+from warp_parallel import *
+import warp_parallel
 
 try:
     import gist
@@ -260,29 +260,6 @@ openbc    = top.openbc
 absorb    = top.absorb
 reflect   = top.reflect
 
-# --- Set handy units conversion factors, converting from named unit to MKS.
-inch = 0.0254  # inches to meter
-nm = 1.e-9     # nm to meter
-um = 1.e-6     # um to meter
-mm = 1.e-3     # mm to meter
-cm = 0.01      # cm to meter
-km = 1.e3      # km to meter
-ps = 1.0e-12   # picosecond to second
-ns = 1.0e-9    # nanosecond to second
-us = 1.0e-6    # microsecond to second
-ms = 1.0e-3    # millesecond to second
-kV = 1.0e3     # kV to V
-keV = 1.0e3    # keV to eV
-MV = 1.0e6     # MV to V
-MeV = 1.0e6    # MeV to eV
-GV = 1.0e9     # GV to V
-GeV = 1.0e9    # GeV to eV
-mA = 1.0e-3    # mA to A
-uC = 1.0e-6    # micro-Coulombs to Coulombs
-nC = 1.0e-9    # nano-Coulombs to Coulombs
-gauss = 1.e-4  # gauss to T
-deg = pi/180.0 # degrees to radians
-
 # --- Set pgroup
 #top.pgroup = top.pgroupstatic
 top.pgroup = ParticleGroup()
@@ -341,10 +318,11 @@ def printversion(v):
 
 def versionstext():
     "Returns a string which has the version information of packages loaded."
+    import __version__
     r = '# Warp\n'
-    r += '# Origin date: %s\n'%warpC.origindate
-    r += '# Local date: %s\n'%warpC.localdate
-    r += '# Commit hash: %s\n'%warpC.commithash
+    r += '# Origin date: %s\n'%__version__.__origindate__
+    r += '# Local date: %s\n'%__version__.__localdate__
+    r += '# Commit hash: %s\n'%__version__.__hash__
     r += '# %s\n'%__file__
     try:
         r += '# %s\n'%warpC.__file__
@@ -993,7 +971,7 @@ def restoreolddump(ff):
 ##############################################################################
 ##############################################################################
 # --- Dump command
-def dump(filename=None,prefix='',suffix='',attr='dump',serial=0,onefile=0,pyvars=1,
+def dump(filename=None,prefix='',suffix='',attr='dump',serial=0,pyvars=1,
          ff=None,varsuffix=None,histz=2,resizeHist=1,verbose=false,
          hdf=0,format='',datawriter=PW.PW,skip=[]):
     """
@@ -1004,10 +982,6 @@ def dump(filename=None,prefix='',suffix='',attr='dump',serial=0,onefile=0,pyvars
                    restartable dump file.
     - serial=0: When 1, does a dump of only non-parallel data (parallel version
                 only).
-    - onefile=0: When 1, all processors dump to one file, otherwise each dumps to
-                 seperate file. The processor number is appended to the dump
-                 filename. It is not recommended to use this option - writing
-                 to one file most likely will not work.
     - pyvars=1: When 1, saves user defined python variables to the file.
     - skip=[]: List of names of Python variables to skip
     - ff=None: Optional file object. When passed in, write to that file instead
@@ -1032,12 +1006,12 @@ def dump(filename=None,prefix='',suffix='',attr='dump',serial=0,onefile=0,pyvars
             s = '.sdump'
         else:
             s = '.dump'
-        if onefile or not lparallel:
+        if not lparallel:
             filename=prefix+arraytostr(top.runid)+('%06d'%top.it)+suffix+s
         else:
             filename=prefix+arraytostr(top.runid)+('%06d_%05d_%05d'%(top.it,me,npes))+suffix+s
     else:
-        if not onefile and lparallel:
+        if lparallel:
             # --- Append the processor number to the user inputted filename
             filename = filename + '_%05d_%05d%s.dump'%(me,npes,suffix)
     print filename
@@ -1060,12 +1034,8 @@ def dump(filename=None,prefix='',suffix='',attr='dump',serial=0,onefile=0,pyvars
         pickledump.pickledump(filename,attr,interpreter_variables,serial,ff,
                               varsuffix,verbose)
     else:
-        if onefile and lparallel:
-            paralleldump(filename,attr,interpreter_variables,serial=serial,
-                         varsuffix=varsuffix,histz=histz,verbose=verbose)
-        else:
-            pydump(filename,attr,interpreter_variables,serial=serial,ff=ff,
-                   varsuffix=varsuffix,verbose=verbose,datawriter=datawriter)
+        pydump(filename,attr,interpreter_variables,serial=serial,ff=ff,
+               varsuffix=varsuffix,verbose=verbose,datawriter=datawriter)
     # --- Update dump time
     top.dumptime = top.dumptime + (wtime() - timetemp)
 
@@ -1081,7 +1051,7 @@ def restore(filename, **kw):
         return ff
 
 # --- Restart command
-def restart(filename,suffix='',onefile=0,verbose=false,skip=[],
+def restart(filename,suffix='',verbose=false,skip=[],
             dofieldsol=true,format='',datareader=PR.PR,main=None,
             clearcontrollers=True):
     """
@@ -1089,8 +1059,6 @@ def restart(filename,suffix='',onefile=0,verbose=false,skip=[],
     - filename: restart file name - when restoring parallel run from multiple
                 files, filename should only be prefix up to but not including
                 the '_' before the processor number.
-    - onefile=0: Restores from one file unless 0, then each processor restores
-                 from seperate file.
     - skip=[]: list of variables to skip
     - dofieldsol=true: When true, call fieldsol(0). This allows special cases
                        where just calling fieldsol(0) is not appropriate or
@@ -1108,14 +1076,13 @@ def restart(filename,suffix='',onefile=0,verbose=false,skip=[],
     ControllerFunctionContainer.clearfunctionlists = clearcontrollers
     # --- If each processor is restoring from a seperate file, append
     # --- appropriate suffix, assuming only prefix was passed in
-    if lparallel and not onefile:
+    if lparallel:
         filename = filename + '_%05d_%05d%s.dump'%(me,npes,suffix)
 
     if format == 'pickle':
         from .data_dumping import pickledump
         pickledump.picklerestore(filename,verbose,skip=skip)
     else:
-        # --- Call different restore routine depending on context.
         # --- Having the restore function return the open file object is very
         # --- kludgy. But it is necessary to avoid opening in
         # --- the file multiple times. Doing that causes problems since some
@@ -1123,13 +1090,10 @@ def restart(filename,suffix='',onefile=0,verbose=false,skip=[],
         # --- This is because the PW pickles everything that it can't write
         # --- out directly and unpickles them when PR is called. Many things
         # --- reinstall themselves when unpickled.
-        if onefile and lparallel:
-            ff = parallelrestore(filename,verbose=verbose,skip=skip,lreturnff=1)
-        else:
-            if main is None:
-                main = warp
-            ff = restore(filename,verbose=verbose,skip=skip,lreturnff=1,
-                         datareader=datareader,main=main)
+        if main is None:
+            main = warp
+        ff = restore(filename,verbose=verbose,skip=skip,lreturnff=1,
+                     datareader=datareader,main=main)
 
         # --- Fix old dump files.
         # --- This is the only place where the open dump file is needed.
@@ -1175,7 +1139,7 @@ def restart(filename,suffix='',onefile=0,verbose=false,skip=[],
     # --- is only meaningful on PE0. Since all processors must call setup,
     # --- PE0's return value from current_window is broadcast to all
     # --- processors.
-    if parallel.broadcast(current_window()) == -1: setup()
+    if warp_parallel.broadcast(current_window()) == -1: setup()
 
     # --- Call any functions that had been registered to be called after
     # --- the restart.
@@ -1420,6 +1384,7 @@ def printtimersordered(file=None,depth=3):
 # --- projections of particles, histories, as well as some line plots.
 # --- Import these here near the end so the functions defined above are
 # --- included in their dictionaries.
+from .units import *
 from .particles.particles import *
 from .field_solvers.fieldsolver import *
 if lparallel:

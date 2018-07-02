@@ -7305,8 +7305,8 @@ def FD_weights_hvincenti(p,l_staggered=False):
     # --- from Henri Vincenti's formulas
     factorial = math.factorial
 
-    c = zeros(p/2)
-    for i in range(p/2):
+    c = zeros(int(p/2))
+    for i in range(int(p/2)):
         l=i+1
         if l_staggered:
             lognumer = math.log(16.)*(1.-p/2.)+math.log(factorial(p-1.))*2

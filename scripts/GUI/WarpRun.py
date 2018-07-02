@@ -1,7 +1,9 @@
 #Boa:Frame:WarpRun
 
 #from wx import py
-from wx import *
+import wx
+import wx.py
+#from wx import *
 from wx.stc import *
 from wx.lib.anchors import LayoutAnchors
 #from wxPython.wx import *
@@ -32,21 +34,23 @@ except:
     l_opendx=0
 import WarpPanel
 import gist
+import string
 import sys
 import os
 import code
 import __main__
 from warp import *
-from errorcheck import *
+from warp.utils.errorcheck import *
 warp_path = os.path.dirname(warp.__file__)
 if warp_path<>'':warp_path+='/'
 sys.path=sys.path+[warp_path+'GUI/pype']
-import pype
 
 # for debugging purpose, output is not redirected in GUI if true
 l_standard_out = 1
-l_PyCrust = 0
+l_PyCrust = 1
 l_pype = 0
+
+if l_pype:import pype
 
 def create(parent):
     return WarpRun(parent)
@@ -105,97 +109,73 @@ class WarpRun(wx.Frame):
     def _init_coll_mnuHelp_Items(self, parent):
         # generated method, don't edit
 
-        parent.Append(help='browse manual', id=wxID_WARPRUNMNUHELPMANUAL,
-              text='Manual', kind=wx.ITEM_NORMAL)
-        EVT_MENU(self, wxID_WARPRUNMNUHELPMANUAL, self.OnMnuhelpManualMenu)
-        parent.Append(help='browse scripts', id=wxID_WARPRUNMNUHELPSCRIPTS,
-              text='Scripts', kind=wx.ITEM_NORMAL)
-        EVT_MENU(self, wxID_WARPRUNMNUHELPSCRIPTS, self.OnMnuhelpScriptsMenu)
-        parent.Append(help='browse source', id=wxID_WARPRUNMNUHELPSOURCE,
-              text='Source', kind=wx.ITEM_NORMAL)
-        EVT_MENU(self, wxID_WARPRUNMNUHELPSOURCE, self.OnMnuhelpSourceMenu)
-        parent.Append(help='display tutorials', id=wxID_WARPRUNMNUHELPTUTORIAL,
-              text='Tutorial', kind=wx.ITEM_NORMAL)
-        EVT_MENU(self, wxID_WARPRUNMNUHELPTUTORIAL, self.OnMnuhelpTutorialMenu)
-        parent.Append(help='Display info', id=wxID_WARPRUNMNUHELPABOUT,
-              text='About', kind=wx.ITEM_NORMAL)
-        EVT_MENU(self, wxID_WARPRUNMNUHELPABOUT, self.OnMnuhelpAboutMenu)
+        parent.Append(wxID_WARPRUNMNUHELPMANUAL, 'Manual', 'browse manual')
+        wx.EVT_MENU(self, wxID_WARPRUNMNUHELPMANUAL, self.OnMnuhelpManualMenu)
+        parent.Append(wxID_WARPRUNMNUHELPSCRIPTS,'Scripts', 'browse scripts')
+        wx.EVT_MENU(self, wxID_WARPRUNMNUHELPSCRIPTS, self.OnMnuhelpScriptsMenu)
+        parent.Append(wxID_WARPRUNMNUHELPSOURCE,'Source', 'browse source')
+        wx.EVT_MENU(self, wxID_WARPRUNMNUHELPSOURCE, self.OnMnuhelpSourceMenu)
+        parent.Append(wxID_WARPRUNMNUHELPTUTORIAL,'Tutorial', 'display tutorials')
+        wx.EVT_MENU(self, wxID_WARPRUNMNUHELPTUTORIAL, self.OnMnuhelpTutorialMenu)
+        parent.Append(wxID_WARPRUNMNUHELPABOUT,'About', 'Display info')
+        wx.EVT_MENU(self, wxID_WARPRUNMNUHELPABOUT, self.OnMnuhelpAboutMenu)
 
     def _init_coll_mnuErrorCheck_Items(self, parent):
         # generated method, don't edit
 
-        parent.Append(help='', id=wxID_WARPRUNMNUERRORCHECKSYMMETRY,
-              text='Symmetry', kind=wx.ITEM_NORMAL)
-        parent.Append(help='', id=wxID_WARPRUNMNUERRORCHECKPARTICLELOAD,
-              text='ParticleLoad', kind=wx.ITEM_NORMAL)
-        parent.Append(help='', id=wxID_WARPRUNMNUERRORCHECKENVELOPE,
-              text='Envelope', kind=wx.ITEM_NORMAL)
-        parent.Append(help='', id=wxID_WARPRUNMNUERRORCHECKIBPUSH,
-              text='Ibpush', kind=wx.ITEM_NORMAL)
-        parent.Append(help='', id=wxID_WARPRUNMNUERRORCHECKCHECKALL,
-              text='CheckAll', kind=wx.ITEM_NORMAL)
-        EVT_MENU(self, wxID_WARPRUNMNUERRORCHECKSYMMETRY,
+        parent.Append(wxID_WARPRUNMNUERRORCHECKSYMMETRY,'Symmetry', '')
+        parent.Append(wxID_WARPRUNMNUERRORCHECKPARTICLELOAD,'ParticleLoad', '')
+        parent.Append(wxID_WARPRUNMNUERRORCHECKENVELOPE,'Envelope', '')
+        parent.Append(wxID_WARPRUNMNUERRORCHECKIBPUSH,'Ibpush', '')
+        parent.Append(wxID_WARPRUNMNUERRORCHECKCHECKALL,'CheckAll', '')
+        wx.EVT_MENU(self, wxID_WARPRUNMNUERRORCHECKSYMMETRY,
               self.OnMnuerrorchecksymmetryMenu)
-        EVT_MENU(self, wxID_WARPRUNMNUERRORCHECKPARTICLELOAD,
+        wx.EVT_MENU(self, wxID_WARPRUNMNUERRORCHECKPARTICLELOAD,
               self.OnMnuerrorcheckparticleloadMenu)
-        EVT_MENU(self, wxID_WARPRUNMNUERRORCHECKENVELOPE,
+        wx.EVT_MENU(self, wxID_WARPRUNMNUERRORCHECKENVELOPE,
               self.OnMnuerrorcheckenvelopeMenu)
-        EVT_MENU(self, wxID_WARPRUNMNUERRORCHECKIBPUSH,
+        wx.EVT_MENU(self, wxID_WARPRUNMNUERRORCHECKIBPUSH,
               self.OnMnuerrorcheckibpushMenu)
-        EVT_MENU(self, wxID_WARPRUNMNUERRORCHECKCHECKALL,
+        wx.EVT_MENU(self, wxID_WARPRUNMNUERRORCHECKCHECKALL,
               self.OnMnuerrorcheckallMenu)
 
     def _init_coll_mnuFile_Items(self, parent):
         # generated method, don't edit
 
-        parent.Append(help='', id=wxID_WARPRUNMNUFILEOPEN, text='Open',
-              kind=wx.ITEM_NORMAL)
-        parent.Append(help='Opens and Executes file',
-              id=wxID_WARPRUNMNUFILEOPENEXEC, text='Open/Execfile',
-              kind=wx.ITEM_NORMAL)
-        parent.Append(help='', id=wxID_WARPRUNMNUFILESAVE, text='Save',
-              kind=wx.ITEM_NORMAL)
-        parent.Append(help='', id=wxID_WARPRUNMNUFILESAVEAS,
-              text='Save As', kind=wx.ITEM_NORMAL)
-        parent.Append(help='', id=wxID_WARPRUNMNUFILEEXEC,
-              text='ExecFile', kind=wx.ITEM_NORMAL)
-        parent.Append(help='', id=wxID_WARPRUNMNUFILEEXIT, text='Exit',
-              kind=wx.ITEM_NORMAL)
-        EVT_MENU(self, wxID_WARPRUNMNUFILEOPEN, self.OnMnuOpenMenu)
-        EVT_MENU(self, wxID_WARPRUNMNUFILESAVE, self.OnMnufileSaveMenu)
-        EVT_MENU(self, wxID_WARPRUNMNUFILESAVEAS, self.OnMnufileSaveAsMenu)
-        EVT_MENU(self, wxID_WARPRUNMNUFILEEXIT, self.OnMnufileExitMenu)
-        EVT_MENU(self, wxID_WARPRUNMNUFILEEXEC, self.OnMnufileexecfileMenu)
-        EVT_MENU(self, wxID_WARPRUNMNUFILEOPENEXEC, self.OnMnufileOpenExecMenu)
+        parent.Append(wxID_WARPRUNMNUFILEOPEN, 'Open', '')
+        parent.Append(wxID_WARPRUNMNUFILEOPENEXEC, 'Open/Execfile', 'Opens and Executes file')
+        parent.Append(wxID_WARPRUNMNUFILESAVE, 'Save', '')
+        parent.Append(wxID_WARPRUNMNUFILESAVEAS,'Save As','')
+        parent.Append(wxID_WARPRUNMNUFILEEXEC,'ExecFile', '')
+        parent.Append(wxID_WARPRUNMNUFILEEXIT, 'Exit', '')
+        wx.EVT_MENU(self, wxID_WARPRUNMNUFILEOPEN, self.OnMnuOpenMenu)
+        wx.EVT_MENU(self, wxID_WARPRUNMNUFILESAVE, self.OnMnufileSaveMenu)
+        wx.EVT_MENU(self, wxID_WARPRUNMNUFILESAVEAS, self.OnMnufileSaveAsMenu)
+        wx.EVT_MENU(self, wxID_WARPRUNMNUFILEEXIT, self.OnMnufileExitMenu)
+        wx.EVT_MENU(self, wxID_WARPRUNMNUFILEEXEC, self.OnMnufileexecfileMenu)
+        wx.EVT_MENU(self, wxID_WARPRUNMNUFILEOPENEXEC, self.OnMnufileOpenExecMenu)
 
     def _init_coll_mnuPackage_Items(self, parent):
         # generated method, don't edit
 
-        parent.Append(help='Select 3-D code', id=wxID_WARPRUNMNUPACKAGE3D,
-              text='3-D', kind=wx.ITEM_CHECK)
-        parent.Append(help='Select slice code',
-              id=wxID_WARPRUNMNUPACKAGEXY, text='X-Y', kind=wx.ITEM_CHECK)
-        parent.Append(help='Select envelope code',
-              id=wxID_WARPRUNMNUPACKAGEENV, text='Envelope', kind=wx.ITEM_CHECK)
-        EVT_MENU(self, wxID_WARPRUNMNUPACKAGE3D, self.OnMnupackage3dMenu)
-        EVT_MENU(self, wxID_WARPRUNMNUPACKAGEXY, self.OnMnupackageXYMenu)
-        EVT_MENU(self, wxID_WARPRUNMNUPACKAGEENV, self.OnMnupackageEnvMenu)
+        parent.Append(wxID_WARPRUNMNUPACKAGE3D,'3-D', 'Select 3-D code')
+        parent.Append(wxID_WARPRUNMNUPACKAGEXY, 'X-Y', 'Select slice code')
+        parent.Append(wxID_WARPRUNMNUPACKAGEENV, 'Envelope', 'Select envelope code')
+        wx.EVT_MENU(self, wxID_WARPRUNMNUPACKAGE3D, self.OnMnupackage3dMenu)
+        wx.EVT_MENU(self, wxID_WARPRUNMNUPACKAGEXY, self.OnMnupackageXYMenu)
+        wx.EVT_MENU(self, wxID_WARPRUNMNUPACKAGEENV, self.OnMnupackageEnvMenu)
 
     def _init_coll_mnuDump_Items(self, parent):
         # generated method, don't edit
 
-        parent.Append(help='', id=wxID_WARPRUNMNUDUMPRESTORE,
-              text='Restore', kind=wx.ITEM_NORMAL)
-        parent.Append(help='', id=wxID_WARPRUNMNUDUMPRESTART,
-              text='Restart', kind=wx.ITEM_NORMAL)
-        parent.Append(help='', id=wxID_WARPRUNMNUDUMPDUMP, text='Dump',
-              kind=wx.ITEM_NORMAL)
-        parent.Append(help='', id=wxID_WARPRUNMNUDUMPDUMPAS,
-              text='Dump As', kind=wx.ITEM_NORMAL)
-        EVT_MENU(self, wxID_WARPRUNMNUDUMPRESTORE, self.OnMnudumpRestore)
-        EVT_MENU(self, wxID_WARPRUNMNUDUMPRESTART, self.OnMnudumpRestart)
-        EVT_MENU(self, wxID_WARPRUNMNUDUMPDUMP, self.OnMnudumpDump)
-        EVT_MENU(self, wxID_WARPRUNMNUDUMPDUMPAS, self.OnMnudumpDumpAs)
+        parent.Append(wxID_WARPRUNMNUDUMPRESTORE,'Restore', '')
+        parent.Append(wxID_WARPRUNMNUDUMPRESTART,'Restart', '')
+        parent.Append(wxID_WARPRUNMNUDUMPDUMP, 'Dump', '')
+        parent.Append(wxID_WARPRUNMNUDUMPDUMPAS,'Dump As', '')
+        wx.EVT_MENU(self, wxID_WARPRUNMNUDUMPRESTORE, self.OnMnudumpRestore)
+        wx.EVT_MENU(self, wxID_WARPRUNMNUDUMPRESTART, self.OnMnudumpRestart)
+        wx.EVT_MENU(self, wxID_WARPRUNMNUDUMPDUMP, self.OnMnudumpDump)
+        wx.EVT_MENU(self, wxID_WARPRUNMNUDUMPDUMPAS, self.OnMnudumpDumpAs)
 
     def _init_coll_notebook1_Pages(self, parent):
         # generated method, don't edit
@@ -207,7 +187,7 @@ class WarpRun(wx.Frame):
         # generated method, don't edit
         parent.SetFieldsCount(1)
 
-        parent.SetStatusText(number=0, text='Status')
+        parent.SetStatusText('Status',0)
 
         parent.SetStatusWidths([-1])
 
@@ -243,7 +223,7 @@ class WarpRun(wx.Frame):
         self.SetClientSize(wx.Size(620, 646))
         self.SetMenuBar(self.menuBar1)
         self.SetAutoLayout(True)
-        EVT_CLOSE(self,self.OnFrameClose)
+        wx.EVT_CLOSE(self,self.OnFrameClose)
 
         self.statusBar1 = wx.StatusBar(id=wxID_WARPRUNSTATUSBAR1,
               name='statusBar1', parent=self, style=0)
@@ -262,7 +242,7 @@ class WarpRun(wx.Frame):
         self.winon.SetFont(wx.Font(10, wx.SWISS, wx.NORMAL, wx.NORMAL, False,
               'MS Sans Serif'))
         self.winon.SetForegroundColour(wx.Colour(255, 255, 255))
-        EVT_BUTTON(self.winon, wxID_WARPRUNWINON, self.OnWinonButton)
+        wx.EVT_BUTTON(self.winon, wxID_WARPRUNWINON, self.OnWinonButton)
 
         self.fma = wx.Button(id=wxID_WARPRUNFMA, label='fma', name='fma',
               parent=self.panel1, pos=wx.Point(40, 0), size=wx.Size(40, 22),
@@ -271,7 +251,7 @@ class WarpRun(wx.Frame):
         self.fma.SetFont(wx.Font(10, wx.SWISS, wx.NORMAL, wx.NORMAL, False,
               'MS Sans Serif'))
         self.fma.SetForegroundColour(wx.Colour(255, 255, 255))
-        EVT_BUTTON(self.fma, wxID_WARPRUNFMA, self.OnFmaButton)
+        wx.EVT_BUTTON(self.fma, wxID_WARPRUNFMA, self.OnFmaButton)
 
         self.hcp = wx.Button(id=wxID_WARPRUNHCP, label='hcp', name='hcp',
               parent=self.panel1, pos=wx.Point(80, 0), size=wx.Size(40, 22),
@@ -280,7 +260,7 @@ class WarpRun(wx.Frame):
         self.hcp.SetFont(wx.Font(10, wx.SWISS, wx.NORMAL, wx.NORMAL, False,
               'MS Sans Serif'))
         self.hcp.SetForegroundColour(wx.Colour(255, 255, 255))
-        EVT_BUTTON(self.hcp, wxID_WARPRUNHCP, self.OnHcpButton)
+        wx.EVT_BUTTON(self.hcp, wxID_WARPRUNHCP, self.OnHcpButton)
 
         self.env = wx.Button(id=wxID_WARPRUNENV, label='env', name='env',
               parent=self.panel1, pos=wx.Point(168, 0), size=wx.Size(40, 22),
@@ -289,7 +269,7 @@ class WarpRun(wx.Frame):
         self.env.SetFont(wx.Font(10, wx.SWISS, wx.NORMAL, wx.NORMAL, False,
               'MS Sans Serif'))
         self.env.SetForegroundColour(wx.Colour(255, 255, 255))
-        EVT_BUTTON(self.env, wxID_WARPRUNENV, self.OnEnvButton)
+        wx.EVT_BUTTON(self.env, wxID_WARPRUNENV, self.OnEnvButton)
 
         self.lat = wx.Button(id=wxID_WARPRUNLAT, label='lat', name='lat',
               parent=self.panel1, pos=wx.Point(208, 0), size=wx.Size(40, 22),
@@ -298,7 +278,7 @@ class WarpRun(wx.Frame):
         self.lat.SetFont(wx.Font(10, wx.SWISS, wx.NORMAL, wx.NORMAL, False,
               'MS Sans Serif'))
         self.lat.SetForegroundColour(wx.Colour(255, 255, 255))
-        EVT_BUTTON(self.lat, wxID_WARPRUNLAT, self.OnLatButton)
+        wx.EVT_BUTTON(self.lat, wxID_WARPRUNLAT, self.OnLatButton)
 
         self.doc = wx.Button(id=wxID_WARPRUNDOC, label='doc', name='doc',
               parent=self.panel1, pos=wx.Point(504, 0), size=wx.Size(40, 22),
@@ -307,43 +287,45 @@ class WarpRun(wx.Frame):
         self.doc.SetFont(wx.Font(10, wx.SWISS, wx.NORMAL, wx.BOLD, False,
               'MS Sans Serif'))
         self.doc.SetBackgroundColour(wx.Colour(255, 255, 128))
-        EVT_BUTTON(self.doc, wxID_WARPRUNDOC, self.OnDocButton)
+        wx.EVT_BUTTON(self.doc, wxID_WARPRUNDOC, self.OnDocButton)
+        
+        if 0:
 
-        self.Step = wx.Button(id=wxID_WARPRUNSTEP, label='Step', name='Step',
-              parent=self.panel1, pos=wx.Point(296, 0), size=wx.Size(40, 22),
-              style=0)
-        self.Step.SetBackgroundColour(wx.Colour(128, 0, 64))
-        self.Step.SetFont(wx.Font(10, wx.SWISS, wx.NORMAL, wx.NORMAL, False,
-              'MS Sans Serif'))
-        self.Step.SetForegroundColour(wx.Colour(255, 255, 255))
-        EVT_BUTTON(self.Step, wxID_WARPRUNSTEP, self.OnStepButton)
+            self.Step = wx.Button(id=wxID_WARPRUNSTEP, label='Step', name='Step',
+                  parent=self.panel1, pos=wx.Point(296, 0), size=wx.Size(40, 22),
+                  style=0)
+            self.Step.SetBackgroundColour(wx.Colour(128, 0, 64))
+            self.Step.SetFont(wx.Font(10, wx.SWISS, wx.NORMAL, wx.NORMAL, False,
+                  'MS Sans Serif'))
+            self.Step.SetForegroundColour(wx.Colour(255, 255, 255))
+            wx.EVT_BUTTON(self.Step, wxID_WARPRUNSTEP, self.OnStepButton)
 
-        self.Next = wx.Button(id=wxID_WARPRUNNEXT, label='Next', name='Next',
-              parent=self.panel1, pos=wx.Point(336, 0), size=wx.Size(40, 22),
-              style=0)
-        self.Next.SetBackgroundColour(wx.Colour(128, 0, 64))
-        self.Next.SetFont(wx.Font(10, wx.SWISS, wx.NORMAL, wx.NORMAL, False,
-              'MS Sans Serif'))
-        self.Next.SetForegroundColour(wx.Colour(255, 255, 255))
-        EVT_BUTTON(self.Next, wxID_WARPRUNNEXT, self.OnNextButton)
+            self.Next = wx.Button(id=wxID_WARPRUNNEXT, label='Next', name='Next',
+                  parent=self.panel1, pos=wx.Point(336, 0), size=wx.Size(40, 22),
+                  style=0)
+            self.Next.SetBackgroundColour(wx.Colour(128, 0, 64))
+            self.Next.SetFont(wx.Font(10, wx.SWISS, wx.NORMAL, wx.NORMAL, False,
+                  'MS Sans Serif'))
+            self.Next.SetForegroundColour(wx.Colour(255, 255, 255))
+            wx.EVT_BUTTON(self.Next, wxID_WARPRUNNEXT, self.OnNextButton)
 
-        self.Start = wx.Button(id=wxID_WARPRUNSTART, label='Start', name='Start',
-              parent=self.panel1, pos=wx.Point(256, 0), size=wx.Size(40, 22),
-              style=0)
-        self.Start.SetBackgroundColour(wx.Colour(128, 0, 64))
-        self.Start.SetFont(wx.Font(10, wx.SWISS, wx.NORMAL, wx.NORMAL, False,
-              'MS Sans Serif'))
-        self.Start.SetForegroundColour(wx.Colour(255, 255, 255))
-        EVT_BUTTON(self.Start, wxID_WARPRUNSTART, self.OnStartButton)
+            self.Start = wx.Button(id=wxID_WARPRUNSTART, label='Start', name='Start',
+                  parent=self.panel1, pos=wx.Point(256, 0), size=wx.Size(40, 22),
+                  style=0)
+            self.Start.SetBackgroundColour(wx.Colour(128, 0, 64))
+            self.Start.SetFont(wx.Font(10, wx.SWISS, wx.NORMAL, wx.NORMAL, False,
+                  'MS Sans Serif'))
+            self.Start.SetForegroundColour(wx.Colour(255, 255, 255))
+            wx.EVT_BUTTON(self.Start, wxID_WARPRUNSTART, self.OnStartButton)
 
-        self.Cont = wx.Button(id=wxID_WARPRUNCONT, label='Cont', name='Cont',
-              parent=self.panel1, pos=wx.Point(376, 0), size=wx.Size(40, 22),
-              style=0)
-        self.Cont.SetBackgroundColour(wx.Colour(128, 0, 64))
-        self.Cont.SetFont(wx.Font(10, wx.SWISS, wx.NORMAL, wx.NORMAL, False,
-              'MS Sans Serif'))
-        self.Cont.SetForegroundColour(wx.Colour(255, 255, 255))
-        EVT_BUTTON(self.Cont, wxID_WARPRUNCONT, self.OnContButton)
+            self.Cont = wx.Button(id=wxID_WARPRUNCONT, label='Cont', name='Cont',
+                  parent=self.panel1, pos=wx.Point(376, 0), size=wx.Size(40, 22),
+                  style=0)
+            self.Cont.SetBackgroundColour(wx.Colour(128, 0, 64))
+            self.Cont.SetFont(wx.Font(10, wx.SWISS, wx.NORMAL, wx.NORMAL, False,
+                  'MS Sans Serif'))
+            self.Cont.SetForegroundColour(wx.Colour(255, 255, 255))
+            wx.EVT_BUTTON(self.Cont, wxID_WARPRUNCONT, self.OnContButton)
 
         self.separate = wx.Button(id=wxID_WARPRUNSEPARATE, label='separate',
               name='separate', parent=self.panel1, pos=wx.Point(560, 0),
@@ -352,7 +334,7 @@ class WarpRun(wx.Frame):
         self.separate.SetForegroundColour(wx.Colour(255, 255, 255))
         self.separate.SetConstraints(LayoutAnchors(self.separate, True, True,
               True, False))
-        EVT_BUTTON(self.separate, wxID_WARPRUNSEPARATE, self.OnSeparateButton)
+        wx.EVT_BUTTON(self.separate, wxID_WARPRUNSEPARATE, self.OnSeparateButton)
 
         self.redraw = wx.Button(id=wxID_WARPRUNREDRAW, label='rdw',
               name='redraw', parent=self.panel1, pos=wx.Point(120, 0),
@@ -361,10 +343,10 @@ class WarpRun(wx.Frame):
         self.redraw.SetFont(wx.Font(10, wx.SWISS, wx.NORMAL, wx.NORMAL, False,
               'MS Sans Serif'))
         self.redraw.SetForegroundColour(wx.Colour(255, 255, 255))
-        EVT_BUTTON(self.redraw, wxID_WARPRUNREDRAW, self.OnRedrawButton)
+        wx.EVT_BUTTON(self.redraw, wxID_WARPRUNREDRAW, self.OnRedrawButton)
 
         self.splitterWindow1 = wx.SplitterWindow(id=wxID_WARPRUNSPLITTERWINDOW1,
-              name='splitterWindow1', parent=self, point=wx.Point(0, 24),
+              name='splitterWindow1', parent=self, pos=wx.Point(0, 24),
               size=wx.Size(616, 576), style=wx.SP_3D)
         self.splitterWindow1.SetConstraints(LayoutAnchors(self.splitterWindow1,
               True, True, True, True))
@@ -383,9 +365,9 @@ class WarpRun(wx.Frame):
         self.notebook1 = wx.Notebook(id=wxID_WARPRUNNOTEBOOK1, name='notebook1',
               parent=self.splitterWindow1, pos=wx.Point(2, 2), size=wx.Size(612,
               348), style=0)
-        EVT_NOTEBOOK_PAGE_CHANGED(self.notebook1, wxID_WARPRUNNOTEBOOK1,
+        wx.EVT_NOTEBOOK_PAGE_CHANGED(self.notebook1, wxID_WARPRUNNOTEBOOK1,
               self.OnNotebook1NotebookPageChanged)
-        EVT_SIZE(self.notebook1, self.OnNotebook1Size)
+        wx.EVT_SIZE(self.notebook1, self.OnNotebook1Size)
 #        self.splitterWindow1.SplitHorizontally(self.notebook1,
 #              self.MessageWindow, 350)
 
@@ -400,7 +382,7 @@ class WarpRun(wx.Frame):
         self.BookMark.SetBackgroundColour(wx.Colour(155, 202, 230))
         self.BookMark.SetFont(wx.Font(8, wx.SWISS, wx.NORMAL, wx.BOLD, False,
               'MS Sans Serif'))
-        EVT_BUTTON(self.BookMark, wxID_WARPRUNBOOKMARK, self.OnBookmarkButton)
+        wx.EVT_BUTTON(self.BookMark, wxID_WARPRUNBOOKMARK, self.OnBookmarkButton)
 
         self.PrevBookMark = wx.Button(id=wxID_WARPRUNPREVBOOKMARK, label='<<',
               name='PrevBookMark', parent=self.panel1, pos=wx.Point(446, 0),
@@ -408,7 +390,7 @@ class WarpRun(wx.Frame):
         self.PrevBookMark.SetBackgroundColour(wx.Colour(155, 202, 230))
         self.PrevBookMark.SetFont(wx.Font(8, wx.SWISS, wx.NORMAL, wx.BOLD, False,
               'MS Sans Serif'))
-        EVT_BUTTON(self.PrevBookMark, wxID_WARPRUNPREVBOOKMARK,
+        wx.EVT_BUTTON(self.PrevBookMark, wxID_WARPRUNPREVBOOKMARK,
               self.OnPrevbookmarkButton)
 
         self.NextBookMark = wx.Button(id=wxID_WARPRUNNEXTBOOKMARK, label='>>',
@@ -417,7 +399,7 @@ class WarpRun(wx.Frame):
         self.NextBookMark.SetBackgroundColour(wx.Colour(155, 202, 230))
         self.NextBookMark.SetFont(wx.Font(8, wx.SWISS, wx.NORMAL, wx.BOLD, False,
               'MS Sans Serif'))
-        EVT_BUTTON(self.NextBookMark, wxID_WARPRUNNEXTBOOKMARK,
+        wx.EVT_BUTTON(self.NextBookMark, wxID_WARPRUNNEXTBOOKMARK,
               self.OnNextbookmarkButton)
 
         self._init_coll_notebook1_Pages(self.notebook1)
@@ -435,13 +417,14 @@ class WarpRun(wx.Frame):
         self.EdPos = 0
         self.startrun = 1
         self.panels = {}
+        print 'hello'
         # substitute default editor by pype
         if l_pype:
             self.notebook1.DeletePage(0)
             self.launch_pype()
         self.prefix = ''
         # start console
-        if l_PyCrust:
+        if 0:
             def shortcuts():
                 print """
     * Key bindings:
@@ -469,7 +452,7 @@ class WarpRun(wx.Frame):
     """
 
             __main__.shortcuts = shortcuts
-            self.Crust = py.crust.Crust(self,-1,intro='For help on:\n - WARP      - type "warphelp()",\n - shortcuts - type "shorcuts()".\n\n')
+            self.Crust = wx.py.crust.Crust(self,-1,intro='For help on:\n - WARP      - type "warphelp()",\n - shortcuts - type "shorcuts()".\n\n')
             self.shell = self.Crust.shell
             self.crustnotebook = self.Crust.notebook
             self.Crust.notebook.Reparent(self)
@@ -495,6 +478,12 @@ class WarpRun(wx.Frame):
             __main__.autocomp=self.AutoComp
             __main__.calltip=self.CallTip
             self.CallTip() # turns off calltip
+
+        if l_PyCrust:
+            self.Console = wx.py.shell.Shell(parent = self.splitterWindow1,pos=wx.Point(0, 350), size=wx.Size(604, 300))
+            self.MessageWindow=self.Console
+            self.shell = self.Console
+            self.inter = self.Console
         else:
             self.inter = code.InteractiveConsole(__main__.__dict__)
             self.ConsolePanel = ConsoleClass.ConsoleClass(parent=self.splitterWindow1,inter=self.inter)
@@ -542,7 +531,7 @@ class WarpRun(wx.Frame):
         def menuAdd(root, menu, name, desc, funct, id, kind=wx.ITEM_NORMAL):
             a = wx.MenuItem(menu, id, 'TEMPORARYNAME', desc, kind)
             menu.AppendItem(a)
-            EVT_MENU(root.GetParent(), id, funct)
+            wx.EVT_MENU(root.GetParent(), id, funct)
 
             ns, oacc = pype._spl(name)
             heir = pype.recmenu(pype.menuBar, id)[:-13] + ns
@@ -634,7 +623,7 @@ class WarpRun(wx.Frame):
                 size = evt.GetSize()
                 size.SetHeight(size.GetHeight()-25)
                 win.SetSize(size)
-            EVT_SIZE(panel,OnCpSize)
+            wx.EVT_SIZE(panel,OnCpSize)
         pype.frame.OnResize=resize_dummy
 
         def testfollowpanel():
@@ -645,7 +634,7 @@ class WarpRun(wx.Frame):
                 win.SetSize(size)
                 pype.frame.Raise()
                 pype.frame.SetFocus()
-            EVT_SIZE(panel,OnCpSize)
+            wx.EVT_SIZE(panel,OnCpSize)
             def getabspos(win):
                 pos = win.GetPosition()
                 try:
@@ -760,9 +749,9 @@ class WarpRun(wx.Frame):
 
     def AddPalette(self,name):
         exec("[wxID_WARPRUNMNUPALLETTE"+name+"] = map(lambda _init_coll_mnuPalette_Items: wx.NewId(), range(1))")
-        exec("self.mnuPalette.Append(help='', id=wxID_WARPRUNMNUPALLETTE"+name+", text='"+name+"',kind=wx.ITEM_NORMAL)")
+        exec("self.mnuPalette.Append(wxID_WARPRUNMNUPALLETTE"+name+", '"+name+"','')")
         exec("def OnMnuPalette"+name+"(event):palette('"+name+".gp')")
-        exec("EVT_MENU(self, wxID_WARPRUNMNUPALLETTE"+name+", OnMnuPalette"+name+")")
+        exec("wx.EVT_MENU(self, wxID_WARPRUNMNUPALLETTE"+name+", OnMnuPalette"+name+")")
 
     def OnMnuhelpAboutMenu(self, event):
         dlg = WarpGUIInfo.WarpGUIInfo(self)
@@ -809,7 +798,7 @@ class WarpRun(wx.Frame):
 
     def OnMnuOpenMenu(self, event):
         dlg = wx.FileDialog(self, "Choose a file", ".", "",
-              "PYTHON files (*.py)|*.py|ALL files (*.*)|*.*", wx.OPEN)
+              "PYTHON files (*.py)|*.py|ALL files (*.*)|*.*", wx.FD_OPEN)
         try:
             if dlg.ShowModal() == wx.ID_OK:
                 filename = dlg.GetPath()
@@ -862,14 +851,16 @@ class WarpRun(wx.Frame):
     def OnMnufileExitMenu(self, event):
         self.Close()
 
-    def OnMnufileexecfileMenu1(self, event):
+    def OnMnufileexecfileMenu(self, event):
         if self.FileName is None:
             OnMnufileSaveAsMenu(event)
-        self.statusBar1.SetStatusText(number=0,text="Executing file %s"%self.FileName)
+        self.statusBar1.SetStatusText("Executing file %s"%self.FileName,0)
+        if(not l_standard_out): sys.stdout = newstdout.newstdout(self.Console)
+        if(not l_standard_out): sys.stderr = newstdout.newstdout(self.Console)
         execfile(self.FileName)
-        self.statusBar1.SetStatusText(number=0,text="Finished executing file %s"%self.FileName)
+        self.statusBar1.SetStatusText("Finished executing file %s"%self.FileName,0)
 
-    def OnMnufileexecfileMenu(self, event):
+    def OnMnufileexecfileMenu2(self, event):
         if self.FileName is None:
             return
         self.Run()
@@ -878,7 +869,7 @@ class WarpRun(wx.Frame):
         self.notebook1.SetSelection(0) # open notebook on Editor
         if(not l_standard_out): sys.stdout = newstdout.newstdout(self.Console)
         if(not l_standard_out): sys.stderr = newstdout.newstdout(self.Console)
-        self.statusBar1.SetStatusText(number=0,text="Executing file %s"%self.FileName)
+        self.statusBar1.SetStatusText("Executing file %s"%self.FileName,0)
         if not l_PyCrust:
             if(self.startrun and self.ConsolePanel.NoEntry):
                 self.Console.Clear()
@@ -1050,7 +1041,7 @@ class WarpRun(wx.Frame):
 #        self.shell.AddText('>>> ')
 #        self.shell.DocumentEnd()
         self.FileExec.ShowPosition(self.EdPos-len(line)-1)
-        self.statusBar1.SetStatusText(number=0,text="Ready")
+        self.statusBar1.SetStatusText("Ready",0)
 
     def OnMnudumpDump(self,event):
         dump()
@@ -1094,18 +1085,19 @@ class WarpRun(wx.Frame):
 
     def mnuPackageUpdate(self):
         currpkg = package()[0]
+        return
         if currpkg == 'w3d':
-            self.mnuPackage.Check(wxID_WARPRUNMNUPACKAGE3D,true)
+            self.mnuPackage.Check(wxID_WARPRUNMNUPACKAGE3D,True)
         else:
-            self.mnuPackage.Check(wxID_WARPRUNMNUPACKAGE3D,false)
+            self.mnuPackage.Check(wxID_WARPRUNMNUPACKAGE3D,False)
         if currpkg == 'wxy':
-            self.mnuPackage.Check(wxID_WARPRUNMNUPACKAGEXY,true)
+            self.mnuPackage.Check(wxID_WARPRUNMNUPACKAGEXY,True)
         else:
-            self.mnuPackage.Check(wxID_WARPRUNMNUPACKAGEXY,false)
+            self.mnuPackage.Check(wxID_WARPRUNMNUPACKAGEXY,False)
         if currpkg == 'env':
-            self.mnuPackage.Check(wxID_WARPRUNMNUPACKAGEENV,true)
+            self.mnuPackage.Check(wxID_WARPRUNMNUPACKAGEENV,True)
         else:
-            self.mnuPackage.Check(wxID_WARPRUNMNUPACKAGEENV,false)
+            self.mnuPackage.Check(wxID_WARPRUNMNUPACKAGEENV,False)
 
     def OnMnupackage3dMenu(self, event):
         package('w3d')

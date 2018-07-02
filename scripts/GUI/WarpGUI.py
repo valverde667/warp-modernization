@@ -2,7 +2,8 @@
 #Boa:App:BoaApp
 
 #from wxPython.wx import *
-from wx import *
+#from wx import *
+import wx
 from warp import *
 import WarpRun
 import __main__
@@ -33,8 +34,8 @@ def add_panel(panel,name):
     panels+=[[panel,name]]
 
 def process_gui_events():
-    while(wgui.Pending()):
-        wgui.Dispatch()
+    while(wgui.HasPendingEvents()):
+        wgui.ProcessPendingEvents()
 __main__.process_gui_events = process_gui_events
 __main__.wgui = wgui
 

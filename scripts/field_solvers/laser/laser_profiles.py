@@ -11,7 +11,7 @@ import h5py
 # Try importing parallel functions, in order to broadcast
 # the experimental laser file, if required
 try:
-    from warp.parallel import mpibcast, me
+    from warp_parallel import mpibcast, me
 except ImportError:
     # Single-proc simulation
     mpibcast = lambda x:x

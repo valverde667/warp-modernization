@@ -47,7 +47,8 @@ As explained on the Warp website, in order to install Forthon :
 
 - Go to the `warp/pywarp90` directory and create a file called `Makefile.local.pympi`. Enter the following lines in this file :
 ```
-FCOMP = -F gfortran --fcompexec ftn --fargs "-fPIC" --cargs "-fPIC"
+FCOMP = -F gfortran --fargs "-fPIC" --cargs "-fPIC"
+FCOMPEXEC =  --fcompexec ftn
 INSTALLOPTIONS = --home=$(SCRATCH)/warp_install/
 ```
 

@@ -31,58 +31,41 @@ if distutils.sysconfig.get_config_vars()["LIBDEST"].find('lib64') != -1:
     for scheme in INSTALL_SCHEMES.values():
         scheme['purelib'] = scheme['platlib']
 
-# --- With this, the data_files listed in setup, the .so files from pywarp90,
-# --- will be installed in the usual place in site-packages along with the scripts.
-for scheme in INSTALL_SCHEMES.values():
-    scheme['data'] = scheme['platlib']
+# --- Write out git versioning information
+with open('__version__.py', 'w') as ff:
+    ff.write('__origindate__ = "%s"\n'%os.popen('git log --branches=master --remotes=origin -n 1 --pretty=%aD').read().strip())
+    ff.write('__localdate__ = "%s"\n'%os.popen('git log -n 1 --pretty=%aD').read().strip())
+    ff.write('__hash__ = "%s"\n'%os.popen('git log -n 1 --pretty=%h').read().strip())
+    ff.write('__fullhash__ = "%s"\n'%os.popen('git log -n 1 --pretty=%H').read().strip())
 
-# --- Get the list of .so files. These should have been copied into scripts
-# --- at the end of the make.
-data_files = glob.glob('*.so')
-
-# --- Hack warning:
-# --- Put warpoptions.py and parallel.py into subdirectories so that they
-# --- can be separate packages. This is needed so that the two modules can be
-# --- imported independently of (and before) warp.
-os.renames('warpoptions.py', 'warpoptions/__init__.py')
-os.renames('parallel.py', 'parallel/__init__.py')
-
-try:
-    setup(name='warp',
-          version='3.0',
-          author='David P. Grote, Jean-Luc Vay, et. al.',
-          author_email='dpgrote@lbl.gov',
-          description='Warp PIC accelerator code',
-          long_description="""
+setup(name='warp',
+      version='4.5',
+      author='David P. Grote, Jean-Luc Vay, et. al.',
+      author_email='dpgrote@lbl.gov',
+      description='Warp PIC accelerator code',
+      long_description="""
 Warp is a PIC code designed to model particle accelerators and similar
 machines that are space-charge dominated.""",
-          url='http://warp.lbl.gov',
-          platforms='Linux, Unix, Windows (cygwin), Mac OSX',
-          packages=['warp', 'warpoptions', 'parallel',
-                    'warp.attic', 
-                    'warp.data_dumping',
-                    'warp.data_dumping.openpmd_diag',
-                    'warp.diagnostics',
-                    'warp.diagnostics.palettes',
-                    'warp.envelope',
-                    'warp.field_solvers',
-                    'warp.field_solvers.laser',
-                    'warp.GUI',
-                    'warp.init_tools',
-                    'warp.lattice',
-                    'warp.particles',
-                    'warp.run_modes',
-                    'warp.utils'],
-          package_dir={'warp': '.'},
-          package_data={'warp': ['diagnostics/palettes/*.gs',
-                                 'diagnostics/palettes/*.gp',
-                                 'particles/aladdin_8.txt']},
-#          data_files=[('warp', data_files)],
-          cmdclass={'build_py': build_py}
-          )
-
-finally:
-    # --- Undo the hack from above. Inside the finally clause, this will
-    # --- always happen, even if there is an error during setup.
-    os.renames('warpoptions/__init__.py', 'warpoptions.py')
-    os.renames('parallel/__init__.py', 'parallel.py')
+      url='http://warp.lbl.gov',
+      platforms='Linux, Unix, Windows (cygwin), Mac OSX',
+      packages=['warp', 'warpoptions', 'warp_parallel',
+                'warp.attic',
+                'warp.data_dumping',
+                'warp.data_dumping.openpmd_diag',
+                'warp.diagnostics',
+                'warp.diagnostics.palettes',
+                'warp.envelope',
+                'warp.field_solvers',
+                'warp.field_solvers.laser',
+                'warp.GUI',
+                'warp.init_tools',
+                'warp.lattice',
+                'warp.particles',
+                'warp.run_modes',
+                'warp.utils'],
+      package_dir={'warp': '.'},
+      package_data={'warp': ['diagnostics/palettes/*.gs',
+                             'diagnostics/palettes/*.gp',
+                             'particles/aladdin_8.txt']},
+      cmdclass={'build_py': build_py}
+      )

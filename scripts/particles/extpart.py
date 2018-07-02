@@ -2159,7 +2159,7 @@ def restoreExtPart(object,filename):
         iz = 0
     # --- PE0 broadcasts its value of iz to all of the other processors
     # --- which create new instances of the ExtPart class.
-    iz = parallel.broadcast(iz)
+    iz = warp_parallel.broadcast(iz)
     if me > 0: result = ExtPart(iz)
     return result
 

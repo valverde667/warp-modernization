@@ -6738,6 +6738,139 @@ c       --- Binary search - is some error checking needed?
       return
       end
 c=============================================================================
+      subroutine load2dfast(np, x, y, nx, ny, n, dx, dy, xmin, ymin)
+      integer(ISZ):: np, nx, ny
+      real(kind=8):: x(np), y(np), n(0:nx,0:ny)
+      real(kind=8):: dx, dy, xmin, ymin
+
+! Load particles onto a two dimensional distribution.  This load is only
+! approximate in that when the resulting particles are loaded back onto
+! the same 2-D grid from which the distribution is taken, the distribution
+! is not exactly reproduced. (The exact version is still under development.)
+
+      real(kind=8):: rnrev
+      real(kind=8):: ni, nip1, ninti, sumny, sumnx, wy
+      integer(ISZ):: i, ip, ix, iy, di
+      real(kind=8), allocatable:: nintxofy(:)
+      real(kind=8), allocatable:: ncumintx(:,:), ncuminty(:)
+      real(kind=8):: ncumintxatynx
+      real(kind=8):: ncumintxatyix
+      real(kind=8):: ncumintxatyixp1
+      integer:: alloc_error
+
+      if (minval(n) < 0.) then
+        call kaboom("load2d: all values of n must be >= 0")
+        return
+      endif
+
+      allocate(nintxofy(0:ny), stat=alloc_error)
+      if (alloc_error /= 0) then
+        print*,"Error:load2d: nintxofy could not be allocated"
+        stop
+      endif
+      allocate(ncumintx(0:nx,0:ny), ncuminty(0:ny), stat=alloc_error)
+      if (alloc_error /= 0) then
+        print*,"Error:load2d: ncumintx or ncuminty could not be allocated"
+        stop
+      endif
+
+!     --- ncumintx = cumulative integral of n over x as a function of y
+      ncumintx(0,:) = 0.
+      do ix=1,nx
+        ncumintx(ix,:) = ncumintx(ix-1,:) + 0.5*(n(ix-1,:) + n(ix,:))
+      enddo
+
+!     --- nintxofy = integral over x as a function of y, normlized by the total sum
+      nintxofy = ncumintx(nx,:)
+      sumny = 0.5*sum((nintxofy(1:ny) + nintxofy(0:ny-1)))
+      nintxofy = nintxofy/sumny
+
+!     --- ncuminty(0:ny) = cumulative integral over y of nintxofy
+      ncuminty(0) = 0.
+      do iy=1,ny
+        ncuminty(iy) = ncuminty(iy-1) + 0.5*(nintxofy(iy-1) + nintxofy(iy))
+      enddo
+      ncuminty(ny) = 1.
+
+!     --- Initialize xp and yp
+!     --- This is slightly faster in a separate loop.
+      do i=1,np
+        x(i) = rnrev(i,2)
+        y(i) = .5/np + (i - 1.)/np
+      enddo
+
+!     --- Now distribute the particles in y
+!     --- When the distribution has a nearly uniform section, a modified
+!     --- expression is required.
+      do ip=1,np
+
+!       --- Binary search - is some error checking needed?
+        iy = ny/2
+        di = ny/4
+        do while (y(ip) < ncuminty(iy) .or. y(ip) > ncuminty(iy+1))
+          if (y(ip) < ncuminty(iy)) then
+            iy = iy - di
+          else
+            iy = iy + di
+          endif
+          if (di > 1) di = di/2
+          if (iy == 0 .or. iy == ny) exit
+        enddo
+
+        ni = nintxofy(iy)
+        nip1 = nintxofy(iy+1)
+        ninti = ncuminty(iy)
+        if (abs(nip1 - ni)/(nip1 + ni) > 1.e-4) then
+          y(ip) = (sqrt(ni**2 - 2.*(nip1 - ni)*(ninti - y(ip))) - ni)/(nip1 - ni) + iy
+        else
+          y(ip) = (y(ip) - ninti)/ni + iy
+        endif
+
+        iy = y(ip)
+        wy = y(ip) - iy
+
+        y(ip) = y(ip)*dy + ymin
+
+!       --- Binary search - is some error checking needed?
+        ix = nx/2
+        di = nx/4
+        ncumintxatynx = ncumintx(nx,iy)*(1. - wy) + ncumintx(nx,iy+1)*wy
+        ncumintxatyix = (ncumintx(ix,iy)*(1. - wy) + ncumintx(ix,iy+1)*wy)/ncumintxatynx
+        ncumintxatyixp1 = (ncumintx(ix+1,iy)*(1. - wy) + ncumintx(ix+1,iy+1)*wy)/ncumintxatynx
+        do while (x(ip) < ncumintxatyix .or. x(ip) > ncumintxatyixp1)
+          if (x(ip) < ncumintxatyix) then
+            ix = ix - di
+          else
+            ix = ix + di
+          endif
+          ncumintxatynx = ncumintx(nx,iy)*(1. - wy) + ncumintx(nx,iy+1)*wy
+          ncumintxatyix = (ncumintx(ix,iy)*(1. - wy) + ncumintx(ix,iy+1)*wy)/ncumintxatynx
+          ncumintxatyixp1 = (ncumintx(ix+1,iy)*(1. - wy) + ncumintx(ix+1,iy+1)*wy)/ncumintxatynx
+          if (ix+1 == nx) ncumintxatyixp1 = 1.
+          if (di > 1) di = di/2
+          if (ix == 0 .or. ix == nx) exit
+        enddo
+
+        sumnx = (nintxofy(iy)*(1. - wy) + nintxofy(iy+1)*wy)*sumny
+        ni = (n(ix,iy)*(1. - wy) + n(ix,iy+1)*wy)/sumnx
+        nip1 = (n(ix+1,iy)*(1. - wy) + n(ix+1,iy+1)*wy)/sumnx
+        ninti = ncumintxatyix
+        if (abs(nip1 - ni)/(nip1 + ni) > 1.e-4) then
+          x(ip) = (sqrt(max(0.,ni**2 - 2.*(nip1 - ni)*(ninti - x(ip)))) - ni)/(nip1 - ni) + ix
+        else
+          x(ip) = (x(ip) - ninti)/ni + ix
+        endif
+
+        x(ip) = x(ip)*dx + xmin
+
+      enddo
+
+      deallocate(nintxofy)
+      deallocate(ncumintx, ncuminty)
+
+      return
+      end subroutine load2dfast
+c=============================================================================
       subroutine load2d(np,x,y,nx,ny,n,dx,dy)
       integer(ISZ):: np,nx,ny
       real(kind=8):: x(np),y(np),n(0:nx,0:ny)
