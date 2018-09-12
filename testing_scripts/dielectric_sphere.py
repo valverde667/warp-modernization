@@ -75,12 +75,13 @@ field_base_path = 'diags/fields/'
 diagFDir = {'magnetic':'diags/fields/magnetic','electric':'diags/fields/electric'}
 
 # Cleanup previous files
-cleanupPrevious(diagDir,diagFDir)
+if comm_world.rank == 0:
+    cleanupPrevious(diagDir,diagFDir)
 
 if comm_world.size != 1:
     synchronizeQueuedOutput_mpi4py(out=False, error=False)
 
-print "rank:", comm_world.rank
+#print "rank:", comm_world.rank
 
 top.inject = 0 
 top.npinject = 0
@@ -98,8 +99,11 @@ Z_MIN = 0.
 Z_MAX = PLATE_SPACING
 
 
-#Grid parameters
-N_ALL = 128
+#Grid parameters - increase number of cells if running in parallel
+if comm_world.size > 1:
+    N_ALL = 96
+else:
+    N_ALL = 64 
 
 NUM_X = N_ALL
 NUM_Y = N_ALL
