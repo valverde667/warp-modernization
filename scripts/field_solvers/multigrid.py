@@ -1202,40 +1202,6 @@ class MultiGrid3DDielectric(MultiGrid3D):
         self.epsilon_decomp_flag = True
     
         
-    def initializeconductors(self):
-        # --- Create the attributes for holding information about conductors
-        # --- and conductor objects.
-        # --- Note that a conductor object will be created for each value of
-        # --- fselfb. This is needed since fselfb effects how the coarsening
-        # --- is done, and different conductor data sets are needed for
-        # --- different coarsenings.
-
-        # --- This stores the ConductorType objects. Note that the objects are
-        # --- not actually created until getconductorobject is called.
-        self.conductorobjects = {}
-
-        # --- This stores the conductors that have been installed in each
-        # --- of the conductor objects.
-        self.installedconductorlists = {}
-
-        # --- This is a list of conductors that have been added.
-        # --- New conductors are not actually installed until the data is needed,
-        # --- when getconductorobject is called.
-        # --- Each element of this list contains all of the input to the
-        # --- installconductor method.
-        self.conductordatalist = []
-    
-
-    def installconductor(self,conductor,
-                              xmin=None,xmax=None,
-                              ymin=None,ymax=None,
-                              zmin=None,zmax=None,
-                              dfill=None):
-        # --- This only adds the conductor to the list. The data is only actually
-        # --- installed when it is needed, during a call to getconductorobject.
-        self.conductordatalist.append((conductor,xmin,xmax,ymin,ymax,zmin,zmax,dfill))
-    
-        
     def _installconductor(self,conductorobject,installedlist,conductordata,fselfb):
         # --- This does that actual installation of the conductor into the
         # --- conductor object
@@ -1396,82 +1362,7 @@ class MultiGrid3DDielectric(MultiGrid3D):
 #            g.installdata(installrz,gridmode,solvergeom,conductors,gridrz)
 
         installedconductors.append(a)
-        
-    
-    def hasconductors(self):
-        return len(self.conductordatalist) > 0
 
-    def clearconductors(self):
-        "Clear out the conductor data"
-        for fselfb in top.fselfb:
-            if fselfb in self.conductorobjects:
-                conductorobject = self.conductorobjects[fselfb]
-                conductorobject.interior.n = 0
-                conductorobject.evensubgrid.n = 0
-                conductorobject.oddsubgrid.n = 0
-                self.installedconductorlists[fselfb] = []
-
-    def getconductorobject(self,fselfb=0.):
-        "Checks for and installs any conductors not yet installed before returning the object"
-        # --- This is the routine that does the creation of the ConductorType
-        # --- objects if needed and ensures that all conductors are installed
-        # --- into it.
-
-        # --- This method is needed during a restore from a pickle, since this
-        # --- object may be restored before the conductors. This delays the
-        # --- installation of the conductors until they are really needed.
-
-        # --- There is a special case, fselfb='p', which refers to the conductor
-        # --- object that has the data generated relative to the particle domain,
-        # --- which can be different from the field domain, especially in parallel.
-        if fselfb == 'p':
-            # --- In serial, just use a reference to the conductor object for the
-            # --- first iselfb group.
-            if not lparallel and 'p' not in self.conductorobjects:
-                self.conductorobjects['p'] = self.conductorobjects[top.fselfb[0]]
-                self.installedconductorlists['p'] = self.installedconductorlists[top.fselfb[0]]
-            # --- In parallel, a whole new instance is created (using the
-            # --- setdefaults below).
-            # --- Check to make sure that the grid the conductor uses is consistent
-            # --- with the particle grid. This is needed so that the conductor
-            # --- data is updated when particle load balancing is done. If the
-            # --- data is not consistent, delete the conductor object so that
-            # --- everything is reinstalled.
-            try:
-                conductorobject = self.conductorobjects['p']
-                if (conductorobject.leveliz[0] != self.izpslave[self.my_index] or
-                    conductorobject.levelnz[0] != self.nzpslave[self.my_index]):
-                    del self.conductorobjects['p']
-                    del self.installedconductorlists['p']
-            except KeyError:
-                # --- 'p' object has not yet been created anyway, so do nothing.
-                pass
-
-        conductorobject = self.conductorobjects.setdefault(fselfb,ConductorType())
-        installedconductorlist = self.installedconductorlists.setdefault(fselfb,[])
-
-        # --- Now, make sure that the conductors are installed into the object.
-        # --- This may be somewhat inefficient, since it loops over all of the
-        # --- conductors everytime. This makes the code more robust, though, since
-        # --- it ensures that all conductors will be properly installed into
-        # --- the conductor object.
-        for conductordata in self.conductordatalist:
-            self._installconductor(conductorobject,installedconductorlist,
-                                   conductordata,fselfb)
-
-        # --- Return the desired conductor object
-        return conductorobject
-
-    def setconductorvoltage(self,voltage,condid=0,discrete=false,
-                            setvinject=false):
-        return
-        'calls setconductorvoltage'
-        # --- Loop over all of the selfb groups to that all conductor objects
-        # --- are handled.
-        for iselfb in range(top.nsselfb):
-            conductorobject = self.getconductorobject(top.fselfb[iselfb])
-            setconductorvoltage(voltage,condid,discrete,setvinject,
-                                conductors=conductorobject)
 
 ##############################################################################
 ##############################################################################
