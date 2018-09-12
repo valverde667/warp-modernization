@@ -62,7 +62,8 @@ INSTALLOPTIONS = --home=$(SCRATCH)/warp_install/
 If you want to compile for Haswell Architecture, enter the following lines in this file :
 
 ```
-FCOMP = -F intel --fcompexec ftn --fargs "-fPIC -O3 -xCORE-AVX2" --cargs "-fPIC"
+FCOMP = -F intel --fargs "-fPIC -O3 -xCORE-AVX2" --cargs "-fPIC"
+FCOMPEXEC =  --fcompexec ftn
 INSTALLOPTIONS = --home=$(SCRATCH)/warp_install/
 ```
 
@@ -72,7 +73,8 @@ However, note that KNL supports previous Intel instructions and your code will
 work even compiled for Haswell (Cori phase 1) or Ivy Bridge (Edison) architectures.
 
 ```
-FCOMP = -F intel --fcompexec ftn --fargs "-fPIC -O3 -xMIC-AVX512" --cargs "-fPIC"
+FCOMP = -F intel --fargs "-fPIC -O3 -xMIC-AVX512" --cargs "-fPIC"
+FCOMPEXEC =  --fcompexec ftn
 INSTALLOPTIONS = --home=$(SCRATCH)/warp_install/
 ```
 

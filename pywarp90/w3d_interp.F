@@ -105,7 +105,8 @@ c     3D xpush with interpolation between drift kinetic and full PIC
       use Picglb3d
 c      use Particles, only: chdtspid
       use Particles,Only: xoldpid,yoldpid,zoldpid,
-     &                    bxoldpid,byoldpid,bzoldpid
+     &                    bxoldpid,byoldpid,bzoldpid,
+     &                    exoldpid,eyoldpid,ezoldpid
       type(ParticleGroup):: pgroup
       integer(ISZ):: npd,is,isid,ipmin,i1,i2
       integer(ISZ):: ip,i,ipmin1,ipc
@@ -116,6 +117,7 @@ c      use Particles, only: chdtspid
       real(kind=8):: gaminvscratch(npd)
       real(kind=8),pointer:: xold(:),yold(:),zold(:)
       real(kind=8),pointer:: bxold(:),byold(:),bzold(:)
+      real(kind=8),pointer:: exold(:),eyold(:),ezold(:)
       real(kind=8):: substarttime,wtime
       if (lw3dtimesubs) substarttime = wtime()
 c     declare some pointers
@@ -126,6 +128,10 @@ c     declare some pointers
          bxold => pgroup%pid(:,bxoldpid)
          byold => pgroup%pid(:,byoldpid)
          bzold => pgroup%pid(:,bzoldpid)
+         exold => pgroup%pid(:,exoldpid)
+         eyold => pgroup%pid(:,eyoldpid)
+         ezold => pgroup%pid(:,ezoldpid)
+
       endif
 
       isid = pgroup%sid(is-1) + 1
@@ -190,6 +196,10 @@ c     We don't need this for the implicit version.
             bxold(ip) = pgroup%bx(ip)
             byold(ip) = pgroup%by(ip)
             bzold(ip) = pgroup%bz(ip)
+            exold(ip) = pgroup%ex(ip)
+            eyold(ip) = pgroup%ey(ip)
+            ezold(ip) = pgroup%ez(ip)
+
          enddo
       endif
 c     push to get x': (predictor)
@@ -313,7 +323,8 @@ c     calculate upar dot B
       use ParticleGroupmodule
       use Particles,Only: uxoldpid,uyoldpid,uzoldpid,bxoldpid,
      &   byoldpid,bzoldpid,uparBopid,
-     &  uparoBpredpid,bxpredpid,bypredpid,bzpredpid
+     &  uparoBpredpid,bxpredpid,bypredpid,bzpredpid,
+     & exoldpid,eyoldpid,ezoldpid
 
       use Picglb
       use DKInterp
@@ -326,6 +337,7 @@ c     calculate upar dot B
       real(kind=8),pointer:: uxold(:),uyold(:),uzold(:),uxp(:),uyp(:),uzp(:)
       real(kind=8),pointer:: bxold(:),byold(:),bzold(:),uparBo(:)
       real(kind=8),pointer:: bx(:),by(:),bz(:)
+      real(kind=8),pointer:: exold(:),eyold(:),ezold(:)
       real(kind=8),pointer:: bxpred(:),bypred(:),bzpred(:),uparoBpred(:)
       real(kind=8):: substarttime,wtime
       if (lw3dtimesubs) substarttime = wtime()
@@ -344,6 +356,9 @@ c     declare some pointers
          bxold => pgroup%pid(ipmin:ipmax,bxoldpid)
          byold => pgroup%pid(ipmin:ipmax,byoldpid)
          bzold => pgroup%pid(ipmin:ipmax,bzoldpid)
+         exold => pgroup%pid(ipmin:ipmax,exoldpid)
+         eyold => pgroup%pid(ipmin:ipmax,eyoldpid)
+         ezold => pgroup%pid(ipmin:ipmax,ezoldpid)
       else
          uparoBpred => pgroup%pid(ipmin:ipmax,uparoBpredpid)
          bxpred => pgroup%pid(ipmin:ipmax,bxpredpid)
@@ -482,7 +497,8 @@ c     find the effective velocity to use in the xpush.
       use ParticleGroupmodule
       use Particles,Only: uxoldpid,uyoldpid,uzoldpid,
      &  vdxoldpid,vdyoldpid,vdzoldpid,uparBopid,bxoldpid,byoldpid,bzoldpid,
-     &  uparoBpredpid,bxpredpid,bypredpid,bzpredpid
+     &  uparoBpredpid,bxpredpid,bypredpid,bzpredpid,
+     &  exoldpid, eyoldpid,ezoldpid
       use DKInterp
       use DKInterptmp
       use Picglb
@@ -499,6 +515,7 @@ c     find the effective velocity to use in the xpush.
       real(kind=8),pointer:: uxold(:),uyold(:),uzold(:),gaminv(:)
       real(kind=8),pointer:: vdxold(:),vdyold(:),vdzold(:)
       real(kind=8),pointer:: uparBo(:),bxold(:),byold(:),bzold(:)
+      real(kind=8),pointer:: exold(:),eyold(:),ezold(:)
       real(kind=8),pointer:: ex(:),ey(:),ez(:)
       real(kind=8),pointer:: bx(:),by(:),bz(:)
       real(kind=8),pointer:: bxpred(:),bypred(:),bzpred(:),uparoBpred(:)
@@ -523,6 +540,10 @@ c     declare some pointers
          bxold => pgroup%pid(ipmin:ipmax,bxoldpid)
          byold => pgroup%pid(ipmin:ipmax,byoldpid)
          bzold => pgroup%pid(ipmin:ipmax,bzoldpid)
+         exold => pgroup%pid(ipmin:ipmax,exoldpid)
+         eyold => pgroup%pid(ipmin:ipmax,eyoldpid)
+         ezold => pgroup%pid(ipmin:ipmax,ezoldpid)
+
       else
          uparoBpred => pgroup%pid(ipmin:ipmax,uparoBpredpid)
          bxpred => pgroup%pid(ipmin:ipmax,bxpredpid)
@@ -1087,7 +1108,7 @@ c     xold, uxold, etc.
       use Particles,Only: xoldpid,yoldpid,zoldpid,uxoldpid,uyoldpid,uzoldpid,
      &  vdxoldpid,vdyoldpid,vdzoldpid,uparBopid,bxoldpid,byoldpid,bzoldpid,
      &  uparoBpredpid,expredpid,eypredpid,ezpredpid,bxpredpid,bypredpid,
-     &  bzpredpid
+     &  bzpredpid,exoldpid,eyoldpid,ezoldpid
       use ParticleGroupmodule
       use DKInterp
       integer(ISZ):: nextpid
@@ -1108,6 +1129,10 @@ c      call gchange("Particles",0)
          if (bxoldpid == 0) bxoldpid = nextpid()
          if (byoldpid == 0) byoldpid = nextpid()
          if (bzoldpid == 0) bzoldpid = nextpid()
+         if (exoldpid == 0) exoldpid = nextpid()
+         if (eyoldpid == 0) eyoldpid = nextpid()
+         if (ezoldpid == 0) ezoldpid = nextpid()
+
          if (uparBopid == 0) uparBopid = nextpid()
       else
          if (bxpredpid == 0) bxpredpid = nextpid()

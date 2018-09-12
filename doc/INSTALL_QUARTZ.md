@@ -61,7 +61,8 @@ The compiler wrappers should sort out all the linking, so all we need to do is t
 ```
 echo "FCOMP = -F gfortran" > Makefile.local
 echo "INSTALLOPTIONS = --user" >> Makefile.local
-echo "FCOMP = -F gfortran --fcompexec=mpif90" > Makefile.local.pympi
+echo "FCOMPEXEC =  --fcompexec mpif90" > Makefile.local.pympi
+echo "" >> Makefile.local
 echo "INSTALLOPTIONS = --user" >> Makefile.local.pympi
 ```
 

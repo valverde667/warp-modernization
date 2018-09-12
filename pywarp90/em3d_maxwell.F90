@@ -6106,14 +6106,6 @@ integer(ISZ):: n,i,it,xl,xr
   call shift_3darray_ncells_x(f%Bx,f%nx,f%ny,f%nz,f%nxguard,f%nyguard,f%nzguard,xl,xr,n)
   call shift_3darray_ncells_x(f%By,f%nx,f%ny,f%nz,f%nxguard,f%nyguard,f%nzguard,xl,xr,n)
   call shift_3darray_ncells_x(f%Bz,f%nx,f%ny,f%nz,f%nxguard,f%nyguard,f%nzguard,xl,xr,n)
-  do it=1,f%ntimes
-    call shift_3darray_ncells_x(f%Jxarray(:,:,:,it), &
-                                    f%nx,f%ny,f%nz,f%nxguard,f%nyguard,f%nzguard,xl,xr,n)
-    call shift_3darray_ncells_x(f%Jyarray(:,:,:,it), &
-                                    f%nx,f%ny,f%nz,f%nxguard,f%nyguard,f%nzguard,xl,xr,n)
-    call shift_3darray_ncells_x(f%Jzarray(:,:,:,it), &
-                                    f%nx,f%ny,f%nz,f%nxguard,f%nyguard,f%nzguard,xl,xr,n)
-  end do
   if (f%nxr>0) then
       do it=1,f%ntimes
          f%Rho => f%Rhoarray(:,:,:,it)
@@ -6186,6 +6178,13 @@ integer(ISZ):: n,xl,xr
 end subroutine shift_em3dsplitf_ncells_x
 
 subroutine shift_3darray_ncells_x(f,nx,ny,nz,nxguard,nyguard,nzguard,xl,xr,n)
+! ==================================================================================
+! Shift an array of reals along the x axis by n cells, and exchange values with
+! neighboring processors, in the direction of the shift
+! If n is positive, the values are shifted to the left within one domain
+! If n is negative, the values are shifter to the right within one domain
+! xl and xr are tags that identify the left and right boundary conditions
+! ==================================================================================
 #ifdef MPIPARALLEL
 use mpirz
 #endif
@@ -6194,47 +6193,254 @@ integer(ISZ) :: nx,ny,nz,nxguard,nyguard,nzguard,n,xl,xr
 integer(ISZ), parameter:: otherproc=10, ibuf = 950
 real(kind=8) :: f(-nxguard:nx+nxguard,-nyguard:ny+nyguard,-nzguard:nz+nzguard)
 
-if (n>0) then
+if (n > 0) then
+  ! Shift the values to the left within one domain
   f(-nxguard:nx+nxguard-n,:,:) = f(-nxguard+n:nx+nxguard,:,:)
   if (xr/=otherproc) f(nx+nxguard-n+1:,:,:) = 0.
 
 #ifdef MPIPARALLEL
-    if (xl==otherproc) then
-       call mpi_packbuffer_init(size(f(nxguard-n+1:nxguard,:,:)),ibuf)
-       call mympi_pack(f(nxguard-n+1:nxguard,:,:),ibuf)
-       call mpi_send_pack(procneighbors(0,0),0,ibuf)
-    end if
-    if (xr==otherproc) then
-      call mpi_packbuffer_init(size(f(nx+nxguard-n+1:nx+nxguard,:,:)),ibuf)
-      call mpi_recv_pack(procneighbors(1,0),0,ibuf)
-      f(nx+nxguard-n+1:nx+nxguard,:,:) = reshape(mpi_unpack_real_array( size(f(nx+nxguard-n+1:nx+nxguard,:,:)),ibuf), &
-                                                           shape(f(nx+nxguard-n+1:nx+nxguard,:,:)))
-    end if
+  ! Send data from the left side of the domain to the left processor
+  if (xl==otherproc) then
+     call mpi_packbuffer_init(size(f(nxguard-n+1:nxguard,:,:)),ibuf)
+     call mympi_pack(f(nxguard-n+1:nxguard,:,:),ibuf)
+     call mpi_send_pack(procneighbors(0,0),0,ibuf)
+  end if
+  ! Receive data from the right processor into the right side of the domain
+  if (xr==otherproc) then
+    call mpi_packbuffer_init(size(f(nx+nxguard-n+1:,:,:)),ibuf)
+    call mpi_recv_pack(procneighbors(1,0),0,ibuf)
+    f(nx+nxguard-n+1:,:,:) = reshape(mpi_unpack_real_array( size(f(nx+nxguard-n+1:,:,:)),ibuf), &
+                                                           shape(f(nx+nxguard-n+1:,:,:)))
+  end if
 #endif
-end if
-if (n<0) then
-  n=-n
-  f(-nxguard+n:nx+nxguard,:,:) = f(-nxguard:nx+nxguard-n,:,:)
-  if (xl/=otherproc) f(-nxguard:-nxguard+n-1,:,:) = 0.
+
+else if (n < 0) then
+  ! Shift the values to the right within one domain
+  ! NB: In the mathematical operations below, keep in mind that n is *negative*
+  f(-nxguard-n:nx+nxguard,:,:) = f(-nxguard:nx+nxguard+n,:,:)
+  if (xl/=otherproc) f(:,:,:-nxguard-n-1) = 0.
 
 #ifdef MPIPARALLEL
-    if (xr==otherproc) then
-       call mpi_packbuffer_init(size(f(nx-nxguard:nx-nxguard+n,:,:)),ibuf)
-       call mympi_pack(f(nx-nxguard:nx-nxguard+n,:,:),ibuf)
-       call mpi_send_pack(procneighbors(1,0),0,ibuf)
-    end if
-    if (xl==otherproc) then
-      call mpi_packbuffer_init(size(f(:-nxguard+n-1,:,:)),ibuf)
-      call mpi_recv_pack(procneighbors(0,0),0,ibuf)
-      f(:-nxguard+n-1,:,:) = reshape(mpi_unpack_real_array( size(f(:-nxguard+n-1,:,:)),ibuf), &
-                                                                   shape(f(:-nxguard+n-1,:,:)))
-    end if
+  ! Send data from the right side of the domain to the right processor
+  if (xr==otherproc) then
+     call mpi_packbuffer_init(size(f(nx-nxguard:nx-nxguard-n-1,:,:)),ibuf)
+     call mympi_pack(f(nx-nxguard:nx-nxguard-n-1,:,:),ibuf)
+     call mpi_send_pack(procneighbors(1,0),0,ibuf)
+  end if
+  ! Receive data from the left processor into the left side of the domain
+  if (xl==otherproc) then
+    call mpi_packbuffer_init(size(f(-nxguard:-nxguard-n-1,:,:)),ibuf)
+    call mpi_recv_pack(procneighbors(0,0),0,ibuf)
+    f(-nxguard:-nxguard-n-1,:,:) = reshape(mpi_unpack_real_array( size(f(-nxguard:-nxguard-n-1,:,:)),ibuf), &
+                                                                 shape(f(-nxguard:-nxguard-n-1,:,:)))
+  end if
 #endif
-  n=-n
-end if
+
+endif
+
 
   return
 end subroutine shift_3darray_ncells_x
+
+subroutine shift_em3dblock_ncells_y(b,n)
+use mod_emfield3d
+implicit none
+TYPE(EM3D_BLOCKtype) :: b
+integer(ISZ):: n
+
+  ! --- shift core
+  call shift_em3df_ncells_y(b%core%yf,b%ylbnd,b%yrbnd,n)
+  ! --- shift sides
+  if(b%xlbnd==openbc) call shift_em3dsplitf_ncells_y(b%sidexl%syf,b%ylbnd,b%yrbnd,n)
+  if(b%xrbnd==openbc) call shift_em3dsplitf_ncells_y(b%sidexr%syf,b%ylbnd,b%yrbnd,n)
+  if(b%ylbnd==openbc) call shift_em3dsplitf_ncells_y(b%sideyl%syf,openbc,openbc,n)
+  if(b%yrbnd==openbc) call shift_em3dsplitf_ncells_y(b%sideyr%syf,openbc,openbc,n)
+  if(b%zlbnd==openbc) call shift_em3dsplitf_ncells_y(b%sidezl%syf,b%ylbnd,b%yrbnd,n)
+  if(b%zrbnd==openbc) call shift_em3dsplitf_ncells_y(b%sidezr%syf,b%ylbnd,b%yrbnd,n)
+  ! --- shift edges
+  if(b%xlbnd==openbc .and. b%ylbnd==openbc) call shift_em3dsplitf_ncells_y(b%edgexlyl%syf,openbc,openbc,n)
+  if(b%xrbnd==openbc .and. b%ylbnd==openbc) call shift_em3dsplitf_ncells_y(b%edgexryl%syf,openbc,openbc,n)
+  if(b%xlbnd==openbc .and. b%yrbnd==openbc) call shift_em3dsplitf_ncells_y(b%edgexlyr%syf,openbc,openbc,n)
+  if(b%xrbnd==openbc .and. b%yrbnd==openbc) call shift_em3dsplitf_ncells_y(b%edgexryr%syf,openbc,openbc,n)
+  if(b%xlbnd==openbc .and. b%zlbnd==openbc) call shift_em3dsplitf_ncells_y(b%edgexlzl%syf,b%ylbnd,b%yrbnd,n)
+  if(b%xrbnd==openbc .and. b%zlbnd==openbc) call shift_em3dsplitf_ncells_y(b%edgexrzl%syf,b%ylbnd,b%yrbnd,n)
+  if(b%xlbnd==openbc .and. b%zrbnd==openbc) call shift_em3dsplitf_ncells_y(b%edgexlzr%syf,b%ylbnd,b%yrbnd,n)
+  if(b%xrbnd==openbc .and. b%zrbnd==openbc) call shift_em3dsplitf_ncells_y(b%edgexrzr%syf,b%ylbnd,b%yrbnd,n)
+  if(b%ylbnd==openbc .and. b%zlbnd==openbc) call shift_em3dsplitf_ncells_y(b%edgeylzl%syf,openbc,openbc,n)
+  if(b%yrbnd==openbc .and. b%zlbnd==openbc) call shift_em3dsplitf_ncells_y(b%edgeyrzl%syf,openbc,openbc,n)
+  if(b%ylbnd==openbc .and. b%zrbnd==openbc) call shift_em3dsplitf_ncells_y(b%edgeylzr%syf,openbc,openbc,n)
+  if(b%yrbnd==openbc .and. b%zrbnd==openbc) call shift_em3dsplitf_ncells_y(b%edgeyrzr%syf,openbc,openbc,n)
+  ! --- shift corners
+  if(b%xlbnd==openbc .and. b%ylbnd==openbc .and. b%zlbnd==openbc) &
+  call shift_em3dsplitf_ncells_y(b%cornerxlylzl%syf,openbc,openbc,n)
+  if(b%xrbnd==openbc .and. b%ylbnd==openbc .and. b%zlbnd==openbc) &
+  call shift_em3dsplitf_ncells_y(b%cornerxrylzl%syf,openbc,openbc,n)
+  if(b%xlbnd==openbc .and. b%yrbnd==openbc .and. b%zlbnd==openbc) &
+  call shift_em3dsplitf_ncells_y(b%cornerxlyrzl%syf,openbc,openbc,n)
+  if(b%xrbnd==openbc .and. b%yrbnd==openbc .and. b%zlbnd==openbc) &
+  call shift_em3dsplitf_ncells_y(b%cornerxryrzl%syf,openbc,openbc,n)
+  if(b%xlbnd==openbc .and. b%ylbnd==openbc .and. b%zrbnd==openbc) &
+  call shift_em3dsplitf_ncells_y(b%cornerxlylzr%syf,openbc,openbc,n)
+  if(b%xrbnd==openbc .and. b%ylbnd==openbc .and. b%zrbnd==openbc) &
+  call shift_em3dsplitf_ncells_y(b%cornerxrylzr%syf,openbc,openbc,n)
+  if(b%xlbnd==openbc .and. b%yrbnd==openbc .and. b%zrbnd==openbc) &
+  call shift_em3dsplitf_ncells_y(b%cornerxlyrzr%syf,openbc,openbc,n)
+  if(b%xrbnd==openbc .and. b%yrbnd==openbc .and. b%zrbnd==openbc) &
+  call shift_em3dsplitf_ncells_y(b%cornerxryrzr%syf,openbc,openbc,n)
+
+  return
+end subroutine shift_em3dblock_ncells_y
+
+subroutine shift_em3df_ncells_y(f,yl,yr,n)
+use mod_emfield3d
+implicit none
+TYPE(EM3D_YEEFIELDtype) :: f
+integer(ISZ):: n,i,it,yl,yr
+  call shift_3darray_ncells_y(f%Ex,f%nx,f%ny,f%nz,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+  call shift_3darray_ncells_y(f%Ey,f%nx,f%ny,f%nz,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+  call shift_3darray_ncells_y(f%Ez,f%nx,f%ny,f%nz,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+  call shift_3darray_ncells_y(f%Bx,f%nx,f%ny,f%nz,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+  call shift_3darray_ncells_y(f%By,f%nx,f%ny,f%nz,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+  call shift_3darray_ncells_y(f%Bz,f%nx,f%ny,f%nz,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+  if (f%nxr>0) then
+      do it=1,f%ntimes
+         f%Rho => f%Rhoarray(:,:,:,it)
+         call shift_3darray_ncells_y(f%Rho,f%nxr,f%nyr,f%nzr,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+      end do
+      f%Rho => f%Rhoarray(:,:,:,1)
+  end if
+  if (f%nxf>0) then
+    call shift_3darray_ncells_y(f%F,f%nxf,f%nyf,f%nzf,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+  end if
+  if (f%nxg>0) then
+    call shift_3darray_ncells_y(f%G,f%nxf,f%nyf,f%nzf,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+  end if
+  if (f%nxpnext>0) then
+    call shift_3darray_ncells_y(f%Expnext,f%nx,f%ny,f%nz,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+    call shift_3darray_ncells_y(f%Eypnext,f%nx,f%ny,f%nz,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+    call shift_3darray_ncells_y(f%Ezpnext,f%nx,f%ny,f%nz,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+    call shift_3darray_ncells_y(f%Bxpnext,f%nx,f%ny,f%nz,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+    call shift_3darray_ncells_y(f%Bypnext,f%nx,f%ny,f%nz,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+    call shift_3darray_ncells_y(f%Bzpnext,f%nx,f%ny,f%nz,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+  end if
+  if (f%nxpo>0) then
+    call shift_3darray_ncells_y(f%Ax,f%nxpo,f%nypo,f%nzpo,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+    call shift_3darray_ncells_y(f%Ay,f%nxpo,f%nypo,f%nzpo,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+    call shift_3darray_ncells_y(f%Az,f%nxpo,f%nypo,f%nzpo,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+    call shift_3darray_ncells_y(f%Phi,f%nxpo,f%nypo,f%nzpo,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+  end if
+
+  return
+end subroutine shift_em3df_ncells_y
+
+subroutine shift_em3dsplitf_ncells_y(f,yl,yr,n)
+use mod_emfield3d
+implicit none
+TYPE(EM3D_SPLITYEEFIELDtype) :: f
+integer(ISZ):: n,yl,yr
+
+  call shift_3darray_ncells_y(f%Exx,f%nx,f%ny,f%nz,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+  call shift_3darray_ncells_y(f%Exy,f%nx,f%ny,f%nz,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+  call shift_3darray_ncells_y(f%Exz,f%nx,f%ny,f%nz,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+
+  call shift_3darray_ncells_y(f%Eyx,f%nx,f%ny,f%nz,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+  call shift_3darray_ncells_y(f%Eyy,f%nx,f%ny,f%nz,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+  call shift_3darray_ncells_y(f%Eyz,f%nx,f%ny,f%nz,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+
+  call shift_3darray_ncells_y(f%Ezx,f%nx,f%ny,f%nz,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+  call shift_3darray_ncells_y(f%Ezy,f%nx,f%ny,f%nz,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+  call shift_3darray_ncells_y(f%Ezz,f%nx,f%ny,f%nz,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+
+  call shift_3darray_ncells_y(f%Bxy,f%nx,f%ny,f%nz,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+  call shift_3darray_ncells_y(f%Bxz,f%nx,f%ny,f%nz,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+
+  call shift_3darray_ncells_y(f%Byx,f%nx,f%ny,f%nz,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+  call shift_3darray_ncells_y(f%Byz,f%nx,f%ny,f%nz,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+
+  call shift_3darray_ncells_y(f%Bzx,f%nx,f%ny,f%nz,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+  call shift_3darray_ncells_y(f%Bzy,f%nx,f%ny,f%nz,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+
+  call shift_3darray_ncells_y(f%Fx,f%nx,f%ny,f%nz,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+  call shift_3darray_ncells_y(f%Fy,f%nx,f%ny,f%nz,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+  call shift_3darray_ncells_y(f%Fz,f%nx,f%ny,f%nz,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+  if (f%nxpo>0) then
+    call shift_3darray_ncells_y(f%Ax,f%nxpo,f%nypo,f%nzpo,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+    call shift_3darray_ncells_y(f%Ay,f%nxpo,f%nypo,f%nzpo,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+    call shift_3darray_ncells_y(f%Az,f%nxpo,f%nypo,f%nzpo,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+    call shift_3darray_ncells_y(f%Phi,f%nxpo,f%nypo,f%nzpo,f%nxguard,f%nyguard,f%nzguard,yl,yr,n)
+  end if
+
+  return
+end subroutine shift_em3dsplitf_ncells_y
+
+subroutine shift_3darray_ncells_y(f,nx,ny,nz,nxguard,nyguard,nzguard,yl,yr,n)
+! ==================================================================================
+! Shift an array of reals along the y axis by n cells, and exchange values with
+! neighboring processors, in the direction of the shift
+! If n is positive, the values are shifted to the left within one domain
+! If n is negative, the values are shifter to the right within one domain
+! yl and yr are tags that identify the left and right boundary conditions
+! ==================================================================================
+#ifdef MPIPARALLEL
+use mpirz
+#endif
+implicit none
+integer(ISZ) :: nx,ny,nz,nxguard,nyguard,nzguard,n,yl,yr
+integer(ISZ), parameter:: otherproc=10, ibuf = 950
+real(kind=8) :: f(-nxguard:nx+nxguard,-nyguard:ny+nyguard,-nzguard:nz+nzguard)
+
+
+if (n > 0) then
+  ! Shift the values to the left within one domain
+  f(:,-nyguard:ny+nyguard-n,:) = f(:,-nyguard:ny+nyguard-n,:)
+  if (yr/=otherproc) f(:,ny+nyguard-n+1:,:) = 0.
+
+#ifdef MPIPARALLEL
+  ! Send data from the left side of the domain to the left processor
+  if (yl==otherproc) then
+     call mpi_packbuffer_init(size(f(:,ny+nyguard-n+1:,:)),ibuf)
+     call mympi_pack(f(:,ny+nyguard-n+1:,:),ibuf)
+     call mpi_send_pack(procneighbors(0,1),0,ibuf)
+  end if
+  ! Receive data from the right processor into the right side of the domain
+  if (yr==otherproc) then
+    call mpi_packbuffer_init(size(f(:,ny+nyguard-n+1:,:)),ibuf)
+    call mpi_recv_pack(procneighbors(1,1),0,ibuf)
+    f(:,ny+nyguard-n+1:,:) = reshape(mpi_unpack_real_array( size(f(:,ny+nyguard-n+1:,:)),ibuf), &
+                                                           shape(f(:,ny+nyguard-n+1:,:)))
+  end if
+#endif
+
+else if (n < 0) then
+  ! Shift the values to the right within one domain
+  ! NB: In the mathematical operations below, keep in mind that n is *negative*
+  f(:,-nyguard-n:ny+nyguard,:) = f(:,-nyguard-n:ny+nyguard,:)
+  if (yl/=otherproc) f(:,:-nyguard-n-1,:) = 0.
+
+#ifdef MPIPARALLEL
+  ! Send data from the right side of the domain to the right processor
+  if (yr==otherproc) then
+     call mpi_packbuffer_init(size(f(:,ny-nyguard:ny-nyguard-n-1,:)),ibuf)
+     call mympi_pack(f(:,ny-nyguard:ny-nyguard-n-1,:),ibuf)
+     call mpi_send_pack(procneighbors(1,1),0,ibuf)
+  end if
+  ! Receive data from the left processor into the left side of the domain
+  if (yl==otherproc) then
+    call mpi_packbuffer_init(size(f(:,-nyguard:-nyguard-n-1,:)),ibuf)
+    call mpi_recv_pack(procneighbors(0,1),0,ibuf)
+    f(:,-nyguard:-nyguard-n-1,:) = reshape(mpi_unpack_real_array( size(f(:,-nyguard:-nyguard-n-1,:)),ibuf), &
+                                                                 shape(f(:,-nyguard:-nyguard-n-1,:)))
+  end if
+#endif
+
+endif
+
+
+  return
+end subroutine shift_3darray_ncells_y
+
+
+
 
 subroutine em3d_applybc_e(f,xlbnd,xrbnd,ylbnd,yrbnd,zlbnd,zrbnd)
 use mod_emfield3d

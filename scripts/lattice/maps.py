@@ -196,8 +196,8 @@ class Maps_simple:
     pg.zp[il:iu]+=(pg.uzp[il:iu]*pg.gaminv[il:iu]-top.vbeam)*dt
 
 # Headtail
-# 	     sz[kmain] = csa * szz0                - eta * C/omegas * ssa * dpp0;
-#	     dp[kmain] = omegas/eta/C * ssa * szz0 + csa * dpp0;
+#        sz[kmain] = csa * szz0                - eta * C/omegas * ssa * dpp0;
+#        dp[kmain] = omegas/eta/C * ssa * szz0 + csa * dpp0;
 # if omegas==0:
 #        sz[kmain] = szz0 - eta*circ*dpp0;
 

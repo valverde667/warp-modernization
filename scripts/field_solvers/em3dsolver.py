@@ -138,7 +138,7 @@ class EM3D(SubcycledPoissonSolver):
             if self.l_nodalgrid:
                 self.l_deposit_nodal=True
             else:
-                l_deposit_nodal=False
+                self.l_deposit_nodal=False
 
         # --- Impose type_rz_depose = 0 if not in circ mode
         if self.l_2drz == False :

@@ -331,12 +331,7 @@ class Assembly(VisualizableClass):
         return kwlist
 
     def getextent(self):
-        return self.extent
-
-    def createextent(self,mins,maxs):
-        self.extent = ConductorExtent(
-                   [self.xcent+mins[0],self.ycent+mins[1],self.zcent+mins[2]],
-                   [self.xcent+maxs[0],self.ycent+maxs[1],self.zcent+maxs[2]])
+        raise Exception('getextent not implemented')
 
     def griddistance(self,ix,iy,iz,xx,yy,zz):
         result = Delta(ix,iy,iz,xx,yy,zz,voltage=self.getvoltage(),condid=self.condid,
@@ -1070,7 +1065,9 @@ class EllipticAssembly(Assembly):
         self.circlegeneratord = generatord
         self.circlegeneratori = generatori
         self.circlegeneratorfnew = generatorfnew
-        self.extent.toellipse(self.ellipticity)
+
+    def modifyextent(self, extent):
+        extent.toellipse(self.ellipticity)
 
     def ellipseconductorf(self,*argtuple):
         arglist = list(argtuple)
@@ -1172,7 +1169,9 @@ class XAssembly(Assembly):
         self.zgeneratord = generatord
         self.zgeneratori = generatori
         self.zgeneratorfnew = generatorfnew
-        self.extent.toX(self.xcent,self.ycent,self.zcent)
+
+    def modifyextent(self, extent):
+        extent.toX()
 
     def xconductorf(self,*argtuple):
         arglist = list(argtuple)
@@ -1195,6 +1194,12 @@ class XAssembly(Assembly):
 
     def xconductorfnew(self,*argtuple):
         arglist = list(argtuple)
+
+        # --- permutate the object center
+        arglist[-5] = argtuple[-4]
+        arglist[-4] = argtuple[-3]
+        arglist[-3] = argtuple[-5]
+
         intercepts = arglist[-2]
         i = intercepts
 
@@ -1211,17 +1216,17 @@ class XAssembly(Assembly):
         i.ix,i.iy,i.iz = i.iz,i.ix,i.iy
         i.nxicpt,i.nyicpt,i.nzicpt = i.nzicpt,i.nxicpt,i.nyicpt
 
-        temp = intercepts.zintercepts
+        temp = intercepts.zintercepts.copy()
         intercepts.zintercepts = intercepts.yintercepts.transpose(0,2,1)
         intercepts.yintercepts = intercepts.xintercepts.transpose(0,2,1)
         intercepts.xintercepts = temp
 
-        temp = intercepts.zvoltages
+        temp = intercepts.zvoltages.copy()
         intercepts.zvoltages = intercepts.yvoltages.transpose(0,2,1)
         intercepts.yvoltages = intercepts.xvoltages.transpose(0,2,1)
         intercepts.xvoltages = temp
 
-        temp = intercepts.zcondids
+        temp = intercepts.zcondids.copy()
         intercepts.zcondids = intercepts.ycondids.transpose(0,2,1)
         intercepts.ycondids = intercepts.xcondids.transpose(0,2,1)
         intercepts.xcondids = temp
@@ -1316,7 +1321,9 @@ class YAssembly(Assembly):
         self.zgeneratord = generatord
         self.zgeneratori = generatori
         self.zgeneratorfnew = generatorfnew
-        self.extent.toY(self.xcent,self.ycent,self.zcent)
+
+    def modifyextent(self, extent):
+        extent.toY()
 
     def yconductorf(self,*argtuple):
         arglist = list(argtuple)
@@ -1339,6 +1346,12 @@ class YAssembly(Assembly):
 
     def yconductorfnew(self,*argtuple):
         arglist = list(argtuple)
+
+        # --- permutate the object center
+        arglist[-5] = argtuple[-3]
+        arglist[-4] = argtuple[-5]
+        arglist[-3] = argtuple[-4]
+
         intercepts = arglist[-2]
         i = intercepts
 
@@ -1355,17 +1368,17 @@ class YAssembly(Assembly):
         i.ix,i.iy,i.iz = i.iy,i.iz,i.ix
         i.nxicpt,i.nyicpt,i.nzicpt = i.nyicpt,i.nzicpt,i.nxicpt
 
-        temp = intercepts.zintercepts.transpose(0,2,1)
+        temp = intercepts.zintercepts.transpose(0,2,1).copy()
         intercepts.zintercepts = intercepts.xintercepts
         intercepts.xintercepts = intercepts.yintercepts.transpose(0,2,1)
         intercepts.yintercepts = temp
 
-        temp = intercepts.zvoltages.transpose(0,2,1)
+        temp = intercepts.zvoltages.transpose(0,2,1).copy()
         intercepts.zvoltages = intercepts.xvoltages
         intercepts.xvoltages = intercepts.yvoltages.transpose(0,2,1)
         intercepts.yvoltages = temp
 
-        temp = intercepts.zcondids.transpose(0,2,1)
+        temp = intercepts.zcondids.transpose(0,2,1).copy()
         intercepts.zcondids = intercepts.xcondids
         intercepts.xcondids = intercepts.ycondids.transpose(0,2,1)
         intercepts.ycondids = temp
@@ -1453,32 +1466,37 @@ class ConductorExtent:
   Class to hold the extent of a conductor. This is somewhat overkill for a
   class, but it does provide a nice way of putting this into one spot.
     """
-    def __init__(self,mins,maxs):
-        self.mins = copy.copy(mins)
-        self.maxs = copy.copy(maxs)
+    def __init__(self,mins,maxs,cent):
+        self._mins = array(mins).copy()
+        self._maxs = array(maxs).copy()
+        self.cent = array(cent).copy()
+    def getmins(self):
+        return self._mins + self.cent
+    def getmaxs(self):
+        return self._maxs + self.cent
+    mins = property(getmins)
+    maxs = property(getmaxs)
     def toellipse(self,ellipticity):
-        self.mins[1] = self.mins[1]*ellipticity
-        self.maxs[1] = self.maxs[1]*ellipticity
-    def toX(self,xcent,ycent,zcent):
-        cent = array([xcent,ycent,zcent])
-        minscopy = self.mins - cent
-        maxscopy = self.maxs - cent
-        self.mins[0] = minscopy[2] + xcent
-        self.maxs[0] = maxscopy[2] + xcent
-        self.mins[1] = minscopy[0] + ycent
-        self.maxs[1] = maxscopy[0] + ycent
-        self.mins[2] = minscopy[1] + zcent
-        self.maxs[2] = maxscopy[1] + zcent
-    def toY(self,xcent,ycent,zcent):
-        cent = array([xcent,ycent,zcent])
-        minscopy = self.mins - cent
-        maxscopy = self.maxs - cent
-        self.mins[0] = minscopy[1] + xcent
-        self.maxs[0] = maxscopy[1] + xcent
-        self.mins[1] = minscopy[2] + ycent
-        self.maxs[1] = maxscopy[2] + ycent
-        self.mins[2] = minscopy[0] + zcent
-        self.maxs[2] = maxscopy[0] + zcent
+        self._mins[1] = self._mins[1]*ellipticity
+        self._maxs[1] = self._maxs[1]*ellipticity
+    def toX(self):
+        minscopy = self._mins.copy()
+        maxscopy = self._maxs.copy()
+        self._mins[0] = minscopy[2]
+        self._maxs[0] = maxscopy[2]
+        self._mins[1] = minscopy[0]
+        self._maxs[1] = maxscopy[0]
+        self._mins[2] = minscopy[1]
+        self._maxs[2] = maxscopy[1]
+    def toY(self):
+        minscopy = self._mins.copy()
+        maxscopy = self._maxs.copy()
+        self._mins[0] = minscopy[1]
+        self._maxs[0] = maxscopy[1]
+        self._mins[1] = minscopy[2]
+        self._maxs[1] = maxscopy[2]
+        self._mins[2] = minscopy[0]
+        self._maxs[2] = maxscopy[0]
 
     def __neg__(self):
         "This one is doesn't help much"
@@ -1486,12 +1504,14 @@ class ConductorExtent:
                                [+largepos,+largepos,+largepos])
     def __add__(self,right):
         return ConductorExtent(minimum(self.mins,right.mins),
-                               maximum(self.maxs,right.maxs))
+                               maximum(self.maxs,right.maxs),
+                               zeros(3))
     def __mul__(self,right):
         return ConductorExtent(maximum(self.mins,right.mins),
-                               minimum(self.maxs,right.maxs))
+                               minimum(self.maxs,right.maxs),
+                               zeros(3))
     def __sub__(self,right):
-        return ConductorExtent(self.mins,self.maxs)
+        return ConductorExtent(self._mins,self._maxs,self.cent)
 
     def doesoverlap(self,mins,maxs):
         return (mins[0] <= self.maxs[0] and maxs[0] >= self.mins[0] and
@@ -3069,9 +3089,12 @@ class CADconductor(Assembly):
                                self.conductorfnew,
                                kw=kw)
         self.filename = filename
+
+    def getextent(self):
         # --- The extent is not used with the new method, but define it anyway.
-        self.createextent([-largepos,-largepos,-largepos],
-                          [+largepos,+largepos,+largepos])
+        return ConductorExtent([-largepos,-largepos,-largepos],
+                               [+largepos,+largepos,+largepos],
+                               [self.xcent,self.ycent,self.zcent])
 
     def conductorf(self):
         raise Exception('This function should never be called')
@@ -3133,9 +3156,14 @@ class Plane(Assembly):
         self.zsign = zsign
         self.theta = theta
         self.phi = phi
+
+    def getextent(self):
         # --- Just assume that the conductor extends everywhere since it can be tricky
         # --- to calculate its extent within the grid.
-        self.createextent([-largepos,-largepos,-largepos],[+largepos,+largepos,+largepos])
+        ConductorExtent([-largepos,-largepos,-largepos],
+                        [+largepos,+largepos,+largepos],
+                        [self.xcent,self.ycent,self.zcent])
+
 
 #============================================================================
 class ZPlane(Assembly):
@@ -3158,11 +3186,13 @@ class ZPlane(Assembly):
                                kw=kw)
         self.z0 = z0
         self.zsign = zsign
-        if zsign > 0:
-            z1,z2 = z0,+largepos
+
+    def getextent(self):
+        if self.zsign > 0:
+            z1,z2 = self.z0,+largepos
         else:
-            z1,z2 = -largepos,z0
-        self.createextent([-largepos,-largepos,z1],[+largepos,+largepos,z2])
+            z1,z2 = -largepos,self.z0
+        return ConductorExtent([-largepos,-largepos,z1],[+largepos,+largepos,z2],[self.xcent,self.ycent,self.zcent])
 
 #============================================================================
 class XPlane(ZPlane,XAssembly):
@@ -3188,6 +3218,18 @@ class XPlane(ZPlane,XAssembly):
                                 self.generatorfnew,
                                 kw=kw)
 
+    def getextent(self):
+        extent = ZPlane.getextent(self)
+        XAssembly.modifyextent(self, extent)
+        return extent
+
+    def drawzx(self,**kw):
+        super(self.__class__,self).drawzy(xcent=self.xcent,zcent=self.zcent,**kw)
+    def drawzy(self,**kw):
+        super(self.__class__,self).drawxy(xcent=self.ycent,zcent=self.zcent,**kw)
+    def drawxy(self,**kw):
+        super(self.__class__,self).drawzx(xcent=self.ycent,zcent=self.xcent,**kw)
+
 #============================================================================
 class YPlane(ZPlane,YAssembly):
     """
@@ -3212,6 +3254,18 @@ class YPlane(ZPlane,YAssembly):
                                 self.generatorfnew,
                                 kw=kw)
 
+    def getextent(self):
+        extent = ZPlane.getextent(self)
+        YAssembly.modifyextent(self, extent)
+        return extent
+
+    def drawzx(self,**kw):
+        super(self.__class__,self).drawxy(xcent=self.xcent,zcent=self.zcent,**kw)
+    def drawzy(self,**kw):
+        super(self.__class__,self).drawzx(xcent=self.ycent,zcent=self.zcent,**kw)
+    def drawxy(self,**kw):
+        super(self.__class__,self).drawzy(xcent=self.ycent,zcent=self.xcent,**kw)
+
 #============================================================================
 class Box(Assembly):
     """
@@ -3232,8 +3286,11 @@ class Box(Assembly):
         self.xsize = xsize
         self.ysize = ysize
         self.zsize = zsize
-        self.createextent([-self.xsize/2.,-self.ysize/2.,-self.zsize/2.],
-                          [+self.xsize/2.,+self.ysize/2.,+self.zsize/2.])
+
+    def getextent(self):
+        return ConductorExtent([-self.xsize/2.,-self.ysize/2.,-self.zsize/2.],
+                               [+self.xsize/2.,+self.ysize/2.,+self.zsize/2.],
+                               [self.xcent,self.ycent,self.zcent])
 
     def draw(self,color='fg',filled=None,fullplane=1,**kw):
         self.drawzx(**kw)
@@ -3287,9 +3344,10 @@ class Cylinder(Assembly):
         self.theta  = theta
         self.phi    = phi
 
+    def getextent(self):
         # --- This is the easiest thing to do without thinking.
         ll = sqrt(self.radius**2 + (self.length/2.)**2)
-        self.createextent([-ll,-ll,-ll],[+ll,+ll,+ll])
+        return ConductorExtent([-ll,-ll,-ll],[+ll,+ll,+ll],[self.xcent,self.ycent,self.zcent])
 
     def draw(self,color='fg',filled=None,fullplane=1,**kw):
         """
@@ -3375,14 +3433,15 @@ class Cylinders(Assembly):
         self.ycent  = self.ycent*ones(self.ncylinders)
         self.zcent  = self.zcent*ones(self.ncylinders)
 
+    def getextent(self):
         rmax = sqrt(self.radius**2 + (self.length/2.)**2)
-        xmin = min(self.xcent-rmax)
-        ymin = min(self.ycent-rmax)
-        zmin = min(self.zcent-rmax)
-        xmax = max(self.xcent+rmax)
-        ymax = max(self.ycent+rmax)
-        zmax = max(self.zcent+rmax)
-        self.extent = ConductorExtent([xmin,ymin,zmin],[xmax,ymax,zmax])
+        xmin = min(-rmax)
+        ymin = min(-rmax)
+        zmin = min(-rmax)
+        xmax = max(+rmax)
+        ymax = max(+rmax)
+        zmax = max(+rmax)
+        return ConductorExtent([xmin,ymin,zmin],[xmax,ymax,zmax],[self.xcent,self.ycent,self.zcent])
 
 #============================================================================
 class ZCylinder(Assembly):
@@ -3414,8 +3473,11 @@ class ZCylinder(Assembly):
                                kw=kw)
         self.radius = radius
         self.length = length
-        self.createextent([-self.radius,-self.radius,-self.length/2.],
-                          [+self.radius,+self.radius,+self.length/2.])
+
+    def getextent(self):
+        return ConductorExtent([-self.radius,-self.radius,-self.length/2.],
+                               [+self.radius,+self.radius,+self.length/2.],
+                               [self.xcent,self.ycent,self.zcent])
 
     def createdxobject(self,kwdict={},**kw):
         kw.update(kwdict)
@@ -3442,6 +3504,8 @@ class ZCylinder(Assembly):
         if rmin is None: rmin = 0.
         r = [self.radius,self.radius,rmin,rmin,self.radius]
         z = self.length*array([-0.5,0.5,0.5,-0.5,-0.5])
+        kw.setdefault('xcent',self.xcent)
+        kw.setdefault('zcent',self.zcent)
         self.plotdata(r,z,color=color,filled=filled,fullplane=fullplane,**kw)
 
     def drawzx(self,color='fg',filled=None,fullplane=1,**kw):
@@ -3468,8 +3532,9 @@ class ZCylinder(Assembly):
         if rmin is None: rmin = 0.
         r = [self.radius,self.radius,rmin,rmin,self.radius]
         z = self.length*array([-0.5,0.5,0.5,-0.5,-0.5])
-        self.plotdata(r,z,color=color,filled=filled,fullplane=fullplane,
-                      xcent=self.ycent,**kw)
+        kw.setdefault('xcent',self.ycent)
+        kw.setdefault('zcent',self.zcent)
+        self.plotdata(r,z,color=color,filled=filled,fullplane=fullplane,**kw)
 
     def drawxy(self,color='fg',filled=None,fullplane=1,nn=101,**kw):
         """
@@ -3489,8 +3554,9 @@ class ZCylinder(Assembly):
         if rmin > 0.:
             x = array(list(x) + self.rmin*cos(-theta))
             y = array(list(y) + self.rmin*sin(-theta))
-        self.plotdata(y,x,color=color,filled=filled,fullplane=fullplane,
-                      xcent=self.ycent,zcent=self.xcent,**kw)
+        kw.setdefault('xcent',self.ycent)
+        kw.setdefault('zcent',self.xcent)
+        self.plotdata(y,x,color=color,filled=filled,fullplane=fullplane,**kw)
 
 #============================================================================
 class ZRoundedCylinder(Assembly):
@@ -3525,8 +3591,11 @@ class ZRoundedCylinder(Assembly):
         self.radius = radius
         self.length = length
         self.radius2 = radius2
-        self.createextent([-self.radius,-self.radius,-self.length/2.],
-                          [+self.radius,+self.radius,+self.length/2.])
+
+    def getextent(self):
+        return ConductorExtent([-self.radius,-self.radius,-self.length/2.],
+                               [+self.radius,+self.radius,+self.length/2.],
+                               [self.xcent,self.ycent,self.zcent])
 
     def createdxobject(self,kwdict={},**kw):
         kw.update(kwdict)
@@ -3603,8 +3672,11 @@ class ZCylinderOut(Assembly):
                           kw=kw)
         self.radius = radius
         self.length = length
-        self.createextent([-largepos,-largepos,-self.length/2.],
-                          [+largepos,+largepos,+self.length/2.])
+
+    def getextent(self):
+        return ConductorExtent([-largepos,-largepos,-self.length/2.],
+                               [+largepos,+largepos,+self.length/2.],
+                               [self.xcent,self.ycent,self.zcent])
 
     def createdxobject(self,rend=1.,kwdict={},**kw):
         kw.update(kwdict)
@@ -3670,8 +3742,11 @@ class ZRoundedCylinderOut(Assembly):
         self.radius = radius
         self.length = length
         self.radius2 = radius2
-        self.createextent([-largepos,-largepos,-self.length/2.],
-                          [+largepos,+largepos,+self.length/2.])
+
+    def getextent(self):
+        return ConductorExtent([-largepos,-largepos,-self.length/2.],
+                               [+largepos,+largepos,+self.length/2.],
+                               [self.xcent,self.ycent,self.zcent])
 
     def createdxobject(self,rend=1.,kwdict={},**kw):
         kw.update(kwdict)
@@ -3755,6 +3830,19 @@ class XCylinder(ZCylinder,XAssembly):
                                 self.generatorfnew,
                                 kw=kw)
 
+    def getextent(self):
+        extent = ZCylinder.getextent(self)
+        XAssembly.modifyextent(self, extent)
+        return extent
+
+    def drawzx(self,**kw):
+        super(self.__class__,self).drawzy(xcent=self.xcent,zcent=self.zcent,**kw)
+    def drawzy(self,**kw):
+        super(self.__class__,self).drawxy(xcent=self.ycent,zcent=self.zcent,**kw)
+    def drawxy(self,**kw):
+        super(self.__class__,self).drawzx(xcent=self.ycent,zcent=self.xcent,**kw)
+
+
 #============================================================================
 class XCylinderOut(ZCylinderOut,XAssembly):
     """
@@ -3785,6 +3873,19 @@ class XCylinderOut(ZCylinderOut,XAssembly):
                                 self.generatorf,self.generatord,self.generatori,
                                 self.generatorfnew,
                                 kw=kw)
+
+    def getextent(self):
+        extent = ZCylinderOut.getextent(self)
+        XAssembly.modifyextent(self, extent)
+        return extent
+
+    def drawzx(self,**kw):
+        super(self.__class__,self).drawzy(xcent=self.xcent,zcent=self.zcent,**kw)
+    def drawzy(self,**kw):
+        super(self.__class__,self).drawxy(xcent=self.ycent,zcent=self.zcent,**kw)
+    def drawxy(self,**kw):
+        super(self.__class__,self).drawzx(xcent=self.ycent,zcent=self.xcent,**kw)
+
 
 #============================================================================
 class YCylinder(ZCylinder,YAssembly):
@@ -3817,6 +3918,18 @@ class YCylinder(ZCylinder,YAssembly):
                                 self.generatorfnew,
                                 kw=kw)
 
+    def getextent(self):
+        extent = ZCylinder.getextent(self)
+        YAssembly.modifyextent(self, extent)
+        return extent
+
+    def drawzx(self,**kw):
+        super(self.__class__,self).drawxy(xcent=self.xcent,zcent=self.zcent,**kw)
+    def drawzy(self,**kw):
+        super(self.__class__,self).drawzx(xcent=self.ycent,zcent=self.zcent,**kw)
+    def drawxy(self,**kw):
+        super(self.__class__,self).drawzy(xcent=self.ycent,zcent=self.xcent,**kw)
+
 #============================================================================
 class YCylinderOut(ZCylinderOut,YAssembly):
     """
@@ -3848,6 +3961,18 @@ class YCylinderOut(ZCylinderOut,YAssembly):
                                 self.generatorfnew,
                                 kw=kw)
 
+    def getextent(self):
+        extent = ZCylinderOut.getextent(self)
+        YAssembly.modifyextent(self, extent)
+        return extent
+
+    def drawzx(self,**kw):
+        super(self.__class__,self).drawxy(xcent=self.xcent,zcent=self.zcent,**kw)
+    def drawzy(self,**kw):
+        super(self.__class__,self).drawzx(xcent=self.ycent,zcent=self.zcent,**kw)
+    def drawxy(self,**kw):
+        super(self.__class__,self).drawzy(xcent=self.ycent,zcent=self.xcent,**kw)
+
 #============================================================================
 class ZCylinderElliptic(ZCylinder,EllipticAssembly):
     """
@@ -3875,6 +4000,11 @@ class ZCylinderElliptic(ZCylinder,EllipticAssembly):
                                   self.generatorf,self.generatord,self.generatori,
                                   self.generatorfnew,
                                   kw=kw)
+
+    def getextent(self):
+        extent = ZCylinder.getextent(self)
+        EllipticAssembly.modifyextent(self, extent)
+        return extent
 
     def createdxobject(self,kwdict={},**kw):
         kw.update(kwdict)
@@ -3919,6 +4049,11 @@ class ZCylinderEllipticOut(ZCylinderOut,EllipticAssembly):
                                   self.generatorfnew,
                                   kw=kw)
 
+    def getextent(self):
+        extent = ZCylinderOut.getextent(self)
+        EllipticAssembly.modifyextent(self, extent)
+        return extent
+
     def createdxobject(self,rend=1.,kwdict={},**kw):
         kw.update(kwdict)
         e = self.ellipticity
@@ -3938,7 +4073,7 @@ class ZCylinderEllipticOut(ZCylinderOut,EllipticAssembly):
 class XCylinderElliptic(ZCylinder,EllipticAssembly,XAssembly):
     """
   Elliptical cylinder aligned with x-axis
-    - ellipticity: ratio of z radius to x radius
+    - ellipticity: ratio of z radius to y radius
     - radius,length: cylinder size
     - voltage=0: cylinder voltage
     - xcent=0.,ycent=0.,zcent=0.: center of cylinder
@@ -3973,11 +4108,25 @@ class XCylinderElliptic(ZCylinder,EllipticAssembly,XAssembly):
                            self.generatorfnew,
                            kw=kw)
 
+    def getextent(self):
+        extent = ZCylinder.getextent(self)
+        EllipticAssembly.modifyextent(self, extent)
+        XAssembly.modifyextent(self, extent)
+        return extent
+
+    def drawzx(self,**kw):
+        super(self.__class__,self).drawzy(xcent=self.xcent,zcent=self.zcent,**kw)
+    def drawzy(self,**kw):
+        super(self.__class__,self).drawxy(xcent=self.ycent,zcent=self.zcent,**kw)
+    def drawxy(self,**kw):
+        super(self.__class__,self).drawzx(xcent=self.ycent,zcent=self.xcent,**kw)
+
+
 #============================================================================
 class XCylinderEllipticOut(ZCylinderOut,EllipticAssembly,XAssembly):
     """
   Outside of an elliptical cylinder aligned with x-axis
-    - ellipticity: ratio of z radius to x radius
+    - ellipticity: ratio of z radius to y radius
     - radius,length: cylinder size
     - voltage=0: cylinder voltage
     - xcent=0.,ycent=0.,zcent=0.: center of cylinder
@@ -4011,6 +4160,20 @@ class XCylinderEllipticOut(ZCylinderOut,EllipticAssembly,XAssembly):
                            self.generatorf,self.generatord,self.generatori,
                            self.generatorfnew,
                            kw=kw)
+
+    def getextent(self):
+        extent = ZCylinderOut.getextent(self)
+        EllipticAssembly.modifyextent(self, extent)
+        XAssembly.modifyextent(self, extent)
+        return extent
+
+    def drawzx(self,**kw):
+        super(self.__class__,self).drawzy(xcent=self.xcent,zcent=self.zcent,**kw)
+    def drawzy(self,**kw):
+        super(self.__class__,self).drawxy(xcent=self.ycent,zcent=self.zcent,**kw)
+    def drawxy(self,**kw):
+        super(self.__class__,self).drawzx(xcent=self.ycent,zcent=self.xcent,**kw)
+
 
 #============================================================================
 class YCylinderElliptic(ZCylinder,EllipticAssembly,YAssembly):
@@ -4050,6 +4213,19 @@ class YCylinderElliptic(ZCylinder,EllipticAssembly,YAssembly):
                            self.generatorfnew,
                            kw=kw)
 
+    def getextent(self):
+        extent = ZCylinder.getextent(self)
+        EllipticAssembly.modifyextent(self, extent)
+        YAssembly.modifyextent(self, extent)
+        return extent
+
+    def drawzx(self,**kw):
+        super(self.__class__,self).drawxy(xcent=self.xcent,zcent=self.zcent,**kw)
+    def drawzy(self,**kw):
+        super(self.__class__,self).drawzx(xcent=self.ycent,zcent=self.zcent,**kw)
+    def drawxy(self,**kw):
+        super(self.__class__,self).drawzy(xcent=self.ycent,zcent=self.xcent,**kw)
+
 #============================================================================
 class YCylinderEllipticOut(ZCylinderOut,EllipticAssembly,YAssembly):
     """
@@ -4088,6 +4264,19 @@ class YCylinderEllipticOut(ZCylinderOut,EllipticAssembly,YAssembly):
                            self.generatorfnew,
                            kw=kw)
 
+    def getextent(self):
+        extent = ZCylinderOut.getextent(self)
+        EllipticAssembly.modifyextent(self, extent)
+        YAssembly.modifyextent(self, extent)
+        return extent
+
+    def drawzx(self,**kw):
+        super(self.__class__,self).drawxy(xcent=self.xcent,zcent=self.zcent,**kw)
+    def drawzy(self,**kw):
+        super(self.__class__,self).drawzx(xcent=self.ycent,zcent=self.zcent,**kw)
+    def drawxy(self,**kw):
+        super(self.__class__,self).drawzy(xcent=self.ycent,zcent=self.xcent,**kw)
+
 #============================================================================
 class Sphere(Assembly):
     """
@@ -4106,8 +4295,11 @@ class Sphere(Assembly):
                           sphereconductorfnew,
                           kw=kw)
         self.radius = radius
-        self.createextent([-self.radius,-self.radius,-self.radius],
-                          [+self.radius,+self.radius,+self.radius])
+
+    def getextent(self):
+        return ConductorExtent([-self.radius,-self.radius,-self.radius],
+                               [+self.radius,+self.radius,+self.radius],
+                               [self.xcent,self.ycent,self.zcent])
 
     def createdxobject(self,kwdict={},**kw):
         kw.update(kwdict)
@@ -4151,6 +4343,11 @@ class ZElliptoid(Sphere,EllipticAssembly):
                                   self.generatorfnew,
                                   kw=kw)
 
+    def getextent(self):
+        extent = Sphere.getextent(self)
+        EllipticAssembly.modifyextent(self, extent)
+        return extent
+
 #============================================================================
 class Cone(Assembly):
     """
@@ -4179,10 +4376,12 @@ class Cone(Assembly):
         self.phi = phi
         self.length = length
 
+    def getextent(self):
         rmax = max(sqrt(self.r_zmin**2+(self.length/2.)**2),
                    sqrt(self.r_zmax**2+(self.length/2.)**2))
-        self.createextent([-rmax,-rmax,-self.length/2.],
-                          [+rmax,+rmax,+self.length/2.])
+        return ConductorExtent([-rmax,-rmax,-self.length/2.],
+                               [+rmax,+rmax,+self.length/2.],
+                               [self.xcent,self.ycent,self.zcent])
 
     def draw(self,color='fg',filled=None,fullplane=1,**kw):
         """
@@ -4245,10 +4444,13 @@ class ConeSlope(Assembly):
 
         self.r_zmin = self.slope*(-self.length/2. - self.intercept)
         self.r_zmax = self.slope*(+self.length/2. - self.intercept)
+
+    def getextent(self):
         rmax = max(sqrt(self.r_zmin**2+(self.length/2.)**2),
                    sqrt(self.r_zmax**2+(self.length/2.)**2))
-        self.createextent([-rmax,-rmax,-self.length/2.],
-                          [+rmax,+rmax,+self.length/2.])
+        return ConductorExtent([-rmax,-rmax,-self.length/2.],
+                               [+rmax,+rmax,+self.length/2.],
+                               [self.xcent,self.ycent,self.zcent])
 
     def getkwlist(self):
         self.r_zmin = self.slope*(-self.length/2. - self.intercept)
@@ -4305,15 +4507,16 @@ class Cones(Assembly):
         self.ycent  = self.ycent*ones(self.ncones)
         self.zcent  = self.zcent*ones(self.ncones)
 
+    def getextent(self):
         rmax = sqrt(maximum(abs(self.r_zmin),abs(self.r_zmax))**2 +
                             (self.length/2.)**2)
-        xmin = min(self.xcent-rmax)
-        ymin = min(self.ycent-rmax)
-        zmin = min(self.zcent-rmax)
-        xmax = max(self.xcent+rmax)
-        ymax = max(self.ycent+rmax)
-        zmax = max(self.zcent+rmax)
-        self.extent = ConductorExtent([xmin,ymin,zmin],[xmax,ymax,zmax])
+        xmin = min(-rmax)
+        ymin = min(-rmax)
+        zmin = min(-rmax)
+        xmax = max(+rmax)
+        ymax = max(+rmax)
+        zmax = max(+rmax)
+        return ConductorExtent([xmin,ymin,zmin],[xmax,ymax,zmax],[self.xcent,self.ycent,self.zcent])
 
 #============================================================================
 class ZTorus(Assembly):
@@ -4335,9 +4538,11 @@ class ZTorus(Assembly):
         self.r1 = r1
         self.r2 = r2
 
+    def getextent(self):
         rmax = self.r1 + self.r2
-        self.createextent([-rmax,-rmax,-self.r2],
-                          [+rmax,+rmax,+self.r2])
+        return ConductorExtent([-rmax,-rmax,-self.r2],
+                               [+rmax,+rmax,+self.r2],
+                               [self.xcent,self.ycent,self.zcent])
 
     def gridintercepts(self,xmmin,ymmin,zmmin,dx,dy,dz,
                        nx,ny,nz,ix,iy,iz,mglevel):
@@ -4402,11 +4607,12 @@ class ZGrid(Assembly):
         self.length = length
         self.thickness = thickness
 
+    def getextent(self):
         zmin = -length/2.
         zmax = +length/2.
-
-        self.createextent([-largepos,-largepos,zmin],
-                          [+largepos,+largepos,zmax])
+        return ConductorExtent([-largepos,-largepos,zmin],
+                               [+largepos,+largepos,zmax],
+                               [self.xcent,self.ycent,self.zcent])
 
     def draw(self,color='fg',filled=None,fullplane=1,**kw):
         r = [-1.,1.,1.,-1.,-1.]
@@ -4439,16 +4645,21 @@ class Beamletplate(Assembly):
         self.z0 = z0
         self.thickness = thickness
 
+    def getextent(self):
         # --- Give a somewhat thoughtful result.
-        if za < 1.e10: zza = za - sqrt((za-z0)**2 - w3d.xmmax**2 - w3d.ymmax**2)
-        else:          zza = z0
-        if zb < 1.e10: zzb = zb - sqrt((zb-z0)**2 - w3d.xmmax**2 - w3d.ymmax**2)
-        else:          zzb = z0
-        zmin = z0 - thickness
-        zmax = max(zza,zzb) + 5*thickness
-
-        self.createextent([-largepos,-largepos,zmin],
-                          [+largepos,+largepos,zmax])
+        if self.za < 1.e10:
+            zza = self.za - sqrt((self.za - self.z0)**2 - w3d.xmmax**2 - w3d.ymmax**2)
+        else:
+            zza = self.z0
+        if self.zb < 1.e10:
+            zzb = self.zb - sqrt((self.zb - self.z0)**2 - w3d.xmmax**2 - w3d.ymmax**2)
+        else:
+            zzb = self.z0
+        zmin = self.z0 - self.thickness
+        zmax = max(zza,zzb) + 5*self.thickness
+        return ConductorExtent([-largepos,-largepos,zmin],
+                               [+largepos,+largepos,zmax],
+                               [self.xcent,self.ycent,self.zcent])
 
     def createdxobject(self,xmin=None,xmax=None,ymin=None,ymax=None,
                        nx=None,ny=None,nz=None,
@@ -4762,8 +4973,10 @@ class ZSrfrv(Srfrv,Assembly):
                 self.zmin = min(self.zmin,self.zc[i] - abs(self.rad[i]))
                 self.zmax = max(self.zmax,self.zc[i] + abs(self.rad[i]))
 
-        self.createextent([-self.rmax,-self.rmax,self.zmin],
-                          [+self.rmax,+self.rmax,self.zmax])
+    def getextent(self):
+        return ConductorExtent([-self.rmax,-self.rmax,self.zmin],
+                               [+self.rmax,+self.rmax,self.zmax],
+                               [self.xcent,self.ycent,self.zcent])
 
     def gridintercepts(self,xmmin,ymmin,zmmin,dx,dy,dz,
                        nx,ny,nz,ix,iy,iz,mglevel):
@@ -4883,8 +5096,10 @@ class ZSrfrvOut(Srfrv,Assembly):
         self.zmin = zmin
         self.zmax = zmax
 
-        self.createextent([-self.rmax,-self.rmax,self.zmin],
-                          [+self.rmax,+self.rmax,self.zmax])
+    def getextent(self):
+        return ConductorExtent([-self.rmax,-self.rmax,self.zmin],
+                               [+self.rmax,+self.rmax,self.zmax],
+                               [self.xcent,self.ycent,self.zcent])
 
     def getkwlist(self):
         self.griddz = _griddzkludge[0]
@@ -5052,6 +5267,7 @@ class ZSrfrvIn(Srfrv,Assembly):
         self.zmin = zmin
         self.zmax = zmax
 
+    def getextent(self):
         if self.lrofzfunc:
             rmax = largepos
         else:
@@ -5059,8 +5275,9 @@ class ZSrfrvIn(Srfrv,Assembly):
             for rc,rr in zip(self.rcdata,self.raddata):
                 if rr is not None:
                     rmax = max(rmax,rc+rr)
-        self.createextent([-rmax,-rmax,self.zmin],
-                          [+rmax,+rmax,self.zmax])
+        return ConductorExtent([-rmax,-rmax,self.zmin],
+                               [+rmax,+rmax,self.zmax],
+                               [self.xcent,self.ycent,self.zcent])
 
     def getkwlist(self):
         self.griddz = _griddzkludge[0]
@@ -5268,6 +5485,7 @@ class ZSrfrvInOut(Srfrv,Assembly):
         self.zmin = zmin
         self.zmax = zmax
 
+    def getextent(self):
         if self.lrmaxofz:
             rmax = largepos
         else:
@@ -5275,8 +5493,9 @@ class ZSrfrvInOut(Srfrv,Assembly):
             for rc,rr in zip(self.rcmaxdata,self.radmaxdata):
                 if rr is not None:
                     rmax = max(rmax,rc+rr)
-        self.createextent([-rmax,-rmax,self.zmin],
-                          [+rmax,+rmax,self.zmax])
+        return ConductorExtent([-rmax,-rmax,self.zmin],
+                               [+rmax,+rmax,self.zmax],
+                               [self.xcent,self.ycent,self.zcent])
 
     def getkwlist(self):
         self.griddz = _griddzkludge[0]
@@ -5485,6 +5704,11 @@ class ZSrfrvEllipticOut(ZSrfrvOut,EllipticAssembly):
                                   self.generatorfnew,
                                   kw=kw)
 
+    def getextent(self):
+        extent = ZSrfrvOut.getextent(self)
+        EllipticAssembly.modifyextent(self, extent)
+        return extent
+
 #============================================================================
 class ZSrfrvEllipticIn(ZSrfrvIn,EllipticAssembly):
     """
@@ -5524,6 +5748,11 @@ class ZSrfrvEllipticIn(ZSrfrvIn,EllipticAssembly):
                                   self.generatorf,self.generatord,self.generatori,
                                   self.generatorfnew,
                                   kw=kw)
+
+    def getextent(self):
+        extent = ZSrfrvIn.getextent(self)
+        EllipticAssembly.modifyextent(self, extent)
+        return extent
 
 #============================================================================
 class ZSrfrvEllipticInOut(ZSrfrvInOut,EllipticAssembly):
@@ -5568,6 +5797,11 @@ class ZSrfrvEllipticInOut(ZSrfrvInOut,EllipticAssembly):
                                   self.generatorfnew,
                                   kw=kw)
 
+    def getextent(self):
+        extent = ZSrfrvInOut.getextent(self)
+        EllipticAssembly.modifyextent(self, extent)
+        return extent
+
 #============================================================================
 class XSrfrvOut(ZSrfrvOut,XAssembly):
     """
@@ -5606,6 +5840,19 @@ class XSrfrvOut(ZSrfrvOut,XAssembly):
                                 self.generatorfnew,
                                 kw=kw)
 
+    def getextent(self):
+        extent = ZSrfrvOut.getextent(self)
+        XAssembly.modifyextent(self, extent)
+        return extent
+
+    def drawzx(self,**kw):
+        super(self.__class__,self).drawzy(xcent=self.xcent,zcent=self.zcent,**kw)
+    def drawzy(self,**kw):
+        super(self.__class__,self).drawxy(xcent=self.ycent,zcent=self.zcent,**kw)
+    def drawxy(self,**kw):
+        super(self.__class__,self).drawzx(xcent=self.ycent,zcent=self.xcent,**kw)
+
+
 #============================================================================
 class XSrfrvIn(ZSrfrvIn,XAssembly):
     """
@@ -5643,6 +5890,19 @@ class XSrfrvIn(ZSrfrvIn,XAssembly):
                                 self.generatorf,self.generatord,self.generatori,
                                 self.generatorfnew,
                                 kw=kw)
+
+    def getextent(self):
+        extent = ZSrfrvIn.getextent(self)
+        XAssembly.modifyextent(self, extent)
+        return extent
+
+    def drawzx(self,**kw):
+        super(self.__class__,self).drawzy(xcent=self.xcent,zcent=self.zcent,**kw)
+    def drawzy(self,**kw):
+        super(self.__class__,self).drawxy(xcent=self.ycent,zcent=self.zcent,**kw)
+    def drawxy(self,**kw):
+        super(self.__class__,self).drawzx(xcent=self.ycent,zcent=self.xcent,**kw)
+
 
 #============================================================================
 class XSrfrvInOut(ZSrfrvInOut,XAssembly):
@@ -5685,6 +5945,19 @@ class XSrfrvInOut(ZSrfrvInOut,XAssembly):
                                 self.generatorfnew,
                                 kw=kw)
 
+    def getextent(self):
+        extent = ZSrfrvInOut.getextent(self)
+        XAssembly.modifyextent(self, extent)
+        return extent
+
+    def drawzx(self,**kw):
+        super(self.__class__,self).drawzy(xcent=self.xcent,zcent=self.zcent,**kw)
+    def drawzy(self,**kw):
+        super(self.__class__,self).drawxy(xcent=self.ycent,zcent=self.zcent,**kw)
+    def drawxy(self,**kw):
+        super(self.__class__,self).drawzx(xcent=self.ycent,zcent=self.xcent,**kw)
+
+
 #============================================================================
 class YSrfrvOut(ZSrfrvOut,YAssembly):
     """
@@ -5723,6 +5996,18 @@ class YSrfrvOut(ZSrfrvOut,YAssembly):
                                 self.generatorfnew,
                                 kw=kw)
 
+    def getextent(self):
+        extent = ZSrfrvOut.getextent(self)
+        YAssembly.modifyextent(self, extent)
+        return extent
+
+    def drawzx(self,**kw):
+        super(self.__class__,self).drawxy(xcent=self.xcent,zcent=self.zcent,**kw)
+    def drawzy(self,**kw):
+        super(self.__class__,self).drawzx(xcent=self.ycent,zcent=self.zcent,**kw)
+    def drawxy(self,**kw):
+        super(self.__class__,self).drawzy(xcent=self.ycent,zcent=self.xcent,**kw)
+
 #============================================================================
 class YSrfrvIn(ZSrfrvIn,YAssembly):
     """
@@ -5760,6 +6045,18 @@ class YSrfrvIn(ZSrfrvIn,YAssembly):
                                 self.generatorf,self.generatord,self.generatori,
                                 self.generatorfnew,
                                 kw=kw)
+
+    def getextent(self):
+        extent = ZSrfrvIn.getextent(self)
+        YAssembly.modifyextent(self, extent)
+        return extent
+
+    def drawzx(self,**kw):
+        super(self.__class__,self).drawxy(xcent=self.xcent,zcent=self.zcent,**kw)
+    def drawzy(self,**kw):
+        super(self.__class__,self).drawzx(xcent=self.ycent,zcent=self.zcent,**kw)
+    def drawxy(self,**kw):
+        super(self.__class__,self).drawzy(xcent=self.ycent,zcent=self.xcent,**kw)
 
 #============================================================================
 class YSrfrvInOut(ZSrfrvInOut,YAssembly):
@@ -5802,6 +6099,18 @@ class YSrfrvInOut(ZSrfrvInOut,YAssembly):
                                 self.generatorfnew,
                                 kw=kw)
 
+    def getextent(self):
+        extent = ZSrfrvInOut.getextent(self)
+        YAssembly.modifyextent(self, extent)
+        return extent
+
+    def drawzx(self,**kw):
+        super(self.__class__,self).drawxy(xcent=self.xcent,zcent=self.zcent,**kw)
+    def drawzy(self,**kw):
+        super(self.__class__,self).drawzx(xcent=self.ycent,zcent=self.zcent,**kw)
+    def drawxy(self,**kw):
+        super(self.__class__,self).drawzy(xcent=self.ycent,zcent=self.xcent,**kw)
+
 #============================================================================
 class Annulus(Assembly):
     """
@@ -5829,9 +6138,10 @@ class Annulus(Assembly):
         self.theta  = theta
         self.phi    = phi
 
+    def getextent(self):
         # --- This is the easiest thing to do without thinking.
         ll = sqrt(self.rmax**2 + (self.length/2.)**2)
-        self.createextent([-ll,-ll,-ll],[+ll,+ll,+ll])
+        return ConductorExtent([-ll,-ll,-ll],[+ll,+ll,+ll],[self.xcent,self.ycent,self.zcent])
 
     def gridintercepts(self,xmmin,ymmin,zmmin,dx,dy,dz,
                        nx,ny,nz,ix,iy,iz,mglevel):
@@ -6627,7 +6937,7 @@ class SRFRVLAsystem:
             parts.draw(ncirc,scx,scy,colort,colorb,color,signx,width)
 
     def getextent(self):
-        return ConductorExtent([w3d.xmmin,w3d.ymmin,w3d.zmmin],[w3d.xmmax,w3d.ymmax,w3d.zmmax])
+        return ConductorExtent([w3d.xmmin,w3d.ymmin,w3d.zmmin],[w3d.xmmax,w3d.ymmax,w3d.zmmax],zeros(3))
 
 class SRFRVLAfromfile(SRFRVLAsystem):
     """

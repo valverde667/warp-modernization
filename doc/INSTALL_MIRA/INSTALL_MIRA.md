@@ -497,7 +497,8 @@ then `cd warp/pywarp90`
 - create a file `Makefile.local.pympi` with this line:
 
 ```
-FCOMP= -F gfortran --fcompexec mpif90 --fargs "-fPIC" --cargs "-fPIC"
+FCOMP= -F gfortran --fargs "-fPIC" --cargs "-fPIC"
+FCOMPEXEC =  --fcompexec mpif90
 ```
 - Before compiling: `export CC=mpicc; export LDSHARED="mpicc -shared -lmpifort"`
 - To compile parallel version: `make pinstall`

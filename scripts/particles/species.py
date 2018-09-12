@@ -1366,7 +1366,8 @@ class Species(object):
 
     def add_gaussian_dist(self, np, deltax, deltay, deltaz, vthx=0., vthy=0., vthz=0.,
                           xmean=0., ymean=0., zmean=0., vxmean=0., vymean=0., vzmean=0.,
-                          zdist='random', rdist='linear', nz=1000, fourfold=0, js=None, lmomentum=0, **kw):
+                          vxdiv=0., vydiv=0., vzdiv=0.,
+                          zdist='random', rdist='linear', nz=1000, fourfold=0, js=None, lmomentum=0, w=None, **kw):
         """
     Add particles with a Gaussian distribution.
      - np: total number of particles to load
@@ -1374,16 +1375,19 @@ class Species(object):
      - vthx, vthy, vthz: thermal velocity, defaults to 0.
      - xmean, ymean, zmean: center of the cylinder, defaults to 0.
      - vxmean, vymean, vzmean: directed velocity, defaults to 0.
+     - vxdiv, vydiv, vzdiv: Velocity divergence, defaults to 0.
      - zdist='random': type of random distribution along z, possible values are
                        'random' and 'regular'
      - rdist='linear': type of random distribution along r, possible values are
                        'linear' and 'flat'
-     - nz=1000: number of data points to use along z
+     - nz=1000: number of data points to use along z when zdist='regular'
      - fourfold=False: whether to use four fold symmetry.
      - js: particle species number, don't set it unless you mean it
      - lmomentum=false: Set to false when velocities are input as velocities, true
                         when input as massless momentum (as WARP stores them).
                         Only used when top.lrelativ is true.
+     - w=None: Particle weight (when top.wpid > 0). With rdist='flat', this will be multiplied by
+               a radially dependent factor.
     Note that the lreturndata option doesn't work.
         """
         if fourfold:
@@ -1393,14 +1397,16 @@ class Species(object):
             if rdist == 'linear': # for uniform noise in XY.
                 x = SpRandom(0., deltax, np)
                 y = SpRandom(0., deltay, np)
-                w = 1.
+                wp = w
             else: # rdist = flat, for uniform noise in R, need to adjust weight accordingly.
                 rmax = 4.
                 r = rmax*random.random(np)
                 t = 2*pi*random.random(np)
                 x = r*cos(t)*deltax
                 y = r*sin(t)*deltay
-                w = rmax*r*exp(-0.5*r**2)
+                wp = rmax*r*exp(-0.5*r**2)
+                if w is not None:
+                    wp *= w
                 if top.wpid==0:top.wpid=nextpid()
 
             z = SpRandom(0., deltaz, np)
@@ -1414,19 +1420,19 @@ class Species(object):
                 xsigns = [1.]
                 ysigns = [1.]
             za = z + zmean
-            vza = vz + vzmean
+            vza = vz + vzmean + vzdiv*z
             for ysign in ysigns:
                 for xsign in xsigns:
                     xa = xsign*x + xmean
                     ya = ysign*y + ymean
-                    vxa = xsign*vx + vxmean
-                    vya = ysign*vy + vymean
+                    vxa = xsign*vx + vxmean + vxdiv*xsign*x
+                    vya = ysign*vy + vymean + vydiv*ysign*y
                     if lmomentum:
                         gi = 1./sqrt(1. + (vxa*vxa + vya*vya + vza*vza)/clight**2)
                     else:
                         gi = 1.
-                    self.addparticles(xa, ya, za, vxa, vya, vza, gi=gi, js=js, w=w, **kw)
-        if zdist == 'regular':
+                    self.addparticles(xa, ya, za, vxa, vya, vza, gi=gi, js=js, w=wp, **kw)
+        elif zdist == 'regular':
             dz = 16.*deltaz/nz
             zmin = -(float(nz/2) - 0.5)*dz
             for i in range(nz):
@@ -1440,14 +1446,16 @@ class Species(object):
                     if rdist == 'linear': # for uniform noise in XY.
                         x = SpRandom(0., deltax, Nadd)
                         y = SpRandom(0., deltay, Nadd)
-                        w = 1.
+                        wp = w
                     else: # rdist = flat, for uniform noise in R, need to adjust weight accordingly.
                         rmax = 4.*sqrt(max(0.,(1.-(zadd/(pi*deltaz))**2)))
                         r = (arange(Nadd)+0.5)*rmax/Nadd
                         t = 2*pi*random.random(Nadd)
                         x = r*cos(t)*deltax
                         y = r*sin(t)*deltay
-                        w = rmax*r*exp(-0.5*r**2)
+                        wp = rmax*r*exp(-0.5*r**2)
+                        if w is not None:
+                            wp *= w
                         if top.wpid==0:top.wpid=nextpid()
 
                     z = zadd + dz*(random.random(Nadd) - 0.5)
@@ -1461,19 +1469,18 @@ class Species(object):
                         xsigns = [1.]
                         ysigns = [1.]
                     za = z + zmean
-                    vza = vz + vzmean
+                    vza = vz + vzmean + vzdiv*z
                     for ysign in ysigns:
                         for xsign in xsigns:
                             xa = xsign*x + xmean
                             ya = ysign*y + ymean
-                            vxa = xsign*vx + vxmean
-                            vya = ysign*vy + vymean
+                            vxa = xsign*vx + vxmean + vxdiv*xsign*x
+                            vya = ysign*vy + vymean + vydiv*ysign*y
                             if lmomentum:
                                 gi = 1./sqrt(1. + (vxa*vxa + vya*vya + vza*vza)/clight**2)
                             else:
                                 gi = 1.
-                            self.addparticles(xa, ya, za, vxa, vya, vza, gi=gi, js=js, \
-                                              w=w, **kw)
+                            self.addparticles(xa, ya, za, vxa, vya, vza, gi=gi, js=js, w=wp, **kw)
 
     def gather_zmmnts_locs(self):
         get_zmmnts_stations(len(self.jslist),
@@ -2831,6 +2838,12 @@ class Species(object):
     getbyold = _setupgetmethod(top, 'byoldpid')
     bzold = property(*_getpgroupattribute(top, 'bzoldpid', 'particle old Bz field'))
     getbzold = _setupgetmethod(top, 'bzoldpid')
+    exold = property(*_getpgroupattribute(top, 'exoldpid', 'particle old Ex field'))
+    getexold = _setupgetmethod(top, 'exoldpid')
+    eyold = property(*_getpgroupattribute(top, 'eyoldpid', 'particle old Ey field'))
+    geteyold = _setupgetmethod(top, 'eyoldpid')
+    ezold = property(*_getpgroupattribute(top, 'ezoldpid', 'particle old Ez field'))
+    getezold = _setupgetmethod(top, 'ezoldpid')
     chdts = property(*_getpgroupattribute(top, 'chdtspid', 'particle flag for dts change'))
     getchdts = _setupgetmethod(top, 'chdtspid')
     uparBo = property(*_getpgroupattribute(top, 'uparBopid', 'particle uparallel * B'))

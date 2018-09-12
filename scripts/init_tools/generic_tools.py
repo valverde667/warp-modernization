@@ -119,6 +119,14 @@ def set_diagnostics( interactive ):
     w3d.lrhodia3d = false
     w3d.lgetese3d = false
     w3d.lgtlchg3d = false
+    top.ifzmmnt = 0
+    top.itmomnts = 0
+    top.itplps = 0
+    top.itplfreq = 0
+    top.iflabwn = 0
+    top.zzmomnts = 0
+    top.zzplps = 0
+    top.zzplfreq = 0
     top.lprntpara = false
     top.lpsplots = false
 

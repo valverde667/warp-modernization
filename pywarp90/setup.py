@@ -34,7 +34,8 @@ for o in optlist:
 sys.argv = ['setup.py'] + args
 fcompiler = FCompiler(machine=machine,
                       debug=debug,
-                      fcompname=fcomp)
+                      fcompname=fcomp,
+                      fcompexec=fcompexec)
 
 dummydist = Distribution()
 dummydist.parse_command_line()
@@ -148,20 +149,17 @@ if os.access('setup.local.py', os.F_OK):
         exec(compile(open('setup.local.py').read(), 'setup.local.py', 'exec'))
 
 elif parallel:
-    # --- If parallel, try the "mpif90 --show" to get the mpi libraries if
-    # --- setup.local.py was not found.
-    if fcompexec is None:
-        fcompexec = 'mpif90'
-    try:
-        show = subprocess.check_output([fcompexec, '--show'], universal_newlines=True)
-    except (OSError, subprocess.CalledProcessError):
-        pass
-    else:
-        for s in show.split():
-            if s.startswith('-L'):
-                library_dirs += [s[2:]]
-            elif s.startswith('-l'):
-                libraries += [s[2:]]
+    if fcompexec is None or fcompexec == 'mpifort' or fcompexec == 'mpif90':
+        # --- If parallel, try the "mpifort -show" to get the mpi libraries
+        try:
+            show = subprocess.check_output([fcompexec, '-show'], universal_newlines=True, stderr=subprocess.STDOUT)
+            for s in show.split():
+                if s.startswith('-L'):
+                    library_dirs += [s[2:]]
+                elif s.startswith('-l'):
+                    libraries += [s[2:]]
+        except (OSError, subprocess.CalledProcessError):
+            pass
 
 setup (name = 'warp',
        version = '4.5',

@@ -238,7 +238,7 @@ class Quasistatic(SubcycledPoissonSolver):
       self.ioniz=[]
       for iz in range(self.izmin,self.izmax):
         self.ioniz.append(Ionization(stride=1))#stride=10,nx=30,ny=30,xmax=0.06,ymax=0.06)
-      torr_to_MKS=133.3224	# 1 Torr=133.3224  N/m**2
+      torr_to_MKS=133.3224  # 1 Torr=133.3224  N/m**2
       # ideal gas law: rho=p/(k*T)
       gas_prefactor = (torr_to_MKS/boltzmann)/294.
       self.gas_density   = gas_prefactor*gas_pressure*(294./gas_temperature)

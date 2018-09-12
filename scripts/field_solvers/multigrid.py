@@ -266,7 +266,7 @@ class MultiGrid3D(SubcycledPoissonSolver):
 
         # --- If there are any relativistic groups, then turn on the code
         # --- which uses the selfe array.
-        if abs(top.fselfb).max() > 0.:
+        if top.allocated('fselfb') and abs(top.fselfb).max() > 0.:
             # --- This is probably redundant, but it shouldn't hurt.
             # --- This forces all species to use the precalculated E field
             # --- if any have the B correction.
@@ -547,7 +547,7 @@ class MultiGrid3D(SubcycledPoissonSolver):
                                 self.potentialp,self.fieldp,
                                 self.l2symtry,self.l4symtry,
                                 self.solvergeom==w3d.RZgeom)
-        if abs(top.fselfb).max() > 0.:
+        if top.allocated('fselfb') and abs(top.fselfb).max() > 0.:
             # --- Note that now fetche3dfrompositions takes B field arguments so
             # --- this code should work OK now. The if statement is left just case
             # --- there is an odd situation.
@@ -630,7 +630,7 @@ class MultiGrid3D(SubcycledPoissonSolver):
             #  tfieldp = transpose(self.fieldp)
             #  tfieldp[...] = 0.
             self.calcselfep(recalculate=1,lzero=lzero)
-            if abs(top.fselfb[iselfb]) > 0:
+            if top.allocated('fselfb') and abs(top.fselfb[iselfb]) > 0:
                 # --- If the self-B correction is nonzero, then calculate and include
                 # --- the approximate correction terms A and dA/dt.
                 bfieldp = self.returnbfieldp()
@@ -933,7 +933,7 @@ class MultiGrid3D(SubcycledPoissonSolver):
     ##########################################################################
     # Define the basic plot commands
     def genericpf(self,kw,pffunc):
-        fselfb = kw.get('fselfb',top.fselfb[0])
+        fselfb = kw.get('fselfb',(top.allocated('fselfb') and top.fselfb[0]) or 0.)
         if 'fselfb' in kw: del kw['fselfb']
         kw['conductors'] = self.getconductorobject(fselfb)
         kw['solver'] = self

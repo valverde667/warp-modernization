@@ -2491,6 +2491,13 @@ byoldpid   integer /0/  # position of particles old By field in array pid
                        # (FORTRAN indexed: based 1)                  
 bzoldpid   integer /0/  # position of particles old Bz field in array pid
                        # (FORTRAN indexed: based 1)                  
+exoldpid   integer /0/  # position of particles old Ex field in array pid
+                       # (FORTRAN indexed: based 1)
+eyoldpid   integer /0/  # position of particles old Ey field in array pid
+                       # (FORTRAN indexed: based 1)
+ezoldpid   integer /0/  # position of particles old Ez field in array pid
+                       # (FORTRAN indexed: based 1)
+
 chdtspid integer /0/   # position of particle pid for dts change
                        # (FORTRAN indexed: based 1)
 uparBopid  integer /0/ # position of particles uparallel * B in array pid

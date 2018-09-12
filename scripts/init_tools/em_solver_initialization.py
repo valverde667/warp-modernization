@@ -112,7 +112,7 @@ def initialize_em_solver( stencil, dim,
             l_fieldcenterK=True,
             l_nodalgrid=int(centered_spectral),
             l_deposit_nodal=int(centered_spectral),
-	    **kwargs )
+            **kwargs )
 
         # Damp the field in the guard cells, in order to prevent
         # them from wrapping around
@@ -138,7 +138,7 @@ def initialize_em_solver( stencil, dim,
             circ_m=circ_m,
             type_rz_depose=1,
             l_correct_num_Cherenkov=True,
-	    **kwargs )
+            **kwargs )
     
     # Return the solver
     return( em )

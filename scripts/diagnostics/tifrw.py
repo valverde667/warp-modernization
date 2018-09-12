@@ -4,7 +4,7 @@
 # by: Rami Kishek and A. Valfells
 # created: April 20, 2005
 #
-#	Last Modified: 4/20/2005
+#        Last Modified: 4/20/2005
 #
 # Set of functions to read and write tif photos from numpy arrays in Python
 # save_tif ...  Saves photo array into 'tif' file
@@ -36,8 +36,8 @@ def save_tif(matrix, filename=None):
     max_val = float(numpy.maximum.reduce(S))
     if max_val != min_val:
         matrix = (matrix - min_val)/(max_val - min_val) * 255  # Preprocessor
-    matrix = matrix.astype(numpy.ubyte)			       # Convert to binary
-    matrix = numpy.transpose(matrix)			# Preprocess for tif-ization
+    matrix = matrix.astype(numpy.ubyte)                        # Convert to binary
+    matrix = numpy.transpose(matrix)                           # Preprocess for tif-ization
 
     if filename is None:
         filename = "temp.tif"

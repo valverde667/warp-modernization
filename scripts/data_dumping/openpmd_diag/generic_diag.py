@@ -97,7 +97,7 @@ class OpenPMDDiagnostic(object) :
         # may crash if the directory hdf5 contains preexisting files.)
         self.create_dir("hdf5")
 
-    def open_file( self, fullpath, parallel_open ):
+    def open_file( self, fullpath, parallel_open,comm=None ):
         """
         Open a file in parallel on several processors, depending
         on the flag parallel_open and self.rank
@@ -118,6 +118,9 @@ class OpenPMDDiagnostic(object) :
         -------
         An h5py.File object, or None
         """
+        if(parallel_open):
+          if (comm is None): 
+            comm = self.comm_world
         # In serial mode, only the first proc opens/creates the file.
         if parallel_open == False and self.rank == 0 :
             # Create the filename and open hdf5 file
@@ -126,7 +129,7 @@ class OpenPMDDiagnostic(object) :
         elif parallel_open == True :
             # Create the filename and open hdf5 file
             f = h5py.File( fullpath, mode="a", driver='mpio',
-                           comm=self.comm_world)
+                           comm=comm)
         else:
             f = None
 

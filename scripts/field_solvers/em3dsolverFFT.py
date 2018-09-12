@@ -40,9 +40,9 @@ class EM3DFFT(EM3D):
             fact2 = 1
             result = 0
             for i in range(abs(norder)/2):
-	            fact1 *= max(i,1)
-	            fact2 *= max(2*i,1)*max(2*i-1,1)
-	            result += x**(2*i+1)*fact2/float(2**(2*i)*fact1**2*(2*i+1))
+                fact1 *= max(i,1)
+                fact2 *= max(2*i,1)*max(2*i-1,1)
+                result += x**(2*i+1)*fact2/float(2**(2*i)*fact1**2*(2*i+1))
             return result
 
 

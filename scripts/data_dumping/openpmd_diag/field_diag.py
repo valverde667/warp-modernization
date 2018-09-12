@@ -143,9 +143,9 @@ class FieldDiagnostic(OpenPMDDiagnostic):
         self.global_indices = global_indices
 
         # Dumped data array dimensions in x,y,z
-        self.nx = ((em.nx)-(em.nx)%sub_sampling[0])/sub_sampling[0]
-        self.ny = ((em.ny)-(em.ny)%sub_sampling[1])/sub_sampling[1]
-        self.nz = ((em.nz)-(em.nz)%sub_sampling[2])/sub_sampling[2]
+        self.nx = ((em.nx)-(em.nx)%sub_sampling[0])//sub_sampling[0]
+        self.ny = ((em.ny)-(em.ny)%sub_sampling[1])//sub_sampling[1]
+        self.nz = ((em.nz)-(em.nz)%sub_sampling[2])//sub_sampling[2]
 
         # Mesh cell sizes of dumped grid arrays
         self.dx = em.dx*sub_sampling[0]
@@ -325,7 +325,7 @@ class FieldDiagnostic(OpenPMDDiagnostic):
     # ---------------------
 
     def create_file_empty_meshes( self, fullpath, iteration,
-                                   time, Nz, zmin, dz, dt ):
+                                   time, Nz, zmin, dz, dt, Nx = None, xmin = None, Ny= None, ymin = None ):
         """
         Create an openPMD file with empty meshes and setup all its attributes
 
@@ -351,20 +351,44 @@ class FieldDiagnostic(OpenPMDDiagnostic):
 
         dt: float (seconds)
             The timestep of the simulation
+
+        Nx, Ny: int
+            The number of gridpoints along x, y in this diagnostics 
+            If None then act as if Nx = nx_globa, Ny = ny_global
+
+        xmin: float (meters)
+           The position of the lower boundary of the box along x 
+           If None, then act as if xmin = w3d.xmmin
+
+        ymin: float (meters)
+           The position of the lower boundary of the box along y
+           If None, then act as if ymin = w3d.ymmin
+
+  
         """
         # Determine the shape of the datasets that will be written
         # Circ case
+        if(Nx is None): 
+            nx = self.nx+1
+        else: 
+            nx = Nx
+        # 3d case
+        if(self.dim == "3d"):
+            if(Ny is None): 
+               ny = self.ny + 1
+            else:
+               ny = Ny 
         if self.dim == "circ":
-            data_shape = ( 2*self.em.circ_m+1, self.nx+1, Nz+1 )
+            data_shape = ( 2*self.em.circ_m+1, nx, Nz+1 )
         # 1D case
         elif self.dim == "1d":
             data_shape = ( Nz+1, )
         # 2D case
         elif self.dim == "2d":
-            data_shape = ( self.nx+1, Nz+1 )
+            data_shape = ( nx, Nz+1 )
         # 3D case
         elif self.dim == "3d":
-            data_shape = ( self.nx+1, self.ny+1, Nz+1 )
+            data_shape = ( nx, ny, Nz+1 )
 
         # Create the file (can be done by one proc or in parallel)
         f = self.open_file( fullpath,
@@ -394,7 +418,7 @@ class FieldDiagnostic(OpenPMDDiagnostic):
                         "rho", data_shape, dtype='f8')
                     self.setup_openpmd_mesh_component( dset, "rho" )
                     # Setup the record to which it belongs
-                    self.setup_openpmd_mesh_record( dset, "rho", dz, zmin )
+                    self.setup_openpmd_mesh_record( dset, "rho", dz, zmin, xmin, ymin )
 
                 # Vector field
                 elif fieldtype in ["E", "B", "J"]:
@@ -407,7 +431,7 @@ class FieldDiagnostic(OpenPMDDiagnostic):
                         self.setup_openpmd_mesh_component( dset, quantity )
                     # Setup the record to which they belong
                     self.setup_openpmd_mesh_record(
-                        field_grp[fieldtype], fieldtype, dz, zmin )
+                        field_grp[fieldtype], fieldtype, dz, zmin, xmin, ymin )
 
                 # Unknown field
                 else:
@@ -476,7 +500,7 @@ class FieldDiagnostic(OpenPMDDiagnostic):
         dset.attrs["chargeCorrection"] = np.string_("none")
 
 
-    def setup_openpmd_mesh_record( self, dset, quantity, dz, zmin ):
+    def setup_openpmd_mesh_record( self, dset, quantity, dz, zmin, xmin = None, ymin = None ):
         """
         Sets the attributes that are specific to a mesh record
 
@@ -490,11 +514,20 @@ class FieldDiagnostic(OpenPMDDiagnostic):
         dz: float (meters)
             The resolution in z of this diagnostic
 
-        zmin: float (meters)
+        xmin, ymin, zmin: float (meters)
             The position of the left end of the grid
         """
         # Generic record attributes
         self.setup_openpmd_record( dset, quantity )
+
+        if(xmin is None): 
+            xmin_d = self.w3d.xmmin
+        else: 
+            xmin_d = xmin
+        if(ymin is None):
+            ymin_d = self.w3d.ymmin
+        else:
+            ymin_d = ymin 
 
         # Geometry parameters
         # - thetaMode
@@ -504,7 +537,7 @@ class FieldDiagnostic(OpenPMDDiagnostic):
               np.string_("m=%d;imag=+" %(self.em.circ_m + 1))
             dset.attrs['gridSpacing'] = np.array([ self.dx, dz ])
             dset.attrs['axisLabels'] = np.array([ b'r', b'z' ])
-            dset.attrs["gridGlobalOffset"] = np.array([self.w3d.xmmin, zmin])
+            dset.attrs["gridGlobalOffset"] = np.array([xmin_d, zmin])
         # - 1D Cartesian
         elif self.dim == "1d":
             dset.attrs['geometry'] = np.string_("cartesian")
@@ -516,14 +549,14 @@ class FieldDiagnostic(OpenPMDDiagnostic):
             dset.attrs['geometry'] = np.string_("cartesian")
             dset.attrs['gridSpacing'] = np.array([ self.dx, dz ])
             dset.attrs['axisLabels'] = np.array([ b'x', b'z' ])
-            dset.attrs["gridGlobalOffset"] = np.array([self.w3d.xmmin, zmin])
+            dset.attrs["gridGlobalOffset"] = np.array([xmin_d, zmin])
         # - 3D Cartesian
         elif self.dim == "3d":
             dset.attrs['geometry'] = np.string_("cartesian")
             dset.attrs['gridSpacing'] = np.array([ self.dx, self.dy, dz ])
             dset.attrs['axisLabels'] = np.array([ b'x', b'y', b'z' ])
-            dset.attrs["gridGlobalOffset"] = np.array([ self.w3d.xmmin,
-                                                    self.w3d.ymmin, zmin])
+            dset.attrs["gridGlobalOffset"] = np.array([ xmin_d,
+                                                    ymin_d, zmin])
         # Generic attributes
         dset.attrs["dataOrder"] = np.string_("C")
         dset.attrs["gridUnitSI"] = 1.
