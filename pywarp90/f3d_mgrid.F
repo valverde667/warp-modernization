@@ -297,7 +297,7 @@ c     --- Also setup parallel arrays.
         rhosave = rho(0:nxlocal,0:nylocal,0:nzlocal)
       endif
 
-      allocate(phisave(-1:nxlocal+1,-1:nylocal+1,-1:nzlocal+1),stat=alloc_status)
+      allocate(phisave(-1:nxlocal+1,-1:nylocal+1,-1:nzlocal+1), stat=alloc_status)
       if (alloc_status /= 0) then
         print*,"multigrid3dsolve: allocation error ",alloc_status,
      &         ": could not allocate phisave to shape ",nxlocal,nylocal,nzlocal
@@ -326,8 +326,8 @@ c       --- correction form since it is operating on the error.
             call cond_potmg(conductors%interior,nxlocal,nylocal,nzlocal,1,1,1,
      &                      phisave,0,mgform,.true.)
           endif
-          call condbndymgint(conductors,nxlocal,nylocal,nzlocal,1,1,1,
-     &		                 phisave,localbounds,0,icndbndy)
+	      call condbndymgint(conductors,nxlocal,nylocal,nzlocal,
+     &                       1,1,1,phisave,localbounds,0,icndbndy)
           call residual3d(nxlocal,nylocal,nzlocal,
      &                    nxguardphi,nyguardphi,nzguardphi,
      &                    nxguardrho,nyguardrho,nzguardrho,
@@ -352,8 +352,7 @@ c       --- Do one vcycle.
      &              nxguardphi,nyguardphi,nzguardphi,
      &              nxguardrho,nyguardrho,nzguardrho,
      &              dx,dy,dz,phi,rho,
-     &              rstar,linbend,bendx,bounds,
-     &              mgparam,mgform,mgmaxlevels,
+     &              rstar,linbend,bendx,bounds,mgparam,mgform,mgmaxlevels,
      &              downpasses,uppasses,lcndbndy,icndbndy,conductors,
      &              lprecalccoeffs,fsdecomp)
 
@@ -508,8 +507,7 @@ c=============================================================================
      &                                xmmin,ymmin,zmmin,
      &                                mgparam,mgiters,mgmaxiters,
      &                                mgmaxvcycles,
-     &                                mgmaxlevels,mgerror,
-     &                                mgtol,mgverbose,
+     &                                mgmaxlevels,mgerror,mgtol,mgverbose,
      &                                downpasses,uppasses,
      &                                lcndbndy,laddconductor,icndbndy,
      &                                gridmode,conductors,lprecalccoeffs,
@@ -623,7 +621,7 @@ c       --- This does the conductor setup for all mglevels
           if (laddconductor) call callpythonfunc("calladdconductor","controllers")
         endif
         call checkconductors(nx,ny,nz,nxlocal,nylocal,nzlocal,dx,dy,dz,
-     &                       conductors,fsdecomp)
+     &                        conductors,fsdecomp)
 
 c       --- This calculates the coefficients for all mglevels
         if (lprecalccoeffs) then
@@ -951,7 +949,7 @@ c         --- For bends, also include curvature corrections.
         endif
 
         if (lf3dtimesubs) timefullmultigrid3dsolve = timefullmultigrid3dsolve +
-       &                                         wtime() - substarttime
+       &                                       wtime() - substarttime
 
       endif
 
@@ -4205,8 +4203,7 @@ c     --- Set the conductor points.
       allocate(iii(0:nxlocal,0:nylocal,0:nzlocal), stat=alloc_status)
       if (alloc_status /= 0) then
         print*,"checkconductors_work: allocation error ",alloc_status,
-     &         ": could not allocate iii to shape ",
-     &         nxlocal,nylocal,nzlocal
+     &         ": could not allocate iii to shape ",nxlocal,nylocal,nzlocal
         call kaboom("checkconductors_work: allocation error")
         return
       endif
@@ -4282,8 +4279,7 @@ c       --- For each direction, check if a conductor is nearer to this point
 c       --- than the other point. If so, reset data for the other point.
         do id=0,5
           if (abs(evensubgrid%dels(id,ic)) < 1. .and.
-     &        abs(evensubgrid%dels(id,ic)) < 
-     &        abs(evensubgrid%dels(id,i))) then
+     &        abs(evensubgrid%dels(id,ic)) < abs(evensubgrid%dels(id,i))) then
             evensubgrid%dels(id,i)  = evensubgrid%dels(id,ic)
             evensubgrid%volt(id,i) = evensubgrid%volt(id,ic)
             evensubgrid%numb(id,i) = evensubgrid%numb(id,ic)
@@ -4347,8 +4343,7 @@ c       --- For each direction, check if a conductor is nearer to this point
 c       --- than the other point. If so, reset data for the other point.
         do id=0,5
           if (abs(oddsubgrid%dels(id,ic)) < 1. .and.
-     &        abs(oddsubgrid%dels(id,ic)) < 
-     &        abs(oddsubgrid%dels(id,i))) then
+     &        abs(oddsubgrid%dels(id,ic)) < abs(oddsubgrid%dels(id,i))) then
             oddsubgrid%dels(id,i)  = oddsubgrid%dels(id,ic)
             oddsubgrid%volt(id,i) = oddsubgrid%volt(id,ic)
             oddsubgrid%numb(id,i) = oddsubgrid%numb(id,ic)
@@ -5624,7 +5619,7 @@ c                     --- division.
                 do iwy=iwy1,iwy2
                   do iwx=iwx1,iwx2
                     do ic=0,nc-1
-                      wsource = weights(iwx,iwy,iwz)*childsource(ic,icx+iwx,icy+iwy,icz+iwz)
+                      wsource=weights(iwx,iwy,iwz)*childsource(ic,icx+iwx,icy+iwy,icz+iwz)
                       if (lcylindrical) then
 c                       --- Calculate volumes. Note that the factors of pi and
 c                       --- dz cancel out and so are left out. Also one
@@ -6058,7 +6053,7 @@ c     --- across the processors.
       if (mgverbose>=1 .or. (mgverbose>=0 .and. mgerror > mgtol)) then
 c       --- Make a print out.
         if (mgerror > mgtol) then
-          call remark("Multigrid2d: Max. # of iterations reached")
+          call remark("Multigrid2d: Maximum number of iterations reached")
         endif
         write(errline,20) mgerror,mgiters
   20    format("Multigrid2d: Error converged to ",1pe11.3," in ",i5," v-cycles")
@@ -7425,7 +7420,6 @@ c=============================================================================
       real(kind=8):: phicoarse(-1:nxlocalcoarse+1,-1:nzlocalcoarse+1)
 	  integer(ISZ):: lxoffset,lzoffset
       integer(ISZ):: bounds(0:5)
-	  
 	  
 c Add the error on the coarser grid to the current value on the finer grid.
 c The expansion is only transverse.
