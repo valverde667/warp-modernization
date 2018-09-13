@@ -949,7 +949,7 @@ c         --- For bends, also include curvature corrections.
         endif
 
         if (lf3dtimesubs) timefullmultigrid3dsolve = timefullmultigrid3dsolve +
-       &                                       wtime() - substarttime
+     &                                         wtime() - substarttime
 
       endif
 
@@ -2177,7 +2177,7 @@ c     --- guard planes in z are already set
      &            + phi(ix  ,iy  ,iz-1)*conductors%coeffs%data(4,ix,iy,iz)
      &            + phi(ix  ,iy  ,iz+1)*conductors%coeffs%data(5,ix,iy,iz)
      &            + conductors%coeffs%data(6,ix,iy,iz))
-	 &            * conductors%coeffs%data(7,ix,iy,iz)
+     &            * conductors%coeffs%data(7,ix,iy,iz)
      &            + spm1*phi(ix,iy,iz)
 
               endif
@@ -2892,7 +2892,7 @@ c       --- calculate the new phi based on the boundary conditions
         if (dosubgrid) then
           phi(ix,iy,iz) = (rho(ix,iy,iz) + 
      &      (pxm+pxp)*dxsqic + (pym+pyp)*dysqic + (pzm+pzp)*dzsqic)/denom +
-	 &      spm1*subgrid%prevphi(ic)
+     &      spm1*subgrid%prevphi(ic)
         endif
       enddo
 !$OMP END DO
@@ -4014,7 +4014,7 @@ c various mesh resolutions needed by the MG solver.
 
 c     --- Make sure the coarsening levels are setup.
       call getmglevels(nx,ny,nz,nxlocal,nylocal,nzlocal,dx,dy,dz,conductors,
-	 &                 fsdecomp)
+     &                 fsdecomp)
 
 c     --- Call the work routine for each level
       do il=0,conductors%levels-1
@@ -4023,7 +4023,7 @@ c     --- Call the work routine for each level
         nzlocal1 = conductors%levelnz(il)
         call checkconductors_work(conductors%interior,
      &                            conductors%evensubgrid,
-	 &                            conductors%oddsubgrid,
+     &                            conductors%oddsubgrid,
      &                            nxlocal1,nylocal1,nzlocal1,il)
       enddo
 
