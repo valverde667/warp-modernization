@@ -383,9 +383,9 @@ class MultiGrid2DDielectric(MultiGrid2D):
         MultiGrid2D.__init__(self,lreducedpickle,**kw)
 
         if epsilon is None:
-             self.epsilon = eps0*fones((self.nxlocal+2,self.nzlocal+2),'d')
+            self.epsilon = eps0*fones((self.nxlocal+2,self.nzlocal+2),'d')
         else:
-             self.epsilon = epsilon
+            self.epsilon = epsilon
 
 #        self.epsilon = epsilon
         # TODO: Find appropriate flag to use
