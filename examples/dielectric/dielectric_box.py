@@ -1,5 +1,7 @@
 # # Test script simulating electrons impacting and charging a 2D box between a cathode and anode.
 # 
+# NOTE: This script is designed to run on a single core.
+# 
 # 1. Simple geometry (fast) - 1 micron x 1 micron (z). 100 x 100 grid
 # 2. Rectangular dielectric - 500 nm x 100 nm (z). Centered transversely, closer to anode along z.
 # 3. Uniform parallel emission -> 20 particles, user-injected,no transverse velocity, clustered about central axis.
@@ -18,6 +20,7 @@ import matplotlib as mpl
 mpl.use('TkAgg')
 
 from warp import * 
+from warp.particles.particlescraper import Dielectric_Particles
 from warp.data_dumping.openpmd_diag import ParticleDiagnostic
 from warp.data_dumping.openpmd_diag import ElectrostaticFieldDiagnostic
 from warp.particles.singleparticle import TraceParticle
@@ -245,7 +248,7 @@ if (comm_world.rank == 0 and MAKE_PLOTS):
 
 #### Specify emission
 
-electrons_tracked_t0 = Species(type=Electron, weight=1.0)
+electrons_tracked_t0 = Species(type=Electron, weight=1.0e6)
 ntrack = 20
 Z_PART_MIN = w3d.dz/8 #Add a minimum z coordinate to prevent absorption
 
@@ -268,6 +271,12 @@ electron_tracker_0 = TraceParticle(js=electrons_tracked_t0.jslist[0],
                      vy=vy_vals,
                      vz=vz_vals)
 
+pscraper = ParticleScraper([box],lsaveintercept=True,lsavecondid=True,)
+DPart = Dielectric_Particles()
+
+if comm_world.rank == 0:
+    pg=top.pgroup
+    pg.yp=0.
 
 num_steps = 3000
 step(num_steps)
@@ -308,7 +317,7 @@ if (comm_world.rank == 0 and MAKE_PLOTS):
     cond_list = solverE.conductordatalist
 
     fig = plt.figure(figsize=(12,6))
-    plt.title("Broad Dielectric Particle Trace")
+    plt.title("Dielectric Particle Trace")
 
     scale = 1e6
 
@@ -348,18 +357,17 @@ if (comm_world.rank == 0 and MAKE_PLOTS):
         ax1.plot(lost_electrons[1][i][:steps2cross] * scale,lost_electrons[0][i][:steps2cross] * scale, c = '#2ca02c')
 
 
-    kept = mlines.Line2D([], [], color='#1f77b4',label='Absorbed Particles')
-    lost = mlines.Line2D([], [], color='#2ca02c',label='Reflected Particles')
+    ptrace = mlines.Line2D([], [], color='#1f77b4',label='Dielectric Particles')
 
     box = ax1.get_position()
     ax1.set_position([box.x0, box.y0, box.width * 0.8, box.height])
 
     plt.xlim(Z_MIN * scale,Z_MAX * scale)
     plt.ylim(X_MIN * scale, X_MAX * scale)
-    plt.legend(handles=[kept, lost],loc='best', bbox_to_anchor=(1, 1))
+    plt.legend(handles=[ptrace],loc='best', bbox_to_anchor=(1, 1))
     plt.xlabel('z ($\mu$m)')
     plt.ylabel('x ($\mu$m)')
-    plt.savefig('broad_dielectric_trace.png')
+    plt.savefig('dielectric_trace.png')
     plt.show()
     
     
@@ -398,7 +406,7 @@ if (comm_world.rank == 0 and MAKE_PLOTS):
     cbar.ax.set_xlabel("V/m")
     cbar.ax.xaxis.set_label_position('top')
 
-    plt.savefig('Ez_broad_box.png',bbox_inches='tight')
+    plt.savefig('Ez_box.png',bbox_inches='tight')
     plt.close()
 
     #Need to compute the fields first
@@ -436,7 +444,7 @@ if (comm_world.rank == 0 and MAKE_PLOTS):
     cbar.ax.set_xlabel("V/m")
     cbar.ax.xaxis.set_label_position('top')
 
-    plt.savefig('Ex_broad_box.png',bbox_inches='tight')
+    plt.savefig('Ex_box.png',bbox_inches='tight')
     plt.close()
 
 
@@ -476,6 +484,6 @@ if (comm_world.rank == 0 and MAKE_PLOTS):
     cbar.ax.set_xlabel("Volts")
     cbar.ax.xaxis.set_label_position('top')
 
-    plt.savefig('phi_broad_box.png',bbox_inches='tight')
+    plt.savefig('phi_box.png',bbox_inches='tight')
     plt.close()
 
