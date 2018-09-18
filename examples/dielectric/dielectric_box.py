@@ -13,13 +13,12 @@
 # Nathan Cook
 
 from __future__ import division
-import sys
 import os
 
 import matplotlib as mpl
 mpl.use('TkAgg')
 
-from warp import * 
+import warp as wp
 from warp.particles.particlescraper import Dielectric_Particles
 from warp.data_dumping.openpmd_diag import ParticleDiagnostic
 from warp.data_dumping.openpmd_diag import ElectrostaticFieldDiagnostic
@@ -29,7 +28,10 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.lines as mlines
 import matplotlib.patches as patches
-import h5py as h5
+
+
+# RUN OPTIONS
+MAKE_PLOTS = True  # If true, plots a 2D slice of the potential and compares a 1D lineout to the analytic solution
 
 
 # Useful utility function - See the rswarp repository for further details:
@@ -45,62 +47,57 @@ def cleanupPrevious(particleDirectory, fieldDirectory):
     """
     if os.path.exists(particleDirectory):
         files = os.listdir(particleDirectory)
-        for file in files:
-            if file.endswith('.h5'):
-                os.remove(os.path.join(particleDirectory,file))
+        for filename in files:
+            if filename.endswith('.h5'):
+                os.remove(os.path.join(particleDirectory, filename))
     if isinstance(fieldDirectory,dict):
         for key in fieldDirectory:
             if os.path.exists(fieldDirectory[key]):
                 files = os.listdir(fieldDirectory[key])
-                for file in files:
-                    if file.endswith('.h5'):
-                        os.remove(os.path.join(fieldDirectory[key],file))
+                for filename in files:
+                    if filename.endswith('.h5'):
+                        os.remove(os.path.join(fieldDirectory[key], filename))
     elif isinstance(fieldDirectory, list):
         for directory in fieldDirectory:
             if os.path.exists(directory):
                 files = os.listdir(directory)
-                for file in files:
-                    if file.endswith('.h5'):
-                        os.remove(os.path.join(directory, file))
+                for filename in files:
+                    if filename.endswith('.h5'):
+                        os.remove(os.path.join(directory, filename))
     elif isinstance(fieldDirectory, str):
             if os.path.exists(fieldDirectory):
                 files = os.listdir(fieldDirectory)
-                for file in files:
-                    if file.endswith('.h5'):
-                        os.remove(os.path.join(fieldDirectory, file))
+                for filename in files:
+                    if filename.endswith('.h5'):
+                        os.remove(os.path.join(fieldDirectory, filename))
 
 
 # Constants imports
 from scipy.constants import e, m_e, c, k
-kb_eV = 8.6173324e-5 #Bolztmann constant in eV/K
-kb_J = k #Boltzmann constant in J/K
+kb_eV = 8.6173324e-5  # Bolztmann constant in eV/K
+kb_J = k  # Boltzmann constant in J/K
 m = m_e
-
-
-MAKE_PLOTS = True #If true, plots a 2D slice of the potential and compares a 1D lineout to the analytic solution
 
 diagDir = 'diags/xzsolver/hdf5/'
 field_base_path = 'diags/fields/'
-diagFDir = {'magnetic':'diags/fields/magnetic','electric':'diags/fields/electric'}
+diagFDir = {'magnetic': 'diags/fields/magnetic', 'electric': 'diags/fields/electric'}
 
 # Cleanup previous files
-if comm_world.rank == 0:
-    cleanupPrevious(diagDir,diagFDir)
+if wp.comm_world.rank == 0:
+    cleanupPrevious(diagDir, diagFDir)
 
-if comm_world.size != 1:
-    synchronizeQueuedOutput_mpi4py(out=False, error=False)
+if wp.comm_world.size != 1:
+    wp.synchronizeQueuedOutput_mpi4py(out=False, error=False)
 
-#print "rank:", comm_world.rank
+wp.top.inject = 0
+wp.top.npinject = 0
 
-top.inject = 0 
-top.npinject = 0
-
-### Grid parameters, Solver, and Boundaries
+# Grid parameters, Solver, and Boundaries
 epsn = 7.
 
-#Dimensions
-PLATE_SPACING = 1.e-6 #plate spacing
-CHANNEL_WIDTH = 1e-6 #width of simulation box
+# Dimensions
+PLATE_SPACING = 1.e-6  # plate spacing
+CHANNEL_WIDTH = 1e-6  # width of simulation box
 
 X_MAX = CHANNEL_WIDTH*0.5
 X_MIN = -1.*X_MAX
@@ -110,112 +107,111 @@ Z_MIN = 0.
 Z_MAX = PLATE_SPACING
 
 
-#Grid parameters
+# Grid parameters
 NUM_X = 128
 NUM_Z = 128
 
 # # Solver Geometry
-w3d.solvergeom = w3d.XZgeom
+wp.w3d.solvergeom = wp.w3d.XZgeom
 
 # Set boundary conditions
-w3d.bound0  = dirichlet
-w3d.boundnz = dirichlet
-w3d.boundxy = periodic 
+wp.w3d.bound0 = wp.dirichlet
+wp.w3d.boundnz = wp.dirichlet
+wp.w3d.boundxy = wp.periodic
 
 # Set grid boundaries
-w3d.xmmin = X_MIN
-w3d.xmmax = X_MAX
-w3d.zmmin = 0. 
-w3d.zmmax = Z_MAX
+wp.w3d.xmmin = X_MIN
+wp.w3d.xmmax = X_MAX
+wp.w3d.zmmin = 0.
+wp.w3d.zmmax = Z_MAX
 
-w3d.nx = NUM_X
-w3d.nz = NUM_Z
+wp.w3d.nx = NUM_X
+wp.w3d.nz = NUM_Z
 
-w3d.dx = (w3d.xmmax-w3d.xmmin)/w3d.nx
-w3d.dz = (w3d.zmmax-w3d.zmmin)/w3d.nz
+wp.w3d.dx = (wp.w3d.xmmax - wp.w3d.xmmin) / wp.w3d.nx
+wp.w3d.dz = (wp.w3d.zmmax - wp.w3d.zmmin) / wp.w3d.nz
 
-zmesh = np.linspace(0,Z_MAX,NUM_Z+1) #holds the z-axis grid points in an array
+zmesh = np.linspace(0, Z_MAX, NUM_Z + 1)  # holds the z-axis grid points in an array
 
 ANODE_VOLTAGE = 10.
 CATHODE_VOLTAGE = 0.
 vacuum_level = ANODE_VOLTAGE - CATHODE_VOLTAGE
 beam_beta = 5e-4
-#Determine an appropriate time step based upon estimated final velocity
-vzfinal = sqrt(2.*abs(vacuum_level)*np.abs(e)/m_e)+beam_beta*c
-dt = w3d.dz/vzfinal #5e-15
-top.dt = 0.1*dt
+# Determine an appropriate time step based upon estimated final velocity
+vzfinal = np.sqrt(2. * abs(vacuum_level) * np.abs(e) / m_e) + beam_beta * c
+dt = wp.w3d.dz / vzfinal
+wp.top.dt = 0.1*dt
 
-if vzfinal*top.dt > w3d.dz:
-    print "Time step dt = {:.3e}s does not constrain motion to a single cell".format(top.dt)
+if vzfinal * wp.top.dt > wp.w3d.dz:
+    print "Time step dt = {:.3e}s does not constrain motion to a single cell".format(wp.top.dt)
 
-#### Set up field solver
+# Set up field solver
+wp.top.depos_order = 1
+wp.f3d.mgtol = 1e-6  # Multigrid solver convergence tolerance, in volts. 1 uV is default in Warp.
+solverE = wp.MultiGrid2DDielectric()
+wp.registersolver(solverE)
 
-top.depos_order = 1
-f3d.mgtol = 1e-6 # Multigrid solver convergence tolerance, in volts. 1 uV is default in Warp.
-solverE = MultiGrid2DDielectric()
-registersolver(solverE)
+# Define conductors and dielectrics using new wrapper
 
-#### Define conductors and dielectrics using new wrapper
+source = wp.ZPlane(zcent=wp.w3d.zmmin + 0 * wp.w3d.dz, zsign=-1., voltage=CATHODE_VOLTAGE)
+solverE.installconductor(source, dfill=wp.largepos)
 
-source = ZPlane(zcent=w3d.zmmin+0*w3d.dz,zsign=-1.,voltage=CATHODE_VOLTAGE)
-solverE.installconductor(source, dfill=largepos)
-
-plate = ZPlane(voltage=ANODE_VOLTAGE, zcent=Z_MAX-0.*w3d.dz)
-solverE.installconductor(plate,dfill=largepos)
+plate = wp.ZPlane(voltage=ANODE_VOLTAGE, zcent=Z_MAX - 0. * wp.w3d.dz)
+solverE.installconductor(plate, dfill=wp.largepos)
 
 
-box = Box(xsize=0.5*(w3d.xmmax-w3d.xmmin),
-          ysize=0.5*(w3d.ymmax-w3d.ymmin),
-          zsize=0.1*(w3d.zmmax-w3d.zmmin),
-          xcent=0.5*(w3d.xmmax+w3d.xmmin),
-          ycent=0.5*(w3d.ymmax+w3d.ymmin),
-          zcent=0.8*(w3d.zmmax+w3d.zmmin),
-          permittivity=epsn)
+box = wp.Box(xsize=0.5 * (wp.w3d.xmmax - wp.w3d.xmmin),
+             ysize=0.5 * (wp.w3d.ymmax - wp.w3d.ymmin),
+             zsize=0.1 * (wp.w3d.zmmax - wp.w3d.zmmin),
+             xcent=0.5 * (wp.w3d.xmmax + wp.w3d.xmmin),
+             ycent=0.5 * (wp.w3d.ymmax + wp.w3d.ymmin),
+             zcent=0.8 * (wp.w3d.zmmax + wp.w3d.zmmin),
+             permittivity=epsn)
 
-solverE.installconductor(box,dfill=largepos)
+solverE.installconductor(box, dfill=wp.largepos)
 
-### Diagnostics
+# Diagnostics
 
-#Define diagnostics
+# Define diagnostics
 particleperiod = 100
-particle_diagnostic_0 = ParticleDiagnostic(period = particleperiod, top = top, w3d = w3d,
-                                          species = {species.name: species for species in listofallspecies},
-                                          comm_world=comm_world, lparallel_output=False, write_dir = diagDir[:-5])
+particle_diagnostic_0 = ParticleDiagnostic(period=particleperiod, top=wp.top, w3d=wp.w3d,
+                                           species={species.name: species for species in wp.listofallspecies},
+                                           comm_world=wp.comm_world, lparallel_output=False, write_dir=diagDir[:-5])
 fieldperiod = 100
-efield_diagnostic_0 = ElectrostaticFieldDiagnostic(solver=solverE, top=top, w3d=w3d, comm_world = comm_world,
-                                      period=fieldperiod, write_dir = diagFDir['electric'])
+efield_diagnostic_0 = ElectrostaticFieldDiagnostic(solver=solverE, top=wp.top, w3d=wp.w3d, comm_world=wp.comm_world,
+                                                   period=fieldperiod, write_dir=diagFDir['electric'])
 
-installafterstep(particle_diagnostic_0.write)
-installafterstep(efield_diagnostic_0.write)
+wp.installafterstep(particle_diagnostic_0.write)
+wp.installafterstep(efield_diagnostic_0.write)
 
 
-### Generate and Run
+# Generate and Run
 
-#Generate PIC code and Run Simulation
+# Generate PIC code and Run Simulation
 solverE.mgmaxiters = 1
 
-#prevent GIST from starting upon setup
-top.lprntpara = false
-top.lpsplots = false
-top.verbosity = 0 
+# prevent GIST from starting upon setup
+wp.top.lprntpara = False
+wp.top.lpsplots = False
+wp.top.verbosity = 0
 
-solverE.mgmaxiters = 10000 #rough approximation needed for initial solve to converge
-package("w3d")
-generate()
+solverE.mgmaxiters = 10000  # rough approximation needed for initial solve to converge
+wp.package("w3d")
+wp.generate()
 solverE.mgmaxiters = 100
 
 
 ################
-#PLOT EPSILON
+# PLOT EPSILON
 ################
 
-if (comm_world.rank == 0 and MAKE_PLOTS):
+if wp.comm_world.rank == 0 and MAKE_PLOTS:
 
-    #Need to compute the fields first
-    epsilon_array = solverE.epsilon/eps0
+    # Need to compute the fields first
+    epsilon_array = solverE.epsilon / wp.eps0
     
-    #Now plot
-    fig = plt.figure(figsize=(12,6))
+    # Now plot
+    fig = plt.figure(figsize=(12, 6))
     
     X_CELLS = NUM_X
     Z_CELLS = NUM_Z
@@ -237,65 +233,65 @@ if (comm_world.rank == 0 and MAKE_PLOTS):
     plt.xlim(pzmin, pzmax)
     plt.ylim(pxmin, pxmax)
 
-    eps_plt = plt.imshow(epsilon_array[xl:xu,zl:zu],cmap='viridis',extent=[pzmin, pzmax, pxmin, pxmax],aspect='auto')
+    eps_plt = plt.imshow(epsilon_array[xl:xu, zl:zu], cmap='viridis',
+                         extent=[pzmin, pzmax, pxmin, pxmax], aspect='auto')
 
     cbar = fig.colorbar(eps_plt)
     cbar.ax.set_xlabel(r"$\kappa$")
     cbar.ax.xaxis.set_label_position('top')
 
-    plt.savefig('eps_broad_box.png',bbox_inches='tight')
+    plt.savefig('eps_broad_box.png', bbox_inches='tight')
 
 
-#### Specify emission
+# Specify emission
 
-electrons_tracked_t0 = Species(type=Electron, weight=1.0e6)
+electrons_tracked_t0 = wp.Species(type=wp.Electron, weight=1.0e6)
 ntrack = 20
-Z_PART_MIN = w3d.dz/8 #Add a minimum z coordinate to prevent absorption
+Z_PART_MIN = wp.w3d.dz / 8  # Add a minimum z coordinate to prevent absorption
 
 # Uniform velocity used for all particles
-x_vals = np.arange(-0.25*CHANNEL_WIDTH,0.25*CHANNEL_WIDTH,0.5*CHANNEL_WIDTH / ntrack)
+x_vals = np.arange(-0.25*CHANNEL_WIDTH, 0.25*CHANNEL_WIDTH, 0.5*CHANNEL_WIDTH / ntrack)
 y_vals = CHANNEL_WIDTH*(np.random.rand(ntrack)-0.5)
-z_vals = np.zeros(ntrack) + Z_PART_MIN #Add a minimum z coordinate to prevent absorption
+z_vals = np.zeros(ntrack) + Z_PART_MIN  # Add a minimum z coordinate to prevent absorption
 
 vx_vals = np.zeros(ntrack)
 vy_vals = np.zeros(ntrack)
-vz_vals = beam_beta*clight*np.ones(ntrack) #beta = 0.0005
+vz_vals = beam_beta * wp.clight * np.ones(ntrack)  # beta = 0.0005
 
-eptclArray = np.asarray([x_vals,vx_vals,y_vals,vy_vals,z_vals,vz_vals]).T
+eptclArray = np.asarray([x_vals, vx_vals, y_vals, vy_vals, z_vals, vz_vals]).T
 
 electron_tracker_0 = TraceParticle(js=electrons_tracked_t0.jslist[0],
-                     x=x_vals,
-                     y=y_vals,
-                     z=z_vals,
-                     vx=vx_vals,
-                     vy=vy_vals,
-                     vz=vz_vals)
+                                   x=x_vals,
+                                   y=y_vals,
+                                   z=z_vals,
+                                   vx=vx_vals,
+                                   vy=vy_vals,
+                                   vz=vz_vals)
 
-pscraper = ParticleScraper([box],lsaveintercept=True,lsavecondid=True,)
+pscraper = wp.ParticleScraper([box], lsaveintercept=True, lsavecondid=True,)
 DPart = Dielectric_Particles()
 
-if comm_world.rank == 0:
-    pg=top.pgroup
-    pg.yp=0.
+if wp.comm_world.rank == 0:
+    pg = wp.top.pgroup
+    pg.yp = 0.
 
 num_steps = 3000
-step(num_steps)
+wp.step(num_steps)
 
-print solverE.getselfe().shape
-print getselfe('z').shape
-zfield = getselfe('z')
-if comm_world.size > 1:
-	if comm_world.rank == 0:
-		np.save('diel_para.npy',zfield)
-elif comm_world.size == 1:
-	np.save('diel_ser.npy',zfield)
+print(solverE.getselfe().shape)
+print(wp.getselfe('z').shape)
+zfield = wp.getselfe('z')
+if wp.comm_world.size > 1:
+    if wp.comm_world.rank == 0:
+        np.save('diel_para.npy', zfield)
+elif wp.comm_world.size == 1:
+    np.save('diel_ser.npy', zfield)
 
 
-if (comm_world.rank == 0 and MAKE_PLOTS):
+if wp.comm_world.rank == 0 and MAKE_PLOTS:
+    # Plot particle trajectories
 
-    ### Plot particle trajectories
-
-    def particle_trace(trace,ntrack):
+    def particle_trace(trace, ntrack):
         kept_electronsx = []
         kept_electronsz = []
         lost_electronsx = []
@@ -310,33 +306,32 @@ if (comm_world.rank == 0 and MAKE_PLOTS):
                 if step == (len(trace.getx(i=electron)) - 2):
                     kept_electronsx.append(trace.getx(i=electron))
                     kept_electronsz.append(trace.getz(i=electron))
-        return [kept_electronsx,kept_electronsz], [lost_electronsx,lost_electronsz]
+        return [kept_electronsx, kept_electronsz], [lost_electronsx, lost_electronsz]
 
-    kept_electrons, lost_electrons = particle_trace(electron_tracker_0,ntrack)
+    kept_electrons, lost_electrons = particle_trace(electron_tracker_0, ntrack)
 
     cond_list = solverE.conductordatalist
 
-    fig = plt.figure(figsize=(12,6))
+    fig = plt.figure(figsize=(12, 6))
     plt.title("Dielectric Particle Trace")
 
     scale = 1e6
 
     ax2 = plt.subplot(111)
 
-    steps2cross = 2500 #computed # of steps to cross
+    steps2cross = 2500  # computed # of steps to cross
 
     cond_list = solverE.conductordatalist
-    for cond in cond_list[2:]: #ignore first two conductors - these are the plates
+    for cond in cond_list[2:]:  # ignore first two conductors - these are the plates
         co = cond[0]
         specs = co.getkwlist()
-        xw = specs[0] #x-dimension (y in plot)
-        xc = specs[3] #center
-        xll = xc - xw/2. #lower left
-        zw = specs[2] #z-dimension (x in plot)
-        zc = specs[-1] #center
-        zll = zc - zw/2. #lower left
+        xw = specs[0]  # x-dimension (y in plot)
+        xc = specs[3]  # center
+        xll = xc - xw / 2.  # lower left
+        zw = specs[2]  # z-dimension (x in plot)
+        zc = specs[-1]  # center
+        zll = zc - zw / 2.  # lower left
 
-    
         ax2.add_patch(
             patches.Rectangle(
                 (zll * scale, xll * scale),
@@ -348,37 +343,34 @@ if (comm_world.rank == 0 and MAKE_PLOTS):
         )
 
     ax1 = plt.subplot(111)
-    kept_electrons, lost_electrons = particle_trace(electron_tracker_0,ntrack)
+    kept_electrons, lost_electrons = particle_trace(electron_tracker_0, ntrack)
 
     for i in range(len(kept_electrons[1])):
-        ax1.plot(kept_electrons[1][i][:steps2cross] * scale,kept_electrons[0][i][:steps2cross] * scale, c = '#1f77b4')
+        ax1.plot(kept_electrons[1][i][:steps2cross] * scale, kept_electrons[0][i][:steps2cross] * scale, c='#1f77b4')
 
     for i in range(len(lost_electrons[1])):
-        ax1.plot(lost_electrons[1][i][:steps2cross] * scale,lost_electrons[0][i][:steps2cross] * scale, c = '#2ca02c')
+        ax1.plot(lost_electrons[1][i][:steps2cross] * scale, lost_electrons[0][i][:steps2cross] * scale, c='#2ca02c')
 
-
-    ptrace = mlines.Line2D([], [], color='#1f77b4',label='Dielectric Particles')
+    ptrace = mlines.Line2D([], [], color='#1f77b4', label='Dielectric Particles')
 
     box = ax1.get_position()
     ax1.set_position([box.x0, box.y0, box.width * 0.8, box.height])
 
-    plt.xlim(Z_MIN * scale,Z_MAX * scale)
+    plt.xlim(Z_MIN * scale, Z_MAX * scale)
     plt.ylim(X_MIN * scale, X_MAX * scale)
-    plt.legend(handles=[ptrace],loc='best', bbox_to_anchor=(1, 1))
+    plt.legend(handles=[ptrace], loc='best', bbox_to_anchor=(1, 1))
     plt.xlabel('z ($\mu$m)')
     plt.ylabel('x ($\mu$m)')
     plt.savefig('dielectric_trace.png')
     plt.show()
-    
-    
-    
-    ### Plot fields
 
-    #Need to compute the fields first
+    # Plot fields
+
+    # Need to compute the fields first
     fieldEz = solverE.getez()
 
-    #Now plot
-    fig = plt.figure(figsize=(12,6))
+    # Now plot
+    fig = plt.figure(figsize=(12, 6))
 
     X_CELLS = NUM_X
     Z_CELLS = NUM_Z
@@ -400,22 +392,22 @@ if (comm_world.rank == 0 and MAKE_PLOTS):
     plt.xlim(pzmin, pzmax)
     plt.ylim(pxmin, pxmax)
 
-    ez_plt = plt.imshow(fieldEz[xl:xu,zl:zu],cmap='viridis',extent=[pzmin, pzmax, pxmin, pxmax],aspect='auto')
+    ez_plt = plt.imshow(fieldEz[xl:xu, zl:zu], cmap='viridis', extent=[pzmin, pzmax, pxmin, pxmax], aspect='auto')
 
     cbar = fig.colorbar(ez_plt)
     cbar.ax.set_xlabel("V/m")
     cbar.ax.xaxis.set_label_position('top')
 
-    plt.savefig('Ez_box.png',bbox_inches='tight')
+    plt.savefig('Ez_box.png', bbox_inches='tight')
     plt.close()
 
-    #Need to compute the fields first
+    # Need to compute the fields first
     fieldEx = solverE.getex()
 
     Exr = fieldEx[::-1]
 
-    #Now plot
-    fig = plt.figure(figsize=(12,6))
+    # Now plot
+    fig = plt.figure(figsize=(12, 6))
 
     X_CELLS = NUM_X
     Z_CELLS = NUM_Z
@@ -437,24 +429,22 @@ if (comm_world.rank == 0 and MAKE_PLOTS):
     plt.xlim(pzmin, pzmax)
     plt.ylim(pxmin, pxmax)
 
-    ex_plt = plt.imshow(Exr[xl:xu,zl:zu],cmap='viridis',extent=[pzmin, pzmax, pxmin, pxmax],aspect='auto')
-
+    ex_plt = plt.imshow(Exr[xl:xu, zl:zu], cmap='viridis',extent=[pzmin, pzmax, pxmin, pxmax], aspect='auto')
 
     cbar = fig.colorbar(ex_plt)
     cbar.ax.set_xlabel("V/m")
     cbar.ax.xaxis.set_label_position('top')
 
-    plt.savefig('Ex_box.png',bbox_inches='tight')
+    plt.savefig('Ex_box.png', bbox_inches='tight')
     plt.close()
 
+    # Plot potential
 
-    #### Plot potential
-
-    #Need to compute the potential first
+    # Need to compute the potential first
     potential = solverE.getphi()
 
-    #Now plot
-    fig = plt.figure(figsize=(12,6))
+    # Now plot
+    fig = plt.figure(figsize=(12, 6))
 
     X_CELLS = NUM_X
     Z_CELLS = NUM_Z
@@ -478,12 +468,11 @@ if (comm_world.rank == 0 and MAKE_PLOTS):
     plt.xlim(pzmin, pzmax)
     plt.ylim(pxmin, pxmax)
 
-    phi_plt = plt.imshow(potential[xl:xu,zl:zu],cmap='RdBu',extent=[pzmin, pzmax, pxmin, pxmax],aspect='auto')
+    phi_plt = plt.imshow(potential[xl:xu, zl:zu], cmap='RdBu', extent=[pzmin, pzmax, pxmin, pxmax], aspect='auto')
 
     cbar = fig.colorbar(phi_plt)
     cbar.ax.set_xlabel("Volts")
     cbar.ax.xaxis.set_label_position('top')
 
-    plt.savefig('phi_box.png',bbox_inches='tight')
+    plt.savefig('phi_box.png', bbox_inches='tight')
     plt.close()
-
