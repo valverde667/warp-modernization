@@ -1,4 +1,4 @@
-# # Test script simulating a 3D dielectric sphere between two parallel plates. This script should run in parallel.
+# # Test script simulating a 3D dielectric sphere between two parallel plates. This script runs in both parallel and serial.
 # 
 # If MAKE_PLOTS is set, then plots a 2D slice of the potential and compares a 1D lineout to the analytic solution.
 #
@@ -101,7 +101,7 @@ Z_MAX = PLATE_SPACING
 
 #Grid parameters - increase number of cells if running in parallel
 if comm_world.size > 1:
-    N_ALL = 96
+    N_ALL = 95
 else:
     N_ALL = 64 
 
