@@ -947,7 +947,6 @@ class EM3DFFT(EM3D):
     ###################################
     #              PSAOTD             #
     ###################################
-        if top.it%100==0:print 'push PSAOTD',top.it
 
         if top.efetch[0] != 4 and (self.refinement is None) and not self.l_nodalgrid:self.node2yee3d()
 

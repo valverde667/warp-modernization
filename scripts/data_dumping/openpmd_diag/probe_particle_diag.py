@@ -804,6 +804,19 @@ class ParticleProbeCatcher(ParticleCatcher):
         if self.top.ssnpid:
             pid = self.get_quantity( species, "id" )
 
+        if 'bx' in self.list_of_quantities:
+            bx = self.get_quantity(species, 'bx')
+        if 'by' in self.list_of_quantities:
+            by = self.get_quantity(species, 'by')
+        if 'bz' in self.list_of_quantities:
+            bz = self.get_quantity(species, 'bz')
+        if 'ex' in self.list_of_quantities:
+            ex = self.get_quantity(species, 'ex')
+        if 'ey' in self.list_of_quantities:
+            ey = self.get_quantity(species, 'ey')
+        if 'ez' in self.list_of_quantities:
+            ez = self.get_quantity(species, 'ez')
+
         # This part is then common for WARP or WARP + PICSAR
         # A particle array for mapping purposes
         particle_indices = np.arange( len(current_z) )
@@ -836,6 +849,18 @@ class ParticleProbeCatcher(ParticleCatcher):
             self.captured_quantities['w'] = np.take(weights, selected_indices)
         if self.top.ssnpid:
             self.captured_quantities['id'] = np.take( pid, selected_indices)
+        if 'bx' in self.list_of_quantities:
+            self.captured_quantities['bx'] = np.take( bx, selected_indices)
+        if 'by' in self.list_of_quantities:
+            self.captured_quantities['by'] = np.take( by, selected_indices)
+        if 'bz' in self.list_of_quantities:
+            self.captured_quantities['bz'] = np.take( bz, selected_indices)
+        if 'ex' in self.list_of_quantities:
+            self.captured_quantities['ex'] = np.take( ex, selected_indices)
+        if 'ey' in self.list_of_quantities:
+            self.captured_quantities['ey'] = np.take( ey, selected_indices)
+        if 'ez' in self.list_of_quantities:
+            self.captured_quantities['ez'] = np.take( ez, selected_indices)
 
         ## Select the particle quantities that satisfy the
         ## aforementioned condition

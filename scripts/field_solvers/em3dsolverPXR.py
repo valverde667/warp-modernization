@@ -37,6 +37,7 @@
 
 from warp.field_solvers.em3dsolverFFT import *
 from warp.particles.species import *
+from .laser.laser_antenna import LaserAntenna
 
 try:
     from mpi4py import MPI
@@ -306,7 +307,7 @@ def aliasparticlearrays():
             pg.npmax = 0
             pxr.partnmax
             pg.ns=1
-            pg.npid=top.npid
+            pg.npid=pxr.npid
             pg.gchange()
             pg.sq = s.charge
             pg.sm = s.mass
@@ -504,6 +505,304 @@ def getn(self, gather=1, bcast=None, **kw ):
     return nb[0]
 
 
+
+def initialize_virtual_particles( self, w3d ):
+    """
+    This function overwrites the LaserAntenna class method
+    initialize_virtual_particles, when using picsar.
+    It creates new antenna macroparticles in picsar.
+
+    Initialization of the antenna particles depending on the dimension and
+    the laser propagation vector.
+    """
+
+    def switch_min_max( x1, x2, u ):
+        """
+        Return x1 or x2 depending on the sign of u
+        """
+        if u >= 0 :
+            return x1
+        else:
+            return x2
+
+    # Shortcut definition
+    x0 = self.spot[0]
+    y0 = self.spot[1]
+    z0 = self.spot[2]
+    xmin = w3d.xmminlocal
+    xmax = w3d.xmmaxlocal
+    ymin = w3d.ymminlocal
+    ymax = w3d.ymmaxlocal
+    zmin = w3d.zmminlocal
+    zmax = w3d.zmmaxlocal
+
+    if self.dim == "1d":
+        # Ux is chosen orthogonal to self.vector in the plane (x,z)
+        Uy = np.array([0.,1.,0.])
+        Ux = np.cross(Uy,self.vector)
+        self.Ux = Ux
+        self.Uy = Uy
+
+        # 1D injection along x
+        self.nn_global = 1
+        self.xx_global = x0 + np.zeros(self.nn_global)
+        self.yy_global = y0 + np.zeros(self.nn_global)
+        self.zz_global = z0 + np.zeros(self.nn_global)
+
+    elif self.dim == "circ":
+        # 2D circ
+
+        # Check that the normal vector is along z and that the
+        # position of the antenna is on the axis
+        # (Otherwise the simulation cannot be performed in cylindrical
+        # coordinate)
+        assert np.allclose( self.vector, np.array([0,0,1]) )
+        assert np.allclose( self.spot[:1], np.array([0,0]) )
+        # Get the vectors that give the coordinate system of the antenna
+        Ux = self.polvector
+        Uy = self.polvector_2
+        self.Ux = Ux
+        self.Uy = Uy
+
+        # The points of the antenna are along a star-pattern
+        imin = np.floor( xmin/w3d.dx )
+        imax = np.floor( xmax/w3d.dx )
+        rr = w3d.dx * np.arange( imin, imax+1 )
+        self.weights_circ = 2 * np.pi * rr / w3d.dx
+        self.weights_circ /= 4 * self.circ_m
+        w0 = self.weights_circ.copy()
+        self.xx_global = rr.copy()
+        self.yy_global = np.zeros_like( self.xx_global  )
+        for i in range( 1, 4*self.circ_m ):
+            phase = 0.5*np.pi*float(i)/self.circ_m
+            self.xx_global = np.concatenate( (self.xx_global,
+                                                rr*np.cos(phase)) )
+            self.yy_global = np.concatenate( (self.yy_global,
+                                                rr*np.sin(phase)) )
+            self.weights_circ = np.concatenate((self.weights_circ,w0))
+        self.nn_global = np.shape(self.xx_global)[0]
+        self.zz_global = z0 + np.zeros(self.nn_global)
+
+    elif self.dim == "2d":
+        # 2D plane
+
+        # Ux is chosen orthogonal to self.vector in the plane (x,z)
+        Uy = np.array([0.,1.,0.])
+        Ux = np.cross(Uy,self.vector)
+        self.Ux = Ux
+        self.Uy = Uy
+
+        # Spacing between virtual particles to ensure at least one
+        # particle per cell
+        # select only the Ux components different from 0
+        list_Ux = []
+        if not Ux[0] == 0.: list_Ux.append(w3d.dx/np.abs(Ux[0]))
+        if not Ux[1] == 0.: list_Ux.append(w3d.dy/np.abs(Ux[1]))
+        if not Ux[2] == 0.: list_Ux.append(w3d.dz/np.abs(Ux[2]))
+        self.Sx = min(list_Ux)
+
+        # Boundaries of the box, depending on sign of the components of Ux
+        xmin_i = switch_min_max(xmin, xmax, Ux[0])
+        ymin_i = switch_min_max(ymin, ymax, Ux[1])
+        zmin_i = switch_min_max(zmin, zmax, Ux[2])
+        xmax_i = switch_min_max(xmax, xmin, Ux[0])
+        ymax_i = switch_min_max(ymax, ymin, Ux[1])
+        zmax_i = switch_min_max(zmax, zmin, Ux[2])
+
+        # Find the range of integer with which the particles will be
+        # initialized
+        imin = Ux[0]*(xmin_i-x0) + Ux[1]*(ymin_i-y0) + Ux[2]*(zmin_i-z0)
+        imax = Ux[0]*(xmax_i-x0) + Ux[1]*(ymax_i-y0) + Ux[2]*(zmax_i-z0)
+        imin = np.floor(imin/self.Sx)
+        imax = np.floor(imax/self.Sx)+1
+        antenna_i = np.arange(imin, imax)
+
+        # Initialize the particle positions
+        self.xx_global = x0 + self.Sx*Ux[0]*antenna_i
+        self.zz_global = z0 + self.Sx*Ux[2]*antenna_i
+
+        # Keep only the particles that are inside the global box
+        is_in_global_box = (self.xx_global >= xmin) \
+                            & (self.xx_global < xmax) \
+                            & (self.zz_global >= zmin) \
+                            & (self.zz_global < zmax)
+        self.zz_global = self.zz_global[is_in_global_box]
+        self.xx_global = self.xx_global[is_in_global_box]
+        self.yy_global = np.zeros(len(self.xx_global))
+        # Number of virtual particles
+        self.nn_global = np.shape(self.xx_global)[0]
+
+    else:
+        # 3D case, Ux = polvector and Uy = polvector_2
+        Ux = self.polvector
+        Uy = self.polvector_2
+        self.Ux = Ux
+        self.Uy = Uy
+
+        # Spacing between virtual particles to ensure at least
+        # one particle per cell
+        # select only the components of Ux and Uy different from 0
+        list_Ux = []; list_Uy = []
+        if not Ux[0] == 0.: list_Ux.append( w3d.dx/np.abs(Ux[0]) )
+        if not Ux[1] == 0.: list_Ux.append( w3d.dy/np.abs(Ux[1]) )
+        if not Ux[2] == 0.: list_Ux.append( w3d.dz/np.abs(Ux[2]) )
+        if not Uy[0] == 0.: list_Uy.append( w3d.dx/np.abs(Uy[0]) )
+        if not Uy[1] == 0.: list_Uy.append( w3d.dy/np.abs(Uy[1]) )
+        if not Uy[2] == 0.: list_Uy.append( w3d.dz/np.abs(Uy[2]) )
+        self.Sx = min(list_Ux)
+        self.Sy = min(list_Uy)
+
+        # Boundaries of the box, depending on sign of the components of Ux
+        xmin_i = switch_min_max(xmin, xmax, Ux[0])
+        ymin_i = switch_min_max(ymin, ymax, Ux[1])
+        zmin_i = switch_min_max(zmin, zmax, Ux[2])
+        xmax_i = switch_min_max(xmax, xmin, Ux[0])
+        ymax_i = switch_min_max(ymax, ymin, Ux[1])
+        zmax_i = switch_min_max(zmax, zmin, Ux[2])
+        # Boundaries of the box, depending on sign of the components of Uy
+        xmin_j = switch_min_max(xmin, xmax, Uy[0])
+        ymin_j = switch_min_max(ymin, ymax, Uy[1])
+        zmin_j = switch_min_max(zmin, zmax, Uy[2])
+        xmax_j = switch_min_max(xmax, xmin, Uy[0])
+        ymax_j = switch_min_max(ymax, ymin, Uy[1])
+        zmax_j = switch_min_max(zmax, zmin, Uy[2])
+
+        # Find the range of integer with which the particles will be
+        # initialized
+        imin = Ux[0]*(xmin_i-x0) + Ux[1]*(ymin_i-y0) + Ux[2]*(zmin_i-z0)
+        imax = Ux[0]*(xmax_i-x0) + Ux[1]*(ymax_i-y0) + Ux[2]*(zmax_i-z0)
+        jmin = Uy[0]*(xmin_j-x0) + Uy[1]*(ymin_j-y0) + Uy[2]*(zmin_j-z0)
+        jmax = Uy[0]*(xmax_j-x0) + Uy[1]*(ymax_j-y0) + Uy[2]*(zmax_j-z0)
+        imin = np.floor(imin/self.Sx)
+        imax = np.floor(imax/self.Sx)+1
+        jmin = np.floor(jmin/self.Sy)
+        jmax = np.floor(jmax/self.Sy)+1
+        array_i = np.arange(imin, imax)
+        array_j = np.arange(jmin, jmax)
+        antenna_i, antenna_j = np.meshgrid(array_i,array_j)
+
+        # Initialize the particle positions
+        self.xx_global = x0 + self.Sx*Ux[0]*antenna_i + self.Sy*Uy[0]*antenna_j
+        self.yy_global = y0 + self.Sx*Ux[1]*antenna_i + self.Sy*Uy[1]*antenna_j
+        self.zz_global = z0 + self.Sx*Ux[2]*antenna_i + self.Sy*Uy[2]*antenna_j
+        self.xx_global = self.xx_global.flatten()
+        self.yy_global = self.yy_global.flatten()
+        self.zz_global = self.zz_global.flatten()
+
+        # Keep only the particles that are inside the global box
+        is_in_global_box = (self.xx_global >= xmin) \
+                            & (self.xx_global < xmax) \
+                            & (self.yy_global >= ymin) \
+                            & (self.yy_global < ymax) \
+                            & (self.zz_global >= zmin) \
+                            & (self.zz_global < zmax)
+        self.zz_global = self.zz_global[is_in_global_box]
+        self.yy_global = self.yy_global[is_in_global_box]
+        self.xx_global = self.xx_global[is_in_global_box]
+        # Number of virtual particles
+        self.nn_global = np.shape(self.xx_global)[0]
+
+    # Set the deplacement around the initial position and normalized momenta
+    # variation of each macroparticles to 0
+    self.xdx_global = np.zeros(self.nn_global)
+    self.ydy_global = np.zeros(self.nn_global)
+    self.zdz_global = np.zeros(self.nn_global)
+    self.ux_global = np.zeros(self.nn_global)
+    self.uy_global = np.zeros(self.nn_global)
+    self.uz_global = np.zeros(self.nn_global)
+    self.gi_global = np.ones(self.nn_global)
+
+    # Calculate the weights
+    self.weights_global = np.ones(self.nn_global) * eps0*self.emax/0.01
+
+    if self.dim == "2d":
+        self.weights_global *= self.Sx
+    elif self.dim == "3d" :
+        self.weights_global *= self.Sy*self.Sx
+    elif self.circ_m > 0 : # Circ
+        # Laser initialized with particles in a star-pattern
+        self.weights_global *= w3d.dx**2 * self.weights_circ
+
+
+    # Create two new antenna species in PICSAR and assign their caracteristics
+    js_laser_pos = numpy.empty(1,dtype=numpy.int64)
+    js_laser_neg = numpy.empty(1,dtype=numpy.int64)
+
+    pxr.init_laser_species_python(self.emax, self.spot, self.vector, Ux, Uy,
+                                    1., self.weights_global, self.xx_global,
+                                self.yy_global, self.zz_global, self.nn_global,
+                                js_laser_pos)
+
+    pxr.init_laser_species_python(self.emax, self.spot, self.vector, Ux, Uy,
+                                -1., self.weights_global, self.xx_global,
+                                self.yy_global, self.zz_global, self.nn_global,
+                                js_laser_neg)
+    self.js_pos = js_laser_pos
+    self.js_neg = js_laser_neg
+
+def push_virtual_particles(self, top, f, clight ):
+    """
+    This function overwrites the LaserAntenna class method
+    push_virtual_particles, when using picsar.
+
+    Calculate the motion parameters of the laser antenna at a given
+    timestep
+    """
+
+    dt = top.dt
+
+    # Coordinate of the antenna in the plane (Ux,Uy)
+    wpid = pxr.wpid
+
+    for js in [self.js_neg, self.js_pos]:
+        nb = numpy.empty(1,dtype=numpy.int64)
+        pxr.get_local_number_of_particles_from_species(js, nb )
+
+        quantity_array = numpy.empty(nb[0], dtype=numpy.float64, order='F')
+        pxr.getquantity_pid(js, wpid+1, nb, quantity_array)
+        x = quantity_array
+
+        quantity_array = numpy.empty(nb[0], dtype=numpy.float64, order='F')
+        pxr.getquantity_pid(js, wpid+2, nb, quantity_array)
+        y = quantity_array
+
+        t = top.time*(1.-self.v/clight)
+        amp = self.laser_func(x,y,t)
+
+        # --- displaces fixed weight particles on "continuous" trajectories
+        dispmax = 0.01*clight
+        coef_ampli = dispmax * (1.-self.v/clight) / self.emax
+
+        if isinstance(amp,list): #elliptic polarization
+            amp_x = amp[0]*self.polvector[0] + amp[1]*self.polvector_2[0]
+            amp_y = amp[0]*self.polvector[1] + amp[1]*self.polvector_2[1]
+            amp_z = amp[0]*self.polvector[2] + amp[1]*self.polvector_2[2]
+
+            amplitude_x = coef_ampli * amp_x
+            amplitude_y = coef_ampli * amp_y
+            amplitude_z = coef_ampli * amp_z
+
+        else: #linear polarization
+            amplitude_x = coef_ampli * amp * self.polvector[0]
+            amplitude_y = coef_ampli * amp * self.polvector[1]
+            amplitude_z = coef_ampli * amp * self.polvector[2]
+
+        pxr.laser_pusher_profile(js, amplitude_x,amplitude_y,amplitude_z, nb,self.vx,self.vy,self.vz)
+
+def select_particles_in_local_box(self, w3d, zgrid):
+    """
+    This function overwrites the LaserAntenna class method
+    select_particles_in_local_box, when using picsar.
+
+    Since the particles are exchanged via basic exchange routines,
+    this function is not used anymore.
+
+    The "self.nn = 0" command assures that the current and charge
+    deposition are not done through warp.
+    """
+    self.nn = 0
+    return
+
 class EM3DPXR(EM3DFFT):
 
     __em3dpxrinputs__ = []
@@ -534,6 +833,28 @@ class EM3DPXR(EM3DFFT):
                       'offset_x_part_grid':[0.,0.],
                       'offset_y_part_grid':[0.,0.],
                       'offset_z_part_grid':[0.,0.],
+                      'full_pxr': False,
+                      'fftw_hybrid':False,
+                      'fftw_with_mpi':False,
+                      'fftw_mpi_transpose':False,
+                      'p3dfft_flag':False,
+                      'p3dfft_stride':False,
+                      'nb_group_x':0,
+                      'nb_group_y':0,
+                      'nb_group_z':0,
+                      'nyg_group':0,
+                      'nzg_group':0,
+                      'nx_pml':8,
+                      'ny_pml':8,
+                      'nz_pml':8,
+                      'shift_x_pml_pxr':4, # number of guardcells whre fields are forced to 0
+                      'shift_y_pml_pxr':4, # when using pml with full pxr mode. This parameter
+                      'shift_z_pml_pxr':4, # is only
+                      'absorbing_bcs_x':0,
+                      'absorbing_bcs_y':0,
+                      'absorbing_bcs_z':0,
+                      'g_spectral':False,
+                      'pxr_antenna':True,
                       }
 
     def __init__(self,**kw):
@@ -550,6 +871,10 @@ class EM3DPXR(EM3DFFT):
           print("Call __init__")
           print(' Debug prints activated')
 
+        if(self.pxr_antenna):
+          top.nextpid()
+          top.nextpid()
+
         EM3DFFT.__init__(self,kwdict=kw)
 
         self.l_pxr = l_pxr
@@ -562,11 +887,45 @@ class EM3DPXR(EM3DFFT):
         if (self.l_debug): print("End __init__")
 
     def finalize(self,lforce=False):
+
         if self.finalized and not lforce: return
+        if(self.l_debug): print("begin finalize")
         if self.l_pxr:
           EM3D.finalize(self)
+
+          # Rewrite the LaserAntenna class methods for pxr
+          if(self.pxr_antenna):
+            LaserAntenna.initialize_virtual_particles  = \
+                                                    initialize_virtual_particles
+            LaserAntenna.push_virtual_particles        = push_virtual_particles
+            LaserAntenna.select_particles_in_local_box = \
+                                                 select_particles_in_local_box
+
+
           self.allocatefieldarraysFFT()
           self.allocatefieldarraysPXR()
+          #if full_pxr == True additional computations are done in picsar.
+          # This includes PSATD block initialization and fields boundaries through PMLS.
+          #This mode also allows to use FFTW_MPI or P3DFFT in order to perform FFT computations.
+
+          if(self.full_pxr):
+            pxr.init_plans_blocks()
+            if(pxr.absorbing_bcs):
+              pxr.init_pml_arrays()
+              # Creates a pointer to each pxr pml sub field
+              self.exy_pxr = pxr.exy
+              self.exz_pxr = pxr.exz
+              self.eyx_pxr = pxr.eyx
+              self.eyz_pxr = pxr.eyz
+              self.ezx_pxr = pxr.ezx
+              self.ezy_pxr = pxr.ezy
+              self.bxy_pxr = pxr.bxy
+              self.bxz_pxr = pxr.bxz
+              self.byx_pxr = pxr.byx
+              self.byz_pxr = pxr.byz
+              self.bzx_pxr = pxr.bzx
+              self.bzy_pxr = pxr.bzy
+
 
           self.lorentz_transform2d = pxr.transform_lorentz2d
           self.lorentz_transform3d = pxr.transform_lorentz3d
@@ -598,7 +957,6 @@ class EM3DPXR(EM3DFFT):
           Species.getby            = getby
           Species.getbz            = getbz
           Species.getn             = getn
-
           Species.getexold         = getexold
           Species.geteyold         = geteyold
           Species.getezold         = getezold
@@ -650,6 +1008,12 @@ class EM3DPXR(EM3DFFT):
                 for ix in range(-1,2):
                     indtoproc=self.convertindtoproc(ixcpu+ix,iycpu+iy,izcpu+iz,pxr.nprocx,pxr.nprocy,pxr.nprocz)
                     pxr.neighbour[ix+1,iy+1,iz+1]=indtoproc
+      #  pxr.proc_x_max =  pxr.neighbour[1,0,0 ]
+      #  pxr.proc_x_min =  pxr.neighbour[-1,0,0]
+      #  pxr.proc_y_max =  pxr.neighbour[0,1,0 ]
+      #  pxr.proc_y_min =  pxr.neighbour[0,-1,0]
+      #  pxr.proc_z_max =  pxr.neighbour[0,0,1 ]
+      #  pxr.proc_z_min =  pxr.neighbour[0,0,-1]
 
         if (ixcpu==0):
             pxr.x_min_boundary=1
@@ -893,8 +1257,64 @@ class EM3DPXR(EM3DFFT):
         pxr.mpi_minimal_init_python(top.fsdecomp.mpi_comm)
 
         # allocate grid quantities
+        if(self.full_pxr):
+          self.l_pxr = True
+          pxr.l_spectral = True
+          pxr.g_spectral = self.g_spectral
+          pxr.fftw_with_mpi = self.fftw_with_mpi
+          pxr.fftw_mpi_transpose = self.fftw_mpi_transpose
+          pxr.fftw_hybrid = self.fftw_hybrid
+          pxr.p3dfft_flag = self.p3dfft_flag
+          pxr.p3dfft_stride = self.p3dfft_stride
+          pxr.nxg_group = self.nxguard
+          pxr.nyg_group = self.nyg_group
+          pxr.nzg_group = self.nzg_group
+          pxr.nb_group_z = self.nb_group_z
+          pxr.nb_group_y = self.nb_group_y
+          pxr.absorbing_bcs_x = self.absorbing_bcs_x
+          pxr.absorbing_bcs_y = self.absorbing_bcs_y
+          pxr.absorbing_bcs_z = self.absorbing_bcs_z
+
+
+         # if(w3d.bound0 == openbc or w3d.boundnz==openbc):
+         #   pxr.absorbing_bcs_z = True
+         # if(w3d.boundxy == openbc):
+         #   pxr.absorbing_bcs_x = True
+         #   pxr.absorbing_bcs_y = True
+
+          #Set aborbing_bcs flag to true if there is an absorbing bc in any direction
+          #If absorbing bcs in one direction then increase the grid offset for particles
+          #in order to avoid PMLS instabilities.
+          if(pxr.absorbing_bcs_x or pxr.absorbing_bcs_y or pxr.absorbing_bcs_z):
+            pxr.absorbing_bcs=True
+            pxr.nx_pml = self.nx_pml
+            pxr.ny_pml = self.ny_pml
+            pxr.nz_pml = self.nz_pml
+
+            pxr.shift_x_pml = self.shift_x_pml_pxr
+            pxr.shift_y_pml = self.shift_y_pml_pxr
+            pxr.shift_z_pml = self.shift_z_pml_pxr
+            if(self.fftw_hybrid):
+              pxr.shift_x_pml = pxr.nxguards
+              pxr.shift_y_pml = pxr.nyguards
+              pxr.shift_z_pml = pxr.nzguards
+
+          self.absorbing_bcs_pxr = pxr.absorbing_bcs
+          pxr.get_neighbours_python()
+          if(pxr.absorbing_bcs==True):
+            #if absorbing_bcs in warp then set warp bcs to periodic to avoid bugs (and useless block inits)
+            pxr.g_spectral = True
+            pxr.get_non_periodic_mpi_bcs()
+          if(pxr.fftw_with_mpi):
+            if(pxr.fftw_hybrid):
+              pxr.setup_groups()
+              pxr.get2d_intersection_group_mpi()
+            else:
+              pxr.adjust_grid_mpi_global()
+
         if (self.l_debug): print(" Allocate grid quantities in PXR")
         pxr.allocate_grid_quantities()
+        if(self.l_debug): print("Compute simulation axis in PXR")
         pxr.compute_simulation_axis()
 
         # set time step
@@ -948,6 +1368,12 @@ class EM3DPXR(EM3DFFT):
         pxr.jx = self.fields.Jx
         pxr.jy = self.fields.Jy
         pxr.jz = self.fields.Jz
+        if(self.full_pxr):
+          pxr.rho = self.fields.Rho
+          pxr.rhoold = self.fields.Rhoold
+          if(pxr.absorbing_bcs):
+            pxr.init_splitted_fields_random()
+
 
         pxr.ex_p = self.fields.Exp
         pxr.ey_p = self.fields.Eyp
@@ -1021,12 +1447,10 @@ class EM3DPXR(EM3DFFT):
         # --- time statistics
         self.time_stat_loc_array = zeros([20])
 
-        # --- species section
-        pxr.nspecies_max=top.pgroup.ns
-
         # --- allocates array of species
         if (self.l_debug): print(" Allocates array of species")
         pxr.init_species_section()
+
         for i,s in enumerate(self.listofallspecies):
             # Check for sorting
             if (i >= len(self.sorting.periods)):
@@ -1040,11 +1464,14 @@ class EM3DPXR(EM3DFFT):
                                                 self.sorting.starts[i],  \
                                                 s.pgroup.ldodepos[i])
             pxr.nspecies+=1
-
         pxr.npid=top.npid
+
+
+
         pxr.ssnpid=top.ssnpid
         pxr.set_tile_split()
         pxr.init_tile_arrays()
+
         # Add all particles of all species to PXR
         for i,s in enumerate(self.listofallspecies):
             pids=s.getpid(id=-1,bcast=0,gather=0)
@@ -1053,7 +1480,7 @@ class EM3DPXR(EM3DFFT):
             pids[:,top.wpid-1]*=s.sw
             s.sw0=s.sw*1.
             # Add particles of species s to PXR
-            pxr.py_add_particles_to_species(i+1, s.nps,top.npid,
+            pxr.py_add_particles_to_species(i+1, s.nps,pxr.npid,
                                             s.getx(bcast=0,gather=0),
                                             s.gety(bcast=0,gather=0),
                                             s.getz(bcast=0,gather=0),
@@ -1118,6 +1545,10 @@ class EM3DPXR(EM3DFFT):
 #            def ppzx(self,**kw):
 #                for pg in self.pgroups:
 #                   self._callppfunc(ppzx,pgroup=pg,**kw)
+
+        if (self.l_debug): print(" Allocates antenna")
+        for i in range(len(self.laser_antenna)):
+            self.laser_antenna[i].initialize_virtual_particles(w3d)
 
         if (self.l_debug): print("End allocatefieldarraysPXR")
 
@@ -1185,10 +1616,10 @@ class EM3DPXR(EM3DFFT):
                         hi = [f.nx, f.nz]
                         flo = [-f.nxguard, -f.nzguard]
                         fhi = [f.nx + f.nxguard, f.nz + f.nzguard]
-                        # Warp field arrays have shape (nx, 1, nz) while PICSAR 
-                        # function pxrpush_em2d_evec takes fields with shape (nx, nz), 
+                        # Warp field arrays have shape (nx, 1, nz) while PICSAR
+                        # function pxrpush_em2d_evec takes fields with shape (nx, nz),
                         # so field arrays have to be squeezed.
-                        pxr.pxrpush_em2d_evec(lo, hi, lo, hi, lo, hi, 
+                        pxr.pxrpush_em2d_evec(lo, hi, lo, hi, lo, hi,
                                               f.Ex.squeeze(), flo, fhi,
                                               f.Ey.squeeze(), flo, fhi,
                                               f.Ez.squeeze(), flo, fhi,
@@ -1218,8 +1649,8 @@ class EM3DPXR(EM3DFFT):
                         lo = [0, 0, 0]
                         hi = [f.nx, f.ny, f.nz]
                         flo = [-f.nxguard, -f.nyguard, -f.nzguard]
-                        fhi = [f.nx + f.nxguard, f.ny + f.nyguard, f.nz + f.nzguard]                        
-                        pxr.pxrpush_em3d_evec(lo, hi, lo, hi, lo, hi, 
+                        fhi = [f.nx + f.nxguard, f.ny + f.nyguard, f.nz + f.nzguard]
+                        pxr.pxrpush_em3d_evec(lo, hi, lo, hi, lo, hi,
                                               f.Ex, flo, fhi,
                                               f.Ey, flo, fhi,
                                               f.Ez, flo, fhi,
@@ -1286,10 +1717,10 @@ class EM3DPXR(EM3DFFT):
                 hi = [f.nx, f.nz]
                 flo = [-f.nxguard, -f.nzguard]
                 fhi = [f.nx + f.nxguard, f.nz + f.nzguard]
-                # Warp field arrays have shape (nx, 1, nz) while PICSAR 
-                # function pxrpush_em2d_bvec takes fields with shape (nx, nz), 
+                # Warp field arrays have shape (nx, 1, nz) while PICSAR
+                # function pxrpush_em2d_bvec takes fields with shape (nx, nz),
                 # so field arrays have to be squeezed.
-                pxr.pxrpush_em2d_bvec(lo, hi, lo, hi, lo, hi, 
+                pxr.pxrpush_em2d_bvec(lo, hi, lo, hi, lo, hi,
                                       f.Ex.squeeze(), flo, fhi,
                                       f.Ey.squeeze(), flo, fhi,
                                       f.Ez.squeeze(), flo, fhi,
@@ -1304,10 +1735,10 @@ class EM3DPXR(EM3DFFT):
                 hi = [f.nx, f.nz]
                 flo = [-f.nxguard, -f.nzguard]
                 fhi = [f.nx + f.nxguard, f.nz + f.nzguard]
-                # Warp field arrays have shape (nx, 1, nz) while PICSAR 
-                # function pxrpush_em2d_bvec_ckc takes fields with shape 
+                # Warp field arrays have shape (nx, 1, nz) while PICSAR
+                # function pxrpush_em2d_bvec_ckc takes fields with shape
                 # (nx, nz), so field arrays have to be squeezed.
-                pxr.pxrpush_em2d_bvec_ckc(lo, hi, lo, hi, lo, hi, 
+                pxr.pxrpush_em2d_bvec_ckc(lo, hi, lo, hi, lo, hi,
                                       f.Ex.squeeze(), flo, fhi,
                                       f.Ey.squeeze(), flo, fhi,
                                       f.Ez.squeeze(), flo, fhi,
@@ -1333,7 +1764,7 @@ class EM3DPXR(EM3DFFT):
                 hi = [f.nx, f.ny, f.nz]
                 flo = [-f.nxguard, -f.nyguard, -f.nzguard]
                 fhi = [f.nx + f.nxguard, f.ny + f.nyguard, f.nz + f.nzguard]
-                pxr.pxrpush_em3d_bvec(lo, hi, lo, hi, lo, hi, 
+                pxr.pxrpush_em3d_bvec(lo, hi, lo, hi, lo, hi,
                                       f.Ex, flo, fhi,
                                       f.Ey, flo, fhi,
                                       f.Ez, flo, fhi,
@@ -1348,7 +1779,7 @@ class EM3DPXR(EM3DFFT):
                 hi = [f.nx, f.ny, f.nz]
                 flo = [-f.nxguard, -f.nyguard, -f.nzguard]
                 fhi = [f.nx + f.nxguard, f.ny + f.nyguard, f.nz + f.nzguard]
-                pxr.pxrpush_em3d_bvec_ckc(lo, hi, lo, hi, lo, hi, 
+                pxr.pxrpush_em3d_bvec_ckc(lo, hi, lo, hi, lo, hi,
                                       f.Ex, flo, fhi,
                                       f.Ey, flo, fhi,
                                       f.Ez, flo, fhi,
@@ -1406,10 +1837,10 @@ class EM3DPXR(EM3DFFT):
                 hi = [f.nx, f.nz]
                 flo = [-f.nxguard, -f.nzguard]
                 fhi = [f.nx + f.nxguard, f.nz + f.nzguard]
-                # Warp field arrays have shape (nx, 1, nz) while PICSAR 
-                # function pxrpush_em2d_bvec takes fields with shape (nx, nz), 
+                # Warp field arrays have shape (nx, 1, nz) while PICSAR
+                # function pxrpush_em2d_bvec takes fields with shape (nx, nz),
                 # so field arrays have to be squeezed.
-                pxr.pxrpush_em2d_bvec(lo, hi, lo, hi, lo, hi, 
+                pxr.pxrpush_em2d_bvec(lo, hi, lo, hi, lo, hi,
                                       f.Ex.squeeze(), flo, fhi,
                                       f.Ey.squeeze(), flo, fhi,
                                       f.Ez.squeeze(), flo, fhi,
@@ -1424,10 +1855,10 @@ class EM3DPXR(EM3DFFT):
                 hi = [f.nx, f.nz]
                 flo = [-f.nxguard, -f.nzguard]
                 fhi = [f.nx + f.nxguard, f.nz + f.nzguard]
-                # Warp field arrays have shape (nx, 1, nz) while PICSAR 
-                # function pxrpush_em2d_bvec_ckc takes fields with shape 
+                # Warp field arrays have shape (nx, 1, nz) while PICSAR
+                # function pxrpush_em2d_bvec_ckc takes fields with shape
                 # (nx, nz), so field arrays have to be squeezed.
-                pxr.pxrpush_em2d_bvec_ckc(lo, hi, lo, hi, lo, hi, 
+                pxr.pxrpush_em2d_bvec_ckc(lo, hi, lo, hi, lo, hi,
                                       f.Ex.squeeze(), flo, fhi,
                                       f.Ey.squeeze(), flo, fhi,
                                       f.Ez.squeeze(), flo, fhi,
@@ -1453,7 +1884,7 @@ class EM3DPXR(EM3DFFT):
                 hi = [f.nx, f.ny, f.nz]
                 flo = [-f.nxguard, -f.nyguard, -f.nzguard]
                 fhi = [f.nx + f.nxguard, f.ny + f.nyguard, f.nz + f.nzguard]
-                pxr.pxrpush_em3d_bvec(lo, hi, lo, hi, lo, hi, 
+                pxr.pxrpush_em3d_bvec(lo, hi, lo, hi, lo, hi,
                                       f.Ex, flo, fhi,
                                       f.Ey, flo, fhi,
                                       f.Ez, flo, fhi,
@@ -1468,7 +1899,7 @@ class EM3DPXR(EM3DFFT):
                 hi = [f.nx, f.ny, f.nz]
                 flo = [-f.nxguard, -f.nyguard, -f.nzguard]
                 fhi = [f.nx + f.nxguard, f.ny + f.nyguard, f.nz + f.nzguard]
-                pxr.pxrpush_em3d_bvec_ckc(lo, hi, lo, hi, lo, hi, 
+                pxr.pxrpush_em3d_bvec_ckc(lo, hi, lo, hi, lo, hi,
                                       f.Ex, flo, fhi,
                                       f.Ey, flo, fhi,
                                       f.Ez, flo, fhi,
@@ -1506,7 +1937,9 @@ class EM3DPXR(EM3DFFT):
         if self.l_pxr:
           tdebcell=MPI.Wtime()
 
-        if top.it%100==0:print 'push PSAOTD',top.it
+        if(self.full_pxr):
+          self.solve_maxwell_full_pxr()
+          return
         if top.efetch[0] != 4 and (self.refinement is None) and not self.l_nodalgrid:self.node2yee3d()
 
         if self.ntsub==inf:
@@ -1663,7 +2096,6 @@ class EM3DPXR(EM3DFFT):
         """
 
         t0 = MPI.Wtime()
-
         if self.novercycle==1:
             if dir>0.:
                 doit=True
@@ -1675,8 +2107,7 @@ class EM3DPXR(EM3DFFT):
             else:
                 doit=False
         if doit:
-            if 0:#self.l_pxr:
-                print 'exchange e pxr'
+            if (self.l_pxr and self.full_pxr):
                 pxr.efield_bcs()
             else:
                 em3d_exchange_e(self.block)
@@ -1705,8 +2136,7 @@ class EM3DPXR(EM3DFFT):
                 doit=False
         if doit:
             if self.l_verbose:print 'exchange_b',self,top.it,self.icycle
-            if 0:#self.l_pxr:
-                print 'exchange b pxr'
+            if (self.l_pxr and self.full_pxr):
                 pxr.bfield_bcs()
             else:
                 em3d_exchange_b(self.block)
@@ -1717,7 +2147,132 @@ class EM3DPXR(EM3DFFT):
         self.time_stat_loc_array[6] += (t1-t0)
 
 
-    def step(self,n=1,freq_print=10,lallspecl=0):
+    def solve_maxwell_full_pxr(self):
+
+        """ full Maxwell push in pxr"""
+        pxr.rho = self.fields.Rho
+        pxr.rhoold = self.fields.Rhoold
+        pxr.jx = self.fields.Jx
+        pxr.jy = self.fields.Jy
+        pxr.jz = self.fields.Jz
+
+        if(self.l_debug):print("begin solve maxwell full pxr")
+        if(pxr.fftw_with_mpi):
+          pxr.get_ffields_mpi_lb()
+        else:
+          pxr.get_ffields()
+        if(pxr.g_spectral):
+          pxr.multiply_mat_vector(pxr.nmatrixes)
+        else:
+          if(pxr.c_dim == 2):
+            pxr.push_psaotd_ebfielfs_2d()
+          else:
+            pxr.push_psaotd_ebfielfs_3d()
+        if(pxr.fftw_with_mpi):
+          pxr.get_fields_mpi_lb()
+        else:
+          pxr.get_fields()
+        if(pxr.absorbing_bcs):
+          pxr.field_damping_bcs()
+          #pxr.merge_fields()
+        if(self.l_debug):print("end solve maxwell full pxr")
+
+    def move_cells(self,n, coord):
+        # move the boundaries of the box along the coord axis
+        # in case of moving window along the coordinate coord.
+        #coord = 'x', 'y', 'z'
+        if(self.full_pxr and self.absorbing_bcs_pxr):
+
+          # when using full pxr mode with absorbing_bcs, the moving window needs
+          # to be applied to the splitted fields of pxr
+
+          save_ntimes = self.block.core.yf.ntimes
+          if   coord=='x': shift_em3dblock_ncells_x(self.block,n)
+          elif coord=='y': shift_em3dblock_ncells_y(self.block,n)
+          elif coord=='z': shift_em3dblock_ncells_z(self.block,n)
+          # sets ntimes to 0 to force the mv window to act only once on the currents and densities
+          self.block.core.yf.ntimes = 0
+
+          s1 = self.block.core.yf.Ex
+          s2 = self.block.core.yf.Ey
+          s3 = self.block.core.yf.Ez
+          s4 = self.block.core.yf.Bx
+          s5 = self.block.core.yf.By
+          s6 = self.block.core.yf.Bz
+
+          self.block.core.yf.Ex = self.exy_pxr
+          self.block.core.yf.Ey = self.eyx_pxr
+          self.block.core.yf.Ez = self.ezx_pxr
+          self.block.core.yf.Bx = self.bxy_pxr
+          self.block.core.yf.By = self.byx_pxr
+          self.block.core.yf.Bz = self.bzx_pxr
+
+
+          if   coord=='x': shift_em3dblock_ncells_x(self.block,n)
+          elif coord=='y': shift_em3dblock_ncells_y(self.block,n)
+          elif coord=='z': shift_em3dblock_ncells_z(self.block,n)
+
+          self.block.core.yf.Ex = self.exz_pxr
+          self.block.core.yf.Ey = self.eyz_pxr
+          self.block.core.yf.Ez = self.ezy_pxr
+          self.block.core.yf.Bx = self.bxz_pxr
+          self.block.core.yf.By = self.byz_pxr
+          self.block.core.yf.Bz = self.bzy_pxr
+
+          if   coord=='x': shift_em3dblock_ncells_x(self.block,n)
+          elif coord=='y': shift_em3dblock_ncells_y(self.block,n)
+          elif coord=='z': shift_em3dblock_ncells_z(self.block,n)
+
+          self.block.core.yf.Ex = s1
+          self.block.core.yf.Ey = s2
+          self.block.core.yf.Ez = s3
+          self.block.core.yf.Bx = s4
+          self.block.core.yf.By = s5
+          self.block.core.yf.Bz = s6
+          self.block.core.yf.ntimes = save_ntimes
+        else:
+          if   coord=='x': shift_em3dblock_ncells_x(self.block,n)
+          elif coord=='y': shift_em3dblock_ncells_y(self.block,n)
+          elif coord=='z': shift_em3dblock_ncells_z(self.block,n)
+
+        listtoshift = [(self,'%s_grid' %(coord) ),
+                       (self,'%smmin'  %(coord) ),
+                       (self,'%smmax' %(coord) ),
+                       (self,'%smminlocal'%(coord) ),
+                       (self,'%smmaxlocal'%(coord) ),
+                       (self.fields,'%smin'%(coord) ),
+                       (self.fields,'%smax'%(coord) ),
+                       (self.block,'%smin'%(coord) ),
+                       (self.block,'%smax'%(coord) ),
+                       (w3d,'%smmin'%(coord) ),
+                       (w3d,'%smmax'%(coord) ),
+                       (w3d,'%smminp'%(coord) ),
+                       (w3d,'%smmaxp'%(coord) ),
+                       (w3d,'%smminlocal'%(coord) ),
+                       (w3d,'%smmaxlocal'%(coord) ),
+                       (w3d,'%smminglobal'%(coord) ),
+                       (w3d,'%smmaxglobal'%(coord) ),
+                       (top,'%spmin'%(coord) ),
+                       (top,'%spmax'%(coord) ),
+                       (top,'%spminlocal'%(coord) ),
+                       (top,'%spmaxlocal'%(coord) )]
+
+        if   coord=='x': increment=self.dx
+        elif coord=='y': increment=self.dy
+        elif coord=='z': increment=self.dz
+
+        for (coord_object,coord_attribute) in listtoshift:
+            # loop equivalent to self.incrementposition(coord_object.coord_attribute, increment, n)
+            # for each tupple in listtoshift
+            coordtoshift=getattr(coord_object,coord_attribute)
+            setattr(coord_object,coord_attribute,self.incrementposition(coordtoshift,increment,n))
+
+
+
+
+
+
+    def step(self,n=1,freq_print=10,lallspecl=0,stdout_stat=10):
       """
       This function performs a range of Particle-In-Cell iterations
 
@@ -1728,7 +2283,6 @@ class EM3DPXR(EM3DFFT):
 
       if (self.l_debug): print("Call step")
 
-      stdout_stat=10
       t0=MPI.Wtime()
       tdeb=MPI.Wtime()
 
@@ -1746,7 +2300,6 @@ class EM3DPXR(EM3DFFT):
                   l_last=1
               else:
                   l_last=0
-
           self.onestep(l_first,l_last)
 
           if(l_pxr & (top.it%stdout_stat==0) & (pxr.rank==0)):
@@ -1895,23 +2448,23 @@ class EM3DPXR(EM3DFFT):
         #tdebpart=MPI.Wtime()
 
         inject3d(1, top.pgroup)
-        
+
         # Call user-defined injection routines
         if (self.l_debug): print("Call user-defined injection routines")
         userinjection.callfuncsinlist()
 
+        # --- call beforeloadrho functions
+        if (self.l_debug): print("Call beforeloadrho functions")
+        beforeloadrho.callfuncsinlist()
+
         xgrid=w3d.xmmin-pxr.xmin
         ygrid=w3d.ymmin-pxr.ymin
         zgrid=w3d.zmmin-pxr.zmin
-
         if (xgrid != 0. or ygrid!=0. or zgrid !=0.):
             pxr.pxr_move_sim_boundaries(xgrid,ygrid,zgrid)
             pxr.particle_bcs()
             aliasparticlearrays()
 
-        # --- call beforeloadrho functions
-        if (self.l_debug): print("Call beforeloadrho functions")
-        beforeloadrho.callfuncsinlist()
 
         if (self.l_debug): print("Call loadrho")
         self.loadrho(pgroups=pgroups)
@@ -1929,8 +2482,8 @@ class EM3DPXR(EM3DFFT):
         # Current deposition + Maxwell
 
         if (self.l_debug): print("Call dosolve")
-        self.dosolve()
 
+        self.dosolve()
         #tendcell=MPI.Wtime()
         #pxr.local_time_cell=pxr.local_time_cell+(tendcell-tdebcell)
 
@@ -1961,7 +2514,7 @@ class EM3DPXR(EM3DFFT):
            minidiag(top.it,top.time,top.lspecial)
         top.it+=1
 
-        # Load balance every dlb_freq time step
+        #Load balance every dlb_freq time step
         if (self.l_debug): print("Call Load balance")
         if (l_pxr & (self.dload_balancing & (top.it%self.dlb_freq==0))):
             pxr.mpitime_per_it=pxr.local_time_part+pxr.local_time_cell
@@ -1994,9 +2547,19 @@ class EM3DPXR(EM3DFFT):
         if(l_pxr & self.l_output_grid & (top.it % self.l_output_freq ==0)):
           self.output_pxr(top.it)
 
+        xgrid=w3d.xmmin-pxr.xmin
+        ygrid=w3d.ymmin-pxr.ymin
+        zgrid=w3d.zmmin-pxr.zmin
+        if (xgrid != 0. or ygrid!=0. or zgrid !=0.):
+            pxr.pxr_move_sim_boundaries(xgrid,ygrid,zgrid)
+            pxr.particle_bcs()
+            aliasparticlearrays()
+
         # --- call afterstep functions
         if (self.l_debug): print("Call callafterstepfuncs.callfuncsinlist()")
         callafterstepfuncs.callfuncsinlist()
+
+
 
     def load_balance_3d(self,imbalance):
         """
@@ -2750,7 +3313,6 @@ class EM3DPXR(EM3DFFT):
              pxr.jz = self.fields.Jz
 
              if pxr.c_dim == 2:
-
                pxr.pxrdepose_currents_on_grid_jxjyjz_2d()
 
                #pxr.pxrdepose_currents_on_grid_jxjyjz_sub_openmp(f.Jx,f.Jy,f.Jz,pxr.nx,pxr.ny,pxr.nz,pxr.nxjguards,
@@ -3047,7 +3609,6 @@ class EM3DPXR(EM3DFFT):
             f.gchange()
 
         if self.spectral:
-
             kwGPSTD = {'l_staggered':s.l_spectral_staggered,\
                      'spectral':s.spectral,\
                      'norderx':s.norderx,\
@@ -3073,8 +3634,8 @@ class EM3DPXR(EM3DFFT):
                     f.nyr = f.ny
                     f.nzr = f.nz
                     f.gchange()
-
-                self.GPSTDMaxwell = gpstd.PSATD_Maxwell(yf=self.fields,
+                if(self.full_pxr == False):
+                  self.GPSTDMaxwell = gpstd.PSATD_Maxwell(yf=self.fields,
                                                   eps0=eps0,
                                                   bc_periodic=bc_periodic,
                                                   **kwGPSTD)
@@ -3085,12 +3646,13 @@ class EM3DPXR(EM3DFFT):
                     f.nyr = f.ny
                     f.nzr = f.nz
                     f.gchange()
-                self.GPSTDMaxwell = gpstd.GPSTD_Maxwell(yf=self.fields,
+                if(self.full_pxr==False):
+                  self.GPSTDMaxwell = gpstd.GPSTD_Maxwell(yf=self.fields,
                                                   eps0=eps0,
                                                   bc_periodic=bc_periodic,
                                                   **kwGPSTD)
-
-            self.FSpace = self.GPSTDMaxwell
+                if(self.full_pxr==False):
+                  self.FSpace = self.GPSTDMaxwell
         else:
             kwFS = {'l_staggered':s.l_spectral_staggered,\
                      'spectral':s.spectral,\
@@ -3228,46 +3790,43 @@ class EM3DPXR(EM3DFFT):
                   emK.add_Sfilter('jx',self.k_source_filter)
                   emK.add_Sfilter('jy',self.k_source_filter)
                   emK.add_Sfilter('jz',self.k_source_filter)
+        if(self.full_pxr == False):
+          if self.spectral:
+              kwPML = kwGPSTD
+              if s.ntsub==inf:
+                  GPSTD_PML = gpstd.PSATD_Maxwell_PML
+              else:
+                  GPSTD_PML = gpstd.GPSTD_Maxwell_PML
+              # --- sides
+              if b.xlbnd==openbc: s.xlPML = GPSTD_PML(syf=b.sidexl.syf,**kwPML)
+              if b.xrbnd==openbc: s.xrPML = GPSTD_PML(syf=b.sidexr.syf,**kwPML)
+              if b.ylbnd==openbc: s.ylPML = GPSTD_PML(syf=b.sideyl.syf,**kwPML)
+              if b.yrbnd==openbc: s.yrPML = GPSTD_PML(syf=b.sideyr.syf,**kwPML)
+              if b.zlbnd==openbc: s.zlPML = GPSTD_PML(syf=b.sidezl.syf,**kwPML)
+              if b.zrbnd==openbc: s.zrPML = GPSTD_PML(syf=b.sidezr.syf,**kwPML)
+              # --- edges
+              if(b.xlbnd==openbc and b.ylbnd==openbc): s.xlylPML = GPSTD_PML(syf=b.edgexlyl.syf,**kwPML)
+              if(b.xrbnd==openbc and b.ylbnd==openbc): s.xrylPML = GPSTD_PML(syf=b.edgexryl.syf,**kwPML)
+              if(b.xlbnd==openbc and b.yrbnd==openbc): s.xlyrPML = GPSTD_PML(syf=b.edgexlyr.syf,**kwPML)
+              if(b.xrbnd==openbc and b.yrbnd==openbc): s.xryrPML = GPSTD_PML(syf=b.edgexryr.syf,**kwPML)
+              if(b.xlbnd==openbc and b.zlbnd==openbc): s.xlzlPML = GPSTD_PML(syf=b.edgexlzl.syf,**kwPML)
+              if(b.xrbnd==openbc and b.zlbnd==openbc): s.xrzlPML = GPSTD_PML(syf=b.edgexrzl.syf,**kwPML)
+              if(b.xlbnd==openbc and b.zrbnd==openbc): s.xlzrPML = GPSTD_PML(syf=b.edgexlzr.syf,**kwPML)
+              if(b.xrbnd==openbc and b.zrbnd==openbc): s.xrzrPML = GPSTD_PML(syf=b.edgexrzr.syf,**kwPML)
+              if(b.ylbnd==openbc and b.zlbnd==openbc): s.ylzlPML = GPSTD_PML(syf=b.edgeylzl.syf,**kwPML)
+              if(b.yrbnd==openbc and b.zlbnd==openbc): s.yrzlPML = GPSTD_PML(syf=b.edgeyrzl.syf,**kwPML)
+              if(b.ylbnd==openbc and b.zrbnd==openbc): s.ylzrPML = GPSTD_PML(syf=b.edgeylzr.syf,**kwPML)
+              if(b.yrbnd==openbc and b.zrbnd==openbc): s.yrzrPML = GPSTD_PML(syf=b.edgeyrzr.syf,**kwPML)
 
-        if self.spectral:
-            kwPML = kwGPSTD
-
-            if s.ntsub==inf:
-                GPSTD_PML = gpstd.PSATD_Maxwell_PML
-            else:
-                GPSTD_PML = gpstd.GPSTD_Maxwell_PML
-
-            # --- sides
-            if b.xlbnd==openbc: s.xlPML = GPSTD_PML(syf=b.sidexl.syf,**kwPML)
-            if b.xrbnd==openbc: s.xrPML = GPSTD_PML(syf=b.sidexr.syf,**kwPML)
-            if b.ylbnd==openbc: s.ylPML = GPSTD_PML(syf=b.sideyl.syf,**kwPML)
-            if b.yrbnd==openbc: s.yrPML = GPSTD_PML(syf=b.sideyr.syf,**kwPML)
-            if b.zlbnd==openbc: s.zlPML = GPSTD_PML(syf=b.sidezl.syf,**kwPML)
-            if b.zrbnd==openbc: s.zrPML = GPSTD_PML(syf=b.sidezr.syf,**kwPML)
-
-            # --- edges
-            if(b.xlbnd==openbc and b.ylbnd==openbc): s.xlylPML = GPSTD_PML(syf=b.edgexlyl.syf,**kwPML)
-            if(b.xrbnd==openbc and b.ylbnd==openbc): s.xrylPML = GPSTD_PML(syf=b.edgexryl.syf,**kwPML)
-            if(b.xlbnd==openbc and b.yrbnd==openbc): s.xlyrPML = GPSTD_PML(syf=b.edgexlyr.syf,**kwPML)
-            if(b.xrbnd==openbc and b.yrbnd==openbc): s.xryrPML = GPSTD_PML(syf=b.edgexryr.syf,**kwPML)
-            if(b.xlbnd==openbc and b.zlbnd==openbc): s.xlzlPML = GPSTD_PML(syf=b.edgexlzl.syf,**kwPML)
-            if(b.xrbnd==openbc and b.zlbnd==openbc): s.xrzlPML = GPSTD_PML(syf=b.edgexrzl.syf,**kwPML)
-            if(b.xlbnd==openbc and b.zrbnd==openbc): s.xlzrPML = GPSTD_PML(syf=b.edgexlzr.syf,**kwPML)
-            if(b.xrbnd==openbc and b.zrbnd==openbc): s.xrzrPML = GPSTD_PML(syf=b.edgexrzr.syf,**kwPML)
-            if(b.ylbnd==openbc and b.zlbnd==openbc): s.ylzlPML = GPSTD_PML(syf=b.edgeylzl.syf,**kwPML)
-            if(b.yrbnd==openbc and b.zlbnd==openbc): s.yrzlPML = GPSTD_PML(syf=b.edgeyrzl.syf,**kwPML)
-            if(b.ylbnd==openbc and b.zrbnd==openbc): s.ylzrPML = GPSTD_PML(syf=b.edgeylzr.syf,**kwPML)
-            if(b.yrbnd==openbc and b.zrbnd==openbc): s.yrzrPML = GPSTD_PML(syf=b.edgeyrzr.syf,**kwPML)
-
-            # --- corners
-            if(b.xlbnd==openbc and b.ylbnd==openbc and b.zlbnd==openbc): s.xlylzlPML = GPSTD_PML(syf=b.cornerxlylzl.syf,**kwPML)
-            if(b.xrbnd==openbc and b.ylbnd==openbc and b.zlbnd==openbc): s.xrylzlPML = GPSTD_PML(syf=b.cornerxrylzl.syf,**kwPML)
-            if(b.xlbnd==openbc and b.yrbnd==openbc and b.zlbnd==openbc): s.xlyrzlPML = GPSTD_PML(syf=b.cornerxlyrzl.syf,**kwPML)
-            if(b.xrbnd==openbc and b.yrbnd==openbc and b.zlbnd==openbc): s.xryrzlPML = GPSTD_PML(syf=b.cornerxryrzl.syf,**kwPML)
-            if(b.xlbnd==openbc and b.ylbnd==openbc and b.zrbnd==openbc): s.xlylzrPML = GPSTD_PML(syf=b.cornerxlylzr.syf,**kwPML)
-            if(b.xrbnd==openbc and b.ylbnd==openbc and b.zrbnd==openbc): s.xrylzrPML = GPSTD_PML(syf=b.cornerxrylzr.syf,**kwPML)
-            if(b.xlbnd==openbc and b.yrbnd==openbc and b.zrbnd==openbc): s.xlyrzrPML = GPSTD_PML(syf=b.cornerxlyrzr.syf,**kwPML)
-            if(b.xrbnd==openbc and b.yrbnd==openbc and b.zrbnd==openbc): s.xryrzrPML = GPSTD_PML(syf=b.cornerxryrzr.syf,**kwPML)
+              # --- corners
+              if(b.xlbnd==openbc and b.ylbnd==openbc and b.zlbnd==openbc): s.xlylzlPML = GPSTD_PML(syf=b.cornerxlylzl.syf,**kwPML)
+              if(b.xrbnd==openbc and b.ylbnd==openbc and b.zlbnd==openbc): s.xrylzlPML = GPSTD_PML(syf=b.cornerxrylzl.syf,**kwPML)
+              if(b.xlbnd==openbc and b.yrbnd==openbc and b.zlbnd==openbc): s.xlyrzlPML = GPSTD_PML(syf=b.cornerxlyrzl.syf,**kwPML)
+              if(b.xrbnd==openbc and b.yrbnd==openbc and b.zlbnd==openbc): s.xryrzlPML = GPSTD_PML(syf=b.cornerxryrzl.syf,**kwPML)
+              if(b.xlbnd==openbc and b.ylbnd==openbc and b.zrbnd==openbc): s.xlylzrPML = GPSTD_PML(syf=b.cornerxlylzr.syf,**kwPML)
+              if(b.xrbnd==openbc and b.ylbnd==openbc and b.zrbnd==openbc): s.xrylzrPML = GPSTD_PML(syf=b.cornerxrylzr.syf,**kwPML)
+              if(b.xlbnd==openbc and b.yrbnd==openbc and b.zrbnd==openbc): s.xlyrzrPML = GPSTD_PML(syf=b.cornerxlyrzr.syf,**kwPML)
+              if(b.xrbnd==openbc and b.yrbnd==openbc and b.zrbnd==openbc): s.xryrzrPML = GPSTD_PML(syf=b.cornerxryrzr.syf,**kwPML)
 
 
 class Sorting:

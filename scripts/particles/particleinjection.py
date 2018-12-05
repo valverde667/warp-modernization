@@ -28,9 +28,11 @@ extends from i-1/2 to i+1/2.
               rnn =  relax*rnn + (1.-relax)*rnn_old
  - includebadparticles=False: Sometimes, particles cannot be interpolated to the emitting surface.
                               Set this to true to include those particles (not recommended).
- - solvers=None: optional list of solvers to use when obtaining the E fields. When not given,
+ - solvers=None: optional list of solvers to use when injecting particles. When not given,
                  the solvers returned by registeredsolvers will be used. If multiple solvers
                  are given, they must all have the same grid.
+ - solvers_field=None: optional list of solvers used to get the E fields for newly injected particles.
+                       If not specified, will default to solvers.
  - doloadrho=False: When true, loadrho is called for the solver. If solvers is given, it is assumed
                     that they are not registered solvers and that the charge density is not otherwise
                     loaded, and this defaults to True.
@@ -42,7 +44,7 @@ conductors are an argument.
     def __init__(self,js=None,conductors=None,vthermal=0.,
                  lcorrectede=None,l_inj_addtempz_abs=None,lsmooth121=0,
                  grid=None,inj_d=None,rnnmax=None,relax=None,includebadparticles=False,
-                 solvers=None,doloadrho=None):
+                 solvers=None,solvers_field=None,doloadrho=None):
         self.vthermal = vthermal
         self.lcorrectede = lcorrectede
         self.l_inj_addtempz_abs = l_inj_addtempz_abs
@@ -51,6 +53,7 @@ conductors are an argument.
         self.relax = relax
         self.includebadparticles = includebadparticles
         self.solvers = solvers
+        self.solvers_field = solvers_field
         self.doloadrho = doloadrho
 
         self.inj_np = 0.   # initial "old" value of number of particles to inject
@@ -92,9 +95,6 @@ conductors are an argument.
             uninstalluserinjection(self.doinjection)
         if isinstalleduserinjection2(self.finishinjection):
             uninstalluserinjection2(self.finishinjection)
-        if self.doloadrho is None or self.doloadrho:
-            if isinstalledbeforeloadrho(self.callloadrho):
-                uninstallbeforeloadrho(self.callloadrho)
 
     def getlcorrectede(self):
         if self.lcorrectede is not None:
@@ -143,8 +143,8 @@ conductors are an argument.
                     # --- A registered solver may have had loadrho already called.
                     if isinstance(solver,EM3D):
                         # --- If using the EM solver, loadrho has already been called
-                        # --- only if the l_deposit_rho flag is true.
-                        if solver.l_deposit_rho:
+                        # --- only if the l_getrho flag is true.
+                        if solver.l_getrho:
                             self.solverwithrho = solver
                             return
                         else:
@@ -167,15 +167,16 @@ conductors are an argument.
                         self.solverwithrho = solver
 
         if isinstance(self.solverwithrho,EM3D) and self.solverwithrho in regsolvers:
-            # --- The EM solver is being used, but the l_deposit_rho is not set.
+            # --- The EM solver is being used, but the l_getrho is not set.
             # --- Set the flag to true - BUT - don't load rho here.
             # --- Loading rho with the EM solver is better done as part of normal
             # --- operations. This will happen during the remainder of the loadrho call.
-            self.solverwithrho.l_deposit_rho = True
+            self.solverwithrho.l_getrho = True
             return
 
         # --- If this point is reached, then an explicit call to loadrho is needed.
-        self.solverwithrho.loadrho(lzero=True,lfinalize_rho=True)
+        if self.doloadrho is None or self.doloadrho:
+            self.solverwithrho.loadrho(lzero=True,lfinalize_rho=True)
 
     def getEfields(self,solvers):
         Ex,Ey,Ez = self.getEfieldsfromsolver(solvers[0])
@@ -325,8 +326,8 @@ the charge density at the grid point at the center of the dual cell times
 the area of the dual cell.
         """
         if isinstance(solver,EM3D):
-            if not solver.l_deposit_rho:
-                raise Exception("The l_deposit_rho flag must be true for the EM solver")
+            if not solver.l_getrho:
+                raise Exception("The l_getrho flag must be true for the EM solver")
             nxguard = solver.nxguard
             nyguard = solver.nyguard
             nzguard = solver.nzguard
@@ -342,7 +343,10 @@ the area of the dual cell.
         return Irho
 
     def fetche3dfrompositionsfromsolvers(self,pgroup,x,y,z,ex,ey,ez,bx,by,bz):
-        solvers = self.getsolvers()
+        if self.solvers_field is None:
+            solvers = self.getsolvers()
+        else:
+            solvers = self.solvers_field
         regsolvers = getregisteredsolvers()
         for solver in solvers:
             if solver in regsolvers or solver is w3d:
@@ -404,6 +408,8 @@ the area of the dual cell.
         #if self.lsmooth121: Qnew = where(self.isdeepinside == 1.,0.,Qnew)
 
         # --- Calculate the number of new particles to add at each grid cell.
+        assert top.pgroup.sq[self.js] != 0., Exception('InjectionGaussLaw.doinjection: The charge of species %d must not be zero.'%self.js)
+        assert top.pgroup.sw[self.js] != 0., Exception('InjectionGaussLaw.doinjection: The weight of species %d must not be zero.'%self.js)
         rnn = Qnew/(top.pgroup.sq[self.js]*top.pgroup.sw[self.js])
 
         # --- Make sure it is positive or zero
@@ -776,7 +782,7 @@ for example after load balancing.
         # --- The decomposition in top may be changed the next time
         # --- loadbalancing is done, but the decomposition in self.grid
         # --- should not be changed. Instead, a whole new grid is created.
-        self.grid = Grid(decomp=copy.deepcopy(solvertop.ppdecomp))
+        self.grid = Grid(decomp=copy.deepcopy(solvertop.ppdecomp), solver=solver)
         self.updateconductors()
 
     def updateconductors(self):

@@ -21,9 +21,9 @@ def set_numerics( depos_order, efetch, particle_pusher, dim ):
 
     # Gathering and current deposition
     top.depos_order[...] = depos_order
-    if dim in ["1d", "2d", "circ"]:
+    if dim in ["1d", "2d"]:
         top.depos_order[1,:] = 1
-    if dim in  ["1d", "circ"]:
+    if dim in  ["1d"]:
         top.depos_order[0,:] = 1
     top.efetch[...] = efetch
     if dim == "circ":

@@ -11634,6 +11634,8 @@ c     --- Note that the B fields are passed in and are only used by fstype==12.
 c     --- Don't do anything if there are no particles input.
       if (n == 0) return
 
+      if (fstype == -1) return
+
 c     --- Zero out the particle's field if requested (the default)
       if (lresetparticlee) then
         ex = 0.

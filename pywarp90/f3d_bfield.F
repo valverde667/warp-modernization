@@ -863,7 +863,7 @@ c       --- Transform Br and Btheta into Bx and By
 !$OMP END MASTER
       return
       end
-c=========================================================================== 
+c===========================================================================
       subroutine getbfroma3d(a,b,nxlocal,nylocal,nzlocal,
      &                       nxguarda,nyguarda,nzguarda,
      &                       nxguardb,nyguardb,nzguardb,
@@ -907,7 +907,7 @@ c       --- The solver calculated B directly, so just do a copy.
 !$OMP END MASTER
       return
       end
-c=========================================================================== 
+c===========================================================================
       subroutine curl3d(a,b,nxlocal,nylocal,nzlocal,
      &                  nxguarda,nyguarda,nzguarda,
      &                  nxguardb,nyguardb,nzguardb,
@@ -1003,7 +1003,7 @@ c           --- a(1,1,0,iz) = a(0,0,-1,iz) = -a(1,-1,0,iz) = -a(0,0,+1,iz)
 
       return
       end
-c=========================================================================== 
+c===========================================================================
       subroutine getefroma3d(e,nxlocal,nylocal,nzlocal,
      &                       nxguarde,nyguarde,nzguarde,
      &                       dt,dz,vframe,idadt,zgrid,zgridaprv)
@@ -1043,7 +1043,7 @@ c       --- dA/dt=(A-Aold)/dt
           enddo
         enddo
       elseif(idadt==2) then
-c       --- dA/dt=vframe*dA/dz 
+c       --- dA/dt=vframe*dA/dz
         tdzi = 0.5*vframe/dz
         do iz=0,nzlocal
           do iy=0,nylocal
@@ -1056,7 +1056,7 @@ c       --- dA/dt=vframe*dA/dz
         enddo
       endif
       zgridaprv=zgrid
-      
+
       return
       end
 c=============================================================================
@@ -2379,7 +2379,7 @@ c The setup of jptmp is skipped is ns == -1.
       bfieldp%lcylindrical = bfield%lcylindrical
 
 c     --- If either jp of bp are not associated or either does not have
-c     --- the correct dimensions as given by nxj, etc, something 
+c     --- the correct dimensions as given by nxj, etc, something
 c     --- needs to be done for fix them.
       if (.not. associated(bfieldp%j) .or. .not. associated(bfieldp%b) .or.
      &  ANY(lbound(bfieldp%b).ne.(/0,-bfieldp%nxguardb,
@@ -2505,7 +2505,8 @@ c     --- Obtain the magnetic field
 
       real(kind=8):: substarttime,wtime
       if (lf3dtimesubs) substarttime = wtime()
-        
+      if (fstype == -1 .and. bfstype == -1) return
+
       if ((fstype == 12 .and. bfstype < 0) .or. bfstype == 12) then
 #if defined(XLF) || defined(XLF2)
 c       --- The pointer assignment breaks with the xlf compilers, so instead
@@ -2514,7 +2515,7 @@ c       --- This is less efficient since there is overhead in the allocation
 c       --- and the data needs to be copied around.
         allocate(xfsapi(n),yfsapi(n),zfsapi(n))
         allocate(bxfsapi(n),byfsapi(n),bzfsapi(n))
-        
+
 c     --- Zero out the particle's B field if requested (the default)
         xfsapi = x
         yfsapi = y
@@ -2681,13 +2682,13 @@ c===========================================================================
       use BFieldGrid
       integer(ISZ):: iwhich
 
-c  Field solver for 3d warped Cartesian geometry. 
+c  Field solver for 3d warped Cartesian geometry.
 c  Enter with charge density in J array, old potential in B array.
 c  Exit with new potential in B array, and J unchanged.
-c  
+c
 c  For field solve in a bend there are two possible cases:
-c      1) Call to an SOR field solver.  
-c      2) Iteration loop for a perturbative calculation of fields. 
+c      1) Call to an SOR field solver.
+c      2) Iteration loop for a perturbative calculation of fields.
 c         The loop is in bendfieldsol3d
 
       real(kind=8):: timetemp
@@ -2696,8 +2697,8 @@ c         The loop is in bendfieldsol3d
       if (lf3dtimesubs) substarttime = wtime()
       timetemp = wtime()
 
-c     --- If no field solve, return 
-      if ( bfstype <= -1) return 
+c     --- If no field solve, return
+      if ( bfstype <= -1) return
 
 c     --- Make sure that j has been finalized and is ready for the solve
       if (.not. ljfinalized) call finalizej()
@@ -2816,7 +2817,7 @@ c     --- though they should never be needed during initialization.
           bfield%nxold=bfield%nxlocal
           bfield%nyold=bfield%nylocal
           bfield%nzold=bfield%nzlocal
-          call BFieldGridTypechange(bfield)          
+          call BFieldGridTypechange(bfield)
         end if
         bfield%aold=bfield%a
       end if
@@ -3207,7 +3208,7 @@ c   Multiply rho by dr*dr and divide by epsilon_0...
         enddo
       enddo
 
-c   Eliminate the lower diagonal from the matrix... 
+c   Eliminate the lower diagonal from the matrix...
       do ikr=1,nrlast
         do ikz = 0,nz
           rfsmat(ikr,2,ikz) = rfsmat(ikr,2,ikz)

@@ -334,10 +334,13 @@ class EM3D(SubcycledPoissonSolver):
                             elif self.stencil == 3 : # Lehe scheme
                                 self.dtcourant = 1./clight  * min( self.dz, self.dx )
                         else :  # 2D r-z
-                            if self.stencil==3: # Lehe scheme
+                            if self.stencil==1:
+                                raise ValueError(
+                                    "The Cole-Karkkainen solver (stencil=1) cannot be used in cylindrical geometry.")
+                            elif self.stencil==3: # Lehe scheme
                                 self.dtcourant = 1./clight  * min( self.dz, self.dx )
 
-                            else:  # Yee scheme and Cole-Karkkainen
+                            else:  # Yee scheme
                                 # In the rz case, the Courant limit has been evaluated
                                 # semi-analytically by R. Lehe, and resulted in the following
                                 # coefficients. For an explanation, see (not officially published)
@@ -1867,10 +1870,10 @@ class EM3D(SubcycledPoissonSolver):
         # move the boundaries of the box along the coord axis
         # in case of moving window along the coordinate coord.
         #coord = 'x', 'y', 'z'
-
         if   coord=='x': shift_em3dblock_ncells_x(self.block,n)
         elif coord=='y': shift_em3dblock_ncells_y(self.block,n)
         elif coord=='z': shift_em3dblock_ncells_z(self.block,n)
+
 
         listtoshift = [(self,'%s_grid' %(coord) ),
                        (self,'%smmin'  %(coord) ),
@@ -1941,7 +1944,7 @@ class EM3D(SubcycledPoissonSolver):
         if self.l_verbose:print 'solve 1st half'
         if top.dt != self.dtinit:raise Exception('Time step has been changed since initialization of EM3D.')
         if self.fields.spectral:
-#            self.move_window_fields()
+            #self.move_window_fields()
             self.push_spectral_psaotd()
         else:
             self.push_e()
@@ -1953,8 +1956,13 @@ class EM3D(SubcycledPoissonSolver):
                 self.push_e_full(i)
                 self.exchange_e()
             self.push_b_part_1()
-        if self.pml_method==2:
-            scale_em3d_bnd_fields(self.block,top.dt,self.l_pushf,self.l_pushg)
+        if(hasattr(self,"full_pxr") == False):
+          if self.pml_method==2:
+              scale_em3d_bnd_fields(self.block,top.dt,self.l_pushf,self.l_pushg)
+        elif(self.full_pxr == False):
+          if self.pml_method==2:
+              scale_em3d_bnd_fields(self.block,top.dt,self.l_pushf,self.l_pushg)
+
         if self.fields.spectral:
             self.exchange_e()
         if self.l_pushf:self.exchange_f()
