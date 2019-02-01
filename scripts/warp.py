@@ -27,23 +27,6 @@ import time
 import warpoptions
 warpoptions.parse_args()
 
-# --- Check if the python executable is statically built. This assumes that
-# --- it was built using dynload_stub.o so that imp.load_dynamic would not
-# --- be defined.
-import imp
-try:
-    imp.load_dynamic
-except AttributeError:
-    lstatic_python = 1
-else:
-    from numpy.core import multiarray
-    if multiarray.__file__[-3:] == '.so':
-        lstatic_python = 0
-    else:
-        lstatic_python = 1
-    del multiarray
-del imp
-
 # --- Check to make sure that the scripts directory is actually in sys.path.
 # --- If warp is being loaded as a module (e.g. via an egg file), then
 # --- the scripts directory may not be in sys.path. But it needs to be in
@@ -107,7 +90,7 @@ else:
 # Import the warpC shared object which contains all of Warp
 # --- If python had been built statically, then warpCparallel is linked
 # --- in under the name warpC.
-if lparallel and not lstatic_python:
+if lparallel:
     from . import warpCparallel as warpC
     from .warpCparallel import *
 else:
