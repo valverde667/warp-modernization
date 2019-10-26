@@ -1,8 +1,8 @@
 """
 Secondaries: class for generating secondaries
 """
-from scipy.constants import m_e as e_mass
-from scipy.constants import e as qe
+from warp import emass as e_mass
+from warp import echarge as qe
 
 from ..warp import *
 from ..utils.appendablearray import AppendableArray
