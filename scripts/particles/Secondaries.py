@@ -80,6 +80,7 @@ class Secondaries:
                       maxsec=None, pyecloud_secemi_object=None, pyecloud_fact_clean=None,
                       pyecloud_fact_split=None, pyecloud_nel_mp_ref=None):
 
+	# Some consistency checks for PyECLOUD mode
         if pyecloud_secemi_object is not None:
             assert(l_set_params_user_only == 0)
             assert(l_usenew == 1)
@@ -93,11 +94,20 @@ class Secondaries:
             assert(pyecloud_fact_split is not None)
             assert(pyecloud_nel_mp_ref is not None)
 
+			##########################
+			# PyECLOUD related inputs
+			##########################
+			# Flag to eneable PyECLOUD mode
             self.flag_pyecloud = True
+			# Secondary emission object from PyECLOUD (initialized externally)
             self.pyeclsecemi = pyecloud_secemi_object
-            self.pyecloud_fact_clean = pyecloud_fact_clean
-            self.pyecloud_fact_split = pyecloud_fact_split
+			# Macroparticles reference size
             self.pyecloud_nel_mp_ref = pyecloud_nel_mp_ref
+			# Every macroparticle smaller than pyecloud_fact_clean*pyecloud_nel_mp_ref will be killed after the emission
+            self.pyecloud_fact_clean = pyecloud_fact_clean
+			# Every macroparticle bigger than pyecloud_fact_split*pyecloud_nel_mp_ref will be split into two after the emission
+            self.pyecloud_fact_split = pyecloud_fact_split
+
             
         else:
             self.flag_pyecloud = False
@@ -120,11 +130,11 @@ class Secondaries:
         self.l_trackssnparents=l_trackssnparents
         # self.condids={}
         # self.emitted={}
-        if not self.flag_pyecloud:
-            self.set_params_user=set_params_user
         self.l_set_params_user_only=l_set_params_user_only
         self.mat_number=1
+	# These members should not be set when in PyECLOUD mode
         if not self.flag_pyecloud:
+	    self.set_params_user=set_params_user
             if maxsec is None:
                 if pos is None:
                     maxsec = 10
@@ -196,7 +206,7 @@ class Secondaries:
         self.power_emit=AppendableArray(typecode='d') # instantaneous power emission [W]
         self.power_diff=AppendableArray(typecode='d') # instantaneous power deposition [W]
         self.piditype = 0
-
+	# These members should not be set when in PyECLOUD mode
         if not self.flag_pyecloud:
             if pos is not None:
                 if posC.nsteps_g != 0:
@@ -310,6 +320,7 @@ class Secondaries:
             if not isinstalledafterscraper(self.generatenew):
                 installafterscraper(self.generatenew)
         else:
+	    # The option_usenew = 0 has been disabled since it was obsolete
             raise ValueError('Not supported anymore!')
 
     def addpart(self,nn,x,y,z,ux,uy,uz,js,weight=None,itype=None,ssnparent=None):
@@ -735,14 +746,15 @@ class Secondaries:
                                     itypes=AppendableArray(typecode='i',autobump=100)
                                 else:
                                     itypes=None
-                                
+
                                 itype=self.inter[incident_species]['type'][ics]
                                 scale_factor=self.inter[incident_species]['scale_factor'][ics]
                                 if scale_factor is None:scale_factor=1.
+				# If using posinst prepare the secondaries
                                 if not self.flag_pyecloud:
                                     self.prepare_secondaries(itype,posC.maxsec)
                                 if top.wpid==0:weight=ones(n,'d')
-                                
+                                # If using Pyecloud compute the secondaries calling the pyecloud_secondary_emission function
                                 if self.flag_pyecloud:
                                     if top.wpid == 0:
                                         raise ValueError('Not compatible with pyecloud')
@@ -755,6 +767,7 @@ class Secondaries:
                                         vxplost[:n], vyplost[:n], vzplost[:n])
                                     ns = len(xnew)
 
+				# If using posinst proceed in the usual way
                                 else:
                                     xnew = zeros(n*posC.maxsec,'d')
                                     ynew = zeros(n*posC.maxsec,'d')
@@ -1310,6 +1323,7 @@ class Secondaries:
 
         return xnew, ynew, znew, uxnew, uynew, uznew, weightnew
 
+    # Method used to reset the macroparticle reference size
     def set_nel_mp_ref(self,new_nel_mp_ref):
         self.pyecloud_nel_mp_ref = new_nel_mp_ref
 
