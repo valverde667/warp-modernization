@@ -1310,7 +1310,7 @@ class Secondaries:
 
         return xnew, ynew, znew, uxnew, uynew, uznew, weightnew
 
-   def set_nel_mp_ref(self,new_nel_mp_ref):
+    def set_nel_mp_ref(self,new_nel_mp_ref):
         self.pyecloud_nel_mp_ref = new_nel_mp_ref
 
     def set_params(self,maxsec,mat_num=None):
