@@ -80,7 +80,7 @@ class Secondaries:
                       maxsec=None, pyecloud_secemi_object=None, pyecloud_fact_clean=None,
                       pyecloud_fact_split=None, pyecloud_nel_mp_ref=None):
 
-	# Some consistency checks for PyECLOUD mode
+    # Some consistency checks for PyECLOUD mode
         if pyecloud_secemi_object is not None:
             assert(l_set_params_user_only == 0)
             assert(l_usenew == 1)
@@ -94,18 +94,18 @@ class Secondaries:
             assert(pyecloud_fact_split is not None)
             assert(pyecloud_nel_mp_ref is not None)
 
-			##########################
-			# PyECLOUD related inputs
-			##########################
-			# Flag to eneable PyECLOUD mode
+            ##########################
+            # PyECLOUD related inputs
+            ##########################
+            # Flag to eneable PyECLOUD mode
             self.flag_pyecloud = True
-			# Secondary emission object from PyECLOUD (initialized externally)
+            # Secondary emission object from PyECLOUD (initialized externally)
             self.pyeclsecemi = pyecloud_secemi_object
-			# Macroparticles reference size
+            # Macroparticles reference size
             self.pyecloud_nel_mp_ref = pyecloud_nel_mp_ref
-			# Every macroparticle smaller than pyecloud_fact_clean*pyecloud_nel_mp_ref will be killed after the emission
+            # Every macroparticle smaller than pyecloud_fact_clean*pyecloud_nel_mp_ref will be killed after the emission
             self.pyecloud_fact_clean = pyecloud_fact_clean
-			# Every macroparticle bigger than pyecloud_fact_split*pyecloud_nel_mp_ref will be split into two after the emission
+            # Every macroparticle bigger than pyecloud_fact_split*pyecloud_nel_mp_ref will be split into two after the emission
             self.pyecloud_fact_split = pyecloud_fact_split
 
             
@@ -132,9 +132,9 @@ class Secondaries:
         # self.emitted={}
         self.l_set_params_user_only=l_set_params_user_only
         self.mat_number=1
-	# These members should not be set when in PyECLOUD mode
+    # These members should not be set when in PyECLOUD mode
         if not self.flag_pyecloud:
-	    self.set_params_user=set_params_user
+        self.set_params_user=set_params_user
             if maxsec is None:
                 if pos is None:
                     maxsec = 10
@@ -206,7 +206,7 @@ class Secondaries:
         self.power_emit=AppendableArray(typecode='d') # instantaneous power emission [W]
         self.power_diff=AppendableArray(typecode='d') # instantaneous power deposition [W]
         self.piditype = 0
-	# These members should not be set when in PyECLOUD mode
+    # These members should not be set when in PyECLOUD mode
         if not self.flag_pyecloud:
             if pos is not None:
                 if posC.nsteps_g != 0:
@@ -320,7 +320,7 @@ class Secondaries:
             if not isinstalledafterscraper(self.generatenew):
                 installafterscraper(self.generatenew)
         else:
-	    # The option_usenew = 0 has been disabled since it was obsolete
+        # The option_usenew = 0 has been disabled since it was obsolete
             raise ValueError('Not supported anymore!')
 
     def addpart(self,nn,x,y,z,ux,uy,uz,js,weight=None,itype=None,ssnparent=None):
@@ -750,7 +750,7 @@ class Secondaries:
                                 itype=self.inter[incident_species]['type'][ics]
                                 scale_factor=self.inter[incident_species]['scale_factor'][ics]
                                 if scale_factor is None:scale_factor=1.
-				# If using posinst prepare the secondaries
+                # If using posinst prepare the secondaries
                                 if not self.flag_pyecloud:
                                     self.prepare_secondaries(itype,posC.maxsec)
                                 if top.wpid==0:weight=ones(n,'d')
@@ -767,7 +767,7 @@ class Secondaries:
                                         vxplost[:n], vyplost[:n], vzplost[:n])
                                     ns = len(xnew)
 
-				# If using posinst proceed in the usual way
+                # If using posinst proceed in the usual way
                                 else:
                                     xnew = zeros(n*posC.maxsec,'d')
                                     ynew = zeros(n*posC.maxsec,'d')
@@ -1266,7 +1266,7 @@ class Secondaries:
         flag_seg = True
         nel_mp_th = self.pyecloud_fact_split * self.pyecloud_nel_mp_ref
         nel_impact = weightplost
-        
+
         (nel_emit_tot_events, event_type, event_info,
            nel_replace, x_replace, y_replace, z_replace,
            vx_replace, vy_replace, vz_replace, i_seg_replace,
