@@ -71,6 +71,12 @@ class Secondaries:
      - luseoldpositionifout=False:
            If the new particle position is outside of the grid, use the old position of the lost particle
            (its position from the previous time step).
+    - pyecloud_secemi_object: An instance of a PyECLOUD secondary emission object. If it’s None Posinst is used. 
+    - pyecloud_nel_mp_ref: Macroparticles reference size. Used only in PyECLOUD mode.
+    - pyecloud_fact_clean: Every emitted macroparticle smaller than pyecloud_fact_clean*pyecloud_nel_mp_ref
+                           will be erased. Used only in PyECLOUD mode.
+    - pyecloud_fact_split: Every emitted macroparticle bigger than pyecloud_fact_split*pyecloud_nel_mp_ref will 
+                           be split into two. Used only in PyECLOUD mode
     """
     def __init__(self,isinc=None,conductors=None,issec=None,set_params_user=None,material=None,
                       xoldpid=None,yoldpid=None,zoldpid=None,min_age=None,vmode=1,l_verbose=0,
