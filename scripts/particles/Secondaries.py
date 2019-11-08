@@ -140,7 +140,7 @@ class Secondaries:
         self.mat_number=1
     # These members should not be set when in PyECLOUD mode
         if not self.flag_pyecloud:
-        self.set_params_user=set_params_user
+            self.set_params_user=set_params_user
             if maxsec is None:
                 if pos is None:
                     maxsec = 10
