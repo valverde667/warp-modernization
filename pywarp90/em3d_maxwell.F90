@@ -144,10 +144,10 @@ contains
            end if
           end do
           if (sf%pml_method==1) then
-            sf%bmfx(1:sf%nx+sf%nxguard)=-sf%bmfx(1:sf%nx+sf%nxguard)
-            sf%bpfx(1:sf%nx+sf%nxguard)=-sf%bpfx(1:sf%nx+sf%nxguard)
-            sf%bmgx(0:sf%nx+sf%nxguard-1)=-sf%bmgx(0:sf%nx+sf%nxguard-1)
-            sf%bpgx(0:sf%nx+sf%nxguard-1)=-sf%bpgx(0:sf%nx+sf%nxguard-1)
+            sf%bmfx(-sf%nxguard+1:sf%nx)=-sf%bmfx(-sf%nxguard+1:sf%nx)
+            sf%bpfx(-sf%nxguard+1:sf%nx)=-sf%bpfx(-sf%nxguard+1:sf%nx)
+            sf%bmgx(-sf%nxguard:sf%nx-1)=-sf%bmgx(-sf%nxguard:sf%nx-1)
+            sf%bpgx(-sf%nxguard:sf%nx-1)=-sf%bpgx(-sf%nxguard:sf%nx-1)
           end if
        end select
     end if
@@ -204,10 +204,10 @@ contains
            end if
           end do
           if (sf%pml_method==1) then
-            sf%bmfy(1:sf%ny+sf%nyguard)=-sf%bmfy(1:sf%ny+sf%nyguard)
-            sf%bpfy(1:sf%ny+sf%nyguard)=-sf%bpfy(1:sf%ny+sf%nyguard)
-            sf%bmgy(0:sf%ny+sf%nyguard-1)=-sf%bmgy(0:sf%ny+sf%nyguard-1)
-            sf%bpgy(0:sf%ny+sf%nyguard-1)=-sf%bpgy(0:sf%ny+sf%nyguard-1)
+            sf%bmfy(-sf%nyguard+1:sf%ny)=-sf%bmfy(-sf%nyguard+1:sf%ny)
+            sf%bpfy(-sf%nyguard+1:sf%ny)=-sf%bpfy(-sf%nyguard+1:sf%ny)
+            sf%bmgy(-sf%nyguard:sf%ny-1)=-sf%bmgy(-sf%nyguard:sf%ny-1)
+            sf%bpgy(-sf%nyguard:sf%ny-1)=-sf%bpgy(-sf%nyguard:sf%ny-1)
           end if
        end select
     end if
@@ -262,10 +262,10 @@ contains
            end if
           end do
           if (sf%pml_method==1) then
-            sf%bmfz(1:sf%nz+sf%nzguard)=-sf%bmfz(1:sf%nz+sf%nzguard)
-            sf%bpfz(1:sf%nz+sf%nzguard)=-sf%bpfz(1:sf%nz+sf%nzguard)
-            sf%bmgz(0:sf%nz+sf%nzguard-1)=-sf%bmgz(0:sf%nz+sf%nzguard-1)
-            sf%bpgz(0:sf%nz+sf%nzguard-1)=-sf%bpgz(0:sf%nz+sf%nzguard-1)
+            sf%bmfz(-sf%nzguard+1:sf%nz)=-sf%bmfz(-sf%nzguard+1:sf%nz)
+            sf%bpfz(-sf%nzguard+1:sf%nz)=-sf%bpfz(-sf%nzguard+1:sf%nz)
+            sf%bmgz(-sf%nzguard:sf%nz-1)=-sf%bmgz(-sf%nzguard:sf%nz-1)
+            sf%bpgz(-sf%nzguard:sf%nz-1)=-sf%bpgz(-sf%nzguard:sf%nz-1)
           end if
       end select
     end if
@@ -394,6 +394,7 @@ end module mod_emfield3d
                                 norderx,nordery,norderz
     REAL(kind=8), INTENT(IN) :: dt, dx, dy, dz, clight, smaxx, smaxy, smaxz, sdeltax, sdeltay, sdeltaz, xmin, ymin, zmin, &
                                 xcoefs(norderx/2),ycoefs(nordery/2),zcoefs(norderz/2)
+    REAL(kind=8) :: beta, delta, rx, ry, rz
     integer(ISZ) :: j
     logical(ISZ) :: l_1dz, l_2dxz, l_2drz, l_nodalgrid
 
@@ -464,6 +465,36 @@ end module mod_emfield3d
     sf%xcoefs = xcoefs
     sf%ycoefs = ycoefs
     sf%zcoefs = zcoefs
+    
+    if (l_2dxz) then
+        delta = min(dx,dz)
+        rx = (delta/dx)**2
+        ry = 0.
+        rz = (delta/dz)**2
+        beta = 0.125*(1.-rx*ry*rz/(ry*rz+rz*rx+rx*ry))
+        sf%betaxz = 0.125*rz
+        sf%betazx = 0.125*rx
+        sf%alphax = 1. - 2.*sf%betaxz
+        sf%alphaz = 1. - 2.*sf%betazx
+    else
+        delta = min(dz,min(dx,dy))
+        rx = (delta/dx)**2
+        ry = (delta/dy)**2
+        rz = (delta/dz)**2
+        beta = 0.125*(1.-rx*ry*rz/(ry*rz+rz*rx+rx*ry))
+        sf%betaxy = ry*beta
+        sf%betaxz = rz*beta
+        sf%betayx = rx*beta
+        sf%betayz = rz*beta
+        sf%betazx = rx*beta
+        sf%betazy = ry*beta
+        sf%gammax = ry*rz*(1./16.-0.125*ry*rz/(ry*rz+rz*rx+rx*ry))
+        sf%gammay = rx*rz*(1./16.-0.125*rx*rz/(ry*rz+rz*rx+rx*ry))
+        sf%gammaz = rx*ry*(1./16.-0.125*rx*ry/(ry*rz+rz*rx+rx*ry))
+        sf%alphax = 1. - 2.*sf%betaxy - 2.* sf%betaxz - 4.*sf%gammax
+        sf%alphay = 1. - 2.*sf%betayx - 2.* sf%betayz - 4.*sf%gammay
+        sf%alphaz = 1. - 2.*sf%betazx - 2.* sf%betazy - 4.*sf%gammaz
+    end if
 
     return
   end subroutine init_splitfield
@@ -1706,7 +1737,10 @@ case( 1 ) ! Cole-Karkkainen stencil on B push (Note: Yee stencil on E push)
     call push_em3d_kyeebvec(f%ex,f%ey,f%ez,f%bx,f%by,f%bz, &
                       dtsdx,dtsdy,dtsdz, &
                       f%nx,f%ny,f%nz, &
-                      f%nxguard,f%nyguard,f%nzguard,f%l_2dxz)
+                      f%nxguard,f%nyguard,f%nzguard,f%l_2dxz, &
+                      f%alphax, f%betaxy, f%betaxz, f%gammax, &
+                      f%alphay, f%betayx, f%betayz, f%gammay, &
+                      f%alphaz, f%betazx, f%betazy, f%gammaz)
   else
     call push_em3d_bvec_norder(f%ex,f%ey,f%ez,f%bx,f%by,f%bz, &
                         dtsdx*f%xcoefs,dtsdy*f%ycoefs,dtsdz*f%zcoefs, &
@@ -2152,12 +2186,18 @@ return
 end subroutine push_em3d_lehebvec_circ
 
 
-subroutine push_em3d_kyeebvec(ex,ey,ez,bx,by,bz,dtsdx,dtsdy,dtsdz,nx,ny,nz,nxguard,nyguard,nzguard,l_2dxz)
-use EM3D_kyee
+subroutine push_em3d_kyeebvec(ex,ey,ez,bx,by,bz,dtsdx,dtsdy,dtsdz,nx,ny,nz,nxguard,nyguard,nzguard,l_2dxz, &
+                              alphax, betaxy, betaxz, gammax, &
+                              alphay, betayx, betayz, gammay, &
+                              alphaz, betazx, betazy, gammaz)
+!use EM3D_kyee
 implicit none
 integer :: nx,ny,nz,nxguard,nyguard,nzguard
 real(kind=8), intent(IN OUT), dimension(-nxguard:nx+nxguard,-nyguard:ny+nyguard,-nzguard:nz+nzguard) :: ex,ey,ez,bx,by,bz
-real(kind=8), intent(IN) :: dtsdx,dtsdy,dtsdz
+real(kind=8), intent(IN) :: dtsdx,dtsdy,dtsdz, &
+                            alphax, betaxy, betaxz, gammax, &
+                            alphay, betayx, betayz, gammay, &
+                            alphaz, betazx, betazy, gammaz
 integer(ISZ) :: j,k,l
 logical(ISZ) :: l_2dxz
 
@@ -2890,7 +2930,10 @@ else
   call push_em3d_kyeeefvec(f%ex,f%ey,f%ez,f%f, &
                       dtsdx,dtsdy,dtsdz, &
                       f%nx,f%ny,f%nz, &
-                      f%nxguard,f%nyguard,f%nzguard,f%l_2dxz)
+                      f%nxguard,f%nyguard,f%nzguard,f%l_2dxz, &
+                      f%alphax, f%betaxy, f%betaxz, f%gammax, &
+                      f%alphay, f%betayx, f%betayz, f%gammay, &
+                      f%alphaz, f%betazx, f%betazy, f%gammaz)
 endif
 
 return
@@ -3069,11 +3112,17 @@ end if
 return
 end subroutine push_em3d_efvec_cond
 
-subroutine push_em3d_kyeeefvec(ex,ey,ez,f,dtsdx,dtsdy,dtsdz,nx,ny,nz,nxguard,nyguard,nzguard,l_2dxz)
-use EM3D_kyee
+subroutine push_em3d_kyeeefvec(ex,ey,ez,f,dtsdx,dtsdy,dtsdz,nx,ny,nz,nxguard,nyguard,nzguard,l_2dxz, &
+                               alphax, betaxy, betaxz, gammax, &
+                               alphay, betayx, betayz, gammay, &
+                               alphaz, betazx, betazy, gammaz)
+!use EM3D_kyee
 integer :: nx,ny,nz,nxguard,nyguard,nzguard
 real(kind=8), intent(IN OUT), dimension(-nxguard:nx+nxguard,-nyguard:ny+nyguard,-nzguard:nz+nzguard) :: ex,ey,ez,f
-real(kind=8), intent(IN) :: dtsdx,dtsdy,dtsdz
+real(kind=8), intent(IN) :: dtsdx,dtsdy,dtsdz, &
+                            alphax, betaxy, betaxz, gammax, &
+                            alphay, betayx, betayz, gammay, &
+                            alphaz, betazx, betazy, gammaz
 integer(ISZ) :: j,k,l
 logical(ISZ) :: l_2dxz
 
@@ -3937,7 +3986,10 @@ INTEGER :: j, k, l,which
                              sf%fx,sf%fy,sf%fz, &
                              sf%agx,sf%agy,sf%agz, &
                              sf%bpgx,sf%bpgy,sf%bpgz, &
-                             sf%bmgx,sf%bmgy,sf%bmgz,sf%l_2dxz)
+                             sf%bmgx,sf%bmgy,sf%bmgz,sf%l_2dxz, &
+                             sf%alphax, sf%betaxy, sf%betaxz, sf%gammax, &
+                             sf%alphay, sf%betayx, sf%betayz, sf%gammay, &
+                             sf%alphaz, sf%betazx, sf%betazy, sf%gammaz)
   end if
 
   return
@@ -4053,8 +4105,11 @@ end subroutine scale_em3d_splitefvec
 
 subroutine push_em3d_splitkyeeefvec(nx,ny,nz,nxguard,nyguard,nzguard, &
                                exx,eyy,ezz,fx,fy,fz, &
-                               agx,agy,agz,bpgx,bpgy,bpgz,bmgx,bmgy,bmgz,l_2dxz)
-use EM3D_kyee
+                               agx,agy,agz,bpgx,bpgy,bpgz,bmgx,bmgy,bmgz,l_2dxz, &
+                               alphax, betaxy, betaxz, gammax, &
+                               alphay, betayx, betayz, gammay, &
+                               alphaz, betazx, betazy, gammaz)
+!use EM3D_kyee
 implicit none
 
 integer(ISZ), INTENT(IN) :: nx,ny,nz,nxguard,nyguard,nzguard
@@ -4066,6 +4121,9 @@ real(kind=8), dimension(-nzguard:nz+nzguard), intent(in) :: agz,bpgz,bmgz
 
 INTEGER :: j, k, l
 logical(ISZ) :: l_2dxz
+real(8) :: alphax, betaxy, betaxz, gammax, &
+           alphay, betayx, betayz, gammay, &
+           alphaz, betazx, betazy, gammaz
 
 if (.not.l_2dxz) then
 
@@ -4213,7 +4271,10 @@ INTEGER :: j, k, l,which
                              sf%bxy,sf%byx,sf%bzx,sf%bxz,sf%byz,sf%bzy, &
                              sf%agx,sf%agy,sf%agz, &
                              sf%bpgx,sf%bpgy,sf%bpgz, &
-                             sf%bmgx,sf%bmgy,sf%bmgz,sf%l_2dxz)
+                             sf%bmgx,sf%bmgy,sf%bmgz,sf%l_2dxz, &
+                             sf%alphax, sf%betaxy, sf%betaxz, sf%gammax, &
+                             sf%alphay, sf%betayx, sf%betayz, sf%gammay, &
+                             sf%alphaz, sf%betazx, sf%betazy, sf%gammaz)
   end if
 
   return
@@ -4690,8 +4751,11 @@ end subroutine scale_em3d_splitgvec
 
 subroutine push_em3d_splitkyeebvec(nx,ny,nz,nxguard,nyguard,nzguard, &
                                exx,exy,exz,eyx,eyy,eyz,ezx,ezy,ezz,bxy,byx,bzx,bxz,byz,bzy, &
-                               agx,agy,agz,bpgx,bpgy,bpgz,bmgx,bmgy,bmgz,l_2dxz)
-use EM3D_kyee
+                               agx,agy,agz,bpgx,bpgy,bpgz,bmgx,bmgy,bmgz,l_2dxz, &
+                               alphax, betaxy, betaxz, gammax, &
+                               alphay, betayx, betayz, gammay, &
+                               alphaz, betazx, betazy, gammaz)
+!use EM3D_kyee
 implicit none
 
 integer(ISZ), INTENT(IN) :: nx,ny,nz,nxguard,nyguard,nzguard
@@ -4706,7 +4770,10 @@ real(kind=8), dimension(-nzguard:nz+nzguard), intent(in) :: agz,bpgz,bmgz
 INTEGER :: j, k, l
 logical(ISZ) :: l_2dxz
 
-real(8) :: b,c,dt
+real(8) :: b,c,dt, &
+           alphax, betaxy, betaxz, gammax, &
+           alphay, betayx, betayz, gammay, &
+           alphaz, betazx, betazy, gammaz
 
 if (.not.l_2dxz) then
 

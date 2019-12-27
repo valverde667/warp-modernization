@@ -397,6 +397,10 @@ class EM3D(SubcycledPoissonSolver):
 
         if self.refinement is not None:
             ref=self.refinement
+            try:
+                self.kw.pop('bounds')
+            except:
+                pass
             self.field_coarse = self.__class__(l_force_nzlocal2nz=True,
                                      l_coarse_patch=True,
                                      nx=self.nx/ref[0],dx=self.dx*ref[0],
@@ -411,7 +415,7 @@ class EM3D(SubcycledPoissonSolver):
                                      xmminlocal=self.xmminlocal,xmmaxlocal=self.xmmaxlocal,
                                      ymminlocal=self.ymminlocal,ymmaxlocal=self.ymmaxlocal,
                                      zmminlocal=self.zmminlocal,zmmaxlocal=self.zmmaxlocal,
-                                     #bounds=self.bounds,
+                                     bounds=self.bounds,
                                      isactiveem=self.isactive,
                                      ntsub=self.root.listofblocks[self.parents[0]].ntsub,
                                      lchild=True,
@@ -1260,7 +1264,7 @@ class EM3D(SubcycledPoissonSolver):
             self.add_laser(self.block.core.yf, self.laser_antenna[i])
         # --- smooth current density
         if any(self.npass_smooth>0):self.smoothdensity()
-        if self.l_nodalgrid:self.Jyee2node3d()
+        if self.l_nodalgrid and not self.l_deposit_nodal:self.Jyee2node3d()
         # --- apply boundary conditions
         self.applysourceboundaryconditions()
         # --- exchange guard cells data across domains
@@ -3126,6 +3130,7 @@ class EM3D(SubcycledPoissonSolver):
             pg = top.pgroup
         np = pg.nps[js]
         if np==0:return
+        setuppgroup(pg)
         il = pg.ins[js]-1
         iu = il+pg.nps[js]
         dt = top.dt*dtmult
@@ -6335,7 +6340,7 @@ class EM3D(SubcycledPoissonSolver):
         self.num_Cherenkov_cor_coefs["Uniform"].append(array([[-3.01526,3.26469,-1.47449,0.225082],[-2.51528,2.13227,-0.661275,0.0450525]]))
 
     def get_num_Cherenkov_cor_coefs(self):
-        dtodz=clight*top.dt/self.dz
+        dtodz=clight*top.dt/(self.dz*self.ntsub)
         allcoefs=self.num_Cherenkov_cor_coefs[self.gather_method]
         ndt=shape(allcoefs[...])[0]
         dtodz_unit=1./(ndt-1)
@@ -6734,6 +6739,36 @@ def pyinit_3dem_block(nx, ny, nz,
     zminm = b.zmin-nbndz*dz
     zmin0 = b.zmin
     zminp = b.zmax
+
+    if f.stencil == 1:
+        if f.l_2dxz:
+            delta = min(f.dx,f.dz)
+            rx = (delta/f.dx)**2
+            ry = 0.
+            rz = (delta/f.dz)**2
+            beta = 0.125*(1.-rx*ry*rz/(ry*rz+rz*rx+rx*ry))
+            f.betaxz = 0.125*rz
+            f.betazx = 0.125*rx
+            f.alphax = 1. - 2.*f.betaxz
+            f.alphaz = 1. - 2.*f.betazx
+        else:
+            delta = min(f.dx,f.dy,f.dz)
+            rx = (delta/f.dx)**2
+            ry = (delta/f.dy)**2
+            rz = (delta/f.dz)**2
+            beta = 0.125*(1.-rx*ry*rz/(ry*rz+rz*rx+rx*ry))
+            f.betaxy = ry*beta
+            f.betaxz = rz*beta
+            f.betayx = rx*beta
+            f.betayz = rz*beta
+            f.betazx = rx*beta
+            f.betazy = ry*beta
+            f.gammax = ry*rz*(1./16.-0.125*ry*rz/(ry*rz+rz*rx+rx*ry))
+            f.gammay = rx*rz*(1./16.-0.125*rx*rz/(ry*rz+rz*rx+rx*ry))
+            f.gammaz = rx*ry*(1./16.-0.125*rx*ry/(ry*rz+rz*rx+rx*ry))
+            f.alphax = 1. - 2.*f.betaxy - 2.* f.betaxz - 4.*f.gammax
+            f.alphay = 1. - 2.*f.betayx - 2.* f.betayz - 4.*f.gammay
+            f.alphaz = 1. - 2.*f.betazx - 2.* f.betazy - 4.*f.gammaz
 
 # --- sides
 # x

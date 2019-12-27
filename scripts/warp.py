@@ -66,9 +66,7 @@ if sys.hexversion >= 0x03000000:
     # --- With Python3, the so files of each Fortran package are imported
     # --- separately. The dlopen flag needs to be set so that cross references
     # --- among the packages can be satisfied.
-    import ctypes
-    #sys.setdlopenflags(ctypes.RTLD_LAZY + ctypes.RTLD_GLOBAL)
-    sys.setdlopenflags(1 + ctypes.RTLD_GLOBAL)
+    sys.setdlopenflags(os.RTLD_LAZY | os.RTLD_GLOBAL)
 
 # --- Test for a mixed installed of Warp, if the old pre-reorganized version is still installed.
 try:

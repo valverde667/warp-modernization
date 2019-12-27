@@ -253,6 +253,7 @@ class Boosted_Frame(object):
             # --- push longitudinal particle positions
             for js in range(self.pgroup.ns):
                 if self.pgroup.nps[js]>0:
+                    setuppgroup(self.pgroup)
                     il=self.pgroup.ins[js]-1
                     iu=il+self.pgroup.nps[js]
                     if top.zoldpid>0:self.pgroup.pid[il:iu,top.zoldpid-1]=self.pgroup.zp[il:iu].copy()

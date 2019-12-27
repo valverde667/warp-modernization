@@ -38,9 +38,13 @@ Run `pip install Forthon`
 
 ## Installing pygist
 
-Use the following commands 
+To install pygist, the plotting package:
 ```
-pip install pygist
+git clone https://bitbucket.org/dpgrote/pygist.git
+cd pygist
+python setup.py config
+python setup.py install
+cd ..
 ```
 
 ## Installing Warp

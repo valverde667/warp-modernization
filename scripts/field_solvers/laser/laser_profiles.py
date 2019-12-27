@@ -6,7 +6,7 @@ import numpy as np
 from scipy.constants import c, m_e, e, epsilon_0
 from scipy.interpolate import RegularGridInterpolator
 from scipy.special import genlaguerre, j1
-from scipy.misc import factorial
+from math import factorial
 import h5py
 # Try importing parallel functions, in order to broadcast
 # the experimental laser file, if required

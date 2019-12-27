@@ -3269,6 +3269,11 @@ class EMMRBlock(MeshRefinement,EM3D):
             child.node2yee3d()
         self.__class__.__bases__[1].node2yee3d(self)
 
+    def smoothfields_poly(self):
+        for child in self.children:
+            child.smoothfields_poly()
+        self.__class__.__bases__[1].smoothfields_poly(self)
+
     def push_eb_subcycle(self):
         if self is self.root:
             self.push_ebsubcycle_children([self])
@@ -3409,7 +3414,9 @@ class EMMRBlock(MeshRefinement,EM3D):
         # --- smooth current density
         self.smoothdensity()
         # -- add laser 
-        self.add_laser(self.block.core.yf)
+        # -- add laser, loop on the different antennas
+        for i in range(len(self.laser_antenna)):
+            self.add_laser(self.block.core.yf, self.laser_antenna[i])
         self.applysourceboundaryconditions()
         if self.l_verbose:print 'finalizesourcep done'
 
@@ -3598,16 +3605,16 @@ class EMMRBlock(MeshRefinement,EM3D):
                 for c in self.blocklists[i]:
                     if c.isactive:
                         if guardMR:
-                            guardMR=array([0,0,0])
+                            guardMRa=array([0,0,0])
                         else:
-                            guardMR=c.nguard*c.refinement
-                        xmin = c.block.xmin+guardMR[0]*c.block.dx
-                        xmax = c.block.xmax-guardMR[0]*c.block.dx
-                        ymin = c.block.ymin+guardMR[1]*c.block.dy
-                        ymax = c.block.ymax-guardMR[1]*c.block.dy
-                        zmin = c.block.zmin+guardMR[2]*c.block.dz
-                        zmax = c.block.zmax-guardMR[2]*c.block.dz
-                        data = getattr(c,dataname)(guards,overlap,guardMR)
+                            guardMRa=c.nguard*c.refinement
+                        xmin = c.block.xmin+guardMRa[0]*c.block.dx
+                        xmax = c.block.xmax-guardMRa[0]*c.block.dx
+                        ymin = c.block.ymin+guardMRa[1]*c.block.dy
+                        ymax = c.block.ymax-guardMRa[1]*c.block.dy
+                        zmin = c.block.zmin+guardMRa[2]*c.block.dz
+                        zmax = c.block.zmax-guardMRa[2]*c.block.dz
+                        data = getattr(c,dataname)(guards,overlap,guardMRa)
                         c.genericpfem3d(data, \
                         title,xmmin=xmin,xmmax=xmax,\
                         ymmin=ymin,ymmax=ymax,\
@@ -3698,6 +3705,18 @@ class EMMRBlock(MeshRefinement,EM3D):
         if top.efetch[0] != 4:yee2node3d(f)
         return self.getarray(dive,guards,overlap,guardMR)
 
+    def getdivemrho(self,guards=0,overlap=0,guardMR=[0,0,0]):
+        dive = zeros(shape(self.fields.Ex),'d')
+        f = self.fields
+        if top.efetch[0] != 4:node2yee3d(f)
+        getdive(f.Ex,f.Ey,f.Ez,dive,f.dx,f.dy,f.dz,
+                f.nx,f.ny,f.nz,f.nxguard,f.nyguard,f.nzguard,
+                f.xmin,
+                self.l_2dxz,self.l_2drz,self.l_nodalgrid)
+        if top.efetch[0] != 4:yee2node3d(f)
+        return self.getarray(dive,guards,overlap,guardMR) - \
+               self.getarray(self.fields.Rho/eps0,guards,overlap,guardMR)
+
     def pfex(self,l_children=1,guards=0,guardMR=0,**kw):
         self.genericpfem3dMR('E_x','getex',l_children,guards,guardMR,**kw)
 
@@ -3751,6 +3770,9 @@ class EMMRBlock(MeshRefinement,EM3D):
 
     def pfdive(self,l_children=1,guards=0,guardMR=0,**kw):
         self.genericpfem3dMR('Div E','getdive',l_children,guards,guardMR,**kw)
+
+    def pfdivemrho(self,l_children=1,guards=0,guardMR=0,**kw):
+        self.genericpfem3dMR('Div E','getdivemrho',l_children,guards,guardMR,**kw)
 
 # --- This can only be done after MRBlock3D is defined.
 try:

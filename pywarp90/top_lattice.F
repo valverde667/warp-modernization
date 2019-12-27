@@ -364,6 +364,8 @@ c============================================================================
                 helepe(ii,0) = helepe(ii,nhele)
                 helepm(ii,0) = helepm(ii,nhele)
              enddo
+             helesf(0) = helesf(nhele)
+             helesc(0) = helesc(nhele)
              helene(0) = helene(nhele)
              helenm(0) = helenm(nhele)
              heleox(0) = heleox(nhele)
@@ -3534,6 +3536,7 @@ c   bx, by, bz   magnetic field
       real(kind=8):: z1,z2,zl,fl,zr,fr,frac
       real(kind=8):: n,v,f,rpow,cosnt,sinnt
       real(kind=8):: xpmqoff,ypmqoff
+      real(kind=8):: scalefactor
       integer(ISZ), allocatable:: tiele(:)
       real(kind=8), allocatable, dimension(:):: vz,dzi,tfrac,txpmqoff,typmqoff,
      &                                          trpmqoff,ttpmqoff
@@ -3637,6 +3640,7 @@ c         --- indices, and residence fractions
           do ip = 1,np
             if (tfrac(ip) == 0.) cycle
             iele = tiele(ip)
+            scalefactor = helesf(iele) + helesc(iele)
             n = hele_n(ii,iele)
             v = hele_v(ii,iele)
 c           --- electric multipoles
@@ -3648,16 +3652,16 @@ c               --- accl element does a better job.  The transverse
 c               --- fields should only be kicks at the entrance and exit.
                 f = 1./(2.*v+2.)
                 rpow = trpmqoff(ip)**(2*v)
-                ex(ip) = ex(ip)-tfrac(ip)*heleep(ii,iele)*rpow*f*txpmqoff(ip)
-                ey(ip) = ey(ip)-tfrac(ip)*heleep(ii,iele)*rpow*f*typmqoff(ip)
-                ez(ip) = ez(ip)+tfrac(ip)*heleae(ii,iele)*rpow
+                ex(ip) = ex(ip)-tfrac(ip)*heleep(ii,iele)*rpow*f*txpmqoff(ip)*scalefactor
+                ey(ip) = ey(ip)-tfrac(ip)*heleep(ii,iele)*rpow*f*typmqoff(ip)*scalefactor
+                ez(ip) = ez(ip)+tfrac(ip)*heleae(ii,iele)*rpow*scalefactor
               else if (n == 1 .and. v == 0) then
 c               --- The pure dipole term needs special treatment since it
 c               --- breaks down at r = 0.
                 cosnt = cos(helepe(ii,iele))
                 sinnt = sin(helepe(ii,iele))
-                ex(ip) = ex(ip) + tfrac(ip)*heleae(ii,iele)*cosnt
-                ey(ip) = ey(ip) + tfrac(ip)*heleae(ii,iele)*sinnt
+                ex(ip) = ex(ip) + tfrac(ip)*heleae(ii,iele)*cosnt*scalefactor
+                ey(ip) = ey(ip) + tfrac(ip)*heleae(ii,iele)*sinnt*scalefactor
               else
 c               --- rest of components
                 f = 1. + 2.*v/n
@@ -3665,9 +3669,9 @@ c               --- rest of components
                 sinnt = sin(n*(ttpmqoff(ip)-helepe(ii,iele)))
                 rpow = trpmqoff(ip)**(n-2+2*v)
                 ex(ip) = ex(ip) + tfrac(ip)*heleae(ii,iele)*rpow*
-     &                         (f*txpmqoff(ip)*cosnt + typmqoff(ip)*sinnt)
+     &                         (f*txpmqoff(ip)*cosnt + typmqoff(ip)*sinnt)*scalefactor
                 ey(ip) = ey(ip) + tfrac(ip)*heleae(ii,iele)*rpow*
-     &                         (f*typmqoff(ip)*cosnt - txpmqoff(ip)*sinnt)
+     &                         (f*typmqoff(ip)*cosnt - txpmqoff(ip)*sinnt)*scalefactor
               endif
             endif
 c           --- magnetic multipoles
@@ -3678,16 +3682,16 @@ c               --- The transverse fields should only be kicks at the entrance
 c               --- and exit.
                 f = 1./(2.*v+2.)
                 rpow = trpmqoff(ip)**(2*v)
-                bx(ip) = bx(ip)-tfrac(ip)*helemp(ii,iele)*rpow*f*txpmqoff(ip)
-                by(ip) = by(ip)-tfrac(ip)*helemp(ii,iele)*rpow*f*typmqoff(ip)
-                bz(ip) = bz(ip)+tfrac(ip)*heleam(ii,iele)*rpow
+                bx(ip) = bx(ip)-tfrac(ip)*helemp(ii,iele)*rpow*f*txpmqoff(ip)*scalefactor
+                by(ip) = by(ip)-tfrac(ip)*helemp(ii,iele)*rpow*f*typmqoff(ip)*scalefactor
+                bz(ip) = bz(ip)+tfrac(ip)*heleam(ii,iele)*rpow*scalefactor
               else if (n == 1 .and. v == 0) then
 c               --- The pure dipole term needs special treatment since it
 c               --- breaks down at r = 0.
                 cosnt = cos(helepm(ii,iele))
                 sinnt = sin(helepm(ii,iele))
-                bx(ip) = bx(ip) - tfrac(ip)*heleam(ii,iele)*sinnt
-                by(ip) = by(ip) + tfrac(ip)*heleam(ii,iele)*cosnt
+                bx(ip) = bx(ip) - tfrac(ip)*heleam(ii,iele)*sinnt*scalefactor
+                by(ip) = by(ip) + tfrac(ip)*heleam(ii,iele)*cosnt*scalefactor
               else
 c               --- rest of components
                 f = 1. + 2.*v/n
@@ -3695,9 +3699,9 @@ c               --- rest of components
                 sinnt = sin(n*(ttpmqoff(ip)-helepm(ii,iele)))
                 rpow = trpmqoff(ip)**(n-2+2*v)
                 bx(ip) = bx(ip) + tfrac(ip)*heleam(ii,iele)*rpow*
-     &                         (f*txpmqoff(ip)*sinnt - typmqoff(ip)*cosnt)
+     &                         (f*txpmqoff(ip)*sinnt - typmqoff(ip)*cosnt)*scalefactor
                 by(ip) = by(ip) + tfrac(ip)*heleam(ii,iele)*rpow*
-     &                         (f*typmqoff(ip)*sinnt + txpmqoff(ip)*cosnt)
+     &                         (f*typmqoff(ip)*sinnt + txpmqoff(ip)*cosnt)*scalefactor
               endif
             endif
           enddo

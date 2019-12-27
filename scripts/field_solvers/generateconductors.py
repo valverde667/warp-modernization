@@ -59,6 +59,7 @@ Surfaces of revolution:
  YSrfrvInOut(rminofz,rmaxofz,zmin,zmax,...)
 
 Special:
+ Triangles(triangles,...)
  CADconductor(filename,...)
 
 Note that all take the following additional arguments:
@@ -6407,6 +6408,132 @@ class ZConeOutSlope(ZSrfrvOut):
                            condid=condid,
                            rofzdata=rofzdata,zdata=zdata,
                            kw=kw)
+
+#============================================================================
+class Triangles(Assembly):
+    """
+  Defines an object by specifying the triangulated surface
+    - triangles: array of triangles defining the surface. The array should have
+                 the shape (3,3,ntriangles), where the first dimension is the coordinates,
+                 and the second the corners. The corners should be in clockwise order
+                 facing the triangle from the outside.
+                 This works best if the triangles define a closed surface (without holes).
+    - voltage=0: object voltage
+    - xcent=0.,ycent=0.,zcent=0.: center of the object
+    - condid='next': conductor id, must be integer, or can be 'next' in
+                     which case a unique ID is chosen
+    """
+    def __init__(self,triangles,voltage=0.,xcent=0.,ycent=0.,zcent=0.,
+                      condid='next',**kw):
+        kwlist=['ntriangles', 'triangles']
+        Assembly.__init__(self,voltage,xcent,ycent,zcent,condid,kwlist,
+                               None,trianglesconductord,trianglesintercept,
+                               trianglesconductorfnew,
+                               kw=kw)
+        self.ntriangles = triangles.shape[2]
+        self.triangles = triangles
+
+    def getextent(self):
+        return ConductorExtent([self.triangles[0,:,:].min(),self.triangles[1,:,:].min(),self.triangles[2,:,:].min()],
+                               [self.triangles[0,:,:].max(),self.triangles[1,:,:].max(),self.triangles[2,:,:].max()],
+                               [self.xcent,self.ycent,self.zcent])
+
+    def intersections_with_plane(self, planeN, planeD):
+        """
+        Finds all the lines segments where triangles intersect with the specified plane
+         - planeN is the normal to the plane
+         - planeD is the location of the plane
+        """
+        lines = []
+        for it in range(self.ntriangles):
+            ll = self.intersection_with_plane(it, planeN, planeD)
+            if len(ll) > 0:
+                lines.append(ll)
+        # --- There should be two points for each triangle that intersects the plane
+        return array(lines)
+
+    def intersection_with_plane(self, it, planeN, planeD, epsilon=1.e-13):
+        """
+        Finds the line segment of the intersection of a triangle and a plane
+        """
+        def DistanceFromPlane(P):
+            return dot(planeN,P) + planeD
+
+        def GetSegmentPlaneIntersection(Pa, Pb, outSegTips):
+            """Finds the point with the line (Pa, Pb) intersects the plane
+            """
+            d1 = DistanceFromPlane(Pa)
+            d2 = DistanceFromPlane(Pb)
+            bPaOnPlane = (abs(d1) < epsilon)
+            bPbOnPlane = (abs(d2) < epsilon)
+            if bPaOnPlane:
+               outSegTips.append(Pa)
+            if bPbOnPlane:
+               outSegTips.append(Pb)
+            if bPaOnPlane and bPbOnPlane:
+               return
+            if d1*d2 > epsilon:  # points on the same side of plane
+               return
+            t = d1/(d1 - d2) # location of intersection point on the segment
+            outSegTips.append(Pa + t*(Pb - Pa))
+
+        def floatunique(segs):
+            # --- Find unique items in the segments, within epsilon
+            if len(segs) == 0:
+                return array(segs)
+            result = [segs[0]]
+            for i in range(1, len(segs)):
+                for r in result:
+                   if (abs(segs[i] - r)).max() < epsilon:
+                       break
+                else:
+                    result.append(segs[i])
+            return array(result)
+
+        P1 = self.triangles[:,0,it]
+        P2 = self.triangles[:,1,it]
+        P3 = self.triangles[:,2,it]
+
+        outSegTips = []
+        GetSegmentPlaneIntersection( P1, P2, outSegTips)
+        GetSegmentPlaneIntersection( P2, P3, outSegTips)
+        GetSegmentPlaneIntersection( P3, P1, outSegTips)
+        outSegTips = floatunique(outSegTips)
+        if outSegTips.shape[0] == 1:
+            # --- Only one of the vertices is on the plane.
+            # --- Duplicate it to get two points.
+            outSegTips = array([outSegTips[0], outSegTips[0]])
+        return outSegTips
+
+    def draw(self,color='fg',filled=None,fullplane=1,**kw):
+        self.drawzx(color=color, filled=filled, fullplane=fullplane, **kw)
+
+    def drawxy(self,iz=None,color='fg',filled=None,fullplane=1,**kw):
+        if iz is None:
+            iz = w3d.iz_axis
+        lines = self.intersections_with_plane(planeN = array([0., 0., 1.]),
+                                              planeD = w3d.zmmin + iz*w3d.dz)
+        pldj(lines[:,0,0]+self.xcent, lines[:,0,1]+self.ycent,
+             lines[:,1,0]+self.xcent, lines[:,1,1]+self.ycent, color=color, **kw)
+
+    def drawzx(self,iy=None,color='fg',filled=None,fullplane=1,**kw):
+        if iy is None:
+            iy = w3d.iy_axis
+        lines = self.intersections_with_plane(planeN = array([0., 1., 0.]),
+                                              planeD = w3d.ymmin + iy*w3d.dy)
+        pldj(lines[:,0,2]+self.zcent, lines[:,0,0]+self.xcent,
+             lines[:,1,2]+self.zcent, lines[:,1,0]+self.xcent, color=color, **kw)
+
+    def drawzy(self,ix=None,color='fg',filled=None,fullplane=1,**kw):
+        if ix is None:
+            ix = w3d.ix_axis
+        lines = self.intersections_with_plane(planeN = array([1., 0., 0.]),
+                                              planeD = w3d.xmmin + ix*w3d.dx)
+        pldj(lines[:,0,2]+self.zcent, lines[:,0,1]+self.ycent,
+             lines[:,1,2]+self.zcent, lines[:,1,1]+self.ycent, color=color, **kw)
+
+    def createdxobject(self,kwdict={},**kw):
+        pass
 
 #============================================================================
 #============================================================================

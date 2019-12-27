@@ -4705,7 +4705,9 @@ c=============================================================================
         iy = conductors%evensubgrid%indx(1,ic)
         iz = conductors%evensubgrid%indx(2,ic)
         call SETEE(0, -1, 0, 0, +1, 0, 0, 1./dx)
-        call SETEE(1,  0,-1, 0,  0,+1, 0, 1./dy)
+        if (nylocal > 0) then
+          call SETEE(1,  0,-1, 0,  0,+1, 0, 1./dy)
+        endif
         call SETEE(2,  0, 0,-1,  0, 0,+1, 1./dz)
       enddo
 
@@ -4718,7 +4720,9 @@ c=============================================================================
         iy = conductors%oddsubgrid%indx(1,ic)
         iz = conductors%oddsubgrid%indx(2,ic)
         call SETEE(0, -1, 0, 0, +1, 0, 0, 1./dx)
-        call SETEE(1,  0,-1, 0,  0,+1, 0, 1./dy)
+        if (nylocal > 0) then
+          call SETEE(1,  0,-1, 0,  0,+1, 0, 1./dy)
+        endif
         call SETEE(2,  0, 0,-1,  0, 0,+1, 1./dz)
       enddo
 
@@ -4865,6 +4869,17 @@ c       + ...
       real(kind=8),pointer:: dels(:),volt(:)
 
       real(kind=8):: substarttime,wtime
+
+      if (nylocal == 0) then
+        call sete2dwithconductor(conductors,np,xp,yp,zp,efetch,ex,ey,ez,
+     &                           zgrid,xmmin,ymmin,zmmin,
+     &                           dx,dy,dz,nxlocal,nylocal,nzlocal,
+     &                           nxguardphi,nyguardphi,nzguardphi,
+     &                           nxguarde,nyguarde,nzguarde,
+     &                           phi,selfe,
+     &                           l2symtry,l4symtry,lcylindrical)
+        return
+      endif
 
 c     --- If the icgrid is not allocated, then the conductor data is to be
 c     --- ignored, so call the base version of sete3d.
@@ -5309,7 +5324,402 @@ c       ---------------------------------------------------------------------
         end subroutine GETEENGP
       end
 c===========================================================================
-      subroutine sete3dongridwithconductor(conductors,phi,dx,dy,dz,
+      subroutine sete2dwithconductor(conductors,np,xp,yp,zp,efetch,ex,ey,ez,
+     &                               zgrid,xmmin,ymmin,zmmin,
+     &                               dx,dy,dz,nxlocal,nylocal,nzlocal,
+     &                               nxguardphi,nyguardphi,nzguardphi,
+     &                               nxguarde,nyguarde,nzguarde,
+     &                               phi,selfe,
+     &                               l2symtry,l4symtry,lcylindrical)
+      use ConductorTypemodule
+      type(ConductorType):: conductors
+      integer(ISZ):: np,nxlocal,nylocal,nzlocal
+      integer(ISZ):: nxguardphi,nyguardphi,nzguardphi
+      integer(ISZ):: nxguarde,nyguarde,nzguarde
+      real(kind=8):: zgrid,xmmin,ymmin,zmmin,dx,dy,dz
+      real(kind=8):: phi(-nxguardphi:nxlocal+nxguardphi,
+     &                   -nyguardphi:nylocal+nyguardphi,
+     &                   -nzguardphi:nzlocal+nzguardphi)
+      real(kind=8):: selfe(0:2,-nxguarde:nxlocal+nxguarde,
+     &                         -nyguarde:nylocal+nyguarde,
+     &                         -nzguarde:nzlocal+nzguarde)
+      real(kind=8):: xp(np),yp(np),zp(np)
+      real(kind=8):: ex(np),ey(np),ez(np)
+      integer(ISZ):: efetch
+      logical(ISZ):: l2symtry,l4symtry,lcylindrical
+
+c Gets self electric field for particles
+c Note that the phi1d passed in is assumed to start at phi(0,0,-1).
+c This is a change is behavior from what is was earlier. This change
+c was made to avoid problems with bounds checking. phi needs to be accessed
+c at the plane iz=-1, so when phi was passed in starting at phi(0,0,0), with
+c bounds checking turned on, this would be caught (even though the code was
+c technically correct).
+
+c Algorithm notes: phi array is dimensioned (0:nx,0:ny,-1:nz+1) outside,
+c but is made one dimensional in this routine
+c so cell index into 1d phi array for vectorized deposition is:
+c    i + j*(nx+1) + k*(nx+1)*(ny+1)
+c The field is:
+c    Ex = u0*v0*w0*ex(i  ,j  ,k  )
+c       + u1*v0*w0*ex(i+1,j  ,k  )
+c       + u0*v1*w0*ex(i  ,j+1,k  )
+c       + ...
+
+      integer(ISZ):: ip,i,j,k,inext,jnext,knext,nmax
+      real(kind=8):: dxi,dyi,dzi,tdxi,tdyi,tdzi
+      real(kind=8):: u0,u1,v0,v1,w0,w1
+      real(kind=8):: ext,eyt,ezt
+      real(kind=8):: xi,yj,zk,x
+      real(kind=8):: xinext,yjnext,zknext,xnext,ynext
+      real(kind=8):: vv(0:1),dd(0:1)
+      real(kind=8):: ee(0:2)
+      real(kind=8):: eengp(0:2,0:1,0:1,0:1)
+      real(kind=8):: wwsum(0:2)
+      real(kind=8):: xsign,ysign,sx,sy
+      real(kind=8),pointer:: dels(:),volt(:)
+
+      real(kind=8):: substarttime,wtime
+
+c     --- If the icgrid is not allocated, then the conductor data is to be
+c     --- ignored, so call the base version of sete3d.
+      if (.not. ASSOCIATED(conductors%icgrid)) then
+        call sete3d(phi,selfe,np,xp,yp,zp,zgrid,xmmin,ymmin,zmmin,
+     &              dx,dy,dz,nxlocal,nylocal,nzlocal,
+     &              nxguardphi,nyguardphi,nzguardphi,
+     &              efetch,ex,ey,ez,l2symtry,l4symtry,
+     &              lcylindrical)
+        return
+      endif
+
+c     --- Calculate some temporaries.
+      tdxi = 1./(2.*dx)
+      tdzi = 1./(2.*dz)
+      dxi = 1./dx
+      dzi = 1./dz
+      nmax = max(conductors%evensubgrid%nmax,conductors%oddsubgrid%nmax)
+
+      if (efetch == 1 .or. efetch == 3 .or. efetch == 5 .or. efetch == 6) then
+
+        if (lcylindrical) then
+          xnext = sqrt(xp(1)**2 + yp(1)**2)
+        else
+          xnext = xp(1)
+        endif
+
+        if (l4symtry) then
+          xinext = (abs(xnext) - xmmin)*dxi
+        else
+          xinext = (xnext - xmmin)*dxi
+        endif
+        zknext = (zp(1) - zgrid - zmmin)*dzi
+        if (l4symtry) xinext = abs(xinext)
+        inext = xinext
+        knext = zknext
+
+        do ip = 1, np
+
+          i = inext
+          j = 0
+          k = knext
+          x = xnext
+          xi = xinext
+          zk = zknext
+          if (ip < np) then
+            if (lcylindrical) then
+              xnext = sqrt(xp(ip+1)**2 + yp(ip+1)**2)
+            else
+              xnext = xp(ip+1)
+            endif
+            if (l4symtry) then
+              xinext = (abs(xnext) - xmmin)*dxi
+            else
+              xinext = (xnext - xmmin)*dxi
+            endif
+            zknext = (zp(ip+1) - zgrid - zmmin)*dzi
+            inext = xinext
+            knext = zknext
+          endif
+
+          if (xi < 0. .or. xi > nxlocal .or.
+     &        zk < 0. .or. zk > nzlocal) cycle
+
+          u1 = xi - i
+          w1 = zk - k
+
+          u0 = 1. - u1
+          v0 = 1.
+          w0 = 1. - w1
+
+          if (conductors%icgrid(i  ,j  ,k  ) == 0 .and.
+     &        conductors%icgrid(i+1,j  ,k  ) == 0 .and.
+     &        conductors%icgrid(i  ,j  ,k+1) == 0 .and.
+     &        conductors%icgrid(i+1,j  ,k+1) == 0) then
+
+            if (efetch == 3) then
+
+              ext = u0*v0*w0*selfe(0,i  ,j  ,k  )
+     &            + u1*v0*w0*selfe(0,i+1,j  ,k  )
+     &            + u0*v0*w1*selfe(0,i  ,j  ,k+1)
+     &            + u1*v0*w1*selfe(0,i+1,j  ,k+1)
+
+              ezt = u0*v0*w0*selfe(2,i  ,j  ,k  )
+     &            + u1*v0*w0*selfe(2,i+1,j  ,k  )
+     &            + u0*v0*w1*selfe(2,i  ,j  ,k+1)
+     &            + u1*v0*w1*selfe(2,i+1,j  ,k+1)
+
+            else
+
+              ext = u0*v0*w0*(phi(i-1,j  ,k  ) - phi(i+1,j  ,k  ))*tdxi +
+     &              u1*v0*w0*(phi(i  ,j  ,k  ) - phi(i+2,j  ,k  ))*tdxi +
+     &              u0*v0*w1*(phi(i-1,j  ,k+1) - phi(i+1,j  ,k+1))*tdxi +
+     &              u1*v0*w1*(phi(i  ,j  ,k+1) - phi(i+2,j  ,k+1))*tdxi
+
+              ezt = u0*v0*w0*(phi(i  ,j  ,k-1) - phi(i  ,j  ,k+1))*tdzi +
+     &              u1*v0*w0*(phi(i+1,j  ,k-1) - phi(i+1,j  ,k+1))*tdzi +
+     &              u0*v0*w1*(phi(i  ,j  ,k  ) - phi(i  ,j  ,k+2))*tdzi +
+     &              u1*v0*w1*(phi(i+1,j  ,k  ) - phi(i+1,j  ,k+2))*tdzi
+            endif
+
+          else
+
+            ee = 0.
+            wwsum = 0.
+            call GETEEFROME(0, 0,0,0, 1,0,0, dxi,u0*v0*w0,u1*v0*w0)
+            call GETEEFROME(0, 0,0,1, 1,0,0, dxi,u0*v0*w1,u1*v0*w1)
+            if (wwsum(0) .ne. 0.) wwsum(0) = 1./wwsum(0)
+
+            call GETEEFROME(2, 0,0,0, 0,0,1, dzi,u0*v0*w0,u0*v0*w1)
+            call GETEEFROME(2, 1,0,0, 0,0,1, dzi,u1*v0*w0,u1*v0*w1)
+            if (wwsum(2) .ne. 0.) wwsum(2) = 1./wwsum(2)
+
+            ext = ee(0)*wwsum(0)
+            ezt = ee(2)*wwsum(2)
+
+          endif
+
+          if (xp(ip) < 0. .and. l4symtry) ext = -ext
+
+          if (lcylindrical) then
+            if (x > 0.) then
+              eyt = ext*yp(ip)/x
+              ext = ext*xp(ip)/x
+            else
+              ext = ext
+              eyt = 0.
+            endif
+          endif
+
+          ex(ip) = ex(ip) + ext
+          ey(ip) = ey(ip) + eyt
+          ez(ip) = ez(ip) + ezt
+
+        enddo
+
+      elseif (efetch == 4) then
+c       --- Energy conserving
+
+        if (lcylindrical) then
+          xnext = sqrt(xp(1)**2 + yp(1)**2)
+        else
+          xnext = xp(1)
+        endif
+
+        if (l4symtry) then
+          sx = -1
+        else
+          sx = 1
+        endif
+
+        if (l4symtry) then
+          xinext = (abs(xnext) - xmmin)*dxi
+        elseif (l2symtry) then
+          xinext = (xnext - xmmin)*dxi
+        else
+          xinext = (xnext - xmmin)*dxi
+        endif
+        zknext = (zp(1) - zgrid - zmmin)*dzi
+        inext = xinext
+        knext = zknext
+
+        do ip = 1, np
+
+          i = inext
+          j = 0
+          k = knext
+          x = xnext
+          xi = xinext
+          zk = zknext
+          if (ip < np) then
+            if (lcylindrical) then
+              xnext = sqrt(xp(ip+1)**2 + yp(ip+1)**2)
+            else
+              xnext = xp(ip+1)
+            endif
+            if (l4symtry) then
+              xinext = (abs(xnext) - xmmin)*dxi
+            elseif (l2symtry) then
+              xinext = (xnext - xmmin)*dxi
+            else
+              xinext = (xnext - xmmin)*dxi
+            endif
+            zknext = (zp(ip+1) - zgrid - zmmin)*dzi
+            inext = xinext
+            knext = zknext
+          endif
+
+          if (xi < 0. .or. xi > nxlocal .or.
+     &        zk < 0. .or. zk > nzlocal) cycle
+
+          u1 = xi - i
+          w1 = zk - k
+
+          u0 = 1. - u1
+          v0 = 1.
+          w0 = 1. - w1
+
+          call GETEENGP(0,1,0,0,0,0,0,v0*w0,dxi)
+          call GETEENGP(0,1,0,0,0,0,1,v0*w1,dxi)
+          ext = (v0*w0*eengp(0,0,0,0) + v0*w1*eengp(0,0,0,1))
+          if (xp(ip) < 0) ext = sx*ext
+
+          call GETEENGP(2,0,0,1,0,0,0,u0*v0,dzi)
+          call GETEENGP(2,0,0,1,1,0,0,u1*v0,dzi)
+          ezt = (u0*v0*eengp(2,0,0,0) + u1*v0*eengp(2,1,0,0))
+
+          if (lcylindrical) then
+            if (x > 0.) then
+              eyt = ext*yp(ip)/x
+              ext = ext*xp(ip)/x
+            else
+              ext = ext
+              eyt = 0.
+            endif
+          endif
+
+          ex(ip) = ex(ip) + ext
+          ey(ip) = ey(ip) + eyt
+          ez(ip) = ez(ip) + ezt
+
+        enddo
+
+      endif
+
+      return
+      CONTAINS
+
+c       ---------------------------------------------------------------------
+        subroutine GETEEFROME(id,ox,oy,oz,px,py,pz,di,wm,wp)
+        integer(ISZ):: id,ox,oy,oz,px,py,pz
+        real(kind=8):: di,wm,wp
+        integer(ISZ):: ic
+        real(kind=8):: ppp
+        ic = conductors%icgrid(i+ox,j+oy,k+oz)
+        if (ic == 0) then
+          if (efetch == 3) then
+            ee(id) = ee(id) + wm*selfe(id,i+ox,j+oy,k+oz)
+          else
+            ee(id) = ee(id) + wm*(  phi(i+ox-px,j+oy-py,k+oz-pz)
+     &                            - phi(i+ox+px,j+oy+py,k+oz+pz))*0.5*di
+          endif
+          wwsum(id) = wwsum(id) + wm
+        else if (ic < nmax+1) then
+          if (ic < 0) then
+            ee(id) = ee(id) + wm*conductors%oddsubgrid%efield0(id,-ic)
+          else
+            ee(id) = ee(id) + wm*conductors%evensubgrid%efield0(id,ic)
+          endif
+          wwsum(id) = wwsum(id) + wm
+          if (conductors%icgrid(i+ox+px,j+oy+py,k+oz+pz) > nmax) then
+            if (ic < 0) then
+              ee(id) = ee(id) + wp*conductors%oddsubgrid%efieldd(2*id+1,-ic)
+            else
+              ee(id) = ee(id) + wp*conductors%evensubgrid%efieldd(2*id+1,ic)
+            endif
+            wwsum(id) = wwsum(id) + wp
+          endif
+        endif
+        ic = conductors%icgrid(i+ox+px,j+oy+py,k+oz+pz)
+        if (ic == 0) then
+          if (efetch == 3) then
+            ee(id) = ee(id) + wp*selfe(id,i+ox+px,j+oy+py,k+oz+pz)
+          else
+            ee(id) = ee(id) + wp*(  phi(i+ox     ,j+oy     ,k+oz)
+     &                            - phi(i+ox+2*px,j+oy+2*py,k+oz+2*pz))*0.5*di
+          endif
+          wwsum(id) = wwsum(id) + wp
+        else if (ic < nmax+1) then
+          if (ic < 0) then
+            ee(id) = ee(id) + wp*conductors%oddsubgrid%efield0(id,-ic)
+          else
+            ee(id) = ee(id) + wp*conductors%evensubgrid%efield0(id,ic)
+          endif
+          wwsum(id) = wwsum(id) + wp
+          if (conductors%icgrid(i+ox,j+oy,k+oz) > nmax) then
+            if (ic < 0) then
+              ee(id) = ee(id) + wm*conductors%oddsubgrid%efieldd(2*id,-ic)
+            else
+              ee(id) = ee(id) + wm*conductors%evensubgrid%efieldd(2*id,ic)
+            endif
+            wwsum(id) = wwsum(id) + wm
+          endif
+        endif
+
+        return
+        end subroutine GETEEFROME
+
+c       ---------------------------------------------------------------------
+        subroutine GETEENGP(id,px,py,pz,ox,oy,oz,dw,dd)
+        integer(ISZ):: id,px,py,pz,ox,oy,oz
+        real(kind=8):: dw,dd
+        real(kind=8):: vngp,dngp
+        integer(ISZ):: ic
+        if (conductors%icgrid(i+ox,j+oy,k+oz) == 0 .or.
+     &      conductors%icgrid(i+ox+px,j+oy+py,k+oz+pz) == 0) then
+          eengp(id,ox,oy,oz) = (phi(i+ox,j+oy,k+oz) - phi(i+ox+px,j+oy+py,k+oz+pz))*dd
+        elseif (conductors%icgrid(i+ox,j+oy,k+oz) < nmax+1) then
+          ic = conductors%icgrid(i+ox,j+oy,k+oz)
+          if (ic < 0) then
+            dels => conductors%oddsubgrid%dels(:,-ic)
+            volt => conductors%oddsubgrid%volt(:,-ic)
+          else
+            dels => conductors%evensubgrid%dels(:,ic)
+            volt => conductors%evensubgrid%volt(:,ic)
+          endif
+          if (dels(2*id+1+1) <= 1.) then
+            vngp = volt(2*id+1+1)
+            dngp = dels(2*id+1+1)
+          else
+            vngp = phi(i+ox+px,j+oy+py,k+oz+pz)
+            dngp = 1
+          endif
+          eengp(id,ox,oy,oz) = (phi(i+ox,j+oy,k+oz) - vngp)*dd/dngp
+        elseif (conductors%icgrid(i+ox+px,j+oy+py,k+oz+pz) < nmax+1) then
+          ic = conductors%icgrid(i+ox+px,j+oy+py,k+oz+pz)
+          if (ic < 0) then
+            dels => conductors%oddsubgrid%dels(:,-ic)
+            volt => conductors%oddsubgrid%volt(:,-ic)
+          else
+            dels => conductors%evensubgrid%dels(:,ic)
+            volt => conductors%evensubgrid%volt(:,ic)
+          endif
+          if (dels(2*id+1) <= 1.) then
+            vngp = volt(2*id+1)
+            dngp = dels(2*id+1)
+          else
+            vngp = phi(i+ox,j+oy,k+oz)
+            dngp = 1.
+          endif
+          eengp(id,ox,oy,oz) = (vngp - phi(i+ox+px,j+oy+py,k+oz+pz))*dd/dngp
+        else
+          eengp(id,ox,oy,oz) = 0.
+        endif
+
+        end subroutine GETEENGP
+      end
+c===========================================================================
+      subroutine sete3dongridwithconductor(conductors,phi,
+     &                                     dx,dy,dz,
      &                                     nxlocal,nylocal,nzlocal,ex,ey,ez,
      &                                     nxguardphi,nyguardphi,nzguardphi,
      &                                     bounds)

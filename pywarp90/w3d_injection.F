@@ -409,7 +409,7 @@ c                 --- calculate injection surface axial location exactly
 
 c             --- Only save particle if it is within the injection region.
               if (.not. l_inj_zmminmmaxglobal) then
-                if (vzinj > 0. .or. uzt(ip) > 0. .or. l_inj_user_particles) then
+                if (vzinj > 0. .or. (uzt(ip) > 0. .and. l_inj_user_particles_v)) then
 c                 --- Note that normally, particles are allowed to be exactly
 c                 --- aligned to the lower extent of the grid but not the upper extent.
                   if (zpminlocal+zgrid > zs+zinj .or.
@@ -421,7 +421,7 @@ c                 --- the grid boundary or they will never be accelerated.
      &                zs+zinj > zpmaxlocal+zgrid) cycle
                 endif
               else
-                if (vzinj > 0. .or. uzt(ip) > 0.) then
+                if (vzinj > 0. .or. (uzt(ip) > 0. .and. l_inj_user_particles_v)) then
                   if (zpmin+zgrid > zs+zinj .or. zs+zinj >= zpmax+zgrid) cycle
                 else
                   if (zpmin+zgrid >= zs+zinj .or. zs+zinj > zpmax+zgrid) cycle
@@ -490,6 +490,9 @@ c             --- Save SSN
                 ssn = ssn+1
               end if
 c             --- save radius of creation if rbirthpid > 0
+c             --- Note that these are being saved in the frame of the
+c             --- source. This should probably happen after the call to
+c             --- inj_transform below.
               if(rbirthpid>0) then
                 pgroup%pid(ii,rbirthpid) = sqrt(pgroup%xp(ii)**2+pgroup%yp(ii)**2)
               endif

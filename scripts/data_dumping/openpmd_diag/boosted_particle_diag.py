@@ -143,7 +143,7 @@ class BoostedParticleDiagnostic(ParticleDiagnostic):
 
         # Every self.period, write the buffered slices to disk
         if self.top.it % self.period == 0:
-            if(self.lparallel_output == False):
+            if not self.lparallel_output:
                 self.flush_to_disk()
             else:
                 self.flush_to_disk_parallel() 
@@ -369,7 +369,7 @@ class BoostedParticleDiagnostic(ParticleDiagnostic):
         Writes each quantity of the buffered dataset to the disk, the
         final step of the writing
         """
-        if(self.lparallel_output == False): 
+        if not self.lparallel_output: 
             dset = species_grp[path]
             index = dset.shape[0]
 
@@ -434,7 +434,7 @@ class BoostedParticleDiagnostic(ParticleDiagnostic):
         
         # Open the file without parallel I/O in this implementation
         # If using parallel IO then files have already been opened
-        if(self.lparallel_output == False):
+        if not self.lparallel_output:
            f = self.open_file( snapshot.filename, parallel_open=False)
         else: 
            f = h5_file
@@ -502,7 +502,7 @@ class BoostedParticleDiagnostic(ParticleDiagnostic):
 
         #If serial IO then close files here
         
-        if(self.lparallel_output == False):
+        if not self.lparallel_output:
             f.close()
 
 

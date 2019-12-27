@@ -149,8 +149,8 @@ def FD_weights_hvincenti(p,l_staggered=False):
     # --- from Henri Vincenti's formulas
     factorial = math.factorial
 
-    c = np.zeros(p/2)
-    for i in range(p/2):
+    c = np.zeros(p//2)
+    for i in range(p//2):
         l=i+1
         if l_staggered:
             lognumer = math.log(16.)*(1.-p/2.)+math.log(factorial(p-1.))*2
@@ -242,7 +242,7 @@ class Fourier_Space():
 #                w = FD_weights(xc, self.norderx+1,1)[-1,self.norderx/2+1:]
                 w = FD_weights_hvincenti(self.norderx,l_staggered=self.l_staggered)
 
-                for i in range(self.norderx/2):
+                for i in range(self.norderx//2):
                     xcoefs+=w[i]*2*np.sin(kxunit*(xi*i+1)*self.dx/xi)
 
                 kxunit_mod*=xcoefs/np.where(kxunit==0.,1.,kxunit*self.dx)
@@ -267,7 +267,7 @@ class Fourier_Space():
 #                w = FD_weights(yc, self.nordery+1,1)[-1,self.nordery/2+1:]
                 w = FD_weights_hvincenti(self.nordery,l_staggered=self.l_staggered)
 
-                for i in range(self.nordery/2):
+                for i in range(self.nordery//2):
                     ycoefs+=w[i]*2*np.sin(kyunit*(yi*i+1)*self.dy/yi)
 
                 kyunit_mod*=ycoefs/np.where(kyunit==0.,1.,kyunit*self.dy)
@@ -289,7 +289,7 @@ class Fourier_Space():
 #                w = FD_weights(zc, self.norderz+1,1)[-1,self.norderz/2+1:]
                 w = FD_weights_hvincenti(self.norderz,l_staggered=self.l_staggered)
 
-                for i in range(self.norderz/2):
+                for i in range(self.norderz//2):
                     zcoefs+=w[i]*2*np.sin(kzunit*(zi*i+1)*self.dz/zi)
 
                 kzunit_mod*=zcoefs/np.where(kzunit==0.,1.,kzunit*self.dz)

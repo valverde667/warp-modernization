@@ -482,7 +482,7 @@ class ParticleDiagnostic(OpenPMDDiagnostic) :
 
         # Fill the dataset with the quantity
         # (Single-proc operation, when using gathering)
-        if self.lparallel_output == False :
+        if not self.lparallel_output:
             quantity_array = self.get_dataset( species,
                     quantity, select_array, gather=True )
             if self.rank == 0:

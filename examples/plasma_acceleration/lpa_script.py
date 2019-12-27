@@ -192,53 +192,25 @@ def plasma_dens_func( x, y, z ):
 # -----------------
 # Initialize beam electrons (0:off, 1:on)
 # (Please be aware that initializing a beam in 2D geometry makes very little
-# physical sense, because of the long range of its space-charge fields)
+# physical sense, because of the long range of its space-charge fields,
+# and the fact that a 2D beam does not have a well-defined charge)
 use_beam = 0
 # Longitudinal momentum of the beam
 beam_uz = 100.
-# Beam density
-n_beam = 1.e26
-# Number of macroparticles per cell in each direction
-beam_nx = 2*plasma_nx
-beam_ny = 2*plasma_ny
-beam_nz = 2*plasma_nz
-# Positions between which the beam is initialized
-# (Transversally, the plasma is initialized between -plasma_xmax and
-# plasma_xmax, along x, and -plasma_ymax and plasma_ymax along y)
-beam_zmin = -12.e-6
-beam_zmax = -10.e-6
-beam_xmax = 3.e-6
-beam_ymax = 3.e-6
-
-# Define your own profile and profile parameters below
-beam_rmax = beam_xmax
-def beam_dens_func(x, y, z):
-    """
-    User-defined function: density profile of the beam
-
-    It should return the relative density with respect to n_beam,
-    at the position x, y, z (i.e. return a number between 0 and 1)
-
-    Parameters
-    ----------
-    x, y, z: 1darrays of floats
-        Arrays with one element per macroparticle
-    Returns
-    -------
-    n : 1d array of floats
-        Array of relative density, with one element per macroparticles
-    """
-    # Allocate relative density
-    n = ones_like(z)
-    # Longitudinal profile: parabolic
-    n = n*(z - beam_zmin)*(beam_zmax - z) * 4/(beam_zmax - beam_zmin)**2
-    # Transverse profile: parabolic
-    r = sqrt( x**2 + y**2)
-    n = n*(1 - (r/beam_rmax)**2 )
-    # Put the density above rmax to 0
-    n[r > beam_rmax] = 0.
-
-    return(n)
+# Relative energy spread
+beam_rel_energy_spread = 0.01
+# Beam charge
+beam_Q = 50.e-12 # in Coulombs
+# Beam position and RMS size
+beam_z0 = -11.e-6
+beam_xrms = 2.e-6
+beam_yrms = 2.e-6
+beam_zrms = 2.e-6
+# Beam normalized emittance
+beam_emit_x = 1.e-6  # in m.rad
+beam_emit_y = 1.e-6  # in m.rad
+# Number of macroparticles
+beam_Np = 10000
 
 # -----------------------------------------------------------------------------
 # Initialization of the simulation (Normal users should not modify this part.)
@@ -273,8 +245,7 @@ if use_ions:
                                                 group_elec_by_element=True )
 # Create the beam
 if use_beam:
-    beam_weight = prepare_weights( n_beam, beam_nx, beam_ny,
-                                   beam_nz, dim, circ_m )
+    beam_weight = beam_Q / (beam_Np*echarge)
     beam = Species(type=Electron, weight=beam_weight, name='beam')
 # Set the numerical parameters only now: they affect the newly created species
 top.ssnpid = nextpid()
@@ -298,9 +269,14 @@ if use_laser==1:
 # ------------------
 # Load the beam
 if use_beam:
-    PlasmaInjector( beam, None, w3d, top, dim, beam_nx, beam_ny, beam_nz,
-                beam_zmin, beam_zmax, beam_xmax, beam_ymax,
-                dens_func = beam_dens_func, uz_m=beam_uz )
+    beam.add_gaussian_dist(beam_Np, beam_xrms, beam_yrms, beam_zrms,
+                            vthx=beam_emit_x/beam_xrms*clight,
+                            vthy=beam_emit_y/beam_yrms*clight,
+                            vthz=beam_rel_energy_spread*beam_uz*clight,
+                            xmean=0, ymean=0, zmean=beam_z0,
+                            vxmean=0, vymean=0, vzmean=beam_uz*clight,
+                            vxdiv=0, vydiv=0, vzdiv=0,
+                            lmomentum=True, w=1.)
     initialize_beam_fields( em, dim, beam, w3d, top )
 
 # Introduce the plasma

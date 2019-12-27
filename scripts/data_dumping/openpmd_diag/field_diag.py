@@ -246,7 +246,7 @@ class FieldDiagnostic(OpenPMDDiagnostic):
         """
         # Fill the dataset with these quantities
         # Gathering mode
-        if self.lparallel_output == False:
+        if not self.lparallel_output:
             F = get_circ_dataset( self.em, quantity, lgather=True, sub_sampling=self.sub_sampling, start=self.start )
             if self.rank == 0:
                 dset[:,:,:] = F
@@ -267,7 +267,7 @@ class FieldDiagnostic(OpenPMDDiagnostic):
         """
         # Fill the dataset with these quantities
         # Gathering mode
-        if self.lparallel_output == False:
+        if not self.lparallel_output:
             F = get_cart1d_dataset( self.em, quantity, lgather=True,
                     sub_sampling=self.sub_sampling, start=self.start )
             if self.rank == 0:
@@ -286,7 +286,7 @@ class FieldDiagnostic(OpenPMDDiagnostic):
         """
         # Fill the dataset with these quantities
         # Gathering mode
-        if self.lparallel_output == False:
+        if not self.lparallel_output:
             F = get_cart2d_dataset( self.em, quantity, lgather=True,
                     sub_sampling=self.sub_sampling, start=self.start )
             if self.rank == 0:
@@ -306,7 +306,7 @@ class FieldDiagnostic(OpenPMDDiagnostic):
         """
         # Fill the dataset with these quantities
         # Gathering mode
-        if self.lparallel_output == False:
+        if not self.lparallel_output:
             F = get_cart3d_dataset( self.em, quantity, lgather=True,
                     sub_sampling=self.sub_sampling, start=self.start )
             if self.rank == 0:

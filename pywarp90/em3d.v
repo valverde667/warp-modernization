@@ -626,6 +626,19 @@ norderz integer /2/ # order of finite-difference approximation in z
 xcoefs(norderx/2) _real # coefficients of finite-difference stencil in x
 ycoefs(nordery/2) _real # coefficients of finite-difference stencil in x
 zcoefs(norderz/2) _real # coefficients of finite-difference stencil in x
+alphax real /0.58333333333333337/  # 7./12.
+betaxy real /0.083333333333333329/ # 1./12.
+betaxz real /0.083333333333333329/ # 1./12.
+gammax real /0.020833333333333332/ # 1./48.
+alphay real /0.58333333333333337/  # 7./12.
+betayx real /0.083333333333333329/ # 1./12.
+betayz real /0.083333333333333329/ # 1./12.
+gammay real /0.020833333333333332/ # 1./48.
+alphaz real /0.58333333333333337/  # 7./12.
+betazx real /0.083333333333333329/ # 1./12.
+betazy real /0.083333333333333329/ # 1./12.
+gammaz real /0.020833333333333332/ # 1./48.
+deltaz real /0.000000000000000000/ # for the lehe solver
 
 %%%%%%%% EM3D_YEEFIELDtype:
 fieldtype integer /-1/
@@ -814,6 +827,19 @@ norderz integer /2/ # order of finite-difference approximation in z
 xcoefs(norderx/2) _real # coefficients of finite-difference stencil in x
 ycoefs(nordery/2) _real # coefficients of finite-difference stencil in x
 zcoefs(norderz/2) _real # coefficients of finite-difference stencil in x
+alphax real /0.58333333333333337/  # 7./12.
+betaxy real /0.083333333333333329/ # 1./12.
+betaxz real /0.083333333333333329/ # 1./12.
+gammax real /0.020833333333333332/ # 1./48.
+alphay real /0.58333333333333337/  # 7./12.
+betayx real /0.083333333333333329/ # 1./12.
+betayz real /0.083333333333333329/ # 1./12.
+gammay real /0.020833333333333332/ # 1./48.
+alphaz real /0.58333333333333337/  # 7./12.
+betazx real /0.083333333333333329/ # 1./12.
+betazy real /0.083333333333333329/ # 1./12.
+gammaz real /0.020833333333333332/ # 1./48.
+deltaz real /0.000000000000000000/ # for the lehe solver
 
 %%%%%%%% EM3D_FIELDtype:
 fieldtype integer /0/

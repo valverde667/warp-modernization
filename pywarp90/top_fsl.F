@@ -969,6 +969,7 @@ c=============================================================================
       use Particles,Only: wpid
       use InGen,Only: pboundxy,pbound0,pboundnz,pbounds
       use Parallel
+      use GlobalVars,Only: neumann
       type(ParticleGroup):: pgroup
       integer(ISZ):: geometry
       real(kind=8):: zbeam
@@ -981,8 +982,25 @@ c=============================================================================
       if (ltoptimesubs) substarttime = wtime()
 
 c     --- Setup the boundary conditions for the local domain.
-      call setboundsfromflags(pbounds,pboundxy,pbound0,pboundnz,
-     &                        l2symtry,l4symtry)
+c     call setboundsfromflags(pbounds,pboundxy,pbound0,pboundnz,
+c    &                        l2symtry,l4symtry)
+c     --- This avoids the use of the routine from w3d
+      pbounds(0) = pboundxy
+      pbounds(1) = pboundxy
+      pbounds(2) = pboundxy
+      pbounds(3) = pboundxy
+      pbounds(4) = pbound0
+      pbounds(5) = pboundnz
+      if (l2symtry) then
+        pbounds(2) = neumann
+        if (pboundxy == 2) pbounds(3) = neumann
+      else if (l4symtry) then
+        pbounds(0) = neumann
+        pbounds(2) = neumann
+        if (pboundxy == 2) pbounds(1) = neumann
+        if (pboundxy == 2) pbounds(3) = neumann
+      endif
+
       localpbounds = pbounds
 #ifdef MPIPARALLEL
       if (ppdecomp%ixproc > 0)                  localpbounds(0) = -1

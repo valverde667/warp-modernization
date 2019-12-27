@@ -1,0 +1,10 @@
+This folder contains an example of a Warp-PyECLOUD electron cloud buildup simulation. In order to run the example, PyECLOUD needs to be installed.
+
+To install PyECLOUD run the following commands:
+	- git clone https://github.com/PyCOMPLETE/PyECLOUD.git path_to_pyecloud/PyECLOUD
+	- cd path_to_pyecloud/PyECLOUD
+	- ./setup_pyecloud
+	- export PYTHONPATH=path_to_pyecloud
+
+Where path_to_pyecloud is the location where PyECLOUD folder will be placed.
+

@@ -174,7 +174,7 @@ class AppendableArray:
         self._allocatearray()
         # --- Copy data from old to new
         ii = [None] + list(numpy.minimum(oldunitshape,newunitshape))
-        ss = map(slice,ii)
+        ss = tuple(map(slice,ii))
         self._array[ss] = oldarray[ss]
 
     def __len__(self):

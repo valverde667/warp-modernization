@@ -272,7 +272,7 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
 
         # Every self.period, write the buffered slices to disk
         if self.top.it % self.period == 0:
-            if( self.lparallel_output == False) : 
+            if not self.lparallel_output: 
               self.flush_to_disk()
             else: 
               self.flush_to_disk_parallel()

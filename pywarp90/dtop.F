@@ -4819,7 +4819,7 @@ c=============================================================================
 
       if (tracelevel >= level) then
         if (indentlevel == 0) then
-          write(*,"(T1,A,A)") "entering", subname
+          write(*,"(T1,A,X,A)") "entering", subname
         else
           write(messageformat,"(A,I3,A)") "(T1,", indentlevel, "X,A,X,A)"
           write(*,messageformat) "entering", subname
@@ -4840,7 +4840,7 @@ c=============================================================================
       if (tracelevel >= level) then
         indentlevel = indentlevel - 2
         if (indentlevel == 0) then
-          write(*,"(T1,A,A)") "exiting", subname
+          write(*,"(T1,A,X,A)") "exiting", subname
         else
           write(messageformat,"(A,I3,A)") "(T1,", indentlevel, "X,A,X,A)"
           write(*,messageformat) "exiting", subname

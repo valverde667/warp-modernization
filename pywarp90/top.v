@@ -371,6 +371,10 @@ helepe(1:nhmlt,0:nhele)   _real    [rad]
                               # phase angle of h.e. electric multipoles
 helepm(1:nhmlt,0:nhele)   _real    [rad]
                               # phase angle of h.e. magnetic multipoles
+helesf(0:nhele)   _real [1] /0./ # Scale factor for hard edged multipoles
+                                 # Field is scaled by (helesc+helesf)
+helesc(0:nhele)   _real [1] /1./ # Scale factor for hard edged multipoles
+                                 # Field is scaled by (helesc+helesf)
 helene(0:nhele)   _integer [1] # no. elec multipoles in h.e. element (auto-set)
 helenm(0:nhele)   _integer [1] # no. mag  multipoles in h.e. element (auto-set)
 heleox(0:nhele)   _real    [m] # X-offsets of h.e. multipole centers
@@ -3312,12 +3316,6 @@ dvbksb(u:real,w:real,v:real,m:integer,n:integer,mp:integer,np:integer,
        b:real,x:real,tmp:real) subroutine
        # singular value back-substitution routine for solution of matrix 
        # problems                                          (in util.m)
-vrpft2   (a:real, b:real, n, incp, lenv, lfd)  subroutine
-         #  Vectorized Real Periodic Fourier Transform, 2 at a time
-vrpfti2  (a:real, b:real, n, incp, lenv, lfd)  subroutine
-         #  Vectorized Real Periodic Fourier Transform Inverse, 2 at a time
-vcpft    (re:real, im:real, n, incp, signp:real, lenv, lfd) subroutine
-         #  Vectorized Complex Periodic Fourier Transform
 writarry(nn,arry:real,filename:string) subroutine # write array to file
 wtime() real function # returns current absolute CPU time
 wtimeon()  subroutine # turns timer on

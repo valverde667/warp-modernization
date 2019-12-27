@@ -2138,7 +2138,8 @@ def addnewsext(zs,ze,db=0.,de=0.):
 # ----------------------------------------------------------------------------
 # --- HELE --- XXX
 def addnewhele(zs,ze,ap=0.,ax=0.,ay=0.,ox=0.,oy=0.,rr=0.,rl=0.,gl=0.,gp=0.,
-               pw=0.,pa=0.,ae=0.,am=0.,ep=0.,mp=0.,nn=0.,vv=0.,pe=0.,pm=0.):
+               pw=0.,pa=0.,ae=0.,am=0.,ep=0.,mp=0.,nn=0.,vv=0.,pe=0.,pm=0.,
+               time=None,data=None,func=None):
     """
   Adds a new hele element to the lattice. The element will be placed at the
   appropriate location.
@@ -2147,6 +2148,12 @@ def addnewhele(zs,ze,ap=0.,ax=0.,ay=0.,ox=0.,oy=0.,rr=0.,rl=0.,gl=0.,gp=0.,
   The following are all optional and have the same meaning and default as the
   hele arrays with the same suffices:
     - ap,ox,oy,rr,rl,gl,gp,pw,pa,ae,am,ep,mp,nn,vv,pe,pm
+  The applied field can be made time dependent by supplying a time varying
+  scale factor. One of the following can be supplied:
+    - time,data: two 1-D arrays holding the tabulated scale factor (data) as
+                 a function of time (time).
+    - func: a function that takes one argument, the time, and returns the
+            scaling factor.
     """
     # --- Make sure that at least some of the element is in the proper range,
     # --- z >= 0., and if zlatperi != 0, z <= zlatperi.
@@ -2234,6 +2241,9 @@ def addnewhele(zs,ze,ap=0.,ax=0.,ay=0.,ox=0.,oy=0.,rr=0.,rl=0.,gl=0.,gp=0.,
         else:
             # --- These are quantities input for each multipole component
             e[:len(ldict[xx]),ie] = ldict[xx]
+
+    if (time is not None and data is not None) or func is not None:
+        TimeDependentLatticeElement('helesc',ie,time,data,func)
 
     # --- resetlat must be called before the data can be used
     top.lresetlat = true
