@@ -366,8 +366,8 @@ multigrid2ddielectricsolve(iwhich:integer,nx:integer,nz:integer,
                  gridmode:integer,conductors:ConductorType,lrz:logical,
                  fsdecomp:Decomposition)
    subroutine
-   # Solves Poisson's equation in 3D using the multigrid method. All input is
-   # through the argument list.
+   # Solves Poisson's equation in 2D with a variable dielectric using the
+   # multigrid method. All input is through the argument list.
 multigrid3ddielectricsolve(iwhich:integer,nx:integer,ny:integer,nz:integer,
                  nxlocal:integer,nylocal:integer,nzlocal:integer,
                  nxguardphi:integer,nyguardphi:integer,nzguardphi:integer,
@@ -388,7 +388,7 @@ multigrid3ddielectricsolve(iwhich:integer,nx:integer,ny:integer,nz:integer,
                  gridmode:integer,conductors:ConductorType,
                  fsdecomp:Decomposition)
    subroutine
-   # Solves Poisson's equation in 2D with a variable dielectric using the
+   # Solves Poisson's equation in 3D with a variable dielectric using the
    # multigrid method. All input is through the argument list.
 mgsolveimplicites3d(iwhich:integer,nx:integer,ny:integer,nz:integer,
                     nxlocal:integer,nylocal:integer,nzlocal:integer,
