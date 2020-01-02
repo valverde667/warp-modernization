@@ -1712,6 +1712,52 @@ class EM3D(SubcycledPoissonSolver):
                 if self.block.yrbnd==openbc:self.fields.incond[:,-3:,:]=False
                 if self.block.zlbnd==openbc:self.fields.incond[:,:,:3]=False
                 if self.block.zrbnd==openbc:self.fields.incond[:,:,-3:]=False
+                # --- continue conductors in PMLs
+                pmlblocks = []
+                if self.block.xlbnd==openbc:pmlblocks.append(self.block.sidexl.syf)
+                if self.block.xrbnd==openbc:pmlblocks.append(self.block.sidexr.syf)
+                if self.block.ylbnd==openbc:pmlblocks.append(self.block.sideyl.syf)
+                if self.block.yrbnd==openbc:pmlblocks.append(self.block.sideyr.syf)
+                if self.block.zlbnd==openbc:pmlblocks.append(self.block.sidezl.syf)
+                if self.block.zrbnd==openbc:pmlblocks.append(self.block.sidezr.syf)
+                for pmlblock in pmlblocks:
+                    if pmlblock.nconds==0:
+                        pmlblock.nxcond = pmlblock.nx
+                        pmlblock.nycond = pmlblock.ny
+                        pmlblock.nzcond = pmlblock.nz
+                        pmlblock.gchange()
+                    pmlblock.nconds += 1
+                # --- xl
+                if self.block.xlbnd==openbc:
+                    print "HELLO"
+                    for k in range(0,self.nylocal):
+                        for l in range(0,self.nzlocal):
+                            self.block.sidexl.syf.incond[:,self.nyguard+k,self.nzguard+l] = self.fields.incond[self.nxguard,self.nyguard+k,self.nzguard+l]
+                # --- xr
+                if self.block.xrbnd==openbc:
+                    for k in range(0,self.nylocal):
+                        for l in range(0,self.nzlocal):
+                            self.block.sidexr.syf.incond[:,self.nyguard+k,self.nzguard+l] = self.fields.incond[self.nxguard+self.nxlocal,self.nyguard+k,self.nzguard+l]
+                # --- yl
+                if self.block.ylbnd==openbc:
+                    for j in range(0,self.nxlocal):
+                        for l in range(0,self.nzlocal):
+                            self.block.sideyl.syf.incond[self.nxguard+j,:,self.nzguard+l] = self.fields.incond[self.nxguard+j,self.nyguard,self.nzguard+l]
+                # --- yr
+                if self.block.yrbnd==openbc:
+                    for j in range(0,self.nxlocal):
+                        for l in range(0,self.nzlocal):
+                            self.block.sideyr.syf.incond[self.nxguard+j,:,self.nzguard+l] = self.fields.incond[self.nxguard+j,self.nyguard+self.nylocal,self.nzguard+l]
+                # --- zl
+                if self.block.zlbnd==openbc:
+                    for j in range(0,self.nxlocal):
+                        for k in range(0,self.nylocal):
+                            self.block.sidezl.syf.incond[self.nxguard+j,self.nyguard+k,:] = self.fields.incond[self.nxguard+j,self.nyguard+k,self.nzguard]
+                # --- zr
+                if self.block.zrbnd==openbc:
+                    for j in range(0,self.nxlocal):
+                        for k in range(0,self.nylocal):
+                            self.block.sidezr.syf.incond[self.nxguard+j,self.nyguard+k,:] = self.fields.incond[self.nxguard+j,self.nyguard+k,self.nzguard+self.nzlocal]
 
     def hasconductors(self):
         return len(self.conductordatalist) > 0
