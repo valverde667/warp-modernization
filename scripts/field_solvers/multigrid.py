@@ -1033,17 +1033,6 @@ class MultiGrid3DDielectric(MultiGrid3D):
         else:
             self.epsilon = epsilon
 
-        self.ladd_rhob = False
-
-        if self.solvergeom == w3d.XYZgeom:
-            self.initrhob((self.nx + 1, self.ny + 1, self.nz + 1))
-
-    def initrhob(self, dims):
-        self.rhob = fzeros(dims)
-        self.ladd_rhob = True
-
-    def getrhob(self):
-        return self.rhob
 
     def dosolve(self,iwhich=0,zfact=None,isourcepndtscopies=None,indts=None,iselfb=None):
         if not self.l_internal_dosolve: return
@@ -1055,18 +1044,6 @@ class MultiGrid3DDielectric(MultiGrid3D):
         #    zfact = 1./sqrt((1.-beta)*(1.+beta))
         #else:
         #    beta =  sqrt( (1.-1./zfact)*(1.+1./zfact) )
-
-        if self.ladd_rhob is True:
-            nxlocal = self.nxlocal
-            nylocal = self.nylocal
-            nzlocal = self.nzlocal
-            ix = self.fsdecomp.ix[self.fsdecomp.ixproc]
-            iy = self.fsdecomp.iy[self.fsdecomp.iyproc]
-            iz = self.fsdecomp.iz[self.fsdecomp.izproc]
-            self.source[self.nxguardrho:-self.nxguardrho or None,
-                        self.nyguardrho:-self.nyguardrho or None,
-                        self.nzguardrho:-self.nzguardrho or None] \
-                += self.rhob[ix:ix+nxlocal+1,iy:iy+nylocal+1,iz:iz+nzlocal+1]
 
         # --- This is only done for convenience.
         self._phi = self.potential

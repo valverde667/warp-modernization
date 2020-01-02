@@ -172,7 +172,6 @@ for k in periodic_table:
 del k
 
 Electron = Particle(charge=-echarge,mass=emass,Symbol='e-',name='Electron')
-SurfaceElectron = Particle(charge = -echarge, mass = 1.0, Symbol = 'eS', name = 'SurfaceElectron')
 Positron = Particle(charge=+echarge,mass=emass,Symbol='e+',name='Positron')
 Muon = Particle(charge=-echarge,mass=1.883531475e-28,Symbol='mu-',name='Muon')
 Antimuon = Particle(charge=+echarge,mass=1.883531475e-28,Symbol='mu+',
