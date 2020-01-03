@@ -1512,9 +1512,23 @@ class ParticleScraper(object):
                   xmin=self.grid.zmminlocal,xmax=self.grid.zmmaxlocal,
                   ymin=self.grid.ymminlocal,ymax=self.grid.ymmaxlocal,**kw)
 
+
 class Dielectric_Particles(object):
     """
-Class handling Particles captured by dielectrics.
+  Class handling Particles captured by dielectrics. Requires no arguments.
+
+  Dielectric particles are macroparticles which represent accumulated charge
+  on an interior dielectric surface. They inherit their basic properties
+  from top.pgroup.
+
+  When instantiated, macroparticles which would otherwise be scraped upon
+  colliding with a dielectric will be set to a fixed position at the location
+  of interception. The effective charge from each macroparticle is then
+  accumulated and deposited to the grid along with free macroparticles.
+
+  For analysis purposes, the location of generation of the particles is
+  recorded, and made available through getters.
+
     """
     def __init__(self):
         # --- turn flag on to ensure that top.npslost is reset to 0 at every time step.
@@ -1546,6 +1560,9 @@ Class handling Particles captured by dielectrics.
         self.nconds = 0
 
     def generate(self):
+        """
+        Adds particles scraped from the dielectric surface to the dielectric particle group.
+        """
         # --- if needed, update list of dielectrics_id (is true if cond is a dielectric,
         # --- false otherwise).
         if self.nconds<>len(listofallconductors):
@@ -1583,6 +1600,9 @@ Class handling Particles captured by dielectrics.
                           pgroup=self.pgroup)
         
     def loadrho_dielectric(self):
+        """
+        Replaces the default loadrho() command to include deposition of dielectric particles
+        """
         # --- first ensure that npid array sizes match
         if self.pgroup.npid != top.pgroup.npid:
             self.pgroup.npid = top.pgroup.npid
