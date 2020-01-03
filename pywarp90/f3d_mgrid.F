@@ -9450,13 +9450,13 @@ c=============================================================================
       type(ConductorType):: conductors
       type(Decomposition):: fsdecomp
 
-c Use the multigrid method for solving Poisson's equation on a 2D Cartesian
+c Use the multigrid method for solving Poisson's equation on a 3D Cartesian
 c mesh. The fieldsolver allows for a variable dielectric constant.
 c
 c When the grid cells are rectangular, semi-coarsening is done until the
 c grid cell dimensions are roughly equal. Roughly equal means that
-c   2/3 dx < dz < 4/3 dx
-c This keeps (max(dz,dx) - min(dz,dx))/dx < 1/3.
+c   2/3 dx < dz < 4/3 dx & 2/3 dx < dy < 4/3 dx
+c This keeps (max(dz,dy,dx) - min(dz,dy,dx))/dx < 1/3.
 
       integer(ISZ):: i,j,k,ix,iy,iz
       real(kind=8),allocatable:: phisave(:,:,:)
@@ -9511,7 +9511,7 @@ c     --- Make sure guard planes have sensible values before beginning.
         print*,"multigrid3ddielectricsolve: allocation error ",alloc_status,
      &         ": could not allocate phisave to shape ",
      &         nxlocal,nylocal,nzlocal
-        call kaboom("multigrid2ddielectricsolve: allocation error")
+        call kaboom("multigrid3ddielectricsolve: allocation error")
         return
       endif
 
@@ -9592,7 +9592,7 @@ c       --- Make a print out.
 
 !$OMP END PARALLEL
 
-      if (lf3dtimesubs) timemultigrid2dsolve = timemultigrid2dsolve +
+      if (lf3dtimesubs) timemultigrid3dsolve = timemultigrid3dsolve +
      &                                         wtime() - substarttime
 
       return
