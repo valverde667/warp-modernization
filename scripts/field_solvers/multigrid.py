@@ -1020,6 +1020,240 @@ class MultiGrid3D(SubcycledPoissonSolver):
 
 MultiGrid = MultiGrid3D
 
+class MultiGrid3DDielectric(MultiGrid3D):
+    """
+  3-D solver allowing for spatially varying dielectric
+    """
+
+    def __init__(self,epsilon=None,lreducedpickle=1,**kw):
+        MultiGrid3D.__init__(self,lreducedpickle,**kw)
+
+        if epsilon is None:
+             self.epsilon = eps0*fones((self.nxlocal+2,self.nylocal+2,self.nzlocal+2),'d')
+        else:
+            self.epsilon = epsilon
+
+
+    def dosolve(self,iwhich=0,zfact=None,isourcepndtscopies=None,indts=None,iselfb=None):
+        if not self.l_internal_dosolve: return
+        assert self.epsilon is not None,"epsilon must be defined"
+
+        # --- set for longitudinal relativistic contraction
+        #if zfact is None:
+        #    beta = top.pgroup.fselfb[iselfb]/clight
+        #    zfact = 1./sqrt((1.-beta)*(1.+beta))
+        #else:
+        #    beta =  sqrt( (1.-1./zfact)*(1.+1./zfact) )
+
+        # --- This is only done for convenience.
+        self._phi = self.potential
+        self._rho = self.source
+        if isinstance(self.potential,float): return
+
+
+        mgverbose = self.getmgverbose()
+        mgiters = zeros(1,'l')
+        mgerror = zeros(1,'d')
+        # --- This takes care of clear out the conductor information if needed.
+        # --- Note that f3d.gridmode is passed in below - this still allows the
+        # --- user to use the addconductor method if needed.
+        if self.gridmode == 0: self.clearconductors([top.pgroup.fselfb[iselfb]])
+        conductorobject = self.getconductorobject(top.pgroup.fselfb[iselfb])
+        multigrid3ddielectricsolve(iwhich,self.nx,self.ny,self.nz,
+                         self.nxlocal,self.nylocal,self.nzlocal,
+                         self.nxguardphi,self.nyguardphi,self.nzguardphi,
+                         self.nxguardrho,self.nyguardrho,self.nzguardrho,
+                         self.dx,self.dy,self.dz,
+                         self._phi,
+                         self._rho,
+                         self.epsilon,self.bounds,
+                         self.xmminlocal,self.ymminlocal,
+                         self.mgparam,mgiters,self.mgmaxiters,
+                         self.mgmaxlevels,mgerror,self.mgtol,mgverbose,
+                         self.downpasses,self.uppasses,
+                         self.lcndbndy,self.laddconductor,
+                         f3d.gridmode,conductorobject,
+                         self.fsdecomp)
+
+        self.mgiters = mgiters[0]
+        self.mgerror = mgerror[0]
+
+    def getresidual(self):
+        res = zeros(shape(self._phi),'d')
+        conductorobject = self.getconductorobject()
+        residual3ddielectric(self.nxlocal,self.nylocal,self.nzlocal,
+                             self.nxguardphi,self.nyguardphi,self.nzguardphi,
+                             self.nxguardrho,self.nyguardrho,self.nzguardrho,
+                             self.nxguardphi,self.nyguardphi,self.nzguardphi,
+                             self._phi,rho,self.epsilon,res,
+                             self.dx,self.dy,self.dz,0,self.bounds,
+                             True,conductorobject,
+                             self.xmminlocal/self.dx, self.ymminlocal/self.dy)
+        return res
+    
+        
+    def _installconductor(self,conductorobject,installedlist,conductordata,fselfb):
+        # --- This does that actual installation of the conductor into the
+        # --- conductor object
+
+        # --- Extract the data from conductordata (the arguments to installconductor)
+        conductor,xmin,xmax,ymin,ymax,zmin,zmax,dfill = conductordata
+
+        # --- Set dfill to be a large number so that the entire interior of the conductor
+        # --- gets filled in. This ensures that the field is forced to zero everywhere
+        # --- inside the conductor, but does not introduce a performance penalty.
+        if dfill is None: dfill = largepos
+
+        if conductor in installedlist: return
+        installedlist.append(conductor)
+
+        nx,ny,nz = self.nx,self.ny,self.nz
+        if fselfb == 'p':
+            zscale = 1.
+            nxlocal,nylocal,nzlocal = self.nxp,self.nyp,self.nzp
+            mgmaxlevels = 1
+            decomp = self.ppdecomp
+        else:
+            # --- Get relativistic longitudinal scaling factor
+            # --- This is quite ready yet.
+            beta = fselfb/clight
+            zscale = 1./sqrt((1.-beta)*(1.+beta))
+            nxlocal,nylocal,nzlocal = self.nxlocal,self.nylocal,self.nzlocal
+            mgmaxlevels = None
+            decomp = self.fsdecomp
+
+        xmmin,xmmax = self.xmmin,self.xmmax
+        ymmin,ymmax = self.ymmin,self.ymmax
+        zmmin,zmmax = self.zmmin,self.zmmax
+
+        mgmaxlevels=1
+
+        if conductor.permittivity is not None:
+            # --- Need to make copy of number of interior, even and odd points 
+            # --- to be subtracted after installation of dielectric to ensure that
+            # --- it is not also installed as conductor.
+            ntmp = conductorobject.interior.n+0
+            netmp = conductorobject.evensubgrid.n+0
+            notmp = conductorobject.oddsubgrid.n+0
+        
+        installconductors(conductor,xmin,xmax,ymin,ymax,zmin,zmax,dfill,
+                              top.zgrid,
+                              nx,ny,nz,
+                              nxlocal,nylocal,nzlocal,
+                              xmmin,xmmax,ymmin,ymmax,zmmin,zmmax,
+                              zscale,self.l2symtry,self.l4symtry,
+                              installrz=0,
+                              solvergeom=self.solvergeom,conductors=conductorobject,
+                              mgmaxlevels=mgmaxlevels,decomp=decomp)
+
+        if conductorobject.interior.n>0 and conductor.permittivity is not None:
+            # --- install dielectric, i.e. permittivity values
+
+            nxguard = 1
+            nzguard = 1
+            nxlocal = self.nxlocal
+            nylocal = self.nylocal
+            nzlocal = self.nzlocal
+            ix = self.fsdecomp.ix[self.fsdecomp.ixproc]
+            iy = self.fsdecomp.iy[self.fsdecomp.iyproc]
+            iz = self.fsdecomp.iz[self.fsdecomp.izproc]
+            for i in range(conductorobject.interior.n-ntmp):
+                ii = ntmp+i
+                ix = conductorobject.interior.indx[0,ii]
+                iy = conductorobject.interior.indx[1,ii]
+                iz = conductorobject.interior.indx[2,ii]
+                self.epsilon[ix,iy,iz] = conductor.permittivity*eps0
+            
+            # --- returns values of interior, even and odd points to before installation 
+            # --- to ensure that the dielectric is not also installed as conductor.
+            conductorobject.interior.n = ntmp
+            conductorobject.evensubgrid.n = netmp
+            conductorobject.oddsubgrid.n = notmp
+            
+    def installdielectric(self,a,xmin=None,xmax=None,ymin=None,ymax=None,
+                         zmin=None,zmax=None,dfill=None,
+                         zbeam=None,
+                         nx=None,ny=None,nz=None,
+                         nxlocal=None,nylocal=None,nzlocal=None,
+                         xmmin=None,xmmax=None,ymmin=None,ymmax=None,
+                         zmmin=None,zmmax=None,zscale=1.,
+                         l2symtry=None,l4symtry=None,
+                         installrz=None,gridmode=1,solvergeom=None,
+                         conductors=None,gridrz=None,mgmaxlevels=None,
+                         decomp=None):
+        """
+      Installs the given conductors into the field solver. When using the built in
+      solver, this should only be called after the generate. When using a python
+      level solver, for example MultiGrid3d or MultiGrid2d, this should be called
+      only after the solver is registered (with registersolver). In that case, it
+      is OK to call this before the generate (and is in fact preferred so that the
+      conductors will be setup during the field solve that happens during the
+      generate).
+        - a: the assembly of conductors, or list of conductors
+        - xmin,xmax,ymin,ymax,zmin,zmax: extent of conductors. Defaults to the
+          mesh size. These can be set for optimization, to avoid looking
+          for conductors where there are none. Also, they can be used crop a
+          conductor
+        - dfill=2.: points at a depth in the conductor greater than dfill
+                    are skipped.
+        - zbeam=top.zbeam: location of the beam frame
+        - nx,ny,nz: Number of grid cells in the mesh. Defaults to values from w3d
+        - nxlocal,nylocal,nzlocal: Number of grid cells in the mesh for the local
+                                   processor. Defaults to values from w3d
+        - xmmin,xmmax,ymmin,ymmax,zmmin,zmmax: extent of mesh. Defaults to values
+                                               from w3d
+        - zscale=1.: scale factor on dz. This is used when the relativistic scaling
+                    is done for the longitudinal dimension
+        - l2symtry,l4symtry: assumed transverse symmetries. Defaults to values
+                             from w3d
+        - decomp: Decomposition instance holding data for parallelization
+        """
+        if conductors is None and gridrz is None:
+            # --- If conductors was not specified, first check if mesh-refinement
+            # --- or other special solver is being used.
+            solver = getregisteredsolver()
+            import __main__
+            if solver is not None:
+                solver.installconductor(a,dfill=dfill)
+                return
+            elif "AMRtree" in __main__.__dict__:
+                __main__.__dict__["AMRtree"].installconductor(a,dfill=dfill)
+                return
+
+        if dfill is None: dfill = 2.0
+
+        # --- Use whatever conductors object was specified, or
+        # --- if no special solver is being used, use f3d.conductors.
+        if conductors is None: conductors = f3d.conductors
+
+        # --- Set the installrz argument if needed.
+        if installrz is None:
+            installrz = (frz.getpyobject('basegrid') is not None)
+
+        # First, create a grid object
+        g = Grid(xmin,xmax,ymin,ymax,zmin,zmax,zbeam,nx,ny,nz,nxlocal,nylocal,nzlocal,
+                 xmmin,xmmax,ymmin,ymmax,zmmin,zmmax,zscale,l2symtry,l4symtry,
+                 installrz,gridrz,
+                 mgmaxlevels=mgmaxlevels,
+                 decomp=decomp)
+
+        _lwithnewconductorgeneration = True
+        if _lwithnewconductorgeneration:
+            # --- This method is faster...
+            # Generate the conductor data
+            g.getdatanew(a,dfill)
+            # Then install it
+#            g.installintercepts(installrz,gridmode,solvergeom,conductors,gridrz,a.neumann)
+        else:
+            # --- This is the old method, and is now mostly obsolete...
+            # Generate the conductor data
+            g.getdata(a,dfill)
+            # Then install it
+#            g.installdata(installrz,gridmode,solvergeom,conductors,gridrz)
+
+        installedconductors.append(a)
+
+
 ##############################################################################
 ##############################################################################
 class FullMultiGrid3D(MultiGrid3D):

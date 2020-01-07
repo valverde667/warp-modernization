@@ -26,6 +26,10 @@
 #define STDOUT 6
 #define dvnz(X) sign(abs(X)+SMALLPOS,X)
 
+! Minimum Number of Grid Cells when coarsening using multigrid
+#define NMGMIN 5
+
+
 ! Define size of integers. Must be the same as the size of a long int in C.
 #ifndef ISZ
 #if defined ALPHA || defined T3E || defined J90 || defined X86_64 || defined IA64

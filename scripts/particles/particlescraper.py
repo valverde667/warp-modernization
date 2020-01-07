@@ -114,6 +114,7 @@ class ParticleScraper(object):
         self.lfastscraper = lfastscraper
         self.interceptvelocitymethod = interceptvelocitymethod
         self.species = species
+
         # --- First set so install is false. Reset later with input value.
         # --- This is needed since in some cases registerconductors may want
         # --- to do the install. This just skips it in that case.
@@ -185,7 +186,7 @@ class ParticleScraper(object):
     def installscraper(self):
         """
     Install the scraper so that it is called during at the appropriate place
-    in a time step. This is normally done automically."""
+    in a time step. This is normally done automatically."""
         if not self.install: return
         # --- Install the call to scrape particles
         if self.lbeforescraper:
@@ -491,6 +492,7 @@ class ParticleScraper(object):
     def scrape(self,js):
         """Apply scraping to species js. It is better to call scrapeall. This will normally be called automatically."""
         # --- If there are no particles in this species, that nothing needs to be done
+        
         if top.pgroup.nps[js] == 0: return
 
         # --- Get mesh information into local variables
@@ -848,7 +850,6 @@ class ParticleScraper(object):
                         put(top.pgroup.uzp,ic,-take(top.pgroup.uzp,ic))
 
                 else:
-
                     # --- For particles which are inside, set gaminv to 0, the lost
                     # --- particle flag
                     put(top.pgroup.gaminv,ic,0.)
@@ -1510,3 +1511,131 @@ class ParticleScraper(object):
         ppgeneric(gridt=data,
                   xmin=self.grid.zmminlocal,xmax=self.grid.zmmaxlocal,
                   ymin=self.grid.ymminlocal,ymax=self.grid.ymmaxlocal,**kw)
+
+
+class Dielectric_Particles(object):
+    """
+  Class handling Particles captured by dielectrics. Requires no arguments.
+
+  Dielectric particles are macroparticles which represent accumulated charge
+  on an interior dielectric surface. They inherit their basic properties
+  from top.pgroup.
+
+  When instantiated, macroparticles which would otherwise be scraped upon
+  colliding with a dielectric will be set to a fixed position at the location
+  of interception. The effective charge from each macroparticle is then
+  accumulated and deposited to the grid along with free macroparticles.
+
+  For analysis purposes, the location of generation of the particles is
+  recorded, and made available through getters.
+
+    """
+    def __init__(self):
+        # --- turn flag on to ensure that top.npslost is reset to 0 at every time step.
+        top.lresetlostpart=true
+
+        # --- create pgroup for dielectric macroparticles
+        self.pgroup = ParticleGroup()
+        spg = self.pgroup
+        tpg = top.pgroup
+        spg.ns = tpg.ns
+        spg.npid = tpg.npid
+        spg.gchange()
+        spg.sm = tpg.sm
+        spg.sq = tpg.sq
+        spg.sw = tpg.sw
+        spg.sid = tpg.sid
+        spg.ndts = tpg.ndts
+        spg.ldts = tpg.ldts
+        spg.lvdts = tpg.lvdts
+        
+        # --- install subroutines that transfer lost particles to self.pgroup
+        installafterscraper(self.generate)
+
+        # --- disable default loadrho() call and replace with call to loadrho_dielectric() 
+        self.depos=top.depos.copy()
+        top.depos='none'
+        installbeforefs(self.loadrho_dielectric)
+
+        self.nconds = 0
+
+    def generate(self):
+        """
+        Adds particles scraped from the dielectric surface to the dielectric particle group.
+        """
+        # --- if needed, update list of dielectrics_id (is true if cond is a dielectric,
+        # --- false otherwise).
+        if self.nconds<>len(listofallconductors):
+            self.dielectrics_id = []
+            for ic in arange(len(listofallconductors)):
+                self.dielectrics_id.append(listofallconductors[ic].permittivity<>None)
+                
+            self.nconds=len(listofallconductors)
+            
+        # --- initialize birth pid columns if needed.
+        if top.xbirthpid==0:top.xbirthpid=nextpid()
+        if top.ybirthpid==0:top.ybirthpid=nextpid()
+        if top.zbirthpid==0:top.zbirthpid=nextpid()
+    
+        for js in range(self.pgroup.ns):
+            if top.npslost[js]==0:continue
+            i1 = top.inslost[js] - 1
+            i2 = top.inslost[js] + top.npslost[js] - 1
+            # --- treat only particles that were scraped by dielectrics
+            # --- if also used with Secondaries, will need to add similar check there 
+            # --- is not some sort of double counting.
+            mymask = take(self.dielectrics_id,nint(top.pidlost[i1:i2,-1])-1)
+            x = compress(mymask,top.xplost[i1:i2])
+            y = compress(mymask,top.yplost[i1:i2])
+            z = compress(mymask,top.zplost[i1:i2])
+            
+            # --- add particles scraped by dielectrics to local particle group.
+            add_particles(x=x,
+                          y=y,
+                          z=z,
+                          vx=0.,vy=0.,vz=0.,gi=1.,
+                          pid=0.,
+                          w=1.,
+                          js=js,
+                          pgroup=self.pgroup)
+        
+    def loadrho_dielectric(self):
+        """
+        Replaces the default loadrho() command to include deposition of dielectric particles
+        """
+        # --- first ensure that npid array sizes match
+        if self.pgroup.npid != top.pgroup.npid:
+            self.pgroup.npid = top.pgroup.npid
+            self.pgroup.gchange()
+
+        # --- perform charge deposition on main group of particles (top.pgroup) 
+        # --- and 'dielectric macroparticles' (self.pgroup).
+        fs=getregisteredsolver()
+        top.depos=self.depos
+        fs.loadrho(pgroups=[top.pgroup,self.pgroup])
+        top.depos='none'
+
+    def getxbirth(self,js=0):
+        """
+        Return x position at birth.
+        """
+        il = self.pgroup.ins[js] - 1
+        iu = self.pgroup.ins[js] + self.pgroup.nps[js] - 1
+        return self.pgroup.pid[il:iu,top.xbirthpid-1]
+        
+    def getybirth(self,js=0):
+        """
+        Return y position at birth.
+        """
+        il = self.pgroup.ins[js] - 1
+        iu = self.pgroup.ins[js] + self.pgroup.nps[js] - 1
+        return self.pgroup.pid[il:iu,top.ybirthpid-1]
+        
+    def getzbirth(self,js=0):
+        """
+        Return z position at birth.
+        """
+        il = self.pgroup.ins[js] - 1
+        iu = self.pgroup.ins[js] + self.pgroup.nps[js] - 1
+        return self.pgroup.pid[il:iu,top.zbirthpid-1]
+        

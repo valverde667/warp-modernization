@@ -1378,6 +1378,7 @@ from .field_solvers.generateconductors import *
 from .diagnostics.plot_conductor import *
 from .field_solvers.multigrid import MultiGrid
 from .field_solvers.multigrid import MultiGrid3D
+from .field_solvers.multigrid import MultiGrid3DDielectric
 from .field_solvers.multigrid import FullMultiGrid3D
 from .field_solvers.multigrid import MultiGridImplicit3D
 from .field_solvers.multigridRZ import MultiGridRZ

@@ -326,7 +326,7 @@ c       --- correction form since it is operating on the error.
             call cond_potmg(conductors%interior,nxlocal,nylocal,nzlocal,1,1,1,
      &                      phisave,0,mgform,.true.)
           endif
-          call condbndymgint(conductors,nxlocal,nylocal,nzlocal,
+	      call condbndymgint(conductors,nxlocal,nylocal,nzlocal,
      &                       1,1,1,phisave,localbounds,0,icndbndy)
           call residual3d(nxlocal,nylocal,nzlocal,
      &                    nxguardphi,nyguardphi,nzguardphi,
@@ -621,12 +621,12 @@ c       --- This does the conductor setup for all mglevels
           if (laddconductor) call callpythonfunc("calladdconductor","controllers")
         endif
         call checkconductors(nx,ny,nz,nxlocal,nylocal,nzlocal,dx,dy,dz,
-     &                       conductors,fsdecomp)
+     &                        conductors,fsdecomp)
 
 c       --- This calculates the coefficients for all mglevels
         if (lprecalccoeffs) then
           call precalculatecoefficients3d(nxlocal,nylocal,nzlocal,dx,dy,dz,
-     &                                    conductors,mgparam,localbounds)
+     &                                   conductors,mgparam,localbounds)
         endif
 
 c       --- Preset rho to increase performance (reducing the number of
@@ -665,7 +665,7 @@ c         --- Change rstar if using Nuemann boundary conditions
 c     --- Caclulate the potential on the next coarser level.
 c     --- Check if this is the coarsest level. If so, then don't do any further
 c     --- coarsening. This is the same check that is done in getmglevels.
-      if (nx >= 4 .and. ny >= 4 .and. nz >= 4 .and.
+      if ((nx >= NMGMIN .and. ny >= NMGMIN .and. nz >= NMGMIN) .and.
      &    mglevel < mgmaxlevels) then
 
         call getnextcoarselevel3d(nx,ny,nz,nxlocal,nylocal,nzlocal,dx,dy,dz,
@@ -1174,7 +1174,7 @@ c     --- only it can be checked.
      &                                 conductors%levelny(mglevel),
      &                                 conductors%levelnz(mglevel)
         call kaboom("vcycle: error: the coarsening level of the conductor is"//
-     &" inconsistent with that used by the solver")
+     &              " inconsistent with that used by the solver")
         return
       endif
 
@@ -1205,7 +1205,7 @@ c     message added by petermc, 1 Oct 2002
 #endif
 
       if (lprintmgarraysumdiagnostic) then
-        lpe0=(fsdecomp%ixproc==0.and.fsdecomp%iyproc==0.and.fsdecomp%izproc==0)
+        lpe0=(fsdecomp%ixproc==0 .and. fsdecomp%iyproc==0 .and. fsdecomp%izproc==0)
         call mggetarraysum(nxlocal,nylocal,nzlocal,
      &                     nxguardphi,nyguardphi,nzguardphi,phi,fsdecomp,0,sss)
         if (lpe0) print*,"V1 phi",mglevel,sss
@@ -1280,7 +1280,7 @@ c     message added by petermc, 1 Oct 2002
 
 c     --- Check if this is the coarsest level. If so, then don't do any further
 c     --- coarsening. This is the same check that is done in getmglevels.
-      if (nx >= 4 .and. ny >= 4 .and. nz >= 4 .and.
+      if (nx >= NMGMIN .and. ny >= NMGMIN .and. nz > NMGMIN .and.
      &    mglevel < mgmaxlevels) then
 
         nxguardres = 1
@@ -2177,7 +2177,7 @@ c     --- guard planes in z are already set
      &            + phi(ix  ,iy  ,iz-1)*conductors%coeffs%data(4,ix,iy,iz)
      &            + phi(ix  ,iy  ,iz+1)*conductors%coeffs%data(5,ix,iy,iz)
      &            + conductors%coeffs%data(6,ix,iy,iz))
-     &            *conductors%coeffs%data(7,ix,iy,iz)
+     &            * conductors%coeffs%data(7,ix,iy,iz)
      &            + spm1*phi(ix,iy,iz)
 
               endif
@@ -2530,7 +2530,8 @@ c=============================================================================
      &                                  nxlocal,nylocal,nzlocal,
      &                                  nxguardrho,nyguardrho,nzguardrho,
      &                                  rho,
-     &                                  ixmin,ixmax,iymin,iymax,izmin,izmax)
+     &                                  ixmin,ixmax,iymin,iymax,
+     &                                  izmin,izmax)
       use Subtimersf3d
       use ConductorInteriorTypemodule
       type(ConductorInteriorType):: interior
@@ -2574,7 +2575,8 @@ c=============================================================================
      &                                  nxlocal,nylocal,nzlocal,
      &                                  nxguardrho,nyguardrho,nzguardrho,
      &                                  rho,
-     &                                  ixmin,ixmax,iymin,iymax,izmin,izmax)
+     &                                  ixmin,ixmax,iymin,iymax,
+     &                                  izmin,izmax)
       use Subtimersf3d
       use ConductorInteriorTypemodule
       type(ConductorInteriorType):: interior
@@ -2888,7 +2890,7 @@ c       --- the point higher in z is inside the conductor
         endif
 c       --- calculate the new phi based on the boundary conditions
         if (dosubgrid) then
-          phi(ix,iy,iz) = (rho(ix,iy,iz) +
+          phi(ix,iy,iz) = (rho(ix,iy,iz) + 
      &      (pxm+pxp)*dxsqic + (pym+pyp)*dysqic + (pzm+pzp)*dzsqic)/denom +
      &      spm1*subgrid%prevphi(ic)
         endif
@@ -3333,8 +3335,8 @@ c       --- calculate the residual based on the boundary conditions
 
           if (0. >= dels(0,ic) .and. dels(0,ic) >= -1.) res(ixm1,iy,iz) = 0.
           if (0. >= dels(1,ic) .and. dels(1,ic) >= -1.) res(ixp1,iy,iz) = 0.
-          if (0. >= dels(2,ic) .and. dels(2,ic) >= -1. .and. nylocal > 0) res(ix,iym1,iz) = 0.
-          if (0. >= dels(3,ic) .and. dels(3,ic) >= -1. .and. nylocal > 0) res(ix,iyp1,iz) = 0.
+          if (0. >= dels(2,ic) .and. dels(2,ic) >= -1. .and. nylocal>0) res(ix,iym1,iz) = 0.
+          if (0. >= dels(3,ic) .and. dels(3,ic) >= -1. .and. nylocal>0) res(ix,iyp1,iz) = 0.
           if (0. >= dels(4,ic) .and. dels(4,ic) >= -1.) res(ix,iy,izm1) = 0.
           if (0. >= dels(5,ic) .and. dels(5,ic) >= -1.) res(ix,iy,izp1) = 0.
 
@@ -3466,7 +3468,7 @@ c         --- filled in.
      &              + phi(ix  ,iy  ,iz+1)*conductors%coeffs%data(5,ix,iy,iz)
      &              + conductors%coeffs%data(6,ix,iy,iz)
      &              - phi(ix,iy,iz)*mgparam/conductors%coeffs%data(7,ix,iy,iz))
-     &              *conductors%coeffs%data(8,ix,iy,iz)
+     &              * conductors%coeffs%data(8,ix,iy,iz)
               endif
 
 
@@ -3603,6 +3605,10 @@ c     --- Note that nzlocalcoarse is only used if full-coarsening is done.
 
       real(kind=8):: mingridsize
 
+#ifdef DEBUG
+c      write(*,*) "nx, ny, nz: ", nx, ny, nz
+#endif
+      
       nxcoarse = (nx+1)/mgcoarsening
       if (mod(nxcoarse,2) == 1) nxcoarse = nxcoarse + 1
 
@@ -3611,6 +3617,11 @@ c     --- Note that nzlocalcoarse is only used if full-coarsening is done.
 
       nzcoarse = (nz+1)/mgcoarsening
       if (mod(nzcoarse,2) == 1) nzcoarse = nzcoarse + 1
+
+#ifdef DEBUG
+c      write(*,*) "nxcoarse,nycoarse,nzcoarse :", nxcoarse, nycoarse,
+c     &                                           nzcoarse
+#endif
 
       mingridsize = min(dx,dy)
       mingridsize = min(mingridsize,dz)
@@ -3643,6 +3654,7 @@ c=============================================================================
      &                       conductors,fsdecomp)
       use ConductorTypemodule
       use Decompositionmodule
+      use Multigrid3D
       integer(ISZ):: nx,ny,nz,nxlocal,nylocal,nzlocal
       real(kind=8):: dx,dy,dz
       type(ConductorType):: conductors
@@ -3758,10 +3770,10 @@ c     --- Allocate temp space
         conductors%levellz(mglevel) = lz
         conductors%levels = mglevel + 1
 
-        if (nxfine < 4 .or.
-     &      (nyfine < 4 .and. nyfine > 0) .or.
-     &      nzfine < 4 .or.
-     &      mglevel == 100)
+        if ( nxfine < NMGMIN .or.
+     &      (nyfine < NMGMIN . and. nyfine > 0) .or.
+     &       nzfine < NMGMIN .or.
+     &       mglevel == mgmaxlevels)
      &    exit
 
         call getnextcoarselevel3d(nxfine,nyfine,nzfine,
@@ -4010,7 +4022,8 @@ c     --- Call the work routine for each level
         nylocal1 = conductors%levelny(il)
         nzlocal1 = conductors%levelnz(il)
         call checkconductors_work(conductors%interior,
-     &                            conductors%evensubgrid,conductors%oddsubgrid,
+     &                            conductors%evensubgrid,
+     &                            conductors%oddsubgrid,
      &                            nxlocal1,nylocal1,nzlocal1,il)
       enddo
 
@@ -4463,15 +4476,18 @@ c       --- and the right hand side is the desired voltage or zero.
           ppp = 1.
 
           call handlesubgrid2(0,1,
-     &                        coeffs%data(0,ix,iy,iz),coeffs%data(1,ix,iy,iz),
+     &                        coeffs%data(0,ix,iy,iz),
+     &                        coeffs%data(1,ix,iy,iz),
      &                        dxsqicos,ic,nmax,
      &                        dels,volt,voltfac,denom,ppp)
           call handlesubgrid2(2,3,
-     &                        coeffs%data(2,ix,iy,iz),coeffs%data(3,ix,iy,iz),
+     &                        coeffs%data(2,ix,iy,iz),
+     &                        coeffs%data(3,ix,iy,iz),
      &                        dysqicos,ic,nmax,
      &                        dels,volt,voltfac,denom,ppp)
           call handlesubgrid2(4,5,
-     &                        coeffs%data(4,ix,iy,iz),coeffs%data(5,ix,iy,iz),
+     &                        coeffs%data(4,ix,iy,iz),
+     &                        coeffs%data(5,ix,iy,iz),
      &                        dzsqicos,ic,nmax,
      &                        dels,volt,voltfac,denom,ppp)
 
@@ -4540,15 +4556,18 @@ c       --- and the right hand side is the desired voltage or zero.
           ppp = 1.
 
           call handlesubgrid2(0,1,
-     &                        coeffs%data(0,ix,iy,iz),coeffs%data(1,ix,iy,iz),
+     &                        coeffs%data(0,ix,iy,iz),
+     &                        coeffs%data(1,ix,iy,iz),
      &                        dxsqicos,ic,nmax,
      &                        dels,volt,voltfac,denom,ppp)
           call handlesubgrid2(2,3,
-     &                        coeffs%data(2,ix,iy,iz),coeffs%data(3,ix,iy,iz),
+     &                        coeffs%data(2,ix,iy,iz),
+     &                        coeffs%data(3,ix,iy,iz),
      &                        dysqicos,ic,nmax,
      &                        dels,volt,voltfac,denom,ppp)
           call handlesubgrid2(4,5,
-     &                        coeffs%data(4,ix,iy,iz),coeffs%data(5,ix,iy,iz),
+     &                        coeffs%data(4,ix,iy,iz),
+     &                        coeffs%data(5,ix,iy,iz),
      &                        dzsqicos,ic,nmax,
      &                        dels,volt,voltfac,denom,ppp)
 
@@ -4609,6 +4628,7 @@ c=============================================================================
 
       integer(ISZ):: ix,iy,iz,nmax
       integer(ISZ):: ic,ie,io
+      integer(ISZ):: alloc_status
       logical(ISZ):: doalloc
 
       call checkconductors(nx,ny,nz,nxlocal,nylocal,nzlocal,dx,dy,dz,
@@ -4993,32 +5013,32 @@ c     --- Calculate some temporaries.
 
             else
 
-              ext = u0*v0*w0*(phi(i-1,j  ,k  ) - phi(i+1,j  ,k  ))*tdxi +
-     &              u1*v0*w0*(phi(i  ,j  ,k  ) - phi(i+2,j  ,k  ))*tdxi +
-     &              u0*v1*w0*(phi(i-1,j+1,k  ) - phi(i+1,j+1,k  ))*tdxi +
-     &              u1*v1*w0*(phi(i  ,j+1,k  ) - phi(i+2,j+1,k  ))*tdxi +
-     &              u0*v0*w1*(phi(i-1,j  ,k+1) - phi(i+1,j  ,k+1))*tdxi +
-     &              u1*v0*w1*(phi(i  ,j  ,k+1) - phi(i+2,j  ,k+1))*tdxi +
-     &              u0*v1*w1*(phi(i-1,j+1,k+1) - phi(i+1,j+1,k+1))*tdxi +
-     &              u1*v1*w1*(phi(i  ,j+1,k+1) - phi(i+2,j+1,k+1))*tdxi
+              ext = u0*v0*w0*(phi(i-1,j  ,k  ) - phi(i+1,j  ,k  ))*tdxi
+     &            + u1*v0*w0*(phi(i  ,j  ,k  ) - phi(i+2,j  ,k  ))*tdxi
+     &            + u0*v1*w0*(phi(i-1,j+1,k  ) - phi(i+1,j+1,k  ))*tdxi
+     &            + u1*v1*w0*(phi(i  ,j+1,k  ) - phi(i+2,j+1,k  ))*tdxi
+     &            + u0*v0*w1*(phi(i-1,j  ,k+1) - phi(i+1,j  ,k+1))*tdxi
+     &            + u1*v0*w1*(phi(i  ,j  ,k+1) - phi(i+2,j  ,k+1))*tdxi
+     &            + u0*v1*w1*(phi(i-1,j+1,k+1) - phi(i+1,j+1,k+1))*tdxi
+     &            + u1*v1*w1*(phi(i  ,j+1,k+1) - phi(i+2,j+1,k+1))*tdxi
 
-              eyt = u0*v0*w0*(phi(i  ,j-1,k  ) - phi(i  ,j+1,k  ))*tdyi +
-     &              u1*v0*w0*(phi(i+1,j-1,k  ) - phi(i+1,j+1,k  ))*tdyi +
-     &              u0*v1*w0*(phi(i  ,j  ,k  ) - phi(i  ,j+2,k  ))*tdyi +
-     &              u1*v1*w0*(phi(i+1,j  ,k  ) - phi(i+1,j+2,k  ))*tdyi +
-     &              u0*v0*w1*(phi(i  ,j-1,k+1) - phi(i  ,j+1,k+1))*tdyi +
-     &              u1*v0*w1*(phi(i+1,j-1,k+1) - phi(i+1,j+1,k+1))*tdyi +
-     &              u0*v1*w1*(phi(i  ,j  ,k+1) - phi(i  ,j+2,k+1))*tdyi +
-     &              u1*v1*w1*(phi(i+1,j  ,k+1) - phi(i+1,j+2,k+1))*tdyi
+              eyt = u0*v0*w0*(phi(i  ,j-1,k  ) - phi(i  ,j+1,k  ))*tdyi
+     &            + u1*v0*w0*(phi(i+1,j-1,k  ) - phi(i+1,j+1,k  ))*tdyi
+     &            + u0*v1*w0*(phi(i  ,j  ,k  ) - phi(i  ,j+2,k  ))*tdyi
+     &            + u1*v1*w0*(phi(i+1,j  ,k  ) - phi(i+1,j+2,k  ))*tdyi
+     &            + u0*v0*w1*(phi(i  ,j-1,k+1) - phi(i  ,j+1,k+1))*tdyi
+     &            + u1*v0*w1*(phi(i+1,j-1,k+1) - phi(i+1,j+1,k+1))*tdyi
+     &            + u0*v1*w1*(phi(i  ,j  ,k+1) - phi(i  ,j+2,k+1))*tdyi
+     &            + u1*v1*w1*(phi(i+1,j  ,k+1) - phi(i+1,j+2,k+1))*tdyi
 
-              ezt = u0*v0*w0*(phi(i  ,j  ,k-1) - phi(i  ,j  ,k+1))*tdzi +
-     &              u1*v0*w0*(phi(i+1,j  ,k-1) - phi(i+1,j  ,k+1))*tdzi +
-     &              u0*v1*w0*(phi(i  ,j+1,k-1) - phi(i  ,j+1,k+1))*tdzi +
-     &              u1*v1*w0*(phi(i+1,j+1,k-1) - phi(i+1,j+1,k+1))*tdzi +
-     &              u0*v0*w1*(phi(i  ,j  ,k  ) - phi(i  ,j  ,k+2))*tdzi +
-     &              u1*v0*w1*(phi(i+1,j  ,k  ) - phi(i+1,j  ,k+2))*tdzi +
-     &              u0*v1*w1*(phi(i  ,j+1,k  ) - phi(i  ,j+1,k+2))*tdzi +
-     &              u1*v1*w1*(phi(i+1,j+1,k  ) - phi(i+1,j+1,k+2))*tdzi
+              ezt = u0*v0*w0*(phi(i  ,j  ,k-1) - phi(i  ,j  ,k+1))*tdzi
+     &            + u1*v0*w0*(phi(i+1,j  ,k-1) - phi(i+1,j  ,k+1))*tdzi
+     &            + u0*v1*w0*(phi(i  ,j+1,k-1) - phi(i  ,j+1,k+1))*tdzi
+     &            + u1*v1*w0*(phi(i+1,j+1,k-1) - phi(i+1,j+1,k+1))*tdzi
+     &            + u0*v0*w1*(phi(i  ,j  ,k  ) - phi(i  ,j  ,k+2))*tdzi
+     &            + u1*v0*w1*(phi(i+1,j  ,k  ) - phi(i+1,j  ,k+2))*tdzi
+     &            + u0*v1*w1*(phi(i  ,j+1,k  ) - phi(i  ,j+1,k+2))*tdzi
+     &            + u1*v1*w1*(phi(i+1,j+1,k  ) - phi(i+1,j+1,k+2))*tdzi
             endif
 
           else
@@ -5929,7 +5949,9 @@ c=============================================================================
       real(kind=8):: childsource(0:nc-1,-ng(0):cnn(0)+ng(0),
      &                                  -ng(1):cnn(1)+ng(1),
      &                                  -ng(2):cnn(2)+ng(2))
-      real(kind=8):: weights(-r(0)+1:r(0)-1,-r(1)+1:r(1)-1,-r(2)+1:r(2)-1)
+      real(kind=8):: weights(-r(0)+1:r(0)-1,
+     &                       -r(1)+1:r(1)-1,
+     &                       -r(2)+1:r(2)-1)
       real(kind=8):: radius(0:nn(0)),cradius(0:cnn(0))
       logical(ISZ):: lcylindrical
 
@@ -6151,9 +6173,8 @@ c     --- Precalculate the loop limits and weights.
       deallocate(izp1a,izp2a)
       deallocate(wxa,wya,wza)
 
-      if (lf3dtimesubs) timegatherpotentialfromparents =
-     &                                   timegatherpotentialfromparents +
-     &                                   wtime() - substarttime
+      if (lf3dtimesubs) timegatherpotentialfromparents = timegatherpotentialfromparents +
+     &                                           wtime() - substarttime
 
       return
       end
@@ -6359,7 +6380,8 @@ c       --- correction form since it is operating on the error.
      &                    mgform,.true.,lcndbndy,icndbndy,conductors)
 #ifdef MPIPARALLEL
           call mgexchange_phi_periodic(1,nxlocal,0,nzlocal,res,
-     &                                 nxguardres,0,nzguardres,-1,0,localbounds,fsdecomp)
+     &                                 nxguardres,0,nzguardres,
+     &                                 -1,0,localbounds,fsdecomp)
           call mgexchange_res(1,nxlocal,0,nzlocal,res,
      &                        nxguardres,0,nzguardres,
      &                        -1,-1,fsdecomp)
@@ -6577,7 +6599,7 @@ c     --- Do initial SOR passes.
 
 c     --- Check if this is the finest level. If so, then don't do any further
 c     --- coarsening. This is the same check that is done in getmglevels.
-      if (nx >= 4 .and. nz >= 4 .and.
+      if (nx >= NMGMIN .and. nz >= NMGMIN .and.
      &    mglevel < mgmaxlevels) then
 
         nxguardres = 1
@@ -6612,7 +6634,8 @@ c       --- Get the residual on the current grid.
      &                      -3,-1,fsdecomp)
 #endif
         if (lprintmgarraysumdiagnostic) then
-          call mggetarraysum(nxlocal,0,nzlocal,nxguardres,0,nzguardres,res,
+          call mggetarraysum(nxlocal,0,nzlocal,
+     &                       nxguardres,0,nzguardres,res,
      &                       fsdecomp,0,sss)
           if (lpe0) print*,"V3 res",mglevel,sss
         endif
@@ -6681,7 +6704,8 @@ c       --- used in the serial version.
 c       --- Calculate the xmminlocal of the coarse grid
         xmminlocalcoarse = xmminlocal
      &                          - fsdecomp%ix(fsdecomp%ixproc)*dx
-     &                          + coarsedecomp%ix(fsdecomp%ixproc)*dxcoarse
+     &                          + coarsedecomp%ix(fsdecomp%ixproc)
+     &                          * dxcoarse
 #else
         nxlocalcoarse = nxcoarse
         nzlocalcoarse = nzcoarse
@@ -6693,8 +6717,7 @@ c       --- Calculate the xmminlocal of the coarse grid
 #endif
 
 c       --- Alloate new work space
-        allocate(phicoarse(-1:nxlocalcoarse+1,-1:nzlocalcoarse+1),
-     &           stat=alloc_status)
+        allocate(phicoarse(-1:nxlocalcoarse+1,-1:nzlocalcoarse+1), stat=alloc_status)
         if (alloc_status /= 0) then
           print*,"vcycle2d: allocation error ",alloc_status,
      &           ": could not allocate phicoarse to shape ",
@@ -7071,18 +7094,19 @@ c         --- Precalculate the radius for efficiency
             ix1 = ixmin + mod(ixmin + iz + parity,2)
             if (rr(ix1) == 0.) then
 c             --- radius=0 is a special case
-              phi(ix1,iz) = rho(ix1,iz)*const0 +
-     &                     (4*phi(ix1+1,iz))*dxsqic0 +
-     &                     (phi(ix1,iz-1) + phi(ix1,iz+1))*dzsqic0 +
-     &                     (1. - mgparam)*phi(ix1,iz)
+              phi(ix1,iz) = rho(ix1,iz)*const0
+     &                    + (4*phi(ix1+1,iz))*dxsqic0
+     &                    + (phi(ix1,iz-1) + phi(ix1,iz+1))*dzsqic0
+     &                    + (1. - mgparam)*phi(ix1,iz)
               ix1 = ix1 + 2
             endif
             do ix=ix1,ixmax,2
               constB = mgparam/(2.*dxsqi + 2.*dzsqi + dxsqi*rri(ix)**2)
-              phi(ix,iz) = (rho(ix,iz) +
-     &                      ((rr(ix)-0.5)*phi(ix-1,iz) + (rr(ix)+0.5)*phi(ix+1,iz))*dxsqi*rri(ix) +
-     &                      (phi(ix,iz-1) + phi(ix,iz+1))*dzsqi)*constB +
-     &                     (1. - mgparam)*phi(ix,iz)
+              phi(ix,iz) = (rho(ix,iz) 
+     &                   + ((rr(ix)-0.5)*phi(ix-1,iz) 
+     &                   + (rr(ix)+0.5)*phi(ix+1,iz))*dxsqi*rri(ix)
+     &                   + (phi(ix,iz-1) + phi(ix,iz+1))*dzsqi)*constB
+     &                   + (1. - mgparam)*phi(ix,iz)
             enddo
           enddo
 
@@ -7105,10 +7129,11 @@ c             --- radius=0 is a special case
               ix1 = ix1 + 2
             endif
             do ix=ix1,ixmax,2
-              phi(ix,iz) = rho(ix,iz)*const +
-     &                     ((rr(ix)-0.5)*phi(ix-1,iz) + (rr(ix)+0.5)*phi(ix+1,iz))*rri(ix) +
-     &                     (phi(ix,iz-1) + phi(ix,iz+1))*dzsqic +
-     &                     (1. - mgparam)*phi(ix,iz)
+              phi(ix,iz) = rho(ix,iz)*const
+     &                   + ((rr(ix)-0.5)*phi(ix-1,iz) 
+     &                   + (rr(ix)+0.5)*phi(ix+1,iz))*rri(ix)
+     &                   + (phi(ix,iz-1) + phi(ix,iz+1))*dzsqic
+     &                   + (1. - mgparam)*phi(ix,iz)
             enddo
           enddo
 
@@ -7119,10 +7144,10 @@ c             --- radius=0 is a special case
         do iz=izmin,izmax
           ix1 = ixmin + mod(ixmin + iz + parity,2)
           do ix=ix1,ixmax,2
-            phi(ix,iz) = rho(ix,iz)*const +
-     &                   (phi(ix-1,iz  ) + phi(ix+1,iz  ))*dxsqic +
-     &                   (phi(ix  ,iz-1) + phi(ix  ,iz+1))*dzsqic +
-     &                   (1. - mgparam)*phi(ix,iz)
+            phi(ix,iz) = rho(ix,iz)*const
+     &                 + (phi(ix-1,iz  ) + phi(ix+1,iz  ))*dxsqic
+     &                 + (phi(ix  ,iz-1) + phi(ix  ,iz+1))*dzsqic
+     &                 + (1. - mgparam)*phi(ix,iz)
           enddo
         enddo
       endif
@@ -7276,7 +7301,7 @@ c       --- happen rather than add an extra check on c0.
           c0 = c0 + dxsqi*rri(ix)**2
         endif
         phi(ix,iz) = mgparam*(rho(ix,iz) + cxm*pxm + cxp*pxp + czm*pzm + czp*pzp)/c0
-     &               + (1. - mgparam)*subgrid%prevphi(ic)
+     &             + (1. - mgparam)*subgrid%prevphi(ic)
 
       enddo
 !$OMP END DO
@@ -7497,7 +7522,8 @@ c=============================================================================
      &                      dxsqi,dzsqi,
      &                      xminodx,lrz,lmagnetostatic,
      &                      phi,rho,res,mglevel,localbounds,
-     &                      mgform,mgform2init,lcndbndy,icndbndy,conductors)
+     &                      mgform,mgform2init,
+     &                      lcndbndy,icndbndy,conductors)
       use ConductorTypemodule
       integer(ISZ):: nxlocal,nzlocal
       real(kind=8):: dxsqi,dzsqi,xminodx
@@ -7581,7 +7607,8 @@ c     --- Calculate the residual.
           endif
           do ix=ix1,ixmax
             res(ix,iz) = rho(ix,iz)
-     &                   + ((rr(ix)-0.5)*phi(ix-1,iz  ) + (rr(ix)+0.5)*phi(ix+1,iz  ))*rri(ix)
+     &                   + ((rr(ix)-0.5)*phi(ix-1,iz  ) 
+     &                   + (rr(ix)+0.5)*phi(ix+1,iz  ))*rri(ix)
      &                   + (phi(ix,iz-1) + phi(ix,iz+1))*dzsqi
      &                   - phi(ix,iz)*const
           enddo
@@ -7797,26 +7824,27 @@ c=============================================================================
      &                    phicoarse,bounds,lxoffset,lzoffset)
       integer(ISZ):: nx,nz,nxlocal,nzlocal
       integer(ISZ):: nxguardphi,nzguardphi
-      integer(ISZ):: nxcoarse,nzcoarse,nxlocalcoarse,nzlocalcoarse
+	  integer(ISZ):: nxcoarse,nzcoarse,nxlocalcoarse,nzlocalcoarse
       real(kind=8):: phi(-nxguardphi:nxlocal+nxguardphi,
      &                   -nzguardphi:nzlocal+nzguardphi)
       real(kind=8):: phicoarse(-1:nxlocalcoarse+1,-1:nzlocalcoarse+1)
-      integer(ISZ):: lxoffset,lzoffset
+	  integer(ISZ):: lxoffset,lzoffset
       integer(ISZ):: bounds(0:5)
-
+	  
 c Add the error on the coarser grid to the current value on the finer grid.
 c The expansion is only transverse.
 
       integer(ISZ):: ixmin,ixmax,izmin,izmax
       integer(ISZ):: ix,iz
       integer(ISZ):: jx,jz
-      integer(ISZ),pointer:: jxa(:),jza(:)
-      real(kind=8),pointer:: wxa(:),wza(:)
       real(kind=8):: dx,dz
       real(kind=8):: wx,wz
+      
+      integer(ISZ):: jxa(-1:nxlocal+1),jza(-1:nzlocal+1)
+      real(kind=8):: wxa(-1:nxlocal+1),wza(-1:nzlocal+1)
 
-      allocate(jxa(0:nxlocal),jza(0:nzlocal))
-      allocate(wxa(0:nxlocal),wza(0:nzlocal))
+c      allocate(jxa(0:nxlocal),jza(0:nzlocal))
+c      allocate(wxa(0:nxlocal),wza(0:nzlocal))
 
 c     --- Set the loop limits, including edges when appropriate.
       ixmin = 0
@@ -7835,11 +7863,11 @@ c     --- Precalculate the indices and weights. This saves a surprisingly
 c     --- substantial amount of time.
       do iz=izmin,izmax
         jza(iz) = int((iz*nzcoarse + lzoffset)/nz)
-        wza(iz) =  1.*(iz*nzcoarse + lzoffset)/nz - jza(iz)
+        wza(iz) =  float(iz*nzcoarse + lzoffset)/float(nz) - float(jza(iz))
       enddo
       do ix=ixmin,ixmax
         jxa(ix) = int((ix*nxcoarse + lxoffset)/nx)
-        wxa(ix) =  1.*(ix*nxcoarse + lxoffset)/nx - jxa(ix)
+        wxa(ix) =  float(ix*nxcoarse + lxoffset)/float(nx) - float(jxa(ix))
       enddo
 
 !$OMP DO
@@ -7858,9 +7886,6 @@ c     --- substantial amount of time.
         enddo
       enddo
 !$OMP ENDDO
-
-      deallocate(jxa,jza)
-      deallocate(wxa,wza)
 
       return
       end
@@ -7939,13 +7964,12 @@ c     --- Only slab geometry is now supported.
         return
       endif
 
-c     --- The parallel version does not yet work, due to the issue dealing
-c     --- with epsilon, described below.
-      if (fsdecomp%nxprocs*fsdecomp%nyprocs*fsdecomp%nzprocs > 1) then
-        print*,"multigrid2ddielectricsolve: does not yet work in parallel"
-        call kaboom("multigrid2ddielectricsolve: does not yet work in parallel")
-        return
-      endif
+c     --- The parallel version is now working properly
+c      if (fsdecomp%nxprocs*fsdecomp%nyprocs*fsdecomp%nzprocs > 1) then
+c        print*,"multigrid2ddielectricsolve: does not yet work in parallel"
+c        call kaboom("multigrid2ddielectricsolve: does not yet work in parallel")
+c        return
+c      endif
 
 c     --- If doing initialization only, then exit.
       if (iwhich == 1) return
@@ -7976,12 +8000,12 @@ c     --- converted and expanded for the multigrid solver.
 
 #ifdef MPIPARALLEL
 c     --- These calls break the parallel field solver
-c     call mgexchange_phi_periodic(1,nxlocal,0,nzlocal,phi,
-c    &                             nxguardphi,0,nzguardphi,
-c    &                             -1,0,localbounds,fsdecomp)
-c     call mgexchange_phi(1,nxlocal,0,nzlocal,phi,
-c    &                    nxguardphi,0,nzguardphi,
-c    &                    -1,-1,fsdecomp)
+c      call mgexchange_phi_periodic(1,nxlocal,0,nzlocal,phi,
+c     &                             nxguardphi,0,nzguardphi,
+c     &                             -1,0,localbounds,fsdecomp)
+c      call mgexchange_phi(1,nxlocal,0,nzlocal,phi,
+c     &                    nxguardphi,0,nzguardphi,
+c     &                    -1,-1,fsdecomp)
 #endif
 
 c     --- Make sure guard planes have sensible values before beginning.
@@ -8075,7 +8099,23 @@ c       --- Make a print out.
 
       return
       end
+      
+      
 c=============================================================================
+
+      module mg2dDielectricCache 
+        public
+          type mg2dArrayPointer
+            real(kind=8), allocatable :: arr(:,:) 
+          end type
+             
+          type(mg2dArrayPointer), allocatable, target::phicoarsecache(:)
+          type(mg2dArrayPointer), allocatable, target::rescache(:)
+          type(mg2dArrayPointer), allocatable, target::epscoarsecache(:)
+          type(mg2dArrayPointer), allocatable, target::rhocoarsecache(:)
+          
+      end module
+      
       RECURSIVE subroutine vcycle2ddielectric(mglevel,mgscale,nx,nz,
      &                              nxlocal,nzlocal,
      &                              nxguardphi,nzguardphi,
@@ -8088,6 +8128,7 @@ c=============================================================================
       use Multigrid3d_diagnostic
       use Constant,Only: eps0
       use Decompositionmodule
+      use mg2dDielectricCache
       integer(ISZ):: mglevel
       real(kind=8):: mgscale
       integer(ISZ):: nx,nz,nxlocal,nzlocal
@@ -8109,9 +8150,9 @@ c=============================================================================
 
 c Routine that does the v-cycle for multigrid. Note that it is recursive.
 
-      real(kind=8),allocatable:: phicoarse(:,:),rhocoarse(:,:)
-      real(kind=8),allocatable:: epsiloncoarse(:,:)
-      real(kind=8),allocatable:: res(:,:)
+      real(kind=8),pointer:: phicoarse(:,:),rhocoarse(:,:)
+      real(kind=8),pointer:: epsiloncoarse(:,:)
+      real(kind=8),pointer:: res(:,:)
       integer(ISZ):: i,iszone=1
       integer(ISZ):: nxcoarse,nycoarse,nzcoarse,nylocal
       integer(ISZ):: nxlocalcoarse,nzlocalcoarse
@@ -8120,21 +8161,32 @@ c Routine that does the v-cycle for multigrid. Note that it is recursive.
       real(kind=8):: xminodx,xmminlocalcoarse
       real(kind=8):: mgscalecoarse
       integer(ISZ):: ixproc,izproc
-      integer(ISZ):: localbounds(0:5),localboundsc(0:5)
+      integer(ISZ):: localbounds(0:5),localboundsc(0:5),epsbounds(0:5)
       integer(ISZ):: lxoffsetall(0:fsdecomp%nxprocs-1)
       integer(ISZ):: rxoffsetall(0:fsdecomp%nxprocs-1)
       integer(ISZ):: lzoffsetall(0:fsdecomp%nzprocs-1)
       integer(ISZ):: rzoffsetall(0:fsdecomp%nzprocs-1)
       integer(ISZ):: lxoffset,rxoffset
-      integer(ISZ):: lzoffset,rzoffset
+      integer(ISZ):: lzoffset,rzoffset, test_lzoffset, test_epsc_rows
       type(Decomposition):: coarsedecomp
       integer(ISZ):: alloc_status
       integer(ISZ):: nxguardres,nzguardres
       logical(ISZ):: lpe0
       real(kind=8):: sss(2)
-
+      logical :: exist
+      character (len=90) :: filename
       localbounds = globalbounds
       xminodx = xmminlocal/dx
+
+c     Initialize Cached Arrays if needed
+      if (.not.ALLOCATED(phicoarsecache)) then
+        allocate(phicoarsecache(0:mgmaxlevels))
+        allocate(rescache(0:mgmaxlevels))
+        allocate(epscoarsecache(0:mgmaxlevels))
+        allocate(rhocoarsecache(0:mgmaxlevels))
+      endif
+
+      epsbounds = 1
 
 #ifdef MPIPARALLEL
       ixproc = fsdecomp%ixproc
@@ -8143,11 +8195,21 @@ c Routine that does the v-cycle for multigrid. Note that it is recursive.
       if (fsdecomp%ix(ixproc)+nxlocal < nx) localbounds(1) = -1
       if (fsdecomp%iz(izproc) > 0)          localbounds(4) = -1
       if (fsdecomp%iz(izproc)+nzlocal < nz) localbounds(5) = -1
+
+c     Make sure rho guard cells are sane
+      if (mglevel .eq. 0) then
+        call mgexchange_phi(1,nxlocal,0,nzlocal,rho,
+     &                      nxguardrho,0,nzguardrho,
+     &                      -1,-1,fsdecomp)
+        call mgexchange_phi_periodic(1,nxlocal,0,nzlocal,rho,
+     &                             nxguardrho,0,nzguardrho,
+     &                             0,0,localbounds,fsdecomp)
+      endif
 #endif
 
       if (lprintmgarraysumdiagnostic) then
 #ifdef MPIPARALLEL
-        lpe0=(fsdecomp%ixproc==0.and.fsdecomp%izproc==0)
+        lpe0=(fsdecomp%ixproc==0 .and. fsdecomp%izproc==0)
 #else
         lpe0 = .true.
 #endif
@@ -8180,7 +8242,9 @@ c     --- Do initial SOR passes.
 
 c     --- Check if this is the finest level. If so, then don't do any further
 c     --- coarsening. This is the same check that is done in getmglevels.
-      if (nx >= 4 .and. nz >= 4 .and.
+C     changed to stop coarsening at 6 (was 4) to prevent failure of periodic boundary exchange
+C     epsilon has n - 1 cells compared to n for phi and will not be able to exchange boudnaries if n <= 3
+      if (nx >= NMGMIN .and. nz >= NMGMIN .and.
      &    mglevel < mgmaxlevels) then
 
         nxguardres = 1
@@ -8188,15 +8252,24 @@ c     --- coarsening. This is the same check that is done in getmglevels.
         if (nx > nxlocal) nxguardres = 3
         if (nz > nzlocal) nzguardres = 3
 
-        allocate(res(-nxguardres:nxlocal+nxguardres,
-     &               -nzguardres:nzlocal+nzguardres),
-     &           stat=alloc_status)
-        if (alloc_status /= 0) then
-          print*,"vcycle2ddielectric: allocation error ",alloc_status,
-     &           ": could not allocate res to shape ",nxlocal,nzlocal
-          call kaboom("vcycle2ddielectric: allocation error")
-          return
+        if (.not.ALLOCATED(rescache(mglevel)%arr)) then
+#ifdef DEBUG
+          print*,"vcycle2ddielectric: allocating res to shape ",
+     &        nxlocal,nzlocal
+#endif
+          allocate(rescache(mglevel)%arr(-nxguardres:nxlocal+nxguardres,
+     &                                  -nzguardres:nzlocal+nzguardres),
+     &                                  stat=alloc_status)
+          if (alloc_status /= 0) then
+            print*,"vcycle2ddielectric: allocation error ",alloc_status,
+     &             ": could not allocate res to shape ",nxlocal,nzlocal
+            call kaboom("vcycle2ddielectric: allocation error")
+            return
+          endif
         endif
+        
+c       Point to preallocated array
+        res => rescache(mglevel)%arr
 
 c       --- Get the residual on the current grid.
         call residual2ddielectric(nxlocal,nzlocal,
@@ -8214,6 +8287,27 @@ c       --- Get the residual on the current grid.
      &                      nxguardres,0,nzguardres,
      &                      -3,-1,fsdecomp)
 #endif
+
+#ifdef DEBUG
+        write(filename, '("res_",I0.2,"_",I0.2,".txt")') 
+     &    ixproc, izproc
+
+        inquire(file=filename, exist=exist)
+        if (exist) then
+          open(12, file=filename, status="old", 
+     &             position="append", action="write")
+        else
+          open(12, file=filename, status="new", action="write")
+        end if
+
+        write(12,*) "PROCSSOR X",ixproc,"PROCESSOR Z",izproc
+        write(12,*) "NX",nx,"NZ",nz
+        write(12,*) "NXLOCAL",nxlocal,"NZLOCAL",nzlocal
+        write(12,'(10(F17.7))') res
+
+        close(12)
+#endif  
+
         if (lprintmgarraysumdiagnostic) then
           call mggetarraysum(nxlocal,0,nzlocal,nxguardres,0,nzguardres,
      &                       res,fsdecomp,0,sss)
@@ -8276,6 +8370,12 @@ c       --- used in the serial version.
         lxoffset = lxoffsetall(ixproc)
         rxoffset = rxoffsetall(ixproc)
         lzoffset = lzoffsetall(izproc)
+C         Testing adjustment to lzoffset for cellcenteredrestriction
+        if(lzoffset /= 0)then
+          test_lzoffset = lzoffset
+        else
+          test_lzoffset = lzoffset
+        endif
         rzoffset = rzoffsetall(izproc)
         if (coarsedecomp%ix(ixproc) > 0) localboundsc(0) = -1
         if (coarsedecomp%ix(ixproc)+nxlocalcoarse < nxcoarse) localboundsc(1) = -1
@@ -8292,54 +8392,132 @@ c       --- Calculate the xmminlocal of the coarse grid
         rxoffset = 0
         lzoffset = 0
         rzoffset = 0
+        test_lzoffset = 0
         xmminlocalcoarse = xmminlocal
 #endif
+c       Allocate array space on first time through
+        if (.not.ALLOCATED(phicoarsecache(mglevel)%arr)) then
+c         --- Allocate new work space
+#ifdef DEBUG
+          print*,"vcycle2ddielectric: allocating phicoarse to shape ",
+     &             nxlocalcoarse,nzlocalcoarse
+#endif
+          allocate(phicoarsecache(mglevel)%arr(-1:nxlocalcoarse+1,
+     &                                         -1:nzlocalcoarse+1),
+     &                                         stat=alloc_status)
+          if (alloc_status /= 0) then
+            print*,"vcycle2ddielectric: allocation error ",alloc_status,
+     &             ": could not allocate phicoarse to shape ",
+     &             nxlocalcoarse,nzlocalcoarse
+            call kaboom("vcycle2ddielectric: allocation error")
+            return
+          endif
+        endif
 
-c       --- Alloate new work space
-        allocate(phicoarse(-1:nxlocalcoarse+1,-1:nzlocalcoarse+1), stat=alloc_status)
-        if (alloc_status /= 0) then
-          print*,"vcycle2ddielectric: allocation error ",alloc_status,
-     &           ": could not allocate phicoarse to shape ",
-     &           nxlocalcoarse,nzlocalcoarse
-          call kaboom("vcycle2ddielectric: allocation error")
-          return
+        phicoarse => phicoarsecache(mglevel)%arr
+
+        if (.not.ALLOCATED(rhocoarsecache(mglevel)%arr)) then
+#ifdef DEBUG
+          print*,"vcycle2ddielectric: allocating rhocoarse to shape ",
+     &             nxlocalcoarse,nzlocalcoarse
+#endif
+          allocate(rhocoarsecache(mglevel)%arr(0:nxlocalcoarse,
+     &                                         0:nzlocalcoarse),
+     &                                         stat=alloc_status)
+          if (alloc_status /= 0) then
+            print*,"vcycle2ddielectric: allocation error ",alloc_status,
+     &             ": could not allocate rhocoarse to shape ",
+     &             nxlocalcoarse,nzlocalcoarse
+            call kaboom("vcycle2ddielectric: allocation error")
+            return
+          endif
         endif
-        allocate(rhocoarse(0:nxlocalcoarse,0:nzlocalcoarse), stat=alloc_status)
-        if (alloc_status /= 0) then
-          print*,"vcycle2ddielectric: allocation error ",alloc_status,
-     &           ": could not allocate rhocoarse to shape ",
-     &           nxlocalcoarse,nzlocalcoarse
-          call kaboom("vcycle2ddielectric: allocation error")
-          return
-        endif
-        allocate(epsiloncoarse(0:nxlocalcoarse+1,0:nzlocalcoarse+1), stat=alloc_status)
-        if (alloc_status /= 0) then
-          print*,"vcycle2ddielectric: allocation error ",alloc_status,
-     &           ": could not allocate epsiloncoarse to shape ",
-     &           nxlocalcoarse,nzlocalcoarse
-          call kaboom("vcycle2ddielectric: allocation error")
-          return
+        
+        rhocoarse => rhocoarsecache(mglevel)%arr
+        
+        if (.not.ALLOCATED(epscoarsecache(mglevel)%arr)) then
+#ifdef DEBUG
+          print*,"vcycle2ddielectric: allocating epscoarse to shape ",
+     &             nxlocalcoarse,nzlocalcoarse
+#endif
+          allocate(epscoarsecache(mglevel)%arr(0:nxlocalcoarse+1,
+     &                                         0:nzlocalcoarse+1),
+     &                                         stat=alloc_status)
+          if (alloc_status /= 0) then
+            print*,"vcycle2ddielectric: allocation error ",alloc_status,
+     &             ": could not allocate epsiloncoarse to shape ",
+     &             nxlocalcoarse,nzlocalcoarse
+            call kaboom("vcycle2ddielectric: allocation error")
+            return
+          endif
+          
+          epsiloncoarse => epscoarsecache(mglevel)%arr
+          
+          call restrict2dcellcentered(nx,nz,nxlocal,nzlocal,epsilon,
+     &                    nxcoarse,nzcoarse,nxlocalcoarse,nzlocalcoarse,
+     &                    epsiloncoarse,
+     &                    localbounds,localboundsc,
+     &                    lxoffset,test_lzoffset)
+
+          epsbounds = localboundsc
+          where (epsbounds .eq. 0)
+            epsbounds = 1
+          endwhere
+
+          call applyboundaryconditions3d(nxlocalcoarse-1,0,
+     &                                   nzlocalcoarse-1,
+     &                                   1,0,1,epsiloncoarse,1,
+     &                                   epsbounds,
+     &                                   .true.,.false.)
+C           print*,"Before Exch",ixproc,izproc,epsiloncoarse
+#ifdef MPIPARALLEL
+          call mgexchange_epsilon2(1,nxlocalcoarse,0,nzlocalcoarse,
+     &                        epsiloncoarse,1,0,1,
+     &                        -1,-1,0,0,coarsedecomp)
+          call mgexchange_phi_periodic(1,nxlocalcoarse - 1, 0,
+     &                                   nzlocalcoarse - 1,
+     &                                   epsiloncoarse,
+     &                                   1,0,1,
+     &                                  -1,-1,epsbounds,coarsedecomp)
+#endif
+        else
+          epsiloncoarse => epscoarsecache(mglevel)%arr
         endif
 
         rhocoarse = 0.
         phicoarse = 0.
+c        epsiloncoarse = eps0
 
 c       --- Restriction - note that no scaling factor is needed
         call restrict2d(nx,nz,nxlocal,nzlocal,nxguardres,nzguardres,res,
      &                  nxcoarse,nzcoarse,nxlocalcoarse,nzlocalcoarse,
      &                  rhocoarse,
-     &                  localbounds,localboundsc,lxoffset,lzoffset,.true.)
-        call restrict2dcellcentered(nx,nz,nxlocal,nzlocal,epsilon,
-     &                    nxcoarse,nzcoarse,nxlocalcoarse,nzlocalcoarse,
-     &                    epsiloncoarse,
-     &                    localbounds,localboundsc,lxoffset,lzoffset)
-        call applyboundaryconditions3d(nxlocalcoarse-1,0,nzlocalcoarse-1,
-     &                                 1,0,1,epsiloncoarse,1,localbounds,
-     &                                 .true.,.false.)
-c       --- XXX epsiloncoarse needs to be exchanged among neighboring
-c       --- XXX processors. This code needs to be written, so this solver
-c       --- XXX will not work in parallel. (This is the only issue -
-c       --- XXX everything else here works OK in parallel.)
+     &                  localbounds,localboundsc,
+     &                  lxoffset,lzoffset,.true.)
+
+#ifdef DEBUG
+
+        write(filename, '("epsilcoarse_",I0.2,"_",I0.2,".txt")') 
+     &    ixproc, izproc
+        inquire(file=filename, exist=exist)
+        if (exist) then
+          open(12, file=filename, status="old", 
+     &             position="append", action="write")
+        else
+          open(12, file=filename, status="new", action="write")
+        end if
+
+        write(12,*) "PROCSSOR X",ixproc,"PROCESSOR Z",izproc
+        write(12,*) "NX",nx,"NZ",nz
+        write(12,*) "NXLOCAL",nxlocal,"NZLOCAL",nzlocal
+        write(12,*) "NXCOARSE",nxcoarse,"NZCOARSE",nzcoarse
+        write(12,*) "NXLOCALCOARSE",nxlocalcoarse,"NZLOCALCOARSE",
+     &              nzlocalcoarse
+        write(12,*) "OFFX",lxoffset,"OFFZ",lzoffset
+        write(12,'(10(E17.7))') epsiloncoarse
+
+        close(12)
+#endif
 
         if (lprintmgarraysumdiagnostic) then
           call mggetarraysum(nxlocalcoarse,0,nzlocalcoarse,0,0,0,
@@ -8379,19 +8557,42 @@ c       --- Continue at the next coarsest level.
 c       --- Add in resulting error.
         call expand2d(nx,nz,nxlocal,nzlocal,
      &                nxguardphi,nzguardphi,phi,
-     &                nxcoarse,nzcoarse,nxlocalcoarse,nzlocalcoarse,phicoarse,
+     &                nxcoarse,nzcoarse,nxlocalcoarse,nzlocalcoarse,
+     &                phicoarse,
      &                localbounds,lxoffset,lzoffset)
+     
         call applyboundaryconditions3d(nxlocal,0,nzlocal,
      &                                 nxguardphi,0,nzguardphi,phi,1,
      &                                 localbounds,.false.,.false.)
+     
 #ifdef MPIPARALLEL
         call mgexchange_phi_periodic(1,nxlocal,0,nzlocal,phi,
      &                               nxguardphi,0,nzguardphi,
      &                               -1,-1,localbounds,fsdecomp)
 #endif
 
-        deallocate(phicoarse,rhocoarse,epsiloncoarse)
-        deallocate(res)
+#ifdef DEBUG
+        write(filename, '("phi_",I0.2,"_",I0.2,".txt")') 
+     &    ixproc, izproc
+
+        inquire(file=filename, exist=exist)
+        if (exist) then
+          open(12, file=filename, status="old", 
+     &             position="append", action="write")
+        else
+          open(12, file=filename, status="new", action="write")
+        end if
+
+        write(12,*) "PROCSSOR X",ixproc,"PROCESSOR Z",izproc
+        write(12,*) "NX",nx,"NZ",nz
+        write(12,*) "NXLOCAL",nxlocal,"NZLOCAL",nzlocal
+        write(12,'(10(F17.7))') phi
+
+        close(12)
+#endif          
+
+c        deallocate(phicoarse,rhocoarse,epsiloncoarse)
+c        deallocate(res)
 
 #ifdef MPIPARALLEL
         deallocate(coarsedecomp%ix)
@@ -8439,7 +8640,8 @@ c=============================================================================
      &                             nxguardrho,nzguardrho,
      &                             phi,rho,
      &                             epsilon,dx,dz,xminodx,
-     &                             localbounds,mgparam,lcndbndy,conductors,lrz,
+     &                             localbounds,mgparam,lcndbndy,
+     &                             conductors,lrz,
      &                             fsdecomp)
       use Constant
       use ConductorTypemodule
@@ -8786,11 +8988,11 @@ c     --- substantial amount of time.
         ixmin = ((ixcoarse-1)*nx - lxoffset + 4*nxcoarse)/nxcoarse-3
         ixmax = ((ixcoarse+1)*nx - lxoffset - 1)/nxcoarse
         if (ixmin < 0) ixmin = 0
-        if (ixmax > nx+1) ixmax = nx+1
+        if (ixmax > nxlocal+1) ixmax = nxlocal+1
         if (ixmax < ixmin) continue
 
         do ix=ixmin,ixmax
-          wx(ix-ixmin) = 1. - abs(ixcoarse - ix*dxi)
+          wx(ix-ixmin) = 1.-abs(ixcoarse-(ix+1.*lxoffset/nxcoarse)*dxi)
         enddo
         ixmina(ixcoarse) = ixmin
         ixmaxa(ixcoarse) = ixmax
@@ -8826,7 +9028,8 @@ c     --- Do the loops.
         enddo
       enddo
 !$OMP END DO
-
+C       print*, "WXA",wxa
+C       print*, "WZA",wza
       deallocate(ixmina,ixmaxa)
       deallocate(izmina,izmaxa)
       deallocate(wxa,wza)
@@ -8861,7 +9064,7 @@ c conductor boundaries for points near conductor surface.
       integer(ISZ):: ic,ix,iz
       real(kind=8):: pxm,pzm,pxp,pzp
       real(kind=8):: dxm,dzm,dxp,dzp
-      real(kind=8):: epxm,epzm,epxp,epzp
+      real(kind=8):: epxm,epzm,epxp,epzp,epsbari,const
       real(kind=8):: cxm,czm,cxp,czp
       real(kind=8):: voltfac,c0
       real(kind=8):: rr(0:nxlocal),rri(0:nxlocal)
@@ -8877,6 +9080,9 @@ c     --- coarser levels since solver for the residuals.
       else
         voltfac = 0.
       endif
+
+c     Constant to multiply into rho
+      const = 1./(2.*(dxsqi+dzsqi))
 
 c     --- Note that in the loop below, for the Neumann boundary conditions,
 c     --- the potentials are not set since they will be multiplied by zero
@@ -8953,16 +9159,19 @@ c       --- used and so is not set.
         endif
 
 c       --- Setup the epsilon coefficients
-        epxm = 0.5*(epsilon(ix  ,iz) + epsilon(ix  ,iz+1))
-        epxp = 0.5*(epsilon(ix+1,iz) + epsilon(ix+1,iz+1))
-        epzm = 0.5*(epsilon(ix,iz  ) + epsilon(ix+1,iz  ))
-        epzp = 0.5*(epsilon(ix,iz+1) + epsilon(ix+1,iz+1))
+c        epxm = 0.5*(epsilon(ix  ,iz) + epsilon(ix  ,iz+1))
+c        epxp = 0.5*(epsilon(ix+1,iz) + epsilon(ix+1,iz+1))
+c        epzm = 0.5*(epsilon(ix,iz  ) + epsilon(ix+1,iz  ))
+c        epzp = 0.5*(epsilon(ix,iz+1) + epsilon(ix+1,iz+1))
+
+        epsbari = 4./(epsilon(ix,iz) + epsilon(ix+1,iz)
+     &              + epsilon(ix,iz+1) + epsilon(ix+1,iz+1))
 
 c       --- Now construct the coefficients
-        cxm = epxm*dxsqi/(dxm*(0.5*dxm + 0.5*dxp))
-        cxp = epxp*dxsqi/(dxp*(0.5*dxm + 0.5*dxp))
-        czm = epzm*dzsqi/(dzm*(0.5*dzm + 0.5*dzp))
-        czp = epzp*dzsqi/(dzp*(0.5*dzm + 0.5*dzp))
+        cxm = dxsqi/(dxm*(0.5*dxm + 0.5*dxp))
+        cxp = dxsqi/(dxp*(0.5*dxm + 0.5*dxp))
+        czm = dzsqi/(dzm*(0.5*dzm + 0.5*dzp))
+        czp = dzsqi/(dzp*(0.5*dzm + 0.5*dzp))
         if (-1. < dels(0,ic) .and. dels(0,ic) <= 0.) cxm = 0.
         if (-1. < dels(1,ic) .and. dels(1,ic) <= 0.) cxp = 0.
         if (-1. < dels(4,ic) .and. dels(4,ic) <= 0.) czm = 0.
@@ -8984,7 +9193,7 @@ c       --- isolated case which doesn't make sense anyway, so let a NaN
 c       --- happen rather than add an extra check on c0.
 
         c0 = cxm + cxp + czm + czp
-        phi(ix,iz) = mgparam*(rho(ix,iz)
+        phi(ix,iz) = mgparam*(rho(ix,iz) * const * epsbari
      &                        + cxm*pxm + cxp*pxp + czm*pzm + czp*pzp)/c0
      &               + (1. - mgparam)*subgrid%prevphi(ic)
 c       print*,phi(ix,iz),rho(ix,iz),cxm,pxm,cxp,pxp,czm,pzm,czp,pzp,c0,
@@ -9027,7 +9236,7 @@ c conductor boundaries for points near conductor surface.
       real(kind=8):: pxm,pzm,pxp,pzp
       real(kind=8):: dxm,dzm,dxp,dzp
       real(kind=8):: cxm,czm,cxp,czp
-      real(kind=8):: epxm,epzm,epxp,epzp
+      real(kind=8):: epxm,epzm,epxp,epzp, epsbari, const
       real(kind=8):: voltfac,ppp,c0
       real(kind=8):: rr(0:nxlocal),rri(0:nxlocal)
       real(kind=8),pointer:: dels(:,:),volt(:,:)
@@ -9052,6 +9261,8 @@ c     --- using uninitialized variables.
       pxp = 0.
       pzm = 0.
       pzp = 0.
+
+      const = 1./(2.*(dxsqi+dzsqi))
 
 c     --- Precalculate the radius for efficiency
       if (lrz) then
@@ -9142,17 +9353,21 @@ c       --- used and so is not set.
           dzp = 1.
         endif
 
+
 c       --- Setup the epsilon coefficients
-        epxm = 0.5*(epsilon(ix  ,iz) + epsilon(ix  ,iz+1))
-        epxp = 0.5*(epsilon(ix+1,iz) + epsilon(ix+1,iz+1))
-        epzm = 0.5*(epsilon(ix,iz  ) + epsilon(ix+1,iz  ))
-        epzp = 0.5*(epsilon(ix,iz+1) + epsilon(ix+1,iz+1))
+c        epxm = 0.5*(epsilon(ix  ,iz) + epsilon(ix  ,iz+1))
+c        epxp = 0.5*(epsilon(ix+1,iz) + epsilon(ix+1,iz+1))
+c        epzm = 0.5*(epsilon(ix,iz  ) + epsilon(ix+1,iz  ))
+c        epzp = 0.5*(epsilon(ix,iz+1) + epsilon(ix+1,iz+1))
+
+        epsbari = 4./(epsilon(ix,iz) + epsilon(ix+1,iz)
+     &              + epsilon(ix,iz+1) + epsilon(ix+1,iz+1))
 
 c       --- Now construct the coefficients
-        cxm = epxm*dxsqi/(dxm*(0.5*dxm + 0.5*dxp))
-        cxp = epxp*dxsqi/(dxp*(0.5*dxm + 0.5*dxp))
-        czm = epzm*dzsqi/(dzm*(0.5*dzm + 0.5*dzp))
-        czp = epzp*dzsqi/(dzp*(0.5*dzm + 0.5*dzp))
+        cxm = dxsqi/(dxm*(0.5*dxm + 0.5*dxp))
+        cxp = dxsqi/(dxp*(0.5*dxm + 0.5*dxp))
+        czm = dzsqi/(dzm*(0.5*dzm + 0.5*dzp))
+        czp = dzsqi/(dzp*(0.5*dzm + 0.5*dzp))
         if (-1. < dels(0,ic) .and. dels(0,ic) <= 0.) cxm = 0.
         if (-1. < dels(1,ic) .and. dels(1,ic) <= 0.) cxp = 0.
         if (-1. < dels(4,ic) .and. dels(4,ic) <= 0.) czm = 0.
@@ -9170,13 +9385,1817 @@ c       --- Correct coefficients for axisymmetric case
         endif
 
         c0 = cxm + cxp + czm + czp
-        res(ix,iz) = ppp*(rho(ix,iz) + cxm*pxm + cxp*pxp + czm*pzm + czp*pzp
-     &                    - c0*phi(ix,iz))
+        res(ix,iz) = ppp*((rho(ix,iz) * const * epsbari
+     &                    + cxm*pxm + cxp*pxp 
+     &                    + czm*pzm + czp*pzp)/c0
+     &                    - phi(ix,iz))
 
         if (0. >= dels(0,ic) .and. dels(0,ic) >= -1.) res(ix-1,iz) = 0.
         if (0. >= dels(1,ic) .and. dels(1,ic) >= -1.) res(ix+1,iz) = 0.
         if (0. >= dels(4,ic) .and. dels(4,ic) >= -1.) res(ix,iz-1) = 0.
         if (0. >= dels(5,ic) .and. dels(5,ic) >= -1.) res(ix,iz+1) = 0.
+
+      enddo
+!$OMP END DO
+
+      return
+      end
+c=============================================================================
+c=============================================================================
+c=============================================================================
+c=============================================================================
+c=============================================================================
+c=============================================================================
+c=============================================================================
+c=============================================================================
+c=============================================================================
+c=============================================================================
+c=============================================================================
+      subroutine multigrid3ddielectricsolve(iwhich,nx,ny,nz,
+     &                            nxlocal,nylocal,nzlocal,
+     &                            nxguardphi,nyguardphi,nzguardphi,
+     &                            nxguardrho,nyguardrho,nzguardrho,
+     &                            dx,dy,dz,phi,rho,epsilon,bounds,
+     &                            xmminlocal,ymminlocal,
+     &                            mgparam,mgiters,mgmaxiters,
+     &                            mgmaxlevels,mgerror,mgtol,mgverbose,
+     &                            downpasses,uppasses,
+     &                            lcndbndy,laddconductor,
+     &                            gridmode,conductors,
+     &                            fsdecomp)
+      use Subtimersf3d
+      use ConductorTypemodule
+      use Constant
+      use Decompositionmodule
+      integer(ISZ):: iwhich
+      integer(ISZ):: nx,ny,nz,nxlocal,nylocal,nzlocal
+      integer(ISZ):: nxguardphi,nyguardphi,nzguardphi
+      integer(ISZ):: nxguardrho,nyguardrho,nzguardrho
+      real(kind=8):: phi(-nxguardphi:nxlocal+nxguardphi,
+     &                   -nyguardphi:nylocal+nyguardphi,
+     &                   -nzguardphi:nzlocal+nzguardphi)
+      real(kind=8):: rho(-nxguardrho:nxlocal+nxguardrho,
+     &                   -nyguardrho:nylocal+nyguardrho,
+     &                   -nzguardrho:nzlocal+nzguardrho)
+      real(kind=8):: epsilon(0:nxlocal+1,0:nylocal+1,0:nzlocal+1)
+      real(kind=8):: dx,dy,dz
+      integer(ISZ):: bounds(0:5)
+      real(kind=8):: xmminlocal,ymminlocal
+      real(kind=8):: mgparam
+      integer(ISZ):: mgiters,mgmaxiters,mgmaxlevels,mgverbose
+      real(kind=8):: mgerror,mgtol
+      integer(ISZ):: downpasses,uppasses
+      logical(ISZ):: lcndbndy,laddconductor
+      integer(ISZ):: gridmode
+      type(ConductorType):: conductors
+      type(Decomposition):: fsdecomp
+
+c Use the multigrid method for solving Poisson's equation on a 3D Cartesian
+c mesh. The fieldsolver allows for a variable dielectric constant.
+c
+c When the grid cells are rectangular, semi-coarsening is done until the
+c grid cell dimensions are roughly equal. Roughly equal means that
+c   2/3 dx < dz < 4/3 dx & 2/3 dx < dy < 4/3 dx
+c This keeps (max(dz,dy,dx) - min(dz,dy,dx))/dx < 1/3.
+
+      integer(ISZ):: i,j,k,ix,iy,iz
+      real(kind=8),allocatable:: phisave(:,:,:)
+
+      integer(ISZ):: localbounds(0:5)
+      integer(ISZ):: lxoffset(0:fsdecomp%nxprocs-1)
+      integer(ISZ):: rxoffset(0:fsdecomp%nxprocs-1)
+      integer(ISZ):: lyoffset(0:fsdecomp%nyprocs-1)
+      integer(ISZ):: ryoffset(0:fsdecomp%nyprocs-1)     
+      integer(ISZ):: lzoffset(0:fsdecomp%nzprocs-1)
+      integer(ISZ):: rzoffset(0:fsdecomp%nzprocs-1)
+      character(72):: errline
+      integer(ISZ):: alloc_status
+      real(kind=8):: substarttime,wtime
+      if (lf3dtimesubs) substarttime = wtime()
+
+c     --- If doing initialization only, then exit.
+      if (iwhich == 1) return
+
+      localbounds = bounds
+#ifdef MPIPARALLEL
+      if (fsdecomp%ix(fsdecomp%ixproc) > 0)          localbounds(0) = -1
+      if (fsdecomp%ix(fsdecomp%ixproc)+nxlocal < nx) localbounds(1) = -1
+      if (fsdecomp%iy(fsdecomp%iyproc) > 0)          localbounds(2) = -1
+      if (fsdecomp%iy(fsdecomp%iyproc)+nylocal < nx) localbounds(3) = -1
+      if (fsdecomp%iz(fsdecomp%izproc) > 0)          localbounds(4) = -1
+      if (fsdecomp%iz(fsdecomp%izproc)+nzlocal < nz) localbounds(5) = -1
+#endif
+
+c     --- Determine the points that make up the conductor.  This takes extra
+c     --- time and so should not be done if the grid is not moving in the lab
+c     --- frame.  Set gridmode to 1 to avoid this call. The data is then
+c     --- converted and expanded for the multigrid solver.
+      if (gridmode == 0 .or. iwhich == -2) then
+        conductors%interior%n = 0
+        conductors%evensubgrid%n = 0
+        conductors%oddsubgrid%n = 0
+        if (laddconductor) 
+     &    call callpythonfunc("calladdconductor","controllers")
+      endif
+      call checkconductors(nx,ny,nz,nxlocal,nylocal,nzlocal,dx,dy,dz,
+     &                     conductors,fsdecomp)
+
+c     --- Make sure guard planes have sensible values before beginning.
+      call applyboundaryconditions3d(nxlocal,nylocal,nzlocal,
+     &                               nxguardphi,nyguardphi,nzguardphi,
+     &                               phi,1,
+     &                               localbounds,.false.,.false.)
+
+      allocate(phisave(-1:nxlocal+1,-1:nylocal+1,-1:nzlocal+1), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"multigrid3ddielectricsolve: allocation error ",alloc_status,
+     &         ": could not allocate phisave to shape ",
+     &         nxlocal,nylocal,nzlocal
+        call kaboom("multigrid3ddielectricsolve: allocation error")
+        return
+      endif
+
+c     --- Main multigrid v-cycle loop. Calculate error each iteration since
+c     --- very few iterations are done.
+      mgiters = 0
+      mgerror = 2.*mgtol + 1.
+      do while (mgerror > mgtol .and. mgiters < mgmaxiters)
+        mgiters = mgiters + 1
+
+c       --- Save current value of phi
+        phisave = phi(-1:nxlocal+1,-1:nylocal+1,-1:nzlocal+1)
+
+c       --- Do one vcycle.
+        call vcycle3ddielectric(0,1.,nx,ny,nz,
+     &                          nxlocal,nylocal,nzlocal,
+     &                          nxguardphi,nyguardphi,nzguardphi,
+     &                          nxguardrho,nyguardrho,nzguardrho,
+     &                          dx,dy,dz,phi,rho,epsilon,
+     &                          bounds,mgparam,mgmaxlevels,
+     &                          downpasses,uppasses,lcndbndy,conductors,
+     &                          xmminlocal,ymminlocal,fsdecomp)
+
+c       --- Calculate the change in phi.
+        mgerror = 0.
+        do iz=0,nzlocal
+          do iy=0,nylocal
+            do ix=0,nxlocal
+              mgerror = max(mgerror,abs(phisave(ix,iy,iz) 
+     &                    - phi(ix,iy,iz)))
+            enddo
+          enddo
+        enddo
+
+#ifdef MPIPARALLEL
+        if (fsdecomp%nxprocs*fsdecomp%nyprocs*fsdecomp%nzprocs > 1) then
+c         --- calculate global sorerror
+          call parallelmaxrealarraycomm(mgerror,1,fsdecomp%mpi_comm)
+        endif
+#endif
+
+      enddo
+
+c     --- Set boundary conditions. This is only really needed for the
+c     --- Dirichlet boundaries, but this is convenient to call.
+c     --- Do this before mgexchange_phi so that the Dirichlet guard
+c     --- cells get filled in and can be sent to fill in neighbor guard
+c     --- cells in the overlapping regions.
+      call applyboundaryconditions3d(nxlocal,nylocal,nzlocal,
+     &                               nxguardphi,nyguardphi,nzguardphi,
+     &                               phi,1,
+     &                               localbounds,.true.,.false.)
+
+#ifdef MPIPARALLEL
+c     --- If there are extra guard cells, then make the data consistent
+c     --- across the processors.
+      if ((nxguardphi > 1 .and. fsdecomp%nxprocs > 1) .or.
+     &    (nyguardphi > 1 .and. fsdecomp%nyprocs > 1) .or.
+     &    (nzguardphi > 1 .and. fsdecomp%nzprocs > 1)) then
+        call mgexchange_phi(1,nxlocal,nylocal,nzlocal,phi,
+     &                      nxguardphi,nyguardphi,nzguardphi,
+     &                      -max(nxguardphi,nyguardphi,nzguardphi),
+     &                      0,fsdecomp)
+      endif
+#endif
+
+      if (mgverbose>=1 .or. (mgverbose>=0 .and. mgerror > mgtol)) then
+c       --- Make a print out.
+        if (mgerror > mgtol) then
+          call remark("Multigrid3ddielectric: Maximum number of iterations reached")
+        endif
+        write(errline,20) mgerror,mgiters
+  20    format("Multigrid3ddielectric: Error converged to ",1pe11.3," in ",i5," v-cycles")
+        call remark(errline)
+      endif
+
+      deallocate(phisave)
+
+!$OMP END PARALLEL
+
+      if (lf3dtimesubs) timemultigrid3dsolve = timemultigrid3dsolve +
+     &                                         wtime() - substarttime
+
+      return
+      end
+      
+      
+c=============================================================================
+
+      module mg3dDielectricCache 
+        public
+          type mg3dArrayPointer
+            real(kind=8), allocatable :: arr(:,:,:) 
+          end type
+             
+          type(mg3dArrayPointer), allocatable, target::phicoarsecache(:)
+          type(mg3dArrayPointer), allocatable, target::rescache(:)
+          type(mg3dArrayPointer), allocatable, target::epscoarsecache(:)
+          type(mg3dArrayPointer), allocatable, target::rhocoarsecache(:)
+          
+      end module
+      
+      RECURSIVE subroutine vcycle3ddielectric(mglevel,mgscale,nx,ny,nz,
+     &                              nxlocal,nylocal,nzlocal,
+     &                              nxguardphi,nyguardphi,nzguardphi,
+     &                              nxguardrho,nyguardrho,nzguardrho,
+     &                              dx,dy,dz,phi,rho,epsilon,
+     &                              globalbounds,mgparam,
+     &                              mgmaxlevels,downpasses,uppasses,
+     &                              lcndbndy,conductors,
+     &                              xmminlocal,ymminlocal,
+     &                              fsdecomp)
+      use ConductorTypemodule
+      use Multigrid3d_diagnostic
+      use Constant,Only: eps0
+      use Decompositionmodule
+      use mg3dDielectricCache
+      integer(ISZ):: mglevel
+      real(kind=8):: mgscale
+      integer(ISZ):: nx,ny,nz,nxlocal,nylocal,nzlocal
+      integer(ISZ):: nxguardphi,nyguardphi,nzguardphi
+      integer(ISZ):: nxguardrho,nyguardrho,nzguardrho
+      real(kind=8):: dx,dy,dz
+      real(kind=8):: phi(-nxguardphi:nxlocal+nxguardphi,
+     &                   -nyguardphi:nylocal+nyguardphi,
+     &                   -nzguardphi:nzlocal+nzguardphi)
+      real(kind=8):: rho(-nxguardrho:nxlocal+nxguardrho,
+     &                   -nyguardrho:nylocal+nyguardrho,
+     &                   -nzguardrho:nzlocal+nzguardrho)
+      real(kind=8):: epsilon(0:nxlocal+1,0:nylocal+1,0:nzlocal+1)
+      integer(ISZ):: globalbounds(0:5)
+      real(kind=8):: mgparam
+      integer(ISZ):: mgmaxlevels,downpasses,uppasses
+      type(ConductorType):: conductors
+      real(kind=8):: xmminlocal, ymminlocal
+      logical(ISZ):: lcndbndy
+      type(Decomposition):: fsdecomp
+
+c Routine that does the v-cycle for multigrid. Note that it is recursive.
+
+      real(kind=8),pointer:: phicoarse(:,:,:),rhocoarse(:,:,:)
+      real(kind=8),pointer:: epsiloncoarse(:,:,:)
+      real(kind=8),pointer:: res(:,:,:)
+      integer(ISZ):: i,iszone=1
+      integer(ISZ):: nxcoarse,nycoarse,nzcoarse
+      integer(ISZ):: nxlocalcoarse,nylocalcoarse,nzlocalcoarse
+      real(kind=8):: dxcoarse,dycoarse,dzcoarse
+      real(kind=8):: dxcoarsesqi,dycoarsesqi,dzcoarsesqi
+      real(kind=8):: xminodx,xmminlocalcoarse
+      real(kind=8):: yminodx,ymminlocalcoarse
+      real(kind=8):: mgscalecoarse
+      integer(ISZ):: ixproc,iyproc,izproc
+      integer(ISZ):: localbounds(0:5),localboundsc(0:5),epsbounds(0:5)
+      integer(ISZ):: lxoffsetall(0:fsdecomp%nxprocs-1)
+      integer(ISZ):: rxoffsetall(0:fsdecomp%nxprocs-1)
+      integer(ISZ):: lyoffsetall(0:fsdecomp%nyprocs-1)
+      integer(ISZ):: ryoffsetall(0:fsdecomp%nyprocs-1)
+      integer(ISZ):: lzoffsetall(0:fsdecomp%nzprocs-1)
+      integer(ISZ):: rzoffsetall(0:fsdecomp%nzprocs-1)
+      integer(ISZ):: lxoffset,rxoffset
+      integer(ISZ):: lyoffset,ryoffset
+      integer(ISZ):: lzoffset,rzoffset
+      type(Decomposition):: coarsedecomp
+      integer(ISZ):: alloc_status
+      integer(ISZ):: nxguardres,nyguardres,nzguardres
+      logical(ISZ):: lpe0
+      real(kind=8):: sss(2)
+      logical :: exist
+      character (len=90) :: filename
+      localbounds = globalbounds
+      xminodx = xmminlocal/dx
+      yminodx = ymminlocal/dy
+
+      epsbounds = 1
+
+      if (nxlocal .ne. conductors%levelnx(mglevel) .or.
+     &    nylocal .ne. conductors%levelny(mglevel) .or.
+     &    nzlocal .ne. conductors%levelnz(mglevel)) then
+        print*,"grid nx, ny, nz = ",nxlocal,nylocal,nzlocal
+        print*,"conductor nx,ny,nz = ",conductors%levelnx(mglevel),
+     &                                 conductors%levelny(mglevel),
+     &                                 conductors%levelnz(mglevel)
+        call kaboom("vcycle3ddielectric: error: the coarsening level"//
+     &              " of the conductor is"//
+     &              " inconsistent with that used by the solver")
+        return
+      endif
+
+c     Initialize Cached Arrays if needed
+      if (.not.ALLOCATED(phicoarsecache)) then
+        allocate(phicoarsecache(0:mgmaxlevels))
+        allocate(rescache(0:mgmaxlevels))
+        allocate(epscoarsecache(0:mgmaxlevels))
+        allocate(rhocoarsecache(0:mgmaxlevels))
+      endif
+
+#ifdef MPIPARALLEL
+      ixproc = fsdecomp%ixproc
+      iyproc = fsdecomp%iyproc
+      izproc = fsdecomp%izproc
+      if (fsdecomp%ix(ixproc) > 0)          localbounds(0) = -1
+      if (fsdecomp%ix(ixproc)+nxlocal < nx) localbounds(1) = -1
+      if (fsdecomp%iy(iyproc) > 0)          localbounds(2) = -1
+      if (fsdecomp%iy(iyproc)+nylocal < ny) localbounds(3) = -1
+      if (fsdecomp%iz(izproc) > 0)          localbounds(4) = -1
+      if (fsdecomp%iz(izproc)+nzlocal < nz) localbounds(5) = -1
+      
+c     Make sure rho guard cells are sane
+      if (mglevel .eq. 0) then 
+        call mgexchange_phi(1,nxlocal,nylocal,nzlocal,rho,
+     &                        nxguardrho,nyguardrho,nzguardrho,
+     &                        -1,-1,fsdecomp)
+        call mgexchange_phi_periodic(1,nxlocal,nylocal,nzlocal,rho,
+     &                               nxguardrho,nyguardrho,nzguardrho,
+     &                               0,0,localbounds,fsdecomp)
+      endif
+#endif
+
+#ifdef DEBUG
+        write(filename, '("rho_",I0.2,"_",I0.2"_"I0.2,".txt")') 
+     &    ixproc, iyproc, izproc
+
+        inquire(file=filename, exist=exist)
+        if (exist) then
+          open(12, file=filename, status="old", 
+     &             position="append", action="write")
+        else
+          open(12, file=filename, status="new", action="write")
+        end if
+
+        write(12,*) "PROCESSOR X,Y,Z",ixproc,iyproc,izproc
+        write(12,*) "N",nx,ny,nz
+        write(12,*) "NLOCAL",nxlocal,nylocal,nzlocal
+        write(12,'(10(ES20.10))') rho
+
+        close(12)
+#endif  
+
+      if (lprintmgarraysumdiagnostic) then
+#ifdef MPIPARALLEL
+        lpe0=(fsdecomp%ixproc==0 .and. fsdecomp%iyproc==0 
+     &    .and. fsdecomp%izproc==0)
+#else
+        lpe0 = .true.
+#endif
+        call mggetarraysum(nxlocal,nylocal,nzlocal,
+     &                     nxguardphi,nyguardphi,nzguardphi,
+     &                     phi,fsdecomp,0,sss)
+        if (lpe0) print*,"V1 phi",mglevel,sss
+        call mggetarraysum(nxlocal,nylocal,nzlocal,
+     &                     nxguardrho,nyguardrho,nzguardrho,
+     &                     rho,fsdecomp,0,sss)
+        if (lpe0) print*,"V1 rho",mglevel,sss/eps0
+      endif
+
+c     --- Do initial SOR passes.
+      do i=1,downpasses
+        call relax3ddielectric(mglevel,nx,ny,nz,
+     &                         nxlocal,nylocal,nzlocal,
+     &                         nxguardphi,nyguardphi,nzguardphi,
+     &                         nxguardrho,nyguardrho,nzguardrho,
+     &                         phi,rho,epsilon,
+     &                         dx,dy,dz,xminodx,yminodx,
+     &                         localbounds,mgparam,lcndbndy,
+     &                         conductors,fsdecomp)
+      enddo
+
+      if (lprintmgarraysumdiagnostic) then
+        call mggetarraysum(nxlocal,nylocal,nzlocal,
+     &                     nxguardphi,nyguardphi,nzguardphi,
+     &                     phi,fsdecomp,0,sss)
+        if (lpe0) print*,"V2 phi",mglevel,sss
+        call mggetarraysum(nxlocal,nylocal,nzlocal,
+     &                     nxguardrho,nyguardrho,nzguardrho,
+     &                     rho,fsdecomp,0,sss)
+        if (lpe0) print*,"V2 rho",mglevel,sss/eps0
+      endif
+
+c     --- Check if this is the coarsest level. If so, then don't do any further
+c     --- coarsening. This is the same check that is done in getmglevels.
+C     changed to stop coarsening at 6 (was 4) to prevent failure of periodic boundary exchange
+C     epsilon has n - 1 cells compared to n for phi and will not be able to exchange boudnaries if n <= 3
+      if (nx >= NMGMIN .and. ny >= NMGMIN .and. nz > NMGMIN .and.
+     &    mglevel < mgmaxlevels) then
+
+        nxguardres = 1
+        nyguardres = 1
+        nzguardres = 1
+        if (nx > nxlocal) nxguardres = 3
+        if (ny > nylocal) nyguardres = 3
+        if (nz > nzlocal) nzguardres = 3
+
+        if (.not.ALLOCATED(rescache(mglevel)%arr)) then
+#ifdef DEBUG
+          print*,"vcycle3ddielectric: allocating res to shape ",
+     &        nxlocal,nylocal,nzlocal
+#endif
+          allocate(rescache(mglevel)%arr(-nxguardres:nxlocal+nxguardres,
+     &                                   -nyguardres:nylocal+nyguardres,
+     &                                  -nzguardres:nzlocal+nzguardres),
+     &                                  stat=alloc_status)
+          if (alloc_status /= 0) then
+            print*,"vcycle3ddielectric: allocation error ",alloc_status,
+     &             ": could not allocate res to shape ",
+     &             nxlocal,nylocal,nzlocal
+            call kaboom("vcycle3ddielectric: allocation error")
+            return
+          endif
+        endif
+        
+c       Point to preallocated array
+        res => rescache(mglevel)%arr
+
+c       --- Get the residual on the current grid.
+        call residual3ddielectric(nxlocal,nylocal,nzlocal,
+     &                            nxguardphi,nyguardphi,nzguardphi,
+     &                            nxguardrho,nyguardrho,nzguardrho,
+     &                            nxguardres,nyguardres,nzguardres,
+     &                            phi,rho,epsilon,res,dx,dy,dz,
+     &                            mglevel,localbounds,
+     &                            lcndbndy,conductors,
+     &                            xminodx,yminodx)
+#ifdef MPIPARALLEL
+        call mgexchange_phi_periodic(1,nxlocal,nylocal,nzlocal,res,
+     &                               nxguardres,nyguardres,nzguardres,
+     &                               -1,0,localbounds,fsdecomp)
+        call mgexchange_res(1,nxlocal,nylocal,nzlocal,res,
+     &                      nxguardres,nyguardres,nzguardres,
+     &                      -3,-1,fsdecomp)
+#endif
+#ifdef DEBUG
+        write(filename, '("res_",I0.2,"_",I0.2"_"I0.2,".txt")') 
+     &    ixproc, iyproc, izproc
+
+        inquire(file=filename, exist=exist)
+        if (exist) then
+          open(12, file=filename, status="old", 
+     &             position="append", action="write")
+        else
+          open(12, file=filename, status="new", action="write")
+        end if
+
+        write(12,*) "PROCESSOR X,Y,Z",ixproc,iyproc,izproc
+        write(12,*) "N",nx,ny,nz
+        write(12,*) "NLOCAL",nxlocal,nylocal,nzlocal
+        write(12,'(10(ES20.10))') res
+
+        close(12)
+#endif  
+        if (lprintmgarraysumdiagnostic) then
+          call mggetarraysum(nxlocal,nylocal,nzlocal,
+     &                       nxguardres,nyguardres,nzguardres,
+     &                       res,fsdecomp,0,sss)
+          if (lpe0) print*,"V3 res",mglevel,sss/eps0
+        endif
+
+c       --- Note that some y quantities are included as dummies since the
+c       --- routine will change the values.
+        call getnextcoarselevel3d(nx,ny,nz,
+     &                            nxlocal,nylocal,nzlocal,dx,dy,dz,
+     &                            nxcoarse,nycoarse,nzcoarse,
+     &                            dxcoarse,dycoarse,dzcoarse)
+
+        dxcoarsesqi = 1./dxcoarse**2
+        dycoarsesqi = 1./dycoarse**2
+        dzcoarsesqi = 1./dzcoarse**2
+c       --- This option is not supported
+c       mgscalecoarse = mgscale*dxcoarse*dzcoarse/(dx*dz)
+        mgscalecoarse = 1.
+
+        localboundsc = globalbounds
+
+#ifdef MPIPARALLEL
+        coarsedecomp%nxglobal = nxcoarse
+        coarsedecomp%nyglobal = nycoarse
+        coarsedecomp%nzglobal = nzcoarse
+        coarsedecomp%mpi_comm_x = fsdecomp%mpi_comm_x
+        coarsedecomp%mpi_comm_y = fsdecomp%mpi_comm_y
+        coarsedecomp%mpi_comm_z = fsdecomp%mpi_comm_z
+        coarsedecomp%ixproc = fsdecomp%ixproc
+        coarsedecomp%iyproc = fsdecomp%iyproc
+        coarsedecomp%izproc = fsdecomp%izproc
+        coarsedecomp%nxprocs = fsdecomp%nxprocs
+        coarsedecomp%nyprocs = fsdecomp%nyprocs
+        coarsedecomp%nzprocs = fsdecomp%nzprocs
+        allocate(coarsedecomp%ix(0:fsdecomp%nxprocs-1))
+        allocate(coarsedecomp%nx(0:fsdecomp%nxprocs-1))
+        allocate(coarsedecomp%iy(0:fsdecomp%nyprocs-1))
+        allocate(coarsedecomp%ny(0:fsdecomp%nyprocs-1))
+        allocate(coarsedecomp%iz(0:fsdecomp%nzprocs-1))
+        allocate(coarsedecomp%nz(0:fsdecomp%nzprocs-1))
+        allocate(coarsedecomp%mpistatex(0:fsdecomp%nxprocs-1))
+        allocate(coarsedecomp%mpistatey(0:fsdecomp%nyprocs-1))
+        allocate(coarsedecomp%mpistatez(0:fsdecomp%nzprocs-1))
+c       --- Find domains in coarser grid
+        call mgdividenz(fsdecomp,coarsedecomp,nx,ny,nz,
+     &                  nxcoarse,nycoarse,nzcoarse,mgscale)
+c       --- Reset value to corrected one
+        nxlocalcoarse = coarsedecomp%nx(ixproc)
+        nylocalcoarse = coarsedecomp%ny(iyproc)
+        nzlocalcoarse = coarsedecomp%nz(izproc)
+c       --- Difference between starts and ends of coarse and fine grids.
+c       --- Should only be in the range 0-2.
+        lxoffsetall = (nxcoarse*fsdecomp%ix-nx*coarsedecomp%ix)
+        rxoffsetall = (nx*(coarsedecomp%ix + coarsedecomp%nx) -
+     &                 nxcoarse*(fsdecomp%ix + fsdecomp%nx))
+        lyoffsetall = (nycoarse*fsdecomp%iy-ny*coarsedecomp%iy)
+        ryoffsetall = (ny*(coarsedecomp%iy + coarsedecomp%ny) -
+     &                 nycoarse*(fsdecomp%iy + fsdecomp%ny))
+        lzoffsetall = (nzcoarse*fsdecomp%iz-nz*coarsedecomp%iz)
+        rzoffsetall = (nz*(coarsedecomp%iz + coarsedecomp%nz) -
+     &                 nzcoarse*(fsdecomp%iz + fsdecomp%nz))
+c       --- Note that the lzoffsetall and rzoffsetall can only be used in
+c       --- MPIPARALLEL sections since they will be unallocated in the
+c       --- serial code. So, separate scalars are used in code which is
+c       --- used in the serial version.
+        lxoffset = lxoffsetall(ixproc)
+        rxoffset = rxoffsetall(ixproc)
+        lyoffset = lyoffsetall(iyproc)
+        ryoffset = ryoffsetall(iyproc)
+        lzoffset = lzoffsetall(izproc)
+        rzoffset = rzoffsetall(izproc)
+        if (coarsedecomp%ix(ixproc) > 0) localboundsc(0) = -1
+        if (coarsedecomp%ix(ixproc)+nxlocalcoarse < nxcoarse)
+     &    localboundsc(1) = -1
+        if (coarsedecomp%iy(iyproc) > 0) localboundsc(2) = -1
+        if (coarsedecomp%iy(iyproc)+nylocalcoarse < nycoarse)
+     &    localboundsc(3) = -1
+        if (coarsedecomp%iz(izproc) > 0) localboundsc(4) = -1
+        if (coarsedecomp%iz(izproc)+nzlocalcoarse < nzcoarse)
+     &    localboundsc(5) = -1
+c       --- Calculate the xmminlocal of the coarse grid
+        xmminlocalcoarse = xmminlocal
+     &                   - fsdecomp%ix(fsdecomp%ixproc)*dx
+     &                   + coarsedecomp%ix(fsdecomp%ixproc)*dxcoarse
+        ymminlocalcoarse = ymminlocal
+     &                   - fsdecomp%iy(fsdecomp%iyproc)*dy
+     &                   + coarsedecomp%iy(fsdecomp%iyproc)*dycoarse
+#else
+        nxlocalcoarse = nxcoarse
+        nylocalcoarse = nycoarse
+        nzlocalcoarse = nzcoarse
+        lxoffset = 0
+        rxoffset = 0
+        lyoffset = 0
+        ryoffset = 0
+        lzoffset = 0
+        rzoffset = 0
+        xmminlocalcoarse = xmminlocal
+        ymminlocalcoarse = ymminlocal
+#endif
+c       Allocate array space on first time through
+        if (.not.ALLOCATED(phicoarsecache(mglevel)%arr)) then
+c         --- Allocate new work space
+#ifdef DEBUG
+          print*,"vcycle3ddielectric: allocating phicoarse to shape ",
+     &             nxlocalcoarse,nylocalcoarse,nzlocalcoarse
+#endif
+          allocate(phicoarsecache(mglevel)%arr(-1:nxlocalcoarse+1,
+     &                                         -1:nylocalcoarse+1,
+     &                                         -1:nzlocalcoarse+1),
+     &                                         stat=alloc_status)
+          if (alloc_status /= 0) then
+            print*,"vcycle3ddielectric: allocation error ",alloc_status,
+     &             ": could not allocate phicoarse to shape ",
+     &             nxlocalcoarse,nylocalcoarse,nzlocalcoarse
+            call kaboom("vcycle3ddielectric: allocation error")
+            return
+          endif
+        endif
+
+        phicoarse => phicoarsecache(mglevel)%arr
+
+        if (.not.ALLOCATED(rhocoarsecache(mglevel)%arr)) then
+#ifdef DEBUG
+          print*,"vcycle3ddielectric: allocating rhocoarse to shape ",
+     &             nxlocalcoarse,nylocalcoarse,nzlocalcoarse
+#endif
+          allocate(rhocoarsecache(mglevel)%arr(0:nxlocalcoarse,
+     &                                         0:nylocalcoarse,
+     &                                         0:nzlocalcoarse),
+     &                                         stat=alloc_status)
+          if (alloc_status /= 0) then
+            print*,"vcycle3ddielectric: allocation error ",alloc_status,
+     &             ": could not allocate rhocoarse to shape ",
+     &             nxlocalcoarse,nylocalcoarse,nzlocalcoarse
+            call kaboom("vcycle2ddielectric: allocation error")
+            return
+          endif
+        endif
+        
+        rhocoarse => rhocoarsecache(mglevel)%arr
+        
+        if (.not.ALLOCATED(epscoarsecache(mglevel)%arr)) then
+#ifdef DEBUG
+          print*,"vcycle3ddielectric: allocating epscoarse to shape ",
+     &             nxlocalcoarse,nylocalcoarse,nzlocalcoarse
+#endif
+          allocate(epscoarsecache(mglevel)%arr(0:nxlocalcoarse+1,
+     &                                         0:nylocalcoarse+1,
+     &                                         0:nzlocalcoarse+1),
+     &                                         stat=alloc_status)
+          if (alloc_status /= 0) then
+            print*,"vcycle3ddielectric: allocation error ",alloc_status,
+     &             ": could not allocate epsiloncoarse to shape ",
+     &             nxlocalcoarse,nylocalcoarse,nzlocalcoarse
+            call kaboom("vcycle2ddielectric: allocation error")
+            return
+          endif
+          
+          epsiloncoarse => epscoarsecache(mglevel)%arr
+          
+          call restrict3dcellcentered(nx,ny,nz,
+     &                    nxlocal,nylocal,nzlocal,epsilon,
+     &                    nxcoarse,nycoarse,nzcoarse,
+     &                    nxlocalcoarse,nylocalcoarse,nzlocalcoarse,
+     &                    epsiloncoarse,
+     &                    localbounds,localboundsc,
+     &                    lxoffset,lyoffset,lzoffset)
+
+          epsbounds = localboundsc
+          where (epsbounds .eq. 0)
+            epsbounds = 1
+          endwhere
+
+          call applyboundaryconditions3d(nxlocalcoarse-1,
+     &                                   nylocalcoarse-1,
+     &                                   nzlocalcoarse-1,
+     &                                   1,1,1,epsiloncoarse,
+     &                                   1,epsbounds,
+     &                                 .true.,.false.)
+C           print*,"Before Exch",ixproc,izproc,epsiloncoarse
+#ifdef MPIPARALLEL
+          call mgexchange_epsilon2(1,nxlocalcoarse,
+     &                               nylocalcoarse,
+     &                               nzlocalcoarse,
+     &                               epsiloncoarse,1,1,1,
+     &                               -1,-1,0,0,coarsedecomp)
+          call mgexchange_phi_periodic(1,nxlocalcoarse - 1,
+     &                                   nylocalcoarse - 1,
+     &                                   nzlocalcoarse - 1,
+     &                                   epsiloncoarse,
+     &                                   1,1,1,
+     &                                  -1,-1,epsbounds,coarsedecomp)
+#endif
+
+#ifdef DEBUG
+          write(filename, '("epscoarse_",I0.2,"_",I0.2"_"I0.2,".txt")') 
+     &      ixproc, iyproc, izproc
+
+          inquire(file=filename, exist=exist)
+          if (exist) then
+            open(12, file=filename, status="old", 
+     &               position="append", action="write")
+          else
+            open(12, file=filename, status="new", action="write")
+          end if
+
+          write(12,*) "PROCESSOR X,Y,Z",ixproc,iyproc,izproc
+          write(12,*) "N",nx,ny,nz
+          write(12,*) "NLOCAL",nxlocal,nylocal,nzlocal
+          write(12,'(10(ES20.10))') epsiloncoarse
+
+        close(12)
+#endif  
+
+        endif
+        
+        epsiloncoarse => epscoarsecache(mglevel)%arr
+
+c        rhocoarse = 0.
+        phicoarse = 0.
+
+c       --- Restriction - note that no scaling factor is needed since rho 
+c       is not prescaled with mgparam/(2*(dxsqi+dysqi+dzsqi))
+        call restrict3d(nx,ny,nz,nxlocal,nylocal,nzlocal,
+     &                  nxguardres,nyguardres,nzguardres,res,
+     &                  nxcoarse,nycoarse,nzcoarse,
+     &                  nxlocalcoarse,nylocalcoarse,nzlocalcoarse,
+     &                  rhocoarse,
+     &                  1.0,localbounds,localboundsc,
+     &                  lxoffset,lyoffset,lzoffset)
+
+
+        if (lprintmgarraysumdiagnostic) then
+          call mggetarraysum(nxlocalcoarse,nylocalcoarse,nzlocalcoarse,
+     &                       0,0,0,
+     &                       rhocoarse,coarsedecomp,0,sss)
+          if (lpe0) print*,"V3 rhocoarse",mglevel,sss/eps0
+        endif
+
+c       --- Continue at the next coarsest level.
+        call vcycle3ddielectric(mglevel+iszone,mgscalecoarse,
+     &                nxcoarse,nycoarse,nzcoarse,
+     &                nxlocalcoarse,nylocalcoarse,nzlocalcoarse,
+     &                1,1,1,
+     &                0,0,0,
+     &                dxcoarse,dycoarse,dzcoarse,phicoarse,rhocoarse,
+     &                epsiloncoarse,
+     &                globalbounds,mgparam,
+     &                mgmaxlevels,downpasses,uppasses,
+     &                lcndbndy,conductors,
+     &                xmminlocalcoarse,ymminlocalcoarse,
+     &                coarsedecomp)
+
+        if (lprintmgarraysumdiagnostic) then
+          call mggetarraysum(nxlocalcoarse,nylocalcoarse,nzlocalcoarse,
+     &                       1,1,1,
+     &                       phicoarse,coarsedecomp,0,sss)
+          if (lpe0) print*,"V4 phicoarse",mglevel,sss
+        endif
+
+#ifdef MPIPARALLEL
+        if (any(coarsedecomp%mpistatex == 1) .or.
+     &      any(coarsedecomp%mpistatey == 1) .or.
+     &      any(coarsedecomp%mpistatez == 1)) then
+          call mgexchange_phiupdate(1,nxlocalcoarse,
+     &                              nylocalcoarse,nzlocalcoarse,
+     &                              phicoarse,
+     &                              nxguardphi,nyguardphi,nzguardphi,
+     &                              -1,-1,coarsedecomp)
+        endif
+#endif
+        if (lprintmgarraysumdiagnostic) then
+          call mggetarraysum(nxlocalcoarse,nylocalcoarse,nzlocalcoarse,
+     &                       1,1,1,
+     &                       phicoarse,coarsedecomp,1,sss)
+          if (lpe0) print*,"V5 phicoarse",mglevel,sss
+        endif
+
+c       --- Add in resulting error.
+        call expand3d(nx,ny,nz,nxlocal,nylocal,nzlocal,
+     &                nxguardphi,nyguardphi,nzguardphi,phi,
+     &                nxcoarse,nycoarse,nzcoarse,
+     &                nxlocalcoarse,nylocalcoarse,nzlocalcoarse,
+     &                phicoarse,
+     &                localbounds,lxoffset,lyoffset,lzoffset,
+     &                conductors,.false.)
+     
+        call applyboundaryconditions3d(nxlocal,nylocal,nzlocal,
+     &                                 nxguardphi,nyguardphi,nzguardphi,
+     &                                 phi,1,
+     &                                 localbounds,.false.,.false.)
+     
+#ifdef MPIPARALLEL
+        call mgexchange_phi_periodic(1,nxlocal,nylocal,nzlocal,phi,
+     &                               nxguardphi,nyguardphi,nzguardphi,
+     &                               -1,0,localbounds,fsdecomp)
+#endif
+
+#ifdef DEBUG
+        write(filename, '("phi_",I0.2,"_",I0.2"_"I0.2,".txt")') 
+     &    ixproc, iyproc, izproc
+
+        inquire(file=filename, exist=exist)
+        if (exist) then
+          open(12, file=filename, status="old", 
+     &             position="append", action="write")
+        else
+          open(12, file=filename, status="new", action="write")
+        end if
+
+        write(12,*) "PROCESSOR X,Y,Z",ixproc,iyproc,izproc
+        write(12,*) "N",nx,ny,nz
+        write(12,*) "NLOCAL",nxlocal,nylocal,nzlocal
+        write(12,'(10(ES20.10))') phi
+
+        close(12)
+#endif  
+
+c        deallocate(phicoarse,rhocoarse,epsiloncoarse)
+c        deallocate(res)
+
+#ifdef MPIPARALLEL
+        deallocate(coarsedecomp%ix)
+        deallocate(coarsedecomp%nx)
+        deallocate(coarsedecomp%iy)
+        deallocate(coarsedecomp%ny)
+        deallocate(coarsedecomp%iz)
+        deallocate(coarsedecomp%nz)
+        deallocate(coarsedecomp%mpistatex)
+        deallocate(coarsedecomp%mpistatey)
+        deallocate(coarsedecomp%mpistatez)
+#endif
+
+      endif
+
+      if (lprintmgarraysumdiagnostic) then
+#ifdef MPIPARALLEL
+        call mgexchange_phi_periodic(1,nxlocal,nylocal,nzlocal,phi,
+     &                               nxguardphi,nyguardphi,nzguardphi,
+     &                               0,0,localbounds,fsdecomp)
+        call mgexchange_phi(1,nxlocal,nylocal,nzlocal,phi,
+     &                      nxguardphi,nyguardphi,nzguardphi,
+     &                      -1,-1,fsdecomp)
+#endif
+        call mggetarraysum(nxlocal,nylocal,nzlocal,
+     &                     nxguardphi,nyguardphi,nzguardphi,
+     &                     phi,fsdecomp,0,sss)
+        if (lpe0) print*,"V5 phi",mglevel,sss
+      endif
+
+c     --- Do final SOR passes.
+      do i=1,uppasses
+        call relax3ddielectric(mglevel,nx,ny,nz,nxlocal,nylocal,nzlocal,
+     &                         nxguardphi,nyguardphi,nzguardphi,
+     &                         nxguardrho,nyguardrho,nzguardrho,
+     &                         phi,rho,epsilon,
+     &                         dx,dy,dz,xminodx,yminodx,localbounds,
+     &                         mgparam,lcndbndy,
+     &                         conductors,fsdecomp)
+      enddo
+
+      return
+      end
+c=============================================================================
+      subroutine relax3ddielectric(mglevel,nx,ny,nz,
+     &                             nxlocal,nylocal,nzlocal,
+     &                             nxguardphi,nyguardphi,nzguardphi,
+     &                             nxguardrho,nyguardrho,nzguardrho,
+     &                             phi,rho,
+     &                             epsilon,dx,dy,dz,xminodx,yminodx,
+     &                             localbounds,mgparam,lcndbndy,
+     &                             conductors,
+     &                             fsdecomp)
+      use Constant
+      use ConductorTypemodule
+      use Decompositionmodule
+      integer(ISZ):: mglevel,nx,ny,nz,nxlocal,nylocal,nzlocal
+      integer(ISZ):: nxguardphi,nyguardphi,nzguardphi
+      integer(ISZ):: nxguardrho,nyguardrho,nzguardrho
+      real(kind=8):: phi(-nxguardphi:nxlocal+nxguardphi,
+     &                   -nyguardphi:nylocal+nyguardphi,
+     &                   -nzguardphi:nzlocal+nzguardphi)
+      real(kind=8):: rho(-nxguardrho:nxlocal+nxguardrho,
+     &                   -nyguardrho:nylocal+nyguardrho,
+     &                   -nzguardrho:nzlocal+nzguardrho)
+      real(kind=8):: epsilon(0:nxlocal+1,0:nylocal+1,0:nzlocal+1)
+      integer(ISZ):: localbounds(0:5)
+      real(kind=8):: dx,dy,dz,xminodx,yminodx,mgparam
+      logical(ISZ):: lcndbndy
+      type(ConductorType):: conductors
+      type(Decomposition):: fsdecomp
+
+c This routine does one pass of point SOR with even-odd (red-black)
+c ordering.
+c phisave is needed because when there are B fields, the even and odd sweeps
+c are no longer independent since the diagonal coefficients become non-zero.
+c The simplest solution is to save the values of phi before a sweep and
+c read those saved values for the update of phi.
+
+      integer(ISZ):: parity,s_parity,e_parity
+      integer(ISZ):: ixmin,ixmax,iymin,iymax,izmin,izmax,ix,iy,iz,ix1
+      integer(ISZ):: i1,i2,ic
+      real(kind=8):: dxsqi,dysqi,dzsqi, const, epsbari, 
+     &               depsx, depsy, depsz
+
+      dxsqi = 1./dx**2
+      dysqi = 1./dy**2
+      dzsqi = 1./dz**2
+      
+      const = mgparam/(2.*(dxsqi+dysqi+dzsqi))
+
+      call cond_potmg(conductors%interior,nxlocal,nylocal,nzlocal,
+     &                nxguardphi,nyguardphi,nzguardphi,
+     &                phi,mglevel,1,.false.)
+      call condbndymgint(conductors,nxlocal,nylocal,nzlocal,
+     &                   nxguardphi,nyguardphi,nzguardphi,
+     &                   phi,localbounds,mglevel,2)
+
+c     --- Set starting and ending parity.
+#ifdef MPIPARALLEL
+      parity =   fsdecomp%ix(fsdecomp%ixproc)
+     &         + fsdecomp%iy(fsdecomp%iyproc)
+     &         + fsdecomp%iz(fsdecomp%izproc)
+      s_parity = mod(parity,2)
+      e_parity = mod(s_parity+1,2)
+#else
+      s_parity = 0
+      e_parity = 1
+#endif
+
+c     --- Set min and max indices for phi array.
+c     --- If using Dirichlet boundary conditions, do not solve for the
+c     --- potential on the grid edge.
+      ixmin = 0
+      ixmax = nxlocal
+      iymin = 0
+      iymax = nylocal
+      izmin = 0
+      izmax = nzlocal
+      if (localbounds(0) < 1) ixmin = 1
+      if (localbounds(1) < 1) ixmax = nxlocal - 1
+      if (localbounds(2) < 1) iymin = 1
+      if (localbounds(3) < 1) iymax = nylocal - 1
+      if (localbounds(4) < 1) izmin = 1
+      if (localbounds(5) < 1) izmax = nzlocal - 1
+
+c     --- do loop to cover even and odd points
+      do parity=s_parity,e_parity,e_parity-s_parity
+
+c       --- Save values just outside conductor surfaces. Only save phi at the
+c       --- subgrid points which are to be used at the current level of
+c       --- grid refinement.
+        if (lcndbndy) then
+          if (parity == 0) then
+            i1 = conductors%evensubgrid%istart(mglevel)
+            i2 = conductors%evensubgrid%istart(mglevel+1)-1
+            do ic = i1,i2
+              ix = conductors%evensubgrid%indx(0,ic)
+              iy = conductors%evensubgrid%indx(1,ic)
+              iz = conductors%evensubgrid%indx(2,ic)
+              conductors%evensubgrid%prevphi(ic) = phi(ix,iy,iz)
+            enddo
+          else
+            i1 = conductors%oddsubgrid%istart(mglevel)
+            i2 = conductors%oddsubgrid%istart(mglevel+1)-1
+            do ic = i1,i2
+              ix = conductors%oddsubgrid%indx(0,ic)
+              iy = conductors%oddsubgrid%indx(1,ic)
+              iz = conductors%oddsubgrid%indx(2,ic)
+              conductors%oddsubgrid%prevphi(ic) = phi(ix,iy,iz)
+            enddo
+          endif
+        endif
+
+        do iz=izmin,izmax
+          do iy=iymin,iymax
+            ix1 = ixmin + mod(ixmin + iy + iz + parity,2)
+            do ix=ix1,ixmax,2
+c             Calculate coefficient values for 3D dielectric SOR update 
+              epsbari = 1./(epsilon(ix,iy,iz) + epsilon(ix+1,iy,iz)
+     &                + epsilon(ix+1,iy+1,iz) + epsilon(ix,iy+1,iz)
+     &                + epsilon(ix+1,iy,iz+1) + epsilon(ix,iy,iz+1)
+     &                + epsilon(ix,iy+1,iz+1) + epsilon(ix+1,iy+1,iz+1))
+     
+              depsx = (epsilon(ix+1,iy,iz) - epsilon(ix,iy,iz)
+     &              + epsilon(ix+1,iy+1,iz) - epsilon(ix,iy+1,iz)
+     &              + epsilon(ix+1,iy,iz+1) - epsilon(ix,iy,iz+1)
+     &              + epsilon(ix+1,iy+1,iz+1) - epsilon(ix,iy+1,iz+1))
+     &              * epsbari
+
+              depsy = (epsilon(ix,iy+1,iz) - epsilon(ix,iy,iz)
+     &              + epsilon(ix+1,iy+1,iz) - epsilon(ix+1,iy,iz)
+     &              + epsilon(ix,iy+1,iz+1) - epsilon(ix,iy,iz+1)
+     &              + epsilon(ix+1,iy+1,iz+1) - epsilon(ix+1,iy,iz+1))
+     &              * epsbari 
+     
+              depsz = (epsilon(ix,iy,iz+1) - epsilon(ix,iy,iz)
+     &              + epsilon(ix+1,iy,iz+1) - epsilon(ix+1,iy,iz)
+     &              + epsilon(ix,iy+1,iz+1) - epsilon(ix,iy+1,iz)
+     &              + epsilon(ix+1,iy+1,iz+1) - epsilon(ix+1,iy+1,iz))
+     &              * epsbari
+     
+c             Update phi                              
+              phi(ix,iy,iz) = const*(8.*epsbari*rho(ix,iy,iz)
+     &                      + dxsqi*phi(ix+1,iy,iz)*(1.+depsx)
+     &                      + dxsqi*phi(ix-1,iy,iz)*(1.-depsx)
+     &                      + dysqi*phi(ix,iy+1,iz)*(1.+depsy)
+     &                      + dysqi*phi(ix,iy-1,iz)*(1.-depsy) 
+     &                      + dzsqi*phi(ix,iy,iz+1)*(1.+depsz)
+     &                      + dzsqi*phi(ix,iy,iz-1)*(1.-depsz))
+     &                     + (1.-mgparam)*phi(ix,iy,iz)
+            enddo
+          enddo
+        enddo
+
+c       --- Apply altered difference equation to the points near the
+c       --- surface of the conductor boundaries.
+        if (lcndbndy) then
+          if (parity == 0) then
+           call condbndymg3ddielectric(conductors%evensubgrid,
+     &                                 nxlocal,nylocal,nzlocal,
+     &                                 nxguardphi,nyguardphi,nzguardphi,
+     &                                 nxguardrho,nyguardrho,nzguardrho,
+     &                                 phi,rho,epsilon,
+     &                                 dxsqi,dysqi,dzsqi,
+     &                                 xminodx,yminodx,
+     &                                 mgparam,localbounds,mglevel)
+          endif
+          if (parity == 1) then
+           call condbndymg3ddielectric(conductors%oddsubgrid,
+     &                                 nxlocal,nylocal,nzlocal,
+     &                                 nxguardphi,nyguardphi,nzguardphi,
+     &                                 nxguardrho,nyguardrho,nzguardrho,
+     &                                 phi,rho,epsilon,
+     &                                 dxsqi,dysqi,dzsqi,
+     &                                 xminodx,yminodx,
+     &                                 mgparam,localbounds,mglevel)
+          endif
+        endif
+
+        call cond_potmg(conductors%interior,nxlocal,nylocal,nzlocal,
+     &                  nxguardphi,nyguardphi,nzguardphi,
+     &                  phi,mglevel,1,.false.)
+        call condbndymgint(conductors,nxlocal,nylocal,nzlocal,
+     &                     nxguardphi,nyguardphi,nzguardphi,
+     &                     phi,localbounds,mglevel,2)
+
+        call applyboundaryconditions3d(nxlocal,nylocal,nzlocal,
+     &                                 nxguardphi,nyguardphi,nzguardphi,
+     &                                 phi,1,
+     &                                 localbounds,.false.,.false.)
+
+#ifdef MPIPARALLEL
+        call mgexchange_phi_periodic(1,nxlocal,nylocal,nzlocal,phi,
+     &                               nxguardphi,nyguardphi,nzguardphi,
+     &                               -1,0,localbounds,fsdecomp)
+        if (parity == s_parity) then
+          call mgexchange_phi(1,nxlocal,nylocal,nzlocal,phi,
+     &                          nxguardphi,nyguardphi,nzguardphi,
+     &                          0,0,fsdecomp)
+        else
+          call mgexchange_phi(1,nxlocal,nylocal,nzlocal,phi,
+     &                          nxguardphi,nyguardphi,nzguardphi,
+     &                          -1,0,fsdecomp)
+        endif
+#endif
+
+c     --- end of loop over even and odd points
+      enddo
+
+#ifdef MPIPARALLEL
+c     --- Exchange phi in the z guard planes
+c      call mgexchange_phi(1,nxlocal,nylocal,nzlocal,phi,
+c     &                    nxguardphi,nyguardphi,nzguardphi,
+c     &                    -1,-1,fsdecomp)
+#endif
+
+      return
+      end
+c=============================================================================
+      subroutine residual3ddielectric(nxlocal,nylocal,nzlocal,
+     &                                nxguardphi,nyguardphi,nzguardphi,
+     &                                nxguardrho,nyguardrho,nzguardrho,
+     &                                nxguardres,nyguardres,nzguardres,
+     &                                phi,rho,epsilon,res,dx,dy,dz,
+     &                                mglevel,localbounds,lcndbndy,
+     &                                conductors,
+     &                                xminodx,yminodx)
+      use Constant
+      use ConductorTypemodule
+      integer(ISZ):: nxlocal,nylocal,nzlocal
+      integer(ISZ):: nxguardphi,nyguardphi,nzguardphi
+      integer(ISZ):: nxguardrho,nyguardrho,nzguardrho
+      integer(ISZ):: nxguardres,nyguardres,nzguardres
+      real(kind=8):: phi(-nxguardphi:nxlocal+nxguardphi,
+     &                   -nyguardphi:nylocal+nyguardphi,
+     &                   -nzguardphi:nzlocal+nzguardphi)
+      real(kind=8):: rho(-nxguardrho:nxlocal+nxguardrho,
+     &                   -nyguardrho:nylocal+nyguardrho,
+     &                   -nzguardrho:nzlocal+nzguardrho)
+      real(kind=8):: epsilon(0:nxlocal+1,
+     &                       0:nylocal+1,
+     &                       0:nzlocal+1)
+      real(kind=8):: res(-nxguardres:nxlocal+nxguardres,
+     &                   -nyguardres:nylocal+nyguardres,
+     &                   -nzguardres:nzlocal+nzguardres)
+      real(kind=8):: dx,dy,dz
+      integer(ISZ):: mglevel,localbounds(0:5)
+      logical(ISZ):: lcndbndy
+      type(ConductorType):: conductors
+      real(kind=8):: xminodx, yminodx
+
+c Calculate the residual on the grid. Residual = r.h.s. - l.h.s.
+
+      integer(ISZ):: ix,iy,iz
+      integer(ISZ):: ixmin,ixmax,iymin,iymax,izmin,izmax
+      real(kind=8):: dxsqi,dysqi,dzsqi,epsbari,depsx,depsy,depsz,const
+
+      dxsqi = 1./dx**2
+      dysqi = 1./dy**2
+      dzsqi = 1./dz**2
+
+      const = 1./(2.*(dxsqi+dysqi+dzsqi))
+
+c     --- Set the loop limits, including edges when appropriate.
+      ixmin = 0
+      ixmax = nxlocal
+      iymin = 0
+      iymax = nylocal
+      izmin = 0
+      izmax = nzlocal
+      if (localbounds(0) == 0) ixmin = 1
+      if (localbounds(1) == 0) ixmax = nxlocal - 1
+      if (localbounds(2) == 0) iymin = 1
+      if (localbounds(3) == 0) iymax = nylocal - 1
+      if (localbounds(4) == 0) izmin = 1
+      if (localbounds(5) == 0) izmax = nzlocal - 1
+
+c     --- Calculate the residual.
+
+c       --- This zeroing out is done inside the loop so that the cache look
+c       --- ups for the zeroing and the calculation are done at the same time.
+        if (localbounds(4) == 0) then
+c         --- At Dirichlet boundaries, zero out res at the boundary.
+          res(:,:,-nzguardres:0) = 0.
+        else if (localbounds(4)  > 0 .and. nzguardres > 1) then
+c         --- Otherwise, only zero out the guard cells that won't be otherwise
+c         --- filled in.
+          res(:,:,-nzguardres:-2) = 0
+        endif
+
+!$OMP DO
+      do iz=izmin,izmax
+      
+        if (localbounds(2) == 0) then
+          res(:,-nyguardres:0,iz) = 0.
+        else if (localbounds(2)  > 0 .and. nyguardres > 1) then
+          res(:,-nyguardres:-2,iz) = 0.
+        endif
+          
+        do iy=iymin,iymax
+        
+          if (localbounds(0) == 0) then
+            res(-nxguardres:0,iy,iz) = 0.
+          else if (localbounds(0)  > 0 .and. nxguardres > 1) then
+            res(-nxguardres:-2,iy,iz) = 0.
+          endif
+        
+          do ix=ixmin,ixmax
+c             Calculate coefficient values for 3D dielectric residual calc 
+              epsbari = 1./(epsilon(ix,iy,iz) + epsilon(ix+1,iy,iz)
+     &                + epsilon(ix+1,iy+1,iz) + epsilon(ix,iy+1,iz)
+     &                + epsilon(ix+1,iy,iz+1) + epsilon(ix,iy,iz+1)
+     &                + epsilon(ix,iy+1,iz+1) + epsilon(ix+1,iy+1,iz+1))
+     
+              depsx = (epsilon(ix+1,iy,iz) - epsilon(ix,iy,iz)
+     &              + epsilon(ix+1,iy+1,iz) - epsilon(ix,iy+1,iz)
+     &              + epsilon(ix+1,iy,iz+1) - epsilon(ix,iy,iz+1)
+     &              + epsilon(ix+1,iy+1,iz+1) - epsilon(ix,iy+1,iz+1))
+     &              * epsbari
+
+              depsy = (epsilon(ix,iy+1,iz) - epsilon(ix,iy,iz)
+     &              + epsilon(ix+1,iy+1,iz) - epsilon(ix+1,iy,iz)
+     &              + epsilon(ix,iy+1,iz+1) - epsilon(ix,iy,iz+1)
+     &              + epsilon(ix+1,iy+1,iz+1) - epsilon(ix+1,iy,iz+1))
+     &              * epsbari 
+     
+              depsz = (epsilon(ix,iy,iz+1) - epsilon(ix,iy,iz)
+     &              + epsilon(ix+1,iy,iz+1) - epsilon(ix+1,iy,iz)
+     &              + epsilon(ix,iy+1,iz+1) - epsilon(ix,iy+1,iz)
+     &              + epsilon(ix+1,iy+1,iz+1) - epsilon(ix+1,iy+1,iz))
+     &              * epsbari
+     
+c             Update residual                              
+              res(ix,iy,iz) = const*(8.*epsbari*rho(ix,iy,iz)
+     &                      + dxsqi*phi(ix+1,iy,iz)*(1.+depsx)
+     &                      + dxsqi*phi(ix-1,iy,iz)*(1.-depsx)
+     &                      + dysqi*phi(ix,iy+1,iz)*(1.+depsy)
+     &                      + dysqi*phi(ix,iy-1,iz)*(1.-depsy) 
+     &                      + dzsqi*phi(ix,iy,iz+1)*(1.+depsz)
+     &                      + dzsqi*phi(ix,iy,iz-1)*(1.-depsz))
+     &                      - phi(ix,iy,iz)
+
+          enddo
+          
+          if (localbounds(1) == 0) then
+            res(nxlocal:nxlocal+nxguardres,iy,iz) = 0.
+          else if (localbounds(1)  > 0 .and. nxguardres > 1) then
+            res(nxlocal+2:nxlocal+nxguardres,iy,iz) = 0.
+          endif
+          
+        enddo
+        
+        if (localbounds(3) == 0) then
+          res(:,nylocal:nylocal+nyguardres,iz) = 0.
+        else if (localbounds(3)  > 0 .and. nyguardres > 1) then
+          res(:,nylocal+2:nylocal+nyguardres,iz) = 0.
+        endif
+        
+      enddo
+!$OMP END DO
+
+      if (localbounds(5) == 0) then
+        res(:,:,nzlocal:nzlocal+nzguardres) = 0.
+      else if (localbounds(5)  > 0 .and. nzguardres > 1) then
+        res(:,:,nzlocal+2:nzlocal+nzguardres) = 0.
+      endif
+
+c     --- Zero the residual inside conductors.
+      call cond_potmgres(conductors%interior,
+     &                   nxlocal,nylocal,nzlocal,
+     &                   nxguardres,nyguardres,nzguardres,
+     &                   res,mglevel,1,.false.)
+
+      if (lcndbndy) then
+c       --- Calculate the residual near the conductor.
+        call condbndymgres3ddielectric(conductors%evensubgrid,
+     &                                 nxlocal,nylocal,nzlocal,
+     &                                 nxguardphi,nyguardphi,nzguardphi,
+     &                                 nxguardrho,nyguardrho,nzguardrho,
+     &                                 nxguardres,nyguardres,nzguardres,
+     &                                 phi,rho,res,epsilon,
+     &                                 dxsqi,dysqi,dzsqi,
+     &                                 xminodx,yminodx,
+     &                                 localbounds,
+     &                                 mglevel)
+        call condbndymgres3ddielectric(conductors%oddsubgrid,
+     &                                 nxlocal,nylocal,nzlocal,
+     &                                 nxguardphi,nyguardphi,nzguardphi,
+     &                                 nxguardrho,nyguardrho,nzguardrho,
+     &                                 nxguardres,nzguardres,nzguardres,
+     &                                 phi,rho,res,epsilon,
+     &                                 dxsqi,dysqi,dzsqi,
+     &                                 xminodx,yminodx,
+     &                                 localbounds,
+     &                                 mglevel)
+      endif
+
+      call applyboundaryconditions3d(nxlocal,nylocal,nzlocal,
+     &                               nxguardres,nyguardres,nzguardres,
+     &                               res,1,localbounds,.false.,.false.)
+
+      return
+      end
+c=============================================================================
+      subroutine restrict3dcellcentered(nx,ny,nz,
+     &                                  nxlocal,nylocal,nzlocal,u,
+     &                                  nxcoarse,nycoarse,nzcoarse,
+     &                                  nxlocalcoarse,nylocalcoarse,
+     &                                  nzlocalcoarse,
+     &                                  ucoarse,
+     &                                  localbounds,localboundscoarse,
+     &                                  lxoffset,lyoffset,lzoffset)
+      integer(ISZ):: nx,ny,nz,nxlocal,nylocal,nzlocal
+      integer(ISZ):: nxcoarse,nycoarse,nzcoarse,
+     &               nxlocalcoarse,nylocalcoarse,nzlocalcoarse
+      real(kind=8):: u(0:nxlocal+1,0:nylocal+1,0:nzlocal+1)
+      real(kind=8):: ucoarse(0:nxlocalcoarse+1,
+     &                       0:nylocalcoarse+1,
+     &                       0:nzlocalcoarse+1)
+      integer(ISZ):: localbounds(0:5)
+      integer(ISZ):: localboundscoarse(0:5)
+      integer(ISZ):: lxoffset,lyoffset,lzoffset
+
+c Restrict to a coarser grid.
+
+      integer(ISZ):: ix,iy,iz
+      integer(ISZ):: ixcoarse,iycoarse,izcoarse
+      integer(ISZ):: ixmin,ixmax,iymin,iymax,izmin,izmax
+      integer(ISZ),allocatable:: ixmina(:),ixmaxa(:)
+      integer(ISZ),allocatable:: iymina(:),iymaxa(:)
+      integer(ISZ),allocatable:: izmina(:),izmaxa(:)
+      real(kind=8),allocatable:: wxa(:,:),wya(:,:),wza(:,:)
+      real(kind=8):: r,w,dx,dy,dz,dxi,dyi,dzi,wx(0:3),wy(0:3),wz(0:3)
+
+      allocate(ixmina(1:nxlocalcoarse),ixmaxa(1:nxlocalcoarse))
+      allocate(iymina(1:nylocalcoarse),iymaxa(1:nylocalcoarse))
+      allocate(izmina(1:nzlocalcoarse),izmaxa(1:nzlocalcoarse))
+      allocate(wxa(0:3,1:nxlocalcoarse))
+      allocate(wya(0:3,1:nylocalcoarse))
+      allocate(wza(0:3,1:nzlocalcoarse))
+      wxa = 0.
+      wya = 0.
+      wza = 0.
+
+      dx = 1.*nx/nxcoarse
+      dy = 1.*ny/nycoarse
+      dz = 1.*nz/nzcoarse
+      dxi = 1.*nxcoarse/nx
+      dyi = 1.*nycoarse/ny
+      dzi = 1.*nzcoarse/nz
+
+c     --- Precalculate the loop limits and weights. This saves a surprisingly
+c     --- substantial amount of time.
+      do izcoarse=1,nzlocalcoarse
+        izmin = ((izcoarse-1)*nz - lzoffset + 4*nzcoarse)/nzcoarse-3
+        izmax = ((izcoarse+1)*nz - lzoffset - 1)/nzcoarse
+        if (izmin < 0) izmin = 0
+        if (izmax > nzlocal+1) izmax = nzlocal+1
+        if (izmax < izmin) continue
+
+        do iz=izmin,izmax
+          wz(iz-izmin) = 1.-abs(izcoarse-(iz+1.*lzoffset/nzcoarse)*dzi)
+        enddo
+        izmina(izcoarse) = izmin
+        izmaxa(izcoarse) = izmax
+        wza(:,izcoarse) = wz
+      enddo
+
+      do iycoarse=1,nylocalcoarse
+        iymin = ((iycoarse-1)*ny - lyoffset + 4*nycoarse)/nycoarse-3
+        iymax = ((iycoarse+1)*ny - lyoffset - 1)/nycoarse
+        if (iymin < 0) iymin = 0
+        if (iymax > nylocal+1) iymax = nylocal+1
+        if (iymax < iymin) continue
+
+        do iy=iymin,iymax
+          wy(iy-iymin) = 1.-abs(iycoarse-(iy+1.*lyoffset/nycoarse)*dyi)
+        enddo
+        iymina(iycoarse) = iymin
+        iymaxa(iycoarse) = iymax
+        wya(:,iycoarse) = wy
+      enddo
+
+      do ixcoarse=1,nxlocalcoarse
+        ixmin = ((ixcoarse-1)*nx - lxoffset + 4*nxcoarse)/nxcoarse-3
+        ixmax = ((ixcoarse+1)*nx - lxoffset - 1)/nxcoarse
+        if (ixmin < 0) ixmin = 0
+        if (ixmax > nxlocal+1) ixmax = nxlocal+1
+        if (ixmax < ixmin) continue
+
+        do ix=ixmin,ixmax
+          wx(ix-ixmin) = 1.-abs(ixcoarse-(ix+1.*lxoffset/nxcoarse)*dxi)
+        enddo
+        ixmina(ixcoarse) = ixmin
+        ixmaxa(ixcoarse) = ixmax
+        wxa(:,ixcoarse) = wx
+      enddo
+
+c     --- Do the loops.
+!$OMP DO
+      do izcoarse=1,nzlocalcoarse
+        izmin = izmina(izcoarse)
+        izmax = izmaxa(izcoarse)
+        wz(:) = wza(:,izcoarse)
+        
+        do iycoarse=1,nylocalcoarse
+          iymin = iymina(iycoarse)
+          iymax = iymaxa(iycoarse)
+          wy(:) = wya(:,iycoarse)
+          
+          do ixcoarse=1,nxlocalcoarse
+            ixmin = ixmina(ixcoarse)
+            ixmax = ixmaxa(ixcoarse)
+            wx(:) = wxa(:,ixcoarse)
+
+            r = 0.
+            w = 0.
+            do iz=izmin,izmax
+              do iy=iymin,iymax
+                do ix=ixmin,ixmax
+                  r = r + wx(ix-ixmin)*wy(iy-iymin)*wz(iz-izmin)
+     &                  * u(ix,iy,iz)
+                  w = w + wx(ix-ixmin)*wy(iy-iymin)*wz(iz-izmin)
+                enddo
+              enddo
+            enddo
+            if (w > 0.) then
+              ucoarse(ixcoarse,iycoarse,izcoarse) = r/w
+            else
+              ucoarse(ixcoarse,iycoarse,izcoarse) = 0.
+            endif
+
+          enddo
+        enddo
+      enddo
+!$OMP END DO
+      deallocate(ixmina,ixmaxa)
+      deallocate(iymina,iymaxa)
+      deallocate(izmina,izmaxa)
+      deallocate(wxa,wya,wza)
+
+      return
+      end
+c=============================================================================
+      subroutine condbndymg3ddielectric(subgrid,nxlocal,nylocal,nzlocal,
+     &                                 nxguardphi,nyguardphi,nzguardphi,
+     &                                 nxguardrho,nyguardrho,nzguardrho,
+     &                                 phi,rho,epsilon,
+     &                                 dxsqi,dysqi,dzsqi,
+     &                                 xminodx,yminodx,
+     &                                 mgparam,localbounds,mglevel)
+      use ConductorSubGridTypemodule
+      type(ConductorSubGridType):: subgrid
+      integer(ISZ):: nxlocal,nylocal,nzlocal
+      integer(ISZ):: nxguardphi,nyguardphi,nzguardphi
+      integer(ISZ):: nxguardrho,nyguardrho,nzguardrho
+      real(kind=8):: phi(-nxguardphi:nxlocal+nxguardphi,
+     &                   -nyguardphi:nylocal+nyguardphi,
+     &                   -nzguardphi:nzlocal+nzguardphi)
+      real(kind=8):: rho(-nxguardrho:nxlocal+nxguardrho,
+     &                   -nyguardrho:nylocal+nyguardrho,
+     &                   -nzguardrho:nzlocal+nzguardrho)
+      real(kind=8):: epsilon(0:nxlocal+1,0:nylocal+1,0:nzlocal+1)
+      real(kind=8):: dxsqi,dysqi,dzsqi,mgparam,xminodx,yminodx
+      integer(ISZ):: mglevel
+      integer(ISZ):: localbounds(0:5)
+
+c Uses adjusted difference equation to enforce sub-grid level placement of
+c conductor boundaries for points near conductor surface.
+
+      integer(ISZ):: ic,ix,iy,iz
+      real(kind=8):: pxm,pym,pzm,pxp,pyp,pzp
+      real(kind=8):: dxm,dym,dzm,dxp,dyp,dzp
+      real(kind=8):: epxm,epym,epzm,epxp,epyp,epzp,epsbari,const
+      real(kind=8):: cxm,cym,czm,cxp,cyp,czp
+      real(kind=8):: voltfac,c0
+      real(kind=8):: rr(0:nxlocal),rri(0:nxlocal)
+      real(kind=8),pointer:: dels(:,:),volt(:,:)
+
+      dels => subgrid%dels
+      volt => subgrid%volt
+
+c     --- Only use actual voltage on finest level. Set to zero for
+c     --- coarser levels since solver for the residuals.
+      if (mglevel == 0) then
+        voltfac = 1.
+      else
+        voltfac = 0.
+      endif
+
+c     --- Note that in the loop below, for the Neumann boundary conditions,
+c     --- the potentials are not set since they will be multiplied by zero
+c     --- anyway. The code here just ensures that the variables have been
+c     --- initialized so that debuggers and valgrind won't complain about
+c     --- using uninitialized variables.
+      pxm = 0.
+      pxp = 0.
+      pym = 0.
+      pyp = 0.
+      pzm = 0.
+      pzp = 0.
+
+      const = 1./(2.*(dxsqi+dysqi+dzsqi))
+
+c     --- loop over points near surface of conductors
+!$OMP DO
+      do ic = subgrid%istart(mglevel),subgrid%istart(mglevel+1)-1
+
+        ix = subgrid%indx(0,ic)
+        iy = subgrid%indx(1,ic)
+        iz = subgrid%indx(2,ic)
+
+c       --- Skip the data point if it is on a Dirichlet or parallel boundary
+        if (ix == 0  .and. localbounds(0) < 1) cycle
+        if (ix == nxlocal .and. localbounds(1) < 1) cycle
+        if (iy == 0  .and. localbounds(2) < 1) cycle
+        if (iy == nylocal .and. localbounds(3) < 1) cycle
+        if (iz == 0  .and. localbounds(4) < 1) cycle
+        if (iz == nzlocal .and. localbounds(5) < 1) cycle
+
+c       --- First, get the potential and effective grid cell sizes
+c       --- Note that for the Neumann case, the potential is not
+c       --- used and so is not set.
+        if (0. < dels(0,ic) .and. dels(0,ic) < +1.) then
+          pxm = voltfac*volt(0,ic)
+          dxm = dels(0,ic)
+        elseif (-1. < dels(0,ic) .and. dels(0,ic) <= 0.) then
+          dxm = -2.*dels(0,ic)
+        else
+          pxm = phi(ix-1,iy,iz)
+          dxm = 1.
+        endif
+
+        if (0. < dels(1,ic) .and. dels(1,ic) < +1.) then
+          pxp = voltfac*volt(1,ic)
+          dxp = dels(1,ic)
+        elseif (-1. < dels(1,ic) .and. dels(1,ic) <= 0.) then
+          dxp = -2.*dels(1,ic)
+        else
+          pxp = phi(ix+1,iy,iz)
+          dxp = 1.
+        endif
+
+        if (0. < dels(2,ic) .and. dels(2,ic) < +1.) then
+          pym = voltfac*volt(2,ic)
+          dym = dels(2,ic)
+        elseif (-1. < dels(2,ic) .and. dels(2,ic) <= 0.) then
+          dym = -2.*dels(2,ic)
+        else
+          pym = phi(ix,iy-1,iz)
+          dym = 1.
+        endif
+
+        if (0. < dels(3,ic) .and. dels(3,ic) < +1.) then
+          pyp = voltfac*volt(3,ic)
+          dyp = dels(3,ic)
+        elseif (-1. < dels(3,ic) .and. dels(3,ic) <= 0.) then
+          dyp = -2.*dels(3,ic)
+        else
+          pyp = phi(ix,iy+1,iz)
+          dyp = 1.
+        endif
+
+        if (0. < dels(4,ic) .and. dels(4,ic) < +1.) then
+          pzm = voltfac*volt(4,ic)
+          dzm = dels(4,ic)
+        elseif (-1. < dels(4,ic) .and. dels(4,ic) <= 0.) then
+          dzm = -2.*dels(4,ic)
+        else
+          pzm = phi(ix,iy,iz-1)
+          dzm = 1.
+        endif
+
+        if (0. < dels(5,ic) .and. dels(5,ic) < +1.) then
+          pzp = voltfac*volt(5,ic)
+          dzp = dels(5,ic)
+        elseif (-1. < dels(5,ic) .and. dels(5,ic) <= 0.) then
+          dzp = -2.*dels(5,ic)
+        else
+          pzp = phi(ix,iy,iz+1)
+          dzp = 1.
+        endif
+
+c       --- Setup the epsilon coefficients
+c        epxm = 0.25*(epsilon(ix,iy,iz) + epsilon(ix,iy+1,iz)
+c     &             + epsilon(ix,iy,iz+1) + epsilon(ix,iy+1,iz+1))
+c        epxp = 0.25*(epsilon(ix+1,iy,iz) + epsilon(ix+1,iy+1,iz)
+c     &             + epsilon(ix+1,iy,iz+1) + epsilon(ix+1,iy+1,iz+1))
+c        epym = 0.25*(epsilon(ix,iy,iz) + epsilon(ix+1,iy,iz)
+c     &             + epsilon(ix,iy,iz+1) + epsilon(ix+1,iy,iz+1))
+c        epyp = 0.25*(epsilon(ix,iy+1,iz) + epsilon(ix+1,iy+1,iz)
+c     &             + epsilon(ix,iy+1,iz+1) + epsilon(ix+1,iy+1,iz+1))
+c        epzm = 0.25*(epsilon(ix,iy,iz) + epsilon(ix+1,iy,iz)
+c     &             + epsilon(ix,iy+1,iz) + epsilon(ix+1,iy+1,iz))
+c        epzp = 0.25*(epsilon(ix,iy,iz+1) + epsilon(ix+1,iy,iz+1)
+c     &             + epsilon(ix,iy+1,iz+1) + epsilon(ix+1,iy+1,iz+1))
+
+        epsbari = 1./(epsilon(ix,iy,iz) + epsilon(ix+1,iy,iz)
+     &              + epsilon(ix+1,iy+1,iz) + epsilon(ix,iy+1,iz)
+     &              + epsilon(ix+1,iy,iz+1) + epsilon(ix,iy,iz+1)
+     &              + epsilon(ix,iy+1,iz+1) + epsilon(ix+1,iy+1,iz+1))
+
+c       --- Now construct the coefficients
+        cxm = dxsqi/(dxm*(0.5*dxm + 0.5*dxp))
+        cxp = dxsqi/(dxp*(0.5*dxm + 0.5*dxp))
+        cym = dysqi/(dym*(0.5*dym + 0.5*dyp))
+        cyp = dysqi/(dyp*(0.5*dym + 0.5*dyp))
+        czm = dzsqi/(dzm*(0.5*dzm + 0.5*dzp))
+        czp = dzsqi/(dzp*(0.5*dzm + 0.5*dzp))
+        if (-1. < dels(0,ic) .and. dels(0,ic) <= 0.) cxm = 0.
+        if (-1. < dels(1,ic) .and. dels(1,ic) <= 0.) cxp = 0.
+        if (-1. < dels(2,ic) .and. dels(2,ic) <= 0.) cym = 0.
+        if (-1. < dels(3,ic) .and. dels(3,ic) <= 0.) cyp = 0.
+        if (-1. < dels(4,ic) .and. dels(4,ic) <= 0.) czm = 0.
+        if (-1. < dels(5,ic) .and. dels(5,ic) <= 0.) czp = 0.
+
+c       --- Note that it is possible for c0 to be zero, but that is an
+c       --- isolated case which doesn't make sense anyway, so let a NaN
+c       --- happen rather than add an extra check on c0.
+
+        c0 = cxm + cxp + cym + cyp + czm + czp
+        
+        phi(ix,iy,iz) = mgparam*(rho(ix,iy,iz) * const * epsbari
+     &                      + cxm*pxm + cxp*pxp 
+     &                      + cym*pym + cyp*pyp
+     &                      + czm*pzm + czp*pzp)/c0
+     &               + (1. - mgparam)*subgrid%prevphi(ic)
+
+      enddo
+!$OMP END DO
+
+      return
+      end
+c=============================================================================
+      subroutine condbndymgres3ddielectric(subgrid,
+     &                                 nxlocal,nylocal,nzlocal,
+     &                                 nxguardphi,nyguardphi,nzguardphi,
+     &                                 nxguardrho,nyguardrho,nzguardrho,
+     &                                 nxguardres,nyguardres,nzguardres,
+     &                                 phi,rho,res,epsilon,
+     &                                 dxsqi,dysqi,dzsqi,
+     &                                 xminodx,yminodx,
+     &                                 localbounds,mglevel)
+      use ConductorSubGridTypemodule
+      type(ConductorSubGridType):: subgrid
+      integer(ISZ):: nxlocal,nylocal,nzlocal,mglevel
+      integer(ISZ):: nxguardphi,nyguardphi,nzguardphi
+      integer(ISZ):: nxguardrho,nyguardrho,nzguardrho
+      integer(ISZ):: nxguardres,nyguardres,nzguardres
+      real(kind=8):: phi(-nxguardphi:nxlocal+nxguardphi,
+     &                   -nyguardphi:nylocal+nyguardphi,
+     &                   -nzguardphi:nzlocal+nzguardphi)
+      real(kind=8):: rho(-nxguardrho:nxlocal+nxguardrho,
+     &                   -nyguardrho:nylocal+nyguardrho,
+     &                   -nzguardrho:nzlocal+nzguardrho)
+      real(kind=8):: res(-nxguardres:nxlocal+nxguardres,
+     &                   -nyguardres:nylocal+nyguardres,
+     &                   -nzguardres:nzlocal+nzguardres)
+      real(kind=8):: epsilon(0:nxlocal+1,0:nylocal+1,0:nzlocal+1)
+      real(kind=8):: dxsqi,dysqi,dzsqi,xminodx,yminodx
+      integer(ISZ):: localbounds(0:5)
+
+c Uses adjusted difference equation to enforce sub-grid level placement of
+c conductor boundaries for points near conductor surface.
+
+      integer(ISZ):: ic,ix,iy,iz
+      real(kind=8):: pxm,pym,pzm,pxp,pyp,pzp
+      real(kind=8):: dxm,dym,dzm,dxp,dyp,dzp
+      real(kind=8):: cxm,cym,czm,cxp,cyp,czp
+      real(kind=8):: epxm,epym,epzm,epxp,epyp,epzp,epsbari,const
+      real(kind=8):: voltfac,ppp,c0
+      real(kind=8),pointer:: dels(:,:),volt(:,:)
+
+      dels => subgrid%dels
+      volt => subgrid%volt
+
+c     --- Only use actual voltage on finest level. Set to zero for
+c     --- coarser levels since solver for the residuals.
+      if (mglevel == 0) then
+        voltfac = 1.
+      else
+        voltfac = 0.
+      endif
+
+c     --- Note that in the loop below, for the Neumann boundary conditions,
+c     --- the potentials are not set since they will be multiplied by zero
+c     --- anyway. The code here just ensures that the variables have been
+c     --- initialized so that debuggers and valgrind won't complain about
+c     --- using uninitialized variables.
+      pxm = 0.
+      pxp = 0.
+      pym = 0.
+      pyp = 0.
+      pzm = 0.
+      pzp = 0.
+
+      const = 1./(2.*(dxsqi+dysqi+dzsqi))
+
+c     --- loop over points near surface of conductors
+!$OMP DO
+      do ic = subgrid%istart(mglevel),subgrid%istart(mglevel+1)-1
+
+        ix = subgrid%indx(0,ic)
+        iy = subgrid%indx(1,ic)
+        iz = subgrid%indx(2,ic)
+
+c       --- Skip the data point if it is on a Dirichlet
+        if (ix == 0  .and. localbounds(0) == 0) cycle
+        if (ix == nxlocal .and. localbounds(1) == 0) cycle
+        if (iy == 0  .and. localbounds(2) == 0) cycle
+        if (iy == nylocal .and. localbounds(3) == 0) cycle
+        if (iz == 0  .and. localbounds(4) == 0) cycle
+        if (iz == nzlocal .and. localbounds(5) == 0) cycle
+
+c       --- First, get the potential and effective grid cell sizes
+c       --- Note that for the Neumann case, the potential is not
+c       --- used and so is not set.
+        ppp = 1.
+        if (0. < dels(0,ic) .and. dels(0,ic) < +1.) then
+          pxm = voltfac*volt(0,ic)
+          dxm = dels(0,ic)
+          ppp = min(ppp,dels(0,ic))
+        elseif (-1. < dels(0,ic) .and. dels(0,ic) <= 0.) then
+          dxm = -2.*dels(0,ic)
+          if (abs(dels(0,ic)) == 0.) then
+            ppp = min(ppp,1.-1.e-9)
+          else
+            ppp = min(ppp,abs(dels(0,ic)))
+          endif
+        else
+          pxm = phi(ix-1,iy,iz)
+          dxm = 1.
+        endif
+
+        if (0. < dels(1,ic) .and. dels(1,ic) < +1.) then
+          pxp = voltfac*volt(1,ic)
+          dxp = dels(1,ic)
+          ppp = min(ppp,dels(1,ic))
+        elseif (-1. < dels(1,ic) .and. dels(1,ic) <= 0.) then
+          dxp = -2.*dels(1,ic)
+          if (abs(dels(1,ic)) == 0.) then
+            ppp = min(ppp,1.-1.e-9)
+          else
+            ppp = min(ppp,abs(dels(1,ic)))
+          endif
+        else
+          pxp = phi(ix+1,iy,iz)
+          dxp = 1.
+        endif
+
+        if (0. < dels(2,ic) .and. dels(2,ic) < +1.) then
+          pym = voltfac*volt(2,ic)
+          dym = dels(2,ic)
+          ppp = min(ppp,dels(2,ic))
+        elseif (-1. < dels(2,ic) .and. dels(2,ic) <= 0.) then
+          dym = -2.*dels(2,ic)
+          if (abs(dels(2,ic)) == 0.) then
+            ppp = min(ppp,1.-1.e-9)
+          else
+            ppp = min(ppp,abs(dels(2,ic)))
+          endif
+        else
+          pym = phi(ix,iy-1,iz)
+          dym = 1.
+        endif
+
+        if (0. < dels(3,ic) .and. dels(3,ic) < +1.) then
+          pyp = voltfac*volt(3,ic)
+          dyp = dels(3,ic)
+          ppp = min(ppp,dels(3,ic))
+        elseif (-1. < dels(3,ic) .and. dels(3,ic) <= 0.) then
+          dyp = -2.*dels(3,ic)
+          if (abs(dels(3,ic)) == 0.) then
+            ppp = min(ppp,1.-1.e-9)
+          else
+            ppp = min(ppp,abs(dels(1,ic)))
+          endif
+        else
+          pyp = phi(ix,iy+1,iz)
+          dyp = 1.
+        endif
+
+        if (0. < dels(4,ic) .and. dels(4,ic) < +1.) then
+          pzm = voltfac*volt(4,ic)
+          dzm = dels(4,ic)
+          ppp = min(ppp,dels(4,ic))
+        elseif (-1. < dels(4,ic) .and. dels(4,ic) <= 0.) then
+          dzm = -2.*dels(4,ic)
+          if (abs(dels(4,ic)) == 0.) then
+            ppp = min(ppp,1.-1.e-9)
+          else
+            ppp = min(ppp,abs(dels(4,ic)))
+          endif
+        else
+          pzm = phi(ix,iy,iz-1)
+          dzm = 1.
+        endif
+
+        if (0. < dels(5,ic) .and. dels(5,ic) < +1.) then
+          pzp = voltfac*volt(5,ic)
+          dzp = dels(5,ic)
+          ppp = min(ppp,dels(5,ic))
+        elseif (-1. < dels(5,ic) .and. dels(5,ic) <= 0.) then
+          dzp = -2.*dels(5,ic)
+          if (abs(dels(5,ic)) == 0.) then
+            ppp = min(ppp,1.-1.e-9)
+          else
+            ppp = min(ppp,abs(dels(5,ic)))
+          endif
+        else
+          pzp = phi(ix,iy,iz+1)
+          dzp = 1.
+        endif
+
+
+c       --- Setup the epsilon coefficients
+c        epxm = 0.25*(epsilon(ix,iy,iz) + epsilon(ix,iy+1,iz)
+c     &             + epsilon(ix,iy,iz+1) + epsilon(ix,iy+1,iz+1))
+c        epxp = 0.25*(epsilon(ix+1,iy,iz) + epsilon(ix+1,iy+1,iz)
+c     &             + epsilon(ix+1,iy,iz+1) + epsilon(ix+1,iy+1,iz+1))
+c        epym = 0.25*(epsilon(ix,iy,iz) + epsilon(ix+1,iy,iz)
+c     &             + epsilon(ix,iy,iz+1) + epsilon(ix+1,iy,iz+1))
+c        epyp = 0.25*(epsilon(ix,iy+1,iz) + epsilon(ix+1,iy+1,iz)
+c     &             + epsilon(ix,iy+1,iz+1) + epsilon(ix+1,iy+1,iz+1))
+c        epzm = 0.25*(epsilon(ix,iy,iz) + epsilon(ix+1,iy,iz)
+c     &             + epsilon(ix,iy+1,iz) + epsilon(ix+1,iy+1,iz))
+c        epzp = 0.25*(epsilon(ix,iy,iz+1) + epsilon(ix+1,iy,iz+1)
+c     &             + epsilon(ix,iy+1,iz+1) + epsilon(ix+1,iy+1,iz+1))
+     
+        epsbari = 1./(epsilon(ix,iy,iz) + epsilon(ix+1,iy,iz)
+     &              + epsilon(ix+1,iy+1,iz) + epsilon(ix,iy+1,iz)
+     &              + epsilon(ix+1,iy,iz+1) + epsilon(ix,iy,iz+1)
+     &              + epsilon(ix,iy+1,iz+1) + epsilon(ix+1,iy+1,iz+1))
+
+c       --- Now construct the coefficients
+        cxm = dxsqi/(dxm*(0.5*dxm + 0.5*dxp))
+        cxp = dxsqi/(dxp*(0.5*dxm + 0.5*dxp))
+        cym = dysqi/(dym*(0.5*dym + 0.5*dyp))
+        cyp = dysqi/(dyp*(0.5*dym + 0.5*dyp))
+        czm = dzsqi/(dzm*(0.5*dzm + 0.5*dzp))
+        czp = dzsqi/(dzp*(0.5*dzm + 0.5*dzp))
+        if (-1. < dels(0,ic) .and. dels(0,ic) <= 0.) cxm = 0.
+        if (-1. < dels(1,ic) .and. dels(1,ic) <= 0.) cxp = 0.
+        if (-1. < dels(2,ic) .and. dels(2,ic) <= 0.) cym = 0.
+        if (-1. < dels(3,ic) .and. dels(3,ic) <= 0.) cyp = 0.
+        if (-1. < dels(4,ic) .and. dels(4,ic) <= 0.) czm = 0.
+        if (-1. < dels(5,ic) .and. dels(5,ic) <= 0.) czp = 0.
+
+c       --- Note that it is possible for c0 to be zero, but that is an
+c       --- isolated case which doesn't make sense anyway, so let a NaN
+c       --- happen rather than add an extra check on c0.
+
+        c0 = cxm + cxp + cym + cyp + czm + czp
+        res(ix,iy,iz) = ppp*((rho(ix,iy,iz) * const * epsbari
+     &                               + cxm*pxm + cxp*pxp
+     &                               + cym*pym + cyp*pyp
+     &                               + czm*pzm + czp*pzp)/c0
+     &                               - phi(ix,iy,iz))
+
+        if (0. >= dels(0,ic) .and. dels(0,ic) >= -1.) 
+     &    res(ix-1,iy,iz) = 0.
+        if (0. >= dels(1,ic) .and. dels(1,ic) >= -1.)
+     &    res(ix+1,iy,iz) = 0.
+        if (0. >= dels(2,ic) .and. dels(2,ic) >= -1.)
+     &    res(ix,iy-1,iz) = 0.
+        if (0. >= dels(3,ic) .and. dels(3,ic) >= -1.)
+     &    res(ix,iy+1,iz) = 0.
+        if (0. >= dels(4,ic) .and. dels(4,ic) >= -1.)
+     &    res(ix,iy,iz-1) = 0.
+        if (0. >= dels(5,ic) .and. dels(5,ic) >= -1.)
+     &    res(ix,iy,iz+1) = 0.
 
       enddo
 !$OMP END DO

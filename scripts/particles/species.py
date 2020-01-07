@@ -171,10 +171,11 @@ for k in periodic_table:
 #  exec(k + " = periodic_table['" + k + "']")
 del k
 
-Electron = Particle(charge=-echarge, mass=emass, Symbol='e-', name='Electron')
-Positron = Particle(charge=+echarge, mass=emass, Symbol='e+', name='Positron')
-Muon = Particle(charge=-echarge, mass=1.883531475e-28, Symbol='mu-', name='Muon')
-Antimuon = Particle(charge=+echarge, mass=1.883531475e-28, Symbol='mu+', name='Antimuon')
+Electron = Particle(charge=-echarge,mass=emass,Symbol='e-',name='Electron')
+Positron = Particle(charge=+echarge,mass=emass,Symbol='e+',name='Positron')
+Muon = Particle(charge=-echarge,mass=1.883531475e-28,Symbol='mu-',name='Muon')
+Antimuon = Particle(charge=+echarge,mass=1.883531475e-28,Symbol='mu+',
+                    name='Antimuon')
 
 Proton = Particle(mass=1.6726231e-27, charge=echarge, Symbol='P', name='Proton')
 AntiProton = Particle(mass=1.6726231e-27, charge=-echarge, Symbol='P', name='Antiproton')
@@ -2620,7 +2621,7 @@ class Species(object):
 
     # --- Make pgroup a property. This is done so that when pgroup is the same
     # --- as top.pgroup, a reference to top.pgroup is not actually kept in the
-    # --- self dict. This avoids problems in a dump/restart.
+    # --- self dict. This avoids problems in a dfump/restart.
     def getpgroup(self):
         try:
             return self._pgroup

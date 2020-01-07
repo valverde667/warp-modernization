@@ -4,6 +4,7 @@ Class for doing multigrid field solve on 2-D
 """
 from ..warp import *
 from find_mgparam import find_mgparam
+import numpy as np
 
 try:
     import psyco
@@ -420,6 +421,290 @@ class MultiGrid2DDielectric(MultiGrid2D):
                              self.dx,self.dz,0,self.bounds,conductorobject)
         return res
 
+    def initializeconductors(self):
+        # --- Create the attributes for holding information about conductors
+        # --- and conductor objects.
+        # --- Note that a conductor object will be created for each value of
+        # --- fselfb. This is needed since fselfb effects how the coarsening
+        # --- is done, and different conductor data sets are needed for
+        # --- different coarsenings.
+
+        # --- This stores the ConductorType objects. Note that the objects are
+        # --- not actually created until getconductorobject is called.
+        self.conductorobjects = {}
+
+        # --- This stores the conductors that have been installed in each
+        # --- of the conductor objects.
+        self.installedconductorlists = {}
+
+        # --- This is a list of conductors that have been added.
+        # --- New conductors are not actually installed until the data is needed,
+        # --- when getconductorobject is called.
+        # --- Each element of this list contains all of the input to the
+        # --- installconductor method.
+        self.conductordatalist = []
+
+    def installconductor(self,conductor,
+                              xmin=None,xmax=None,
+                              ymin=None,ymax=None,
+                              zmin=None,zmax=None,
+                              dfill=None):
+        # --- This only adds the conductor to the list. The data is only actually
+        # --- installed when it is needed, during a call to getconductorobject.
+        self.conductordatalist.append((conductor,xmin,xmax,ymin,ymax,zmin,zmax,dfill))
+
+    def init_macroscopic_coefs(self):
+        if self.fields.l_macroscopic:return
+
+        self.fields.nxs = self.fields.nx
+        self.fields.nys = self.fields.ny
+        self.fields.nzs = self.fields.nz
+        self.fields.gchange()
+        self.fields.Sigmax=0.
+        self.fields.Sigmay=0.
+        self.fields.Sigmaz=0.
+        self.fields.Epsix=1.
+        self.fields.Epsiy=1.
+        self.fields.Epsiz=1.
+        self.fields.Mux=1.
+        self.fields.Muy=1.
+        self.fields.Muz=1.
+        self.fields.l_macroscopic=True
+
+    def _installconductor(self,conductorobject,installedlist,conductordata,fselfb):
+        # --- This does that actual installation of the conductor into the
+        # --- conductor object
+
+        # --- Extract the data from conductordata (the arguments to installconductor)
+        conductor,xmin,xmax,ymin,ymax,zmin,zmax,dfill = conductordata
+
+        # --- Set dfill to be a large number so that the entire interior of the conductor
+        # --- gets filled in. This ensures that the field is forced to zero everywhere
+        # --- inside the conductor, but does not introduce a performance penalty.
+        if dfill is None: dfill = largepos
+
+        if conductor in installedlist: return
+        installedlist.append(conductor)
+
+        nx,ny,nz = self.nx,self.ny,self.nz
+        if fselfb == 'p':
+            zscale = 1.
+            nxlocal,nylocal,nzlocal = self.nxp,self.nyp,self.nzp
+            mgmaxlevels = 1
+            decomp = self.ppdecomp
+        else:
+            # --- Get relativistic longitudinal scaling factor
+            # --- This is quite ready yet.
+            beta = fselfb/clight
+            zscale = 1./sqrt((1.-beta)*(1.+beta))
+            nxlocal,nylocal,nzlocal = self.nxlocal,self.nylocal,self.nzlocal
+            mgmaxlevels = None
+            decomp = self.fsdecomp
+
+        xmmin,xmmax = self.xmmin,self.xmmax
+        ymmin,ymmax = self.ymmin,self.ymmax
+        zmmin,zmmax = self.zmmin,self.zmmax
+
+        mgmaxlevels=1
+
+        if conductor.permittivity is not None:
+            # --- Need to make copy of number of interior, even and odd points 
+            # --- to be subtracted after installation of dielectric to ensure that
+            # --- it is not also installed as conductor.
+            ntmp = conductorobject.interior.n+0
+            netmp = conductorobject.evensubgrid.n+0
+            notmp = conductorobject.oddsubgrid.n+0
+        
+        installconductors(conductor,xmin,xmax,ymin,ymax,zmin,zmax,dfill,
+                              top.zgrid,
+                              nx,ny,nz,
+                              nxlocal,nylocal,nzlocal,
+                              xmmin,xmmax,ymmin,ymmax,zmmin,zmmax,
+                              zscale,self.l2symtry,self.l4symtry,
+                              installrz=0,
+                              solvergeom=self.solvergeom,conductors=conductorobject,
+                              mgmaxlevels=mgmaxlevels,decomp=decomp)
+
+        if conductorobject.interior.n>0 and conductor.permittivity is not None:
+            # --- install dielectric, i.e. permittivity values
+
+            nxguard = 1
+            nzguard = 1
+            nxlocal = self.nxlocal
+            nzlocal = self.nzlocal
+            ix = self.fsdecomp.ix[self.fsdecomp.ixproc]
+            iz = self.fsdecomp.iz[self.fsdecomp.izproc]
+            for i in range(conductorobject.interior.n-ntmp):
+                ii = ntmp+i
+                ix = conductorobject.interior.indx[0,ii]
+                iz = conductorobject.interior.indx[2,ii]
+                self.epsilon[ix,iz] = conductor.permittivity*eps0
+            
+            # --- returns values of interior, even and odd points to before installation 
+            # --- to ensure that the dielectric is not also installed as conductor.
+            conductorobject.interior.n = ntmp
+            conductorobject.evensubgrid.n = netmp
+            conductorobject.oddsubgrid.n = notmp
+            
+    def installdielectric(self,a,xmin=None,xmax=None,ymin=None,ymax=None,
+                         zmin=None,zmax=None,dfill=None,
+                         zbeam=None,
+                         nx=None,ny=None,nz=None,
+                         nxlocal=None,nylocal=None,nzlocal=None,
+                         xmmin=None,xmmax=None,ymmin=None,ymmax=None,
+                         zmmin=None,zmmax=None,zscale=1.,
+                         l2symtry=None,l4symtry=None,
+                         installrz=None,gridmode=1,solvergeom=None,
+                         conductors=None,gridrz=None,mgmaxlevels=None,
+                         decomp=None):
+        """
+      Installs the given conductors into the field solver. When using the built in
+      solver, this should only be called after the generate. When using a python
+      level solver, for example MultiGrid3d or MultiGrid2d, this should be called
+      only after the solver is registered (with registersolver). In that case, it
+      is OK to call this before the generate (and is in fact preferred so that the
+      conductors will be setup during the field solve that happens during the
+      generate).
+        - a: the assembly of conductors, or list of conductors
+        - xmin,xmax,ymin,ymax,zmin,zmax: extent of conductors. Defaults to the
+          mesh size. These can be set for optimization, to avoid looking
+          for conductors where there are none. Also, they can be used crop a
+          conductor
+        - dfill=2.: points at a depth in the conductor greater than dfill
+                    are skipped.
+        - zbeam=top.zbeam: location of the beam frame
+        - nx,ny,nz: Number of grid cells in the mesh. Defaults to values from w3d
+        - nxlocal,nylocal,nzlocal: Number of grid cells in the mesh for the local
+                                   processor. Defaults to values from w3d
+        - xmmin,xmmax,ymmin,ymmax,zmmin,zmmax: extent of mesh. Defaults to values
+                                               from w3d
+        - zscale=1.: scale factor on dz. This is used when the relativistic scaling
+                    is done for the longitudinal dimension
+        - l2symtry,l4symtry: assumed transverse symmetries. Defaults to values
+                             from w3d
+        - decomp: Decomposition instance holding data for parallelization
+        """
+        if conductors is None and gridrz is None:
+            # --- If conductors was not specified, first check if mesh-refinement
+            # --- or other special solver is being used.
+            solver = getregisteredsolver()
+            import __main__
+            if solver is not None:
+                solver.installconductor(a,dfill=dfill)
+                return
+            elif "AMRtree" in __main__.__dict__:
+                __main__.__dict__["AMRtree"].installconductor(a,dfill=dfill)
+                return
+
+        if dfill is None: dfill = 2.0
+
+        # --- Use whatever conductors object was specified, or
+        # --- if no special solver is being used, use f3d.conductors.
+        if conductors is None: conductors = f3d.conductors
+
+        # --- Set the installrz argument if needed.
+        if installrz is None:
+            installrz = (frz.getpyobject('basegrid') is not None)
+
+        # First, create a grid object
+        g = Grid(xmin,xmax,ymin,ymax,zmin,zmax,zbeam,nx,ny,nz,nxlocal,nylocal,nzlocal,
+                 xmmin,xmmax,ymmin,ymmax,zmmin,zmmax,zscale,l2symtry,l4symtry,
+                 installrz,gridrz,
+                 mgmaxlevels=mgmaxlevels,
+                 decomp=decomp)
+
+        _lwithnewconductorgeneration = True
+        if _lwithnewconductorgeneration:
+            # --- This method is faster...
+            # Generate the conductor data
+            g.getdatanew(a,dfill)
+            # Then install it
+#            g.installintercepts(installrz,gridmode,solvergeom,conductors,gridrz,a.neumann)
+        else:
+            # --- This is the old method, and is now mostly obsolete...
+            # Generate the conductor data
+            g.getdata(a,dfill)
+            # Then install it
+#            g.installdata(installrz,gridmode,solvergeom,conductors,gridrz)
+
+        installedconductors.append(a)
+
+
+    def hasconductors(self):
+        return len(self.conductordatalist) > 0
+
+    def clearconductors(self):
+        "Clear out the conductor data"
+        for fselfb in top.fselfb:
+            if fselfb in self.conductorobjects:
+                conductorobject = self.conductorobjects[fselfb]
+                conductorobject.interior.n = 0
+                conductorobject.evensubgrid.n = 0
+                conductorobject.oddsubgrid.n = 0
+                self.installedconductorlists[fselfb] = []
+
+    def getconductorobject(self,fselfb=0.):
+        "Checks for and installs any conductors not yet installed before returning the object"
+        # --- This is the routine that does the creation of the ConductorType
+        # --- objects if needed and ensures that all conductors are installed
+        # --- into it.
+
+        # --- This method is needed during a restore from a pickle, since this
+        # --- object may be restored before the conductors. This delays the
+        # --- installation of the conductors until they are really needed.
+
+        # --- There is a special case, fselfb='p', which refers to the conductor
+        # --- object that has the data generated relative to the particle domain,
+        # --- which can be different from the field domain, especially in parallel.
+        if fselfb == 'p':
+            # --- In serial, just use a reference to the conductor object for the
+            # --- first iselfb group.
+            if not lparallel and 'p' not in self.conductorobjects:
+                self.conductorobjects['p'] = self.conductorobjects[top.fselfb[0]]
+                self.installedconductorlists['p'] = self.installedconductorlists[top.fselfb[0]]
+            # --- In parallel, a whole new instance is created (using the
+            # --- setdefaults below).
+            # --- Check to make sure that the grid the conductor uses is consistent
+            # --- with the particle grid. This is needed so that the conductor
+            # --- data is updated when particle load balancing is done. If the
+            # --- data is not consistent, delete the conductor object so that
+            # --- everything is reinstalled.
+            try:
+                conductorobject = self.conductorobjects['p']
+                if (conductorobject.leveliz[0] != self.izpslave[self.my_index] or
+                    conductorobject.levelnz[0] != self.nzpslave[self.my_index]):
+                    del self.conductorobjects['p']
+                    del self.installedconductorlists['p']
+            except KeyError:
+                # --- 'p' object has not yet been created anyway, so do nothing.
+                pass
+
+        conductorobject = self.conductorobjects.setdefault(fselfb,ConductorType())
+        installedconductorlist = self.installedconductorlists.setdefault(fselfb,[])
+
+        # --- Now, make sure that the conductors are installed into the object.
+        # --- This may be somewhat inefficient, since it loops over all of the
+        # --- conductors everytime. This makes the code more robust, though, since
+        # --- it ensures that all conductors will be properly installed into
+        # --- the conductor object.
+        for conductordata in self.conductordatalist:
+            self._installconductor(conductorobject,installedconductorlist,
+                                   conductordata,fselfb)
+
+        # --- Return the desired conductor object
+        return conductorobject
+
+    def setconductorvoltage(self,voltage,condid=0,discrete=false,
+                            setvinject=false):
+        return
+        'calls setconductorvoltage'
+        # --- Loop over all of the selfb groups to that all conductor objects
+        # --- are handled.
+        for iselfb in range(top.nsselfb):
+            conductorobject = self.getconductorobject(top.fselfb[iselfb])
+            setconductorvoltage(voltage,condid,discrete,setvinject,
+                                conductors=conductorobject)
+                                
 ##############################################################################
 ##############################################################################
 ##############################################################################
