@@ -12419,174 +12419,174 @@ subroutine node2yee3d(f)
   if (f%l_nodalgrid) then
   ! --- averages node values at staggered positions
 
-	  if (.not.f%l_2dxz) then
+      if (.not.f%l_2dxz) then
 
-		 do l=-f%nzguard+1,f%nz+f%nzguard-1
-			do k=-f%nyguard,f%ny+f%nyguard
-			   do j=-f%nxguard,f%nx+f%nxguard
-				  f%ezp(j,k,l)=0.5*(f%ezp(j,k,l)+f%ezp(j,k,l+1))
-				  f%bxp(j,k,l)=0.5*(f%bxp(j,k,l)+f%bxp(j,k,l+1))
-				  f%byp(j,k,l)=0.5*(f%byp(j,k,l)+f%byp(j,k,l+1))
-			   enddo
-			enddo
-		 enddo
+         do l=-f%nzguard+1,f%nz+f%nzguard-1
+            do k=-f%nyguard,f%ny+f%nyguard
+               do j=-f%nxguard,f%nx+f%nxguard
+                  f%ezp(j,k,l)=0.5*(f%ezp(j,k,l)+f%ezp(j,k,l+1))
+                  f%bxp(j,k,l)=0.5*(f%bxp(j,k,l)+f%bxp(j,k,l+1))
+                  f%byp(j,k,l)=0.5*(f%byp(j,k,l)+f%byp(j,k,l+1))
+               enddo
+            enddo
+         enddo
 
-		 do l=-f%nzguard,f%nz+f%nzguard
-			do k=-f%nyguard+1,f%ny+f%nyguard-1
-			   do j=-f%nxguard,f%nx+f%nxguard
-				  f%eyp(j,k,l)=0.5*(f%eyp(j,k,l)+f%eyp(j,k+1,l))
-				  f%bzp(j,k,l)=0.5*(f%bzp(j,k,l)+f%bzp(j,k+1,l))
-				  f%bxp(j,k,l)=0.5*(f%bxp(j,k,l)+f%bxp(j,k+1,l))
-			   enddo
-			enddo
-		 enddo
+         do l=-f%nzguard,f%nz+f%nzguard
+            do k=-f%nyguard+1,f%ny+f%nyguard-1
+               do j=-f%nxguard,f%nx+f%nxguard
+                  f%eyp(j,k,l)=0.5*(f%eyp(j,k,l)+f%eyp(j,k+1,l))
+                  f%bzp(j,k,l)=0.5*(f%bzp(j,k,l)+f%bzp(j,k+1,l))
+                  f%bxp(j,k,l)=0.5*(f%bxp(j,k,l)+f%bxp(j,k+1,l))
+               enddo
+            enddo
+         enddo
 
-		 do l=-f%nzguard,f%nz+f%nzguard
-			do k=-f%nyguard,f%ny+f%nyguard
-			   do j=+f%nxguard+1,f%nx+f%nxguard-1
-				  f%exp(j,k,l)=0.5*(f%exp(j,k,l)+f%exp(j+1,k,l))
-				  f%byp(j,k,l)=0.5*(f%byp(j,k,l)+f%byp(j+1,k,l))
-				  f%bzp(j,k,l)=0.5*(f%bzp(j,k,l)+f%bzp(j+1,k,l))
-			   enddo
-			enddo
-		 enddo
+         do l=-f%nzguard,f%nz+f%nzguard
+            do k=-f%nyguard,f%ny+f%nyguard
+               do j=+f%nxguard+1,f%nx+f%nxguard-1
+                  f%exp(j,k,l)=0.5*(f%exp(j,k,l)+f%exp(j+1,k,l))
+                  f%byp(j,k,l)=0.5*(f%byp(j,k,l)+f%byp(j+1,k,l))
+                  f%bzp(j,k,l)=0.5*(f%bzp(j,k,l)+f%bzp(j+1,k,l))
+               enddo
+            enddo
+         enddo
 
-	  else
+      else
 
-		 if (f%l_1dz) then
-			j=0
-			k=0
-			do l=-f%nzguard+1,f%nz+f%nzguard-1
-			   f%ezp(j,k,l)=0.5*(f%ezp(j,k,l)+f%ezp(j,k,l+1))
-			   f%bxp(j,k,l)=0.5*(f%bxp(j,k,l)+f%bxp(j,k,l+1))
-			   f%byp(j,k,l)=0.5*(f%byp(j,k,l)+f%byp(j,k,l+1))
-			enddo
+         if (f%l_1dz) then
+            j=0
+            k=0
+            do l=-f%nzguard+1,f%nz+f%nzguard-1
+               f%ezp(j,k,l)=0.5*(f%ezp(j,k,l)+f%ezp(j,k,l+1))
+               f%bxp(j,k,l)=0.5*(f%bxp(j,k,l)+f%bxp(j,k,l+1))
+               f%byp(j,k,l)=0.5*(f%byp(j,k,l)+f%byp(j,k,l+1))
+            enddo
 
-		 else
-			k=0
-			do l=-f%nzguard+1,f%nz+f%nzguard-1
-			   do j=-f%nxguard,f%nx+f%nxguard
-				  f%ezp(j,k,l)=0.5*(f%ezp(j,k,l)+f%ezp(j,k,l+1))
-				  f%bxp(j,k,l)=0.5*(f%bxp(j,k,l)+f%bxp(j,k,l+1))
-				  f%byp(j,k,l)=0.5*(f%byp(j,k,l)+f%byp(j,k,l+1))
-			   enddo
-			enddo
+         else
+            k=0
+            do l=-f%nzguard+1,f%nz+f%nzguard-1
+               do j=-f%nxguard,f%nx+f%nxguard
+                  f%ezp(j,k,l)=0.5*(f%ezp(j,k,l)+f%ezp(j,k,l+1))
+                  f%bxp(j,k,l)=0.5*(f%bxp(j,k,l)+f%bxp(j,k,l+1))
+                  f%byp(j,k,l)=0.5*(f%byp(j,k,l)+f%byp(j,k,l+1))
+               enddo
+            enddo
 
-			do l=-f%nzguard,f%nz+f%nzguard
-			   do j=-f%nxguard+1,f%nx+f%nxguard-1
-				  f%exp(j,k,l)=0.5*(f%exp(j,k,l)+f%exp(j+1,k,l))
-				  f%byp(j,k,l)=0.5*(f%byp(j,k,l)+f%byp(j+1,k,l))
-				  f%bzp(j,k,l)=0.5*(f%bzp(j,k,l)+f%bzp(j+1,k,l))
-			   enddo
-			enddo
+            do l=-f%nzguard,f%nz+f%nzguard
+               do j=-f%nxguard+1,f%nx+f%nxguard-1
+                  f%exp(j,k,l)=0.5*(f%exp(j,k,l)+f%exp(j+1,k,l))
+                  f%byp(j,k,l)=0.5*(f%byp(j,k,l)+f%byp(j+1,k,l))
+                  f%bzp(j,k,l)=0.5*(f%bzp(j,k,l)+f%bzp(j+1,k,l))
+               enddo
+            enddo
 
-			if (f%circ_m>0) then
-			   do l=-f%nzguard+1,f%nz+f%nzguard-1
-				  do j=-f%nxguard,f%nx+f%nxguard
-					 f%ezp_circ(j,l,:)=0.5*(f%ezp_circ(j,l,:)+f%ezp_circ(j,l+1,:))
-					 f%bxp_circ(j,l,:)=0.5*(f%bxp_circ(j,l,:)+f%bxp_circ(j,l+1,:))
-					 f%byp_circ(j,l,:)=0.5*(f%byp_circ(j,l,:)+f%byp_circ(j,l+1,:))
-				  enddo
-			   enddo
+            if (f%circ_m>0) then
+               do l=-f%nzguard+1,f%nz+f%nzguard-1
+                  do j=-f%nxguard,f%nx+f%nxguard
+                     f%ezp_circ(j,l,:)=0.5*(f%ezp_circ(j,l,:)+f%ezp_circ(j,l+1,:))
+                     f%bxp_circ(j,l,:)=0.5*(f%bxp_circ(j,l,:)+f%bxp_circ(j,l+1,:))
+                     f%byp_circ(j,l,:)=0.5*(f%byp_circ(j,l,:)+f%byp_circ(j,l+1,:))
+                  enddo
+               enddo
 
-			   do l=-f%nzguard,f%nz+f%nzguard
-				  do j=-f%nxguard+1,f%nx+f%nxguard-1
-					 f%exp_circ(j,l,:)=0.5*(f%exp_circ(j,l,:)+f%exp_circ(j+1,l,:))
-					 f%byp_circ(j,l,:)=0.5*(f%byp_circ(j,l,:)+f%byp_circ(j+1,l,:))
-					 f%bzp_circ(j,l,:)=0.5*(f%bzp_circ(j,l,:)+f%bzp_circ(j+1,l,:))
-				  enddo
-			   enddo
-			END IF
+               do l=-f%nzguard,f%nz+f%nzguard
+                  do j=-f%nxguard+1,f%nx+f%nxguard-1
+                     f%exp_circ(j,l,:)=0.5*(f%exp_circ(j,l,:)+f%exp_circ(j+1,l,:))
+                     f%byp_circ(j,l,:)=0.5*(f%byp_circ(j,l,:)+f%byp_circ(j+1,l,:))
+                     f%bzp_circ(j,l,:)=0.5*(f%bzp_circ(j,l,:)+f%bzp_circ(j+1,l,:))
+                  enddo
+               enddo
+            END IF
 
-		 endif
+         endif
 
-	  endif
+      endif
 
   else
   ! --- reconstruct Yee values that were averaged with yee2node3d
 
-	  if (.not.f%l_2dxz) then
+      if (.not.f%l_2dxz) then
 
-		 do l=-f%nzguard+1,f%nz+f%nzguard-1
-			do k=-f%nyguard,f%ny+f%nyguard
-			   do j=-f%nxguard,f%nx+f%nxguard
-				  f%ezp(j,k,l)=2.*f%ezp(j,k,l)-f%ezp(j,k,l-1)
-				  f%bxp(j,k,l)=2.*f%bxp(j,k,l)-f%bxp(j,k,l-1)
-				  f%byp(j,k,l)=2.*f%byp(j,k,l)-f%byp(j,k,l-1)
-			   enddo
-			enddo
-		 enddo
+         do l=-f%nzguard+1,f%nz+f%nzguard-1
+            do k=-f%nyguard,f%ny+f%nyguard
+               do j=-f%nxguard,f%nx+f%nxguard
+                  f%ezp(j,k,l)=2.*f%ezp(j,k,l)-f%ezp(j,k,l-1)
+                  f%bxp(j,k,l)=2.*f%bxp(j,k,l)-f%bxp(j,k,l-1)
+                  f%byp(j,k,l)=2.*f%byp(j,k,l)-f%byp(j,k,l-1)
+               enddo
+            enddo
+         enddo
 
-		 do l=-f%nzguard,f%nz+f%nzguard
-			do k=-f%nyguard+1,f%ny+f%nyguard-1
-			   do j=-f%nxguard,f%nx+f%nxguard
-				  f%eyp(j,k,l)=2.*f%eyp(j,k,l)-f%eyp(j,k-1,l)
-				  f%bzp(j,k,l)=2.*f%bzp(j,k,l)-f%bzp(j,k-1,l)
-				  f%bxp(j,k,l)=2.*f%bxp(j,k,l)-f%bxp(j,k-1,l)
-			   enddo
-			enddo
-		 enddo
+         do l=-f%nzguard,f%nz+f%nzguard
+            do k=-f%nyguard+1,f%ny+f%nyguard-1
+               do j=-f%nxguard,f%nx+f%nxguard
+                  f%eyp(j,k,l)=2.*f%eyp(j,k,l)-f%eyp(j,k-1,l)
+                  f%bzp(j,k,l)=2.*f%bzp(j,k,l)-f%bzp(j,k-1,l)
+                  f%bxp(j,k,l)=2.*f%bxp(j,k,l)-f%bxp(j,k-1,l)
+               enddo
+            enddo
+         enddo
 
-		 do l=-f%nzguard,f%nz+f%nzguard
-			do k=-f%nyguard,f%ny+f%nyguard
-			   do j=-f%nxguard+1,f%nx+f%nxguard-1
-				  f%exp(j,k,l)=2.*f%exp(j,k,l)-f%exp(j-1,k,l)
-				  f%byp(j,k,l)=2.*f%byp(j,k,l)-f%byp(j-1,k,l)
-				  f%bzp(j,k,l)=2.*f%bzp(j,k,l)-f%bzp(j-1,k,l)
-			   enddo
-			enddo
-		 enddo
+         do l=-f%nzguard,f%nz+f%nzguard
+            do k=-f%nyguard,f%ny+f%nyguard
+               do j=-f%nxguard+1,f%nx+f%nxguard-1
+                  f%exp(j,k,l)=2.*f%exp(j,k,l)-f%exp(j-1,k,l)
+                  f%byp(j,k,l)=2.*f%byp(j,k,l)-f%byp(j-1,k,l)
+                  f%bzp(j,k,l)=2.*f%bzp(j,k,l)-f%bzp(j-1,k,l)
+               enddo
+            enddo
+         enddo
 
-	  else
+      else
 
-		 if (f%l_1dz) then
-			j=0
-			k=0
-			do l=-f%nzguard+1,f%nz+f%nzguard-1
-			   f%ezp(j,k,l)=2.*f%ezp(j,k,l)-f%ezp(j,k,l-1)
-			   f%bxp(j,k,l)=2.*f%bxp(j,k,l)-f%bxp(j,k,l-1)
-			   f%byp(j,k,l)=2.*f%byp(j,k,l)-f%byp(j,k,l-1)
-			enddo
+         if (f%l_1dz) then
+            j=0
+            k=0
+            do l=-f%nzguard+1,f%nz+f%nzguard-1
+               f%ezp(j,k,l)=2.*f%ezp(j,k,l)-f%ezp(j,k,l-1)
+               f%bxp(j,k,l)=2.*f%bxp(j,k,l)-f%bxp(j,k,l-1)
+               f%byp(j,k,l)=2.*f%byp(j,k,l)-f%byp(j,k,l-1)
+            enddo
 
-		 else
-			k=0
-			do l=-f%nzguard+1,f%nz+f%nzguard-1
-			   do j=-f%nxguard,f%nx+f%nxguard
-				  f%ezp(j,k,l)=2.*f%ezp(j,k,l)-f%ezp(j,k,l-1)
-				  f%bxp(j,k,l)=2.*f%bxp(j,k,l)-f%bxp(j,k,l-1)
-				  f%byp(j,k,l)=2.*f%byp(j,k,l)-f%byp(j,k,l-1)
-			   enddo
-			enddo
+         else
+            k=0
+            do l=-f%nzguard+1,f%nz+f%nzguard-1
+               do j=-f%nxguard,f%nx+f%nxguard
+                  f%ezp(j,k,l)=2.*f%ezp(j,k,l)-f%ezp(j,k,l-1)
+                  f%bxp(j,k,l)=2.*f%bxp(j,k,l)-f%bxp(j,k,l-1)
+                  f%byp(j,k,l)=2.*f%byp(j,k,l)-f%byp(j,k,l-1)
+               enddo
+            enddo
 
-			do l=-f%nzguard,f%nz+f%nzguard
-			   do j=-f%nxguard+1,f%nx+f%nxguard-1
-				  f%exp(j,k,l)=2.*f%exp(j,k,l)-f%exp(j-1,k,l)
-				  f%byp(j,k,l)=2.*f%byp(j,k,l)-f%byp(j-1,k,l)
-				  f%bzp(j,k,l)=2.*f%bzp(j,k,l)-f%bzp(j-1,k,l)
-			   enddo
-			enddo
+            do l=-f%nzguard,f%nz+f%nzguard
+               do j=-f%nxguard+1,f%nx+f%nxguard-1
+                  f%exp(j,k,l)=2.*f%exp(j,k,l)-f%exp(j-1,k,l)
+                  f%byp(j,k,l)=2.*f%byp(j,k,l)-f%byp(j-1,k,l)
+                  f%bzp(j,k,l)=2.*f%bzp(j,k,l)-f%bzp(j-1,k,l)
+               enddo
+            enddo
 
-			if (f%circ_m>0) then
-			   do l=-f%nzguard+1,f%nz+f%nzguard-1
-				  do j=-f%nxguard,f%nx+f%nxguard
-					 f%ezp_circ(j,l,:)=2.*f%ezp_circ(j,l,:)-f%ezp_circ(j,l-1,:)
-					 f%bxp_circ(j,l,:)=2.*f%bxp_circ(j,l,:)-f%bxp_circ(j,l-1,:)
-					 f%byp_circ(j,l,:)=2.*f%byp_circ(j,l,:)-f%byp_circ(j,l-1,:)
-				  enddo
-			   enddo
+            if (f%circ_m>0) then
+               do l=-f%nzguard+1,f%nz+f%nzguard-1
+                  do j=-f%nxguard,f%nx+f%nxguard
+                     f%ezp_circ(j,l,:)=2.*f%ezp_circ(j,l,:)-f%ezp_circ(j,l-1,:)
+                     f%bxp_circ(j,l,:)=2.*f%bxp_circ(j,l,:)-f%bxp_circ(j,l-1,:)
+                     f%byp_circ(j,l,:)=2.*f%byp_circ(j,l,:)-f%byp_circ(j,l-1,:)
+                  enddo
+               enddo
 
-			   do l=-f%nzguard,f%nz+f%nzguard
-				  do j=-f%nxguard+1,f%nx+f%nxguard-1
-					 f%exp_circ(j,l,:)=2.*f%exp_circ(j,l,:)-f%exp_circ(j-1,l,:)
-					 f%byp_circ(j,l,:)=2.*f%byp_circ(j,l,:)-f%byp_circ(j-1,l,:)
-					 f%bzp_circ(j,l,:)=2.*f%bzp_circ(j,l,:)-f%bzp_circ(j-1,l,:)
-				  enddo
-			   enddo
-			END IF
+               do l=-f%nzguard,f%nz+f%nzguard
+                  do j=-f%nxguard+1,f%nx+f%nxguard-1
+                     f%exp_circ(j,l,:)=2.*f%exp_circ(j,l,:)-f%exp_circ(j-1,l,:)
+                     f%byp_circ(j,l,:)=2.*f%byp_circ(j,l,:)-f%byp_circ(j-1,l,:)
+                     f%bzp_circ(j,l,:)=2.*f%bzp_circ(j,l,:)-f%bzp_circ(j-1,l,:)
+                  enddo
+               enddo
+            END IF
 
-		 endif
+         endif
 
-	  endif
+      endif
 
   end if
 

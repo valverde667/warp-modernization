@@ -121,45 +121,45 @@ fprintf(stderr,"Seedranf set 48-bit seed  %08x %08x\n",s48[1],s48[0]);
 void Mixranf(int *s,u32 s48[2])
 {
     if(*s < 0){ /* Set default initial value */
-	s48[0] = s48[1] = 0;
+        s48[0] = s48[1] = 0;
         Setranf(s48);
         Getranf(s48);  /* Return default seed */
 
     }else if(*s == 0){ /* Use the clock */
-	int i;
+        int i;
 #ifdef __MWERKS__
 /* use this for the Macintosh */
-	time_t theTime;
-	UnsignedWide	tv_usec;
+        time_t theTime;
+        UnsignedWide tv_usec;
 
-	(void)time(&theTime);
-	Microseconds(&tv_usec); /* the microsecs since start up */
-	s48[0] = (u32)theTime;
-	s48[1] = (u32)tv_usec.lo;
+        (void)time(&theTime);
+        Microseconds(&tv_usec); /* the microsecs since start up */
+        s48[0] = (u32)theTime;
+        s48[1] = (u32)tv_usec.lo;
 #else
 #if defined(_WIN32)
     // suggestions welcome for something better!
     // one of these is from start of job, the other time of day
-	time_t long_time;
-	clock_t clock_time;
-	time(&long_time);
-	clock_time = clock();
-	s48[0] = (u32)long_time;
-	s48[1] = (u32)clock_time;
+        time_t long_time;
+        clock_t clock_time;
+        time(&long_time);
+        clock_time = clock();
+        s48[0] = (u32)long_time;
+        s48[1] = (u32)clock_time;
 #else
-	struct timeval tv;
-	struct timezone tz;
+        struct timeval tv;
+        struct timezone tz;
 #if !defined(__sgi)
-	int gettimeofday();
+        int gettimeofday();
 #endif
 
-	(void)gettimeofday(&tv,&tz);
-	s48[0] = (u32)tv.tv_sec;
-	s48[1] = (u32)tv.tv_usec;
+        (void)gettimeofday(&tv,&tz);
+        s48[0] = (u32)tv.tv_sec;
+        s48[1] = (u32)tv.tv_usec;
 #endif /* !_WIN32 */
 #endif /* !__MWERKS__ */
-	Setranf(s48);
-	for(i=0;i<10;i++) (void)Ranf();  /* Discard first 10 numbers */
+        Setranf(s48);
+        for(i=0;i<10;i++) (void)Ranf();  /* Discard first 10 numbers */
         Getranf(s48);  /* Return seed after these 10 calls */
     }else{ /* s > 0, so set seed directly */
         s48[0] = (u32)*s;
@@ -246,8 +246,8 @@ fprintf(stderr,"Setranf called with s48 = %08x %08x\n",s48[1],s48[0]);
 #endif
 
     if(s48[0] == 0 && s48[1] == 0){ /* Set default starting value */
-	s48[0] = 0x53fc9cd1;
-	s48[1] = 0x9482;
+        s48[0] = 0x53fc9cd1;
+        s48[1] = 0x9482;
     }
 
     /* Store seed as 3 u16's. */
@@ -327,8 +327,8 @@ void Setmult(u32 *m48)
 fprintf(stderr,"Setmult called with m48 = %08x %08x\n",m48[1],m48[0]);
 #endif
     if(m48[0] == 0 && m48[1] == 0){ /* Set default starting value */
-	m48[0] = 0xa2e7b175;
-	m48[1] = 0x2875;
+        m48[0] = 0xa2e7b175;
+        m48[1] = 0x2875;
     }
 
     /* Store multiplier as 3 u16's. */

@@ -106,25 +106,25 @@ xp0           real /0./               [1] # Initial beam centroid vx/vz
 y0            real /0./               [m] # Initial beam centroid in y
 yp0           real /0./               [1] # Initial beam centroid vy/vz
 xx0           real /0./             [m^2] # Initial average value of xx
-	      	   		    	  # w.r.t. the beam centroid
+                                          # w.r.t. the beam centroid
 xxp0          real /0./               [m] # Initial average value of xx'
-	      	   		    	  # w.r.t. the beam centroid
+                                          # w.r.t. the beam centroid
 xpxp0         real /0./               [1] # Initial average value of x'x'
-	      	   		    	  # w.r.t. the beam centroid
+                                          # w.r.t. the beam centroid
 yy0           real /0./             [m^2] # Initial average value of yy
-	      	   		    	  # w.r.t. the beam centroid
+                                          # w.r.t. the beam centroid
 yyp0          real /0./               [m] # Initial average value of yy'
-	      	   		    	  # w.r.t. the beam centroid
+                                          # w.r.t. the beam centroid
 ypyp0         real /0./               [1] # Initial average value of y'y'
-	      	   		    	  # w.r.t. the beam centroid
+                                          # w.r.t. the beam centroid
 xy0           real /0./             [m^2] # Initial average value of xy
-	      	   		    	  # w.r.t. the beam centroid
+                                          # w.r.t. the beam centroid
 xpy0          real /0./               [m] # Initial average value of x'y
-	      	   		    	  # w.r.t. the beam centroid
+                                          # w.r.t. the beam centroid
 xyp0          real /0./               [m] # Initial average value of xy'
-	      	   		    	  # w.r.t. the beam centroid
+                                          # w.r.t. the beam centroid
 xpyp0         real /0./               [1] # Initial average value of x'y'
-	      	   		    	  # w.r.t. the beam centroid
+                                          # w.r.t. the beam centroid
 bph0          real /0./             [rad] # Initial transverse beam tilt angle
 tunelen       real /0./               [m] # Length for tune calc (lattice per.)
 dedr          real /0./             [E/m] # Uniform focusing 

@@ -448,12 +448,12 @@ subroutine move_bnd(b)
       do j = 1, b%nx
       jk = jk1 + j
 
-        b%Bzy(jk) = b%aBzy(jk) *  b%Bzy(jk) 					&
-                     + b%bBzy(jk) * b%Ex(jk+b%n1x)    	&
+        b%Bzy(jk) = b%aBzy(jk) *  b%Bzy(jk) &
+                     + b%bBzy(jk) * b%Ex(jk+b%n1x)    &
                      + b%cBzy(jk) * b%Ex(jk)
 
-        b%Bzx(jk) = b%aBzx(jk) *  b%Bzx(jk)					&
-                     - b%bBzx(jk) * b%Ey(jk+1)		&
+        b%Bzx(jk) = b%aBzx(jk) *  b%Bzx(jk) &
+                     - b%bBzx(jk) * b%Ey(jk+1) &
                      - b%cBzx(jk) * b%Ey(jk)
       end do
     end do
@@ -465,11 +465,11 @@ subroutine move_bnd(b)
       do j = 1, b%nx
       jk = jk1 + j
 
-        b%Bzy(jk) = b%aBzy(jk) *  b%Bzy(jk) 					&
-                     + b%bBzy(jk) * b%Ex(jk+b%n1x) 	&
+        b%Bzy(jk) = b%aBzy(jk) *  b%Bzy(jk) &
+                     + b%bBzy(jk) * b%Ex(jk+b%n1x) &
                      + b%cBzy(jk) * b%Ex(jk)
-        b%Bzx(jk) = b%aBzx(jk) *  b%Bzx(jk)					&
-                     - b%bBzx(jk) * b%Ey(jk+1)       		&
+        b%Bzx(jk) = b%aBzx(jk) *  b%Bzx(jk) &
+                     - b%bBzx(jk) * b%Ey(jk+1)       &
                      - b%cBzx(jk) * b%Ey(jk)
       end do
     end do
@@ -478,12 +478,12 @@ subroutine move_bnd(b)
       do j = 1, b%nbndx
         jk= b%nbot1 + j + k * b%nint
 
-        b%Bzy(jk) = b%aBzy(jk) *  b%Bzy(jk)					&
-                     + b%bBzy(jk) * b%Ex(jk+b%nint) 	&
+        b%Bzy(jk) = b%aBzy(jk) *  b%Bzy(jk) &
+                     + b%bBzy(jk) * b%Ex(jk+b%nint) &
                      + b%cBzy(jk) * b%Ex(jk)
 
-        b%Bzx(jk) = b%aBzx(jk) *  b%Bzx(jk) 					&
-                     - b%bBzx(jk) * b%Ey(jk+1)        		&
+        b%Bzx(jk) = b%aBzx(jk) *  b%Bzx(jk) &
+                     - b%bBzx(jk) * b%Ey(jk+1)        &
                      - b%cBzx(jk) * b%Ey(jk)
       end do
     end do
@@ -505,7 +505,7 @@ subroutine move_bnd(b)
     jk=ijk(b,j,k)
 
 
-      	      b%Bzy(jk) = b%aBzy(jk) *  b%Bzy(jk) &
+              b%Bzy(jk) = b%aBzy(jk) *  b%Bzy(jk) &
                            + b%bBzy(jk) * b%Ex(ijk(b,j,k+1)) &
                            + b%cBzy(jk) * b%Ex(jk)
               b%Bzx(jk) = b%aBzx(jk) *  b%Bzx(jk) &
@@ -519,12 +519,12 @@ subroutine move_bnd(b)
      do j = b%nx-b%nbndx+1, b%nx
       jk = b%nbot2+ j + k * b%nint
 
-        b%Bzy(jk) = b%aBzy(jk) *  b%Bzy(jk)					&
-                     + b%bBzy(jk) * b%Ex(jk+b%nint)	&
+        b%Bzy(jk) = b%aBzy(jk) *  b%Bzy(jk) &
+                     + b%bBzy(jk) * b%Ex(jk+b%nint) &
                      + b%cBzy(jk) * b%Ex(jk)
 
-        b%Bzx(jk) = b%aBzx(jk) *  b%Bzx(jk) 					&
-                     - b%bBzx(jk) * b%Ey(jk+1)       	&
+        b%Bzx(jk) = b%aBzx(jk) *  b%Bzx(jk) &
+                     - b%bBzx(jk) * b%Ey(jk+1)       &
                      - b%cBzx(jk) * b%Ey(jk)
        end do
     end do
@@ -640,7 +640,7 @@ subroutine move_bnd(b)
       jk = jk1 + j
 
         b%Ex(jk) = b%aEx(jk) * b%Ex(jk)  &
-                   + b%bEx(jk) * (b%Bzx(jk)+b%Bzy(jk)) 	&
+                   + b%bEx(jk) * (b%Bzx(jk)+b%Bzy(jk)) &
                    + b%cEx(jk) * (b%Bzx(jk-b%n1x)+b%Bzy(jk-b%n1x))
 
       end do
@@ -654,7 +654,7 @@ subroutine move_bnd(b)
       jk = jk1 + j
 
         b%Ex(jk) = b%aEx(jk) * b%Ex(jk)  &
-                   + b%bEx(jk) * (b%Bzx(jk)+b%Bzy(jk)) 	&
+                   + b%bEx(jk) * (b%Bzx(jk)+b%Bzy(jk)) &
                    + b%cEx(jk) * (b%Bzx(jk-b%n1x)+b%Bzy(jk-b%n1x))
        end do
     end do
@@ -664,7 +664,7 @@ subroutine move_bnd(b)
       jk  = b%nbot1 + j + k*b%nint
 
         b%Ex(jk) = b%aEx(jk) * b%Ex(jk) &
-                   + b%bEx(jk) * (b%Bzx(jk)+b%Bzy(jk)) 		&
+                   + b%bEx(jk) * (b%Bzx(jk)+b%Bzy(jk)) &
                    + b%cEx(jk) * (b%Bzx(jk-b%nint)+b%Bzy(jk-b%nint))
       end do
     end do
@@ -698,7 +698,7 @@ subroutine move_bnd(b)
       jk  = b%nbot2 + j + k*b%nint
 
         b%Ex(jk) = b%aEx(jk) * b%Ex(jk) &
-                   + b%bEx(jk) * (b%Bzx(jk)+b%Bzy(jk)) 		&
+                   + b%bEx(jk) * (b%Bzx(jk)+b%Bzy(jk)) &
                    + b%cEx(jk) * (b%Bzx(jk-b%nint)+b%Bzy(jk-b%nint))
        end do
     end do
@@ -894,12 +894,10 @@ IF(k<=bnd%nbndy+1) then
 ELSEIF(k>=bnd%ny-bnd%nbndy) then
 
   ijk = bnd%ntop2 +  j + k * bnd%n1x  
-        		
 
 ELSEIF(j<=bnd%nbndx+1) then
 
-  ijk = bnd%nbot1 + j + k * bnd%nint 	
-        
+  ijk = bnd%nbot1 + j + k * bnd%nint
 
 ELSEIF(j>=bnd%nx-bnd%nbndx) then
 

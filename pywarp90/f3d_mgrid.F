@@ -326,7 +326,7 @@ c       --- correction form since it is operating on the error.
             call cond_potmg(conductors%interior,nxlocal,nylocal,nzlocal,1,1,1,
      &                      phisave,0,mgform,.true.)
           endif
-	      call condbndymgint(conductors,nxlocal,nylocal,nzlocal,
+          call condbndymgint(conductors,nxlocal,nylocal,nzlocal,
      &                       1,1,1,phisave,localbounds,0,icndbndy)
           call residual3d(nxlocal,nylocal,nzlocal,
      &                    nxguardphi,nyguardphi,nzguardphi,
@@ -7824,13 +7824,13 @@ c=============================================================================
      &                    phicoarse,bounds,lxoffset,lzoffset)
       integer(ISZ):: nx,nz,nxlocal,nzlocal
       integer(ISZ):: nxguardphi,nzguardphi
-	  integer(ISZ):: nxcoarse,nzcoarse,nxlocalcoarse,nzlocalcoarse
+      integer(ISZ):: nxcoarse,nzcoarse,nxlocalcoarse,nzlocalcoarse
       real(kind=8):: phi(-nxguardphi:nxlocal+nxguardphi,
      &                   -nzguardphi:nzlocal+nzguardphi)
       real(kind=8):: phicoarse(-1:nxlocalcoarse+1,-1:nzlocalcoarse+1)
-	  integer(ISZ):: lxoffset,lzoffset
+      integer(ISZ):: lxoffset,lzoffset
       integer(ISZ):: bounds(0:5)
-	  
+
 c Add the error on the coarser grid to the current value on the finer grid.
 c The expansion is only transverse.
 

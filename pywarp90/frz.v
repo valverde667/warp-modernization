@@ -269,7 +269,7 @@ gchange_rhop_phip_rz() subroutine
 install_conductors_rz(conductors:ConductorType,grid:GRIDtype) subroutine
          # install conductors data into RZ arrays
 set_basegrid_phi() subroutine
-	 # set phi on basegrid using w3d.phi 
+         # set phi on basegrid using w3d.phi 
 setbnd_subgrid_to_inj_d() subroutine
          # set indices for force gathering (locpart) to coarser grid 
          # when grid point more than inj_d*grid%dz away from emitting surface

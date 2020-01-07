@@ -313,7 +313,7 @@ cc Add whatever "Use" statements as needed here
       real x1(np1),y1(np1),x2(np2),y2(np2),xf,yf
 
       real nuadt,s00
-      real ddxp,ddyp,epvth	
+      real ddxp,ddyp,epvth
       real etotf1,etotf2,vv,vv1,vv2,fdv,d33,d11,xrand1,uxf,uxf0,uyf,uzf
       real sqrt2
       real aion1,zion1,aion2,zion2,nion1,nion2,vthmisq1,vthmisq2
@@ -495,7 +495,7 @@ cc         if(i.eq.10) write(*,*) "se(1:nxp,1:nyp)=",se(1:nxp,1:nyp)
 cassumes that the average density is const and moats are negligible
 
 
-         if(epvth.eq.0.) epvth=0.95		!!epvth=0.95 works fine
+         if(epvth.eq.0.) epvth=0.95 !!epvth=0.95 works fine
 c Apply collisions with local correction to the temperature and density
 c The nu_0 NRL = 2**1.5 * nu_alpha Jones et al.
 

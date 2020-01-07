@@ -1359,7 +1359,7 @@ INTEGER :: which,i,j
         end do
       else
         allocate(jxjyfin_new(0:nxfin+1,0:nyfin+1,2))
-	jxjyfin_new=0.
+        jxjyfin_new=0.
         do k = 0, nyfin
           do j = 0, nxfin-1
 !            jxjyfin_new(j,  k,  1) = jxjyfin_new(j,  k,  1) +      jxjyfin(j,k,1)
@@ -1378,10 +1378,10 @@ INTEGER :: which,i,j
             jxjyfin_new(j,  k+1,2) = jxjyfin_new(j,  k+1,2) - 0.25*jxjyfin(j,k,2)
             jxjyfin_new(j,  k-1,2) = jxjyfin_new(j,  k-1,2) - 0.25*jxjyfin(j,k,2)
           end do
-        end do	
-	
-	jxjyfin = 0.5*jxjyfin_new
-	deallocate(jxjyfin_new)
+        end do
+
+        jxjyfin = 0.5*jxjyfin_new
+        deallocate(jxjyfin_new)
       end if
    end subroutine interpol_jxjy
 
@@ -1830,21 +1830,21 @@ end if
   call EM2D_FIELDtypeallot(f)
 
 
-	f%Ex = 0.
-	f%Ey = 0.
-	f%Ez = 0.
-	f%Bx = 0.
-	f%By = 0.
-	f%Bz = 0.
-	
-	f%J = 0.
+      f%Ex = 0.
+      f%Ey = 0.
+      f%Ez = 0.
+      f%Bx = 0.
+      f%By = 0.
+      f%Bz = 0.
 
-	f%Bz_in = 0.
-	f%Ey_in = 0.
-	f%Ex_in = 0.
-	f%Ez_in = 0.
-	f%By_in = 0.
-	f%Bx_in = 0.
+      f%J = 0.
+
+      f%Bz_in = 0.
+      f%Ey_in = 0.
+      f%Ex_in = 0.
+      f%Ez_in = 0.
+      f%By_in = 0.
+      f%Bx_in = 0.
       f%pulse=0.
       f%tpulse=0.
 

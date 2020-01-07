@@ -69,7 +69,7 @@ zenv(0:nenv)      _real  [m]     # Z coordinate of envelope point
 lenvout logical /.true./ # Sets whether data is printed out after an env step
 envtime           real   [s]     # CPU time for envelope calculation
 llarmorframe   logical  /.false./  # Determines whether envelope radii, angles, 
-			         # and phase advances are in Larmor frame
+                                 # and phase advances are in Larmor frame
 iesemltq integer # Obsolete
 iesemltu integer # Obsolete
 imsmmltq integer # Obsolete
@@ -164,25 +164,25 @@ envxport(np,z(np):real,a(np):real,ap(np):real,b(np):real,bp(np):real,
          emitx(np):real,emity(np):real,ibeam(np):real) integer function
          # Export routine with envelope data at z(1:np)
 RK4HillSolve(karray(2*numsteps+1):real,si:real,sf:real,xi:real,xpi:real,
-	     numsteps:integer,xxparray(numsteps+1,2):real) subroutine
-	 # Solves Hill's Equation on interval [si,sf] subject to initial 
-	 # conditions xi and xpi via the RK4 method
+             numsteps:integer,xxparray(numsteps+1,2):real) subroutine
+         # Solves Hill's Equation on interval [si,sf] subject to initial 
+         # conditions xi and xpi via the RK4 method
 kappax(z:real) real function  # x-plane lattice focusing function
 kappay(z:real) real function  # y-plane lattice focusing function
 kappaxvec(zarray(n):real,karray(n):real,n:integer) subroutine
-	 # Calculates kappax at each point in zarray and stores those values 
-	 # in karray
+         # Calculates kappax at each point in zarray and stores those values 
+         # in karray
 kappayvec(zarray(n):real,karray(n):real,n:integer) subroutine
-	 # Calculates kappay at each point in zarray and stores those values 
-	 # in karray
+         # Calculates kappay at each point in zarray and stores those values 
+         # in karray
 ludcmp(a(np,np):real,n:integer,np:integer,indx(n):integer,d:real) subroutine
-	 # Performs LU decomposition on matrix a
+         # Performs LU decomposition on matrix a
 lubksb(a(np,np):real,n:integer,np:integer,indx(n):integer,b(n):real) subroutine
-	 # Performs LU backsubstitution on the LU decomposition of a
+         # Performs LU backsubstitution on the LU decomposition of a
 matinv(a(np,np):real,n:integer,np:integer,indx(n):integer,d:real,
-	 y(np,np):real) subroutine
-	 # Computes the inverse of matrix a using ludcmp and lubksb
+         y(np,np):real) subroutine
+         # Computes the inverse of matrix a using ludcmp and lubksb
 matprod(a(i,j):real,b(j,k):real,c(i,k):real,i:integer,j:integer,k:integer) subroutine
-	 # Multiplies matrices a and b to yield matrix c
+         # Multiplies matrices a and b to yield matrix c
 matvecprod(a(i,j):real,b(j):real,c(i):real,i:integer,j:integer) subroutine
-	 # Multiplies matrix a and vector b to yield vector c
+         # Multiplies matrix a and vector b to yield vector c

@@ -442,10 +442,10 @@ subroutine move_bnd(b)
       jk = jk1 + j
         
         oldval = b%Bz(jk)
-        b%Bz(jk) = b%aBz(jk)  * b%Bz(jk) 	        &
+        b%Bz(jk) = b%aBz(jk)  * b%Bz(jk)            &
                  + b%bBzy(jk) * b%Extild(jk+b%n1x)  &
                  + b%cBzy(jk) * b%Extild(jk)        &
-                 - b%bBzx(jk) * b%Eytild(jk+1)		&
+                 - b%bBzx(jk) * b%Eytild(jk+1)      &
                  - b%cBzx(jk) * b%Eytild(jk)
 
         b%Bzxtild(jk) = b%aBzxtild(jk) * b%Bzxtild(jk) &
@@ -464,10 +464,10 @@ subroutine move_bnd(b)
       jk = jk1 + j
 
         oldval = b%Bz(jk)
-        b%Bz(jk) = b%aBz(jk)  * b%Bz(jk) 	        &
+        b%Bz(jk) = b%aBz(jk)  * b%Bz(jk)            &
                  + b%bBzy(jk) * b%Extild(jk+b%n1x)  &
                  + b%cBzy(jk) * b%Extild(jk)        &
-                 - b%bBzx(jk) * b%Eytild(jk+1)		&
+                 - b%bBzx(jk) * b%Eytild(jk+1)      &
                  - b%cBzx(jk) * b%Eytild(jk)
 
         b%Bzxtild(jk) = b%aBzxtild(jk) * b%Bzxtild(jk) &
@@ -483,10 +483,10 @@ subroutine move_bnd(b)
         jk= b%nbot1 + j + k * b%nint
 
         oldval = b%Bz(jk)
-        b%Bz(jk) = b%aBz(jk)  * b%Bz(jk) 	        &
-                 + b%bBzy(jk) * b%Extild(jk+b%nint)  &
+        b%Bz(jk) = b%aBz(jk)  * b%Bz(jk)            &
+                 + b%bBzy(jk) * b%Extild(jk+b%nint) &
                  + b%cBzy(jk) * b%Extild(jk)        &
-                 - b%bBzx(jk) * b%Eytild(jk+1)		&
+                 - b%bBzx(jk) * b%Eytild(jk+1)      &
                  - b%cBzx(jk) * b%Eytild(jk)
 
         b%Bzxtild(jk) = b%aBzxtild(jk) * b%Bzxtild(jk) &
@@ -503,10 +503,10 @@ subroutine move_bnd(b)
     jk=ijk(b,j,k)
 
         oldval = b%Bz(jk)
-        b%Bz(jk) = b%aBz(jk)  * b%Bz(jk) 	        &
+        b%Bz(jk) = b%aBz(jk)  * b%Bz(jk)                &
                  + b%bBzy(jk) * b%Extild(ijk(b,j,k+1))  &
-                 + b%cBzy(jk) * b%Extild(jk)        &
-                 - b%bBzx(jk) * b%Eytild(ijk(b,j+1,k))		&
+                 + b%cBzy(jk) * b%Extild(jk)            &
+                 - b%bBzx(jk) * b%Eytild(ijk(b,j+1,k))  &
                  - b%cBzx(jk) * b%Eytild(jk)
 
         b%Bzxtild(jk) = b%aBzxtild(jk) * b%Bzxtild(jk) &
@@ -522,10 +522,10 @@ subroutine move_bnd(b)
     jk=ijk(b,j,k)
 
         oldval = b%Bz(jk)
-        b%Bz(jk) = b%aBz(jk)  * b%Bz(jk) 	        &
+        b%Bz(jk) = b%aBz(jk)  * b%Bz(jk)                &
                  + b%bBzy(jk) * b%Extild(ijk(b,j,k+1))  &
                  + b%cBzy(jk) * b%Extild(jk)        &
-                 - b%bBzx(jk) * b%Eytild(ijk(b,j+1,k))		&
+                 - b%bBzx(jk) * b%Eytild(ijk(b,j+1,k))  &
                  - b%cBzx(jk) * b%Eytild(jk)
 
         b%Bzxtild(jk) = b%aBzxtild(jk) * b%Bzxtild(jk) &
@@ -543,10 +543,10 @@ subroutine move_bnd(b)
       jk = b%nbot2+ j + k * b%nint
 
         oldval = b%Bz(jk)
-        b%Bz(jk) = b%aBz(jk)  * b%Bz(jk) 	        &
+        b%Bz(jk) = b%aBz(jk)  * b%Bz(jk)             &
                  + b%bBzy(jk) * b%Extild(jk+b%nint)  &
                  + b%cBzy(jk) * b%Extild(jk)        &
-                 - b%bBzx(jk) * b%Eytild(jk+1)		&
+                 - b%bBzx(jk) * b%Eytild(jk+1)      &
                  - b%cBzx(jk) * b%Eytild(jk)
 
         b%Bzxtild(jk) = b%aBzxtild(jk) * b%Bzxtild(jk) &
@@ -561,10 +561,10 @@ subroutine move_bnd(b)
     do j = b%nx-b%nbndx+1, b%nx
     jk=ijk(b,j,k)
         oldval = b%Bz(jk)
-        b%Bz(jk) = b%aBz(jk)  * b%Bz(jk) 	        &
+        b%Bz(jk) = b%aBz(jk)  * b%Bz(jk)                &
                  + b%bBzy(jk) * b%Extild(ijk(b,j,k+1))  &
                  + b%cBzy(jk) * b%Extild(jk)        &
-                 - b%bBzx(jk) * b%Eytild(ijk(b,j+1,k))		&
+                 - b%bBzx(jk) * b%Eytild(ijk(b,j+1,k))  &
                  - b%cBzx(jk) * b%Eytild(jk)
 
         b%Bzxtild(jk) = b%aBzxtild(jk) * b%Bzxtild(jk) &
@@ -578,10 +578,10 @@ subroutine move_bnd(b)
     do j =  b%nx-b%nbndx+1, b%nx
     jk=ijk(b,j,k)
         oldval = b%Bz(jk)
-        b%Bz(jk) = b%aBz(jk)  * b%Bz(jk) 	        &
+        b%Bz(jk) = b%aBz(jk)  * b%Bz(jk)                &
                  + b%bBzy(jk) * b%Extild(ijk(b,j,k+1))  &
                  + b%cBzy(jk) * b%Extild(jk)        &
-                 - b%bBzx(jk) * b%Eytild(ijk(b,j+1,k))		&
+                 - b%bBzx(jk) * b%Eytild(ijk(b,j+1,k))  &
                  - b%cBzx(jk) * b%Eytild(jk)
 
         b%Bzxtild(jk) = b%aBzxtild(jk) * b%Bzxtild(jk) &
@@ -686,7 +686,7 @@ subroutine move_bnd(b)
         oldval = b%Ex(jk)
         
         b%Ex(jk) = b%aEx(jk) * b%Ex(jk)  &
-                 + b%bEx(jk) * b%Bzytild(jk) 	&
+                 + b%bEx(jk) * b%Bzytild(jk) &
                  + b%cEx(jk) * b%Bzytild(jk-b%n1x)
 
         b%Extild(jk) = b%aExtild(jk) * b%Extild(jk) &
@@ -705,7 +705,7 @@ subroutine move_bnd(b)
         oldval = b%Ex(jk)
         
         b%Ex(jk) = b%aEx(jk) * b%Ex(jk)  &
-                 + b%bEx(jk) * b%Bzytild(jk) 	&
+                 + b%bEx(jk) * b%Bzytild(jk) &
                  + b%cEx(jk) * b%Bzytild(jk-b%n1x)
 
         b%Extild(jk) = b%aExtild(jk) * b%Extild(jk) &
@@ -720,7 +720,7 @@ subroutine move_bnd(b)
         oldval = b%Ex(jk)
         
         b%Ex(jk) = b%aEx(jk) * b%Ex(jk)  &
-                 + b%bEx(jk) * b%Bzytild(jk) 	&
+                 + b%bEx(jk) * b%Bzytild(jk) &
                  + b%cEx(jk) * b%Bzytild(jk-b%nint)
 
         b%Extild(jk) = b%aExtild(jk) * b%Extild(jk) &
@@ -734,7 +734,7 @@ subroutine move_bnd(b)
         oldval = b%Ex(jk)
         
         b%Ex(jk) = b%aEx(jk) * b%Ex(jk)  &
-                 + b%bEx(jk) * b%Bzytild(jk) 	&
+                 + b%bEx(jk) * b%Bzytild(jk) &
                  + b%cEx(jk) * b%Bzytild(ijk(b,j,k-1))
 
         b%Extild(jk) = b%aExtild(jk) * b%Extild(jk) &
@@ -749,7 +749,7 @@ subroutine move_bnd(b)
         oldval = b%Ex(jk)
         
         b%Ex(jk) = b%aEx(jk) * b%Ex(jk)  &
-                 + b%bEx(jk) * b%Bzytild(jk) 	&
+                 + b%bEx(jk) * b%Bzytild(jk) &
                  + b%cEx(jk) * b%Bzytild(ijk(b,j,k-1))
 
         b%Extild(jk) = b%aExtild(jk) * b%Extild(jk) &
@@ -764,7 +764,7 @@ subroutine move_bnd(b)
         oldval = b%Ex(jk)
         
         b%Ex(jk) = b%aEx(jk) * b%Ex(jk)  &
-                 + b%bEx(jk) * b%Bzytild(jk) 	&
+                 + b%bEx(jk) * b%Bzytild(jk) &
                  + b%cEx(jk) * b%Bzytild(jk-b%nint)
 
         b%Extild(jk) = b%aExtild(jk) * b%Extild(jk) &
@@ -778,7 +778,7 @@ subroutine move_bnd(b)
         oldval = b%Ex(jk)
         
         b%Ex(jk) = b%aEx(jk) * b%Ex(jk)  &
-                 + b%bEx(jk) * b%Bzytild(jk) 	&
+                 + b%bEx(jk) * b%Bzytild(jk) &
                  + b%cEx(jk) * b%Bzytild(ijk(b,j,k-1))
 
         b%Extild(jk) = b%aExtild(jk) * b%Extild(jk) &
@@ -792,7 +792,7 @@ subroutine move_bnd(b)
         oldval = b%Ex(jk)
         
         b%Ex(jk) = b%aEx(jk) * b%Ex(jk)  &
-                 + b%bEx(jk) * b%Bzytild(jk) 	&
+                 + b%bEx(jk) * b%Bzytild(jk) &
                  + b%cEx(jk) * b%Bzytild(ijk(b,j,k-1))
 
         b%Extild(jk) = b%aExtild(jk) * b%Extild(jk) &
@@ -811,7 +811,7 @@ subroutine move_bnd(b)
         oldval = b%Ey(jk)
         
         b%Ey(jk) = b%aEy(jk) * b%Ey(jk)  &
-                 - b%bEy(jk) * b%Bzxtild(jk) 	&
+                 - b%bEy(jk) * b%Bzxtild(jk) &
                  - b%cEy(jk) * b%Bzxtild(jk-1)
 
         b%Eytild(jk) = b%aEytild(jk) * b%Eytild(jk) &
@@ -826,7 +826,7 @@ subroutine move_bnd(b)
         oldval = b%Ey(jk)
         
         b%Ey(jk) = b%aEy(jk) * b%Ey(jk)  &
-                 - b%bEy(jk) * b%Bzxtild(jk) 	&
+                 - b%bEy(jk) * b%Bzxtild(jk) &
                  - b%cEy(jk) * b%Bzxtild(jk-1)
 
         b%Eytild(jk) = b%aEytild(jk) * b%Eytild(jk) &
@@ -841,7 +841,7 @@ subroutine move_bnd(b)
         oldval = b%Ey(jk)
         
         b%Ey(jk) = b%aEy(jk) * b%Ey(jk)  &
-                 - b%bEy(jk) * b%Bzxtild(jk) 	&
+                 - b%bEy(jk) * b%Bzxtild(jk) &
                  - b%cEy(jk) * b%Bzxtild(jk-1)
 
         b%Eytild(jk) = b%aEytild(jk) * b%Eytild(jk) &
@@ -857,7 +857,7 @@ subroutine move_bnd(b)
         oldval = b%Ey(jk)
         
         b%Ey(jk) = b%aEy(jk) * b%Ey(jk)  &
-                 - b%bEy(jk) * b%Bzxtild(jk) 	&
+                 - b%bEy(jk) * b%Bzxtild(jk) &
                  - b%cEy(jk) * b%Bzxtild(ijk(b,j-1,k))
 
         b%Eytild(jk) = b%aEytild(jk) * b%Eytild(jk) &
@@ -871,7 +871,7 @@ subroutine move_bnd(b)
         oldval = b%Ey(jk)
         
         b%Ey(jk) = b%aEy(jk) * b%Ey(jk)  &
-                 - b%bEy(jk) * b%Bzxtild(jk) 	&
+                 - b%bEy(jk) * b%Bzxtild(jk) &
                  - b%cEy(jk) * b%Bzxtild(ijk(b,j-1,k))
 
         b%Eytild(jk) = b%aEytild(jk) * b%Eytild(jk) &
@@ -887,7 +887,7 @@ subroutine move_bnd(b)
         oldval = b%Ey(jk)
         
         b%Ey(jk) = b%aEy(jk) * b%Ey(jk)  &
-                 - b%bEy(jk) * b%Bzxtild(jk) 	&
+                 - b%bEy(jk) * b%Bzxtild(jk) &
                  - b%cEy(jk) * b%Bzxtild(jk-1)
 
         b%Eytild(jk) = b%aEytild(jk) * b%Eytild(jk) &
@@ -902,7 +902,7 @@ subroutine move_bnd(b)
         oldval = b%Ey(jk)
         
         b%Ey(jk) = b%aEy(jk) * b%Ey(jk)  &
-                 - b%bEy(jk) * b%Bzxtild(jk) 	&
+                 - b%bEy(jk) * b%Bzxtild(jk) &
                  - b%cEy(jk) * b%Bzxtild(jk-1)
 
         b%Eytild(jk) = b%aEytild(jk) * b%Eytild(jk) &
@@ -917,7 +917,7 @@ subroutine move_bnd(b)
         oldval = b%Ey(jk)
         
         b%Ey(jk) = b%aEy(jk) * b%Ey(jk)  &
-                 - b%bEy(jk) * b%Bzxtild(jk) 	&
+                 - b%bEy(jk) * b%Bzxtild(jk) &
                  - b%cEy(jk) * b%Bzxtild(jk-1)
 
         b%Eytild(jk) = b%aEytild(jk) * b%Eytild(jk) &
@@ -931,7 +931,7 @@ subroutine move_bnd(b)
         oldval = b%Ey(jk)
         
         b%Ey(jk) = b%aEy(jk) * b%Ey(jk)  &
-                 - b%bEy(jk) * b%Bzxtild(jk) 	&
+                 - b%bEy(jk) * b%Bzxtild(jk) &
                  - b%cEy(jk) * b%Bzxtild(ijk(b,j-1,k))
 
         b%Eytild(jk) = b%aEytild(jk) * b%Eytild(jk) &
@@ -944,7 +944,7 @@ subroutine move_bnd(b)
         oldval = b%Ey(jk)
         
         b%Ey(jk) = b%aEy(jk) * b%Ey(jk)  &
-                 - b%bEy(jk) * b%Bzxtild(jk) 	&
+                 - b%bEy(jk) * b%Bzxtild(jk) &
                  - b%cEy(jk) * b%Bzxtild(ijk(b,j-1,k))
 
         b%Eytild(jk) = b%aEytild(jk) * b%Eytild(jk) &
@@ -960,7 +960,7 @@ subroutine move_bnd(b)
         oldval = b%Ey(jk)
         
         b%Ey(jk) = b%aEy(jk) * b%Ey(jk)  &
-                 - b%bEy(jk) * b%Bzxtild(jk) 	&
+                 - b%bEy(jk) * b%Bzxtild(jk) &
                  - b%cEy(jk) * b%Bzxtild(jk-1)
 
         b%Eytild(jk) = b%aEytild(jk) * b%Eytild(jk) &
@@ -976,7 +976,7 @@ subroutine move_bnd(b)
         oldval = b%Ey(jk)
         
         b%Ey(jk) = b%aEy(jk) * b%Ey(jk)  &
-                 - b%bEy(jk) * b%Bzxtild(jk) 	&
+                 - b%bEy(jk) * b%Bzxtild(jk) &
                  - b%cEy(jk) * b%Bzxtild(jk-1)
 
         b%Eytild(jk) = b%aEytild(jk) * b%Eytild(jk) &
@@ -992,7 +992,7 @@ subroutine move_bnd(b)
         oldval = b%Ey(jk)
         
         b%Ey(jk) = b%aEy(jk) * b%Ey(jk)  &
-                 - b%bEy(jk) * b%Bzxtild(jk) 	&
+                 - b%bEy(jk) * b%Bzxtild(jk) &
                  - b%cEy(jk) * b%Bzxtild(jk-1)
 
         b%Eytild(jk) = b%aEytild(jk) * b%Eytild(jk) &
@@ -1008,7 +1008,7 @@ subroutine move_bnd(b)
         oldval = b%Ey(jk)
         
         b%Ey(jk) = b%aEy(jk) * b%Ey(jk)  &
-                 - b%bEy(jk) * b%Bzxtild(jk) 	&
+                 - b%bEy(jk) * b%Bzxtild(jk) &
                  - b%cEy(jk) * b%Bzxtild(jk-1)
 
         b%Eytild(jk) = b%aEytild(jk) * b%Eytild(jk) &
@@ -1040,12 +1040,10 @@ IF(k<=bnd%nbndy+1) then
 ELSEIF(k>=bnd%ny-bnd%nbndy) then
 
   ijk = bnd%ntop2 +  j + k * bnd%n1x  
-        		
 
 ELSEIF(j<=bnd%nbndx+1) then
 
-  ijk = bnd%nbot1 + j + k * bnd%nint 	
-        
+  ijk = bnd%nbot1 + j + k * bnd%nint
 
 ELSEIF(j>=bnd%nx-bnd%nbndx) then
 

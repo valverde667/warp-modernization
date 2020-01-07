@@ -151,7 +151,7 @@ depose_rho_n_2dxz(rho:real,
                            nox:integer,noz:integer,
                            l_particles_weight:logical,
                            l4symtry:logical,l_2drz:logical,
-		           type_rz_depose:integer)
+                           type_rz_depose:integer)
                            subroutine
 depose_rho_n_2d_circ(rho:real,rho_circ:complex,circ_n:integer,
                            n:integer,x(n):real,y(n):real,z(n):real,
@@ -162,7 +162,7 @@ depose_rho_n_2d_circ(rho:real,rho_circ:complex,circ_n:integer,
                            nxguard:integer,nzguard:integer,
                            nox:integer,noz:integer,
                            l_particles_weight:logical,
-		           type_rz_depose:integer)
+                           type_rz_depose:integer)
                            subroutine
 depose_j_n_1dz(jx:real,jy:real,jz:real,
                            n:integer,z(n):real,
@@ -301,7 +301,7 @@ getf2drz_circ_n(n:integer,xp(n):real,yp(n):real,zp(n):real,
          nx:integer,ny:integer,nz:integer,
          nxguard:integer,nyguard:integer,nzguard:integer,
          nox:integer,noz:integer,
-	 exg:real,eyg:real,ezg:real,
+         exg:real,eyg:real,ezg:real,
          exg_circ:complex,eyg_circ:complex,ezg_circ:complex,circ_m:integer)
                            subroutine
 gete3d_linear_energy_conserving(n:integer,xp(n):real,yp(n):real,zp(n):real,
@@ -410,11 +410,11 @@ set_macroscopic_coefs_on_yee(f:EM3D_YEEFIELDtype,n:integer,indx(3,n):integer,
 em3d_applybc_rho(f:EM3D_YEEFIELDtype,xlbnd:integer,xrbnd:integer,
                                      ylbnd:integer,yrbnd:integer,
                                      zlbnd:integer,zrbnd:integer,
-		                     type_rz_depose:integer) subroutine
+                                     type_rz_depose:integer) subroutine
 em3d_applybc_j(f:EM3D_YEEFIELDtype,xlbnd:integer,xrbnd:integer,
                                    ylbnd:integer,yrbnd:integer,
                                    zlbnd:integer,zrbnd:integer,
-		                   type_rz_depose:integer) subroutine
+                                   type_rz_depose:integer) subroutine
 project_jxjyjz(jxfine:real,jyfine:real,jzfine:real,
                jxcoarse:real,jycoarse:real,jzcoarse:real,
                jxcoarse_mother:real,jycoarse_mother:real,
@@ -459,7 +459,7 @@ depose_jxjyjz_esirkepov_n_2d(jx:real,jy:real,jz:real,
                            nox:integer,noz:integer,
                            l_particles_weight:logical,
                            l4symtry:logical,l_2drz:logical,
-		           type_rz_depose:integer)
+                           type_rz_depose:integer)
                            subroutine
 depose_jxjyjz_esirkepov_n_2d_circ(jx:real,jy:real,jz:real,jx_circ:complex,
                            jy_circ:complex,jz_circ:complex,circ_m:integer,
@@ -471,7 +471,7 @@ depose_jxjyjz_esirkepov_n_2d_circ(jx:real,jy:real,jz:real,jx_circ:complex,
                            nxguard:integer,nzguard:integer,
                            nox:integer,noz:integer,
                            l_particles_weight:logical,
-		           type_rz_depose:integer)
+                           type_rz_depose:integer)
                            subroutine
 depose_jxjyjz_villasenor_n_2d(jx:real,jy:real,jz:real,
                            n:integer,x(n):real,y(n):real,
