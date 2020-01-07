@@ -1729,7 +1729,6 @@ class EM3D(SubcycledPoissonSolver):
                     pmlblock.nconds += 1
                 # --- xl
                 if self.block.xlbnd==openbc:
-                    print "HELLO"
                     for k in range(0,self.nylocal):
                         for l in range(0,self.nzlocal):
                             self.block.sidexl.syf.incond[:,self.nyguard+k,self.nzguard+l] = self.fields.incond[self.nxguard,self.nyguard+k,self.nzguard+l]
