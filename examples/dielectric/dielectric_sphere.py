@@ -89,12 +89,12 @@ top.npinject = 0
 
 
 #Basic input parameters for dielectric sphere, geometry, and plate voltage
-PLATE_SPACING = 1.e-6 #plate spacing
-CHANNEL_WIDTH = 1.e-6 #width of simulation box
+PLATE_SPACING = 1.e-6 #plate spacing in Z
+CHANNEL_WIDTH = 1.e-6 #width of simulation box in transverse plane(s)
 ANODE_VOLTAGE = 10. #anode plate voltage in V
 CATHODE_VOLTAGE = 0. #cathode plate voltage in V
 
-R_SPHERE = Z_MAX/8.
+R_SPHERE = PLATE_SPACING/8.
 Z0 = 0.5e-6
 EPSN = 7.5 #dielectric constant for sphere
 
