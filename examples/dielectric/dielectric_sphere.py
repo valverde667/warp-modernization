@@ -1,10 +1,13 @@
 # # Test script simulating a 3D dielectric sphere between two parallel plates. This script runs in both parallel and serial.
 # 
-# If MAKE_PLOTS is set, then plots a 2D slice of the potential and compares a 1D lineout to the analytic solution.
+# If run in serial, the grid size is set to be 64x64x64. If run in parallel, then grid size is set to be 95x95x95.
+#
+# User Flags:
+# USE_3D - If set, then runs with a 3D geometry rather than 2D.
+# MAKE_PLOTS - If set, plots a 2D slice of the potential and compares a 1D lineout to the analytic solution.
 #
 #
 # 9/07/2018
-#  
 # Nathan Cook
 
 from __future__ import division
@@ -81,16 +84,22 @@ if comm_world.rank == 0:
 if comm_world.size != 1:
     synchronizeQueuedOutput_mpi4py(out=False, error=False)
 
-#print "rank:", comm_world.rank
-
 top.inject = 0 
 top.npinject = 0
 
-#Dimensions
 
+#Basic input parameters for dielectric sphere, geometry, and plate voltage
 PLATE_SPACING = 1.e-6 #plate spacing
 CHANNEL_WIDTH = 1.e-6 #width of simulation box
+ANODE_VOLTAGE = 10. #anode plate voltage in V
+CATHODE_VOLTAGE = 0. #cathode plate voltage in V
 
+R_SPHERE = Z_MAX/8.
+Z0 = 0.5e-6
+EPSN = 7.5 #dielectric constant for sphere
+
+
+#Domain Dimensions
 X_MAX = CHANNEL_WIDTH*0.5
 X_MIN = -1.*X_MAX
 Y_MAX = CHANNEL_WIDTH*0.5
@@ -142,8 +151,7 @@ else:
 zmesh = np.linspace(0,Z_MAX,NUM_Z+1) #holds the z-axis grid points in an array
 xmesh = np.linspace(X_MIN,X_MAX,NUM_X+1)
 
-ANODE_VOLTAGE = 10.
-CATHODE_VOLTAGE = 0.
+
 vacuum_level = ANODE_VOLTAGE - CATHODE_VOLTAGE
 beam_beta = 5e-4
 #Determine an appropriate time step based upon estimated final velocity
@@ -164,8 +172,7 @@ else:
     
 registersolver(solverE)
 
-#Define conductor/dielectrics
-
+#Define conducting planes
 source = ZPlane(voltage=CATHODE_VOLTAGE, zcent=w3d.zmmin+0*w3d.dz,zsign=-1.)
 solverE.installconductor(source, dfill=largepos)
 
@@ -173,11 +180,7 @@ plate = ZPlane(voltage=ANODE_VOLTAGE, zcent=Z_MAX-0.*w3d.dz)
 solverE.installconductor(plate,dfill=largepos)
 
 #Define dielectric sphere
-r_sphere = Z_MAX/8.
-Z0 = 0.5e-6
-epsn = 7.5 #dielectric constant for sphere
-
-sphere = Sphere(radius=r_sphere, xcent=0.0, ycent=0.0, zcent=Z0, permittivity=epsn)
+sphere = Sphere(radius=R_SPHERE, xcent=0.0, ycent=0.0, zcent=Z0, permittivity=EPSN)
 solverE.installconductor(sphere,dfill=largepos)
 
 
@@ -252,25 +255,17 @@ if (comm_world.rank == 0 and MAKE_PLOTS):
     cbar.ax.xaxis.set_label_position('top')
 
     fig.savefig('phi_{}x{}x{}.png'.format(NUM_X,NUM_Y,NUM_Z),bbox_inches='tight')
-    
+
     
     # Calculate Theoretical Potential
-    d = 1e-6
-    a = d/8.
-    phi_a = 10. # 10 V
-
-    e_r = 7.5
-
     [Z,X] = np.meshgrid(zmesh+1e-12,xmesh+1e-12)
-
-    Z0 = 0.5e-6
-
     R = np.sqrt((Z-Z0)**2 + X**2)
-
-    inside = (R <= a)
-
-    phicalc = phi_a *(Z-Z0) /d *(1.-(e_r-1.)/(e_r+2.)*(a/R)**3.)
-    phicalc[inside] = 3./(e_r+2.)*phi_a *(Z[inside]-Z0)/d
+    
+    
+    #compute phi inside and outside of sphere
+    inside = (R <= R_SPHERE)
+    phicalc = ANODE_VOLTAGE *(Z-Z0)/PLATE_SPACING *(1.-(EPSN-1.)/(EPSN+2.)*(R_SPHERE/R)**3.)
+    phicalc[inside] = 3./(EPSN+2.)*ANODE_VOLTAGE *(Z[inside]-Z0)/PLATE_SPACING
 
 
     #comparison
