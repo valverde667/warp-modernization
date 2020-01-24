@@ -3,8 +3,15 @@ from warp.particles.ionization import *
 from scipy import special
 
 class TunnelIonization(Ionization):
-    def __init__(self,**kw):
+    """Handle tunnel ionization
+    - minimum_weight=1: Minimum frational weight of emitted particles. This must be <= 1.
+                When 1, the emitted particles will have the same weight as the target particles.
+                If < 1, the particles must have variable weights.
+    """
+    def __init__(self,minimum_weight=1.,**kw):
         Ionization.__init__(self,**kw)
+        assert minimum_weight <= 1, Exception('In TunnelIonization, minimum_weight must be <= 1.')
+        self.minimum_weight = minimum_weight
         self.alpha=1./137
         self.hbar=1.054571726e-34
         self.rbohr=4.*pi*eps0*self.hbar**2/(emass*echarge**2)
@@ -142,6 +149,8 @@ class TunnelIonization(Ionization):
 #       return 1.-exp(-dt*ADKrate);
 
     def generate(self,dt=None):
+        if self.minimum_weight < 1:
+            assert top.wpid > 0, Exception('In TunnelIonization, with minimum_weight < 1, particles must have variable weights')
         if dt is None:dt=top.dt/top.boost_gamma
         if self.l_timing:t1 = time.clock()
         for incident_species in self.inter:
@@ -205,7 +214,11 @@ class TunnelIonization(Ionization):
                     prob = self.GetADKprobSI(Emag,Z,incident_species.type,dt*ipg.ndts[js]*self.stride,l_dc2ac=False)
 
                     # --- Get a count of the number of collisions for each particle.
-                    ncoli = where(ranf(prob)<prob,1,0)
+                    # --- If minimum_weight < 1, this increases the probability that
+                    # --- a macro particle will be involved in an event.
+                    # --- With minimum_weight == 0, all macro particles will
+                    # --- have some fraction ionized.
+                    ncoli = where(ranf(prob)*self.minimum_weight < prob,1,0)
 
                     # --- Select the particles that will collide
                     io=compress(ncoli>0,arange(ni))
@@ -218,9 +231,14 @@ class TunnelIonization(Ionization):
                         uynew = uyi
                         uznew = uzi
 
-                    if 1:  # --- self.inter[incident_species]['remove_incident'][it]:
-                        # --- if projectile is modified, then need to delete it
+                    if self.minimum_weight == 1.:
+                        # --- In this case, all of the macro particle is ionized,
+                        # --- so remove it.
                         put(ipg.gaminv,array(io)*self.stride+i1,0.)
+                    else:
+                        # --- Remove the fraction ionized and give it to the emitted particles.
+                        wi = wi*maximum(prob, self.minimum_weight)
+                        ipg.pid[array(io)*self.stride+i1] -= wi[io]
 
                     # --- The position of the incident particle is at or near the incident particle
                     xnew = xi
