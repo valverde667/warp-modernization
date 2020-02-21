@@ -3040,18 +3040,24 @@ def ppzxy(iw=0,**kw):
     if ppmultispecies(ppzxy,(iw,),kw): return
     if 'pplimits' in kw:
         kw['lframe'] = 1
+        setpplimits = False
     else:
-        kw['pplimits'] = (top.zplmin+top.zbeam,top.zplmax+top.zbeam,
-                          top.xplmin,top.xplmax)
+        setpplimits = True
     kw.setdefault('local',0)
-    kw['ii'] = selectparticles(iw=iw,win=top.ywindows,z=top.pgroup.yp,kwdict=kw)
+    kw['ii'] = selectparticles(iw=iw,kwdict=kw)
     if(top.wpid!=0): kw['weights'] = getpid(id=top.wpid-1,gather=0,**kw)
 
     kw['view'] = 9
+    if setpplimits:
+        kw['pplimits'] = (top.zplmin+top.zbeam,top.zplmax+top.zbeam,
+                          top.xplmin,top.xplmax)
     settitles("X vs Z","Z","X",pptitleright(iw=iw,kwdict=kw))
     ppgeneric(getx(gather=0,**kw),getz(gather=0,**kw),kwdict=kw)
 
     kw['view'] = 10
+    if setpplimits:
+        kw['pplimits'] = (top.zplmin+top.zbeam,top.zplmax+top.zbeam,
+                          top.yplmin,top.yplmax)
     settitles("Y vs Z","Z","Y",pptitleright(iw=iw,kwdict=kw))
     ppgeneric(gety(gather=0,**kw),getz(gather=0,**kw),kwdict=kw)
 
