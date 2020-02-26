@@ -473,12 +473,22 @@ class Cartesian3DGrid(picmistandard.PICMI_Cartesian3DGrid):
 
 
 class ElectromagneticSolver(picmistandard.PICMI_ElectromagneticSolver):
+    __forbidden_kw__ = ['norderx','nordery','norderz','ntsub','stencil',
+                        'npass_smooth','alpha_smooth','stride_smooth','dtcoef',
+                        'l_2dxz','l_2drz','l_1dz','current_cor','spectral']
+    __flaginputs__ = {**EM3D.__flaginputs__, **EM3DFFT.__flaginputs__}
+    
     def init(self, kw):
-        self.l_correct_num_Cherenkov = kw.pop('warp_l_correct_num_Cherenkov', EM3D.__flaginputs__['l_correct_num_Cherenkov'])
-        self.type_rz_depose = kw.pop('warp_type_rz_depose', EM3D.__flaginputs__['type_rz_depose'])
-        self.l_setcowancoefs = kw.pop('warp_l_setcowancoefs', EM3D.__flaginputs__['l_setcowancoefs'])
-        self.l_getrho = kw.pop('warp_l_getrho', EM3D.__flaginputs__['l_getrho'])
-        self.l_pushf = kw.pop('warp_l_pushf', EM3D.__flaginputs__['l_pushf'])
+        self.em3dfft_args = {}
+
+        for warp_arg, val in kw.copy().items():
+            arg = warp_arg[len(codename)+1:] # strip off ‘warp_’
+
+            if arg in self.__forbidden_kw__:
+                raise ValueError('ElectromagneticSolver: %s cannot be specified by the user'%arg)
+            elif arg in self.__flaginputs__:
+                self.em3dfft_args[arg] = val
+                kw.pop(warp_arg)
 
     def initialize_solver_inputs(self):
         if self.method is not None:
@@ -569,12 +579,7 @@ class ElectromagneticSolver(picmistandard.PICMI_ElectromagneticSolver):
                               npass_smooth = npass_smooth,
                               alpha_smooth = alpha_smooth, 
                               stride_smooth = stride_smooth,
-                              l_correct_num_Cherenkov = self.l_correct_num_Cherenkov,
-                              type_rz_depose = self.type_rz_depose,
-                              l_setcowancoefs = self.l_setcowancoefs,
-                              current_cor = spectral,
-                              l_pushf = self.l_pushf,
-                              l_getrho = self.l_getrho)
+                              **self.em3dfft_args)
 
 
 class ElectrostaticSolver(picmistandard.PICMI_ElectrostaticSolver):
