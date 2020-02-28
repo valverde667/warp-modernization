@@ -5,8 +5,17 @@ from ...warp import PicklableFunction
 class LaserAntenna(object):
 
     def __init__(self, laser_func, vector, polvector, spot, emax,
-                 source_z, source_v, polangle, w3d, dim, circ_m ):
+                 source_z, source_v, polangle, w3d, dim, circ_m,
+                 laser_xmin = None, laser_xmax = None,
+                 laser_ymin = None, laser_ymax = None,
+                 laser_zmin = None, laser_zmax = None):
 
+        self.laser_xmin = laser_xmin
+        self.laser_xmax = laser_xmax
+        self.laser_ymin = laser_ymin
+        self.laser_ymax = laser_ymax
+        self.laser_zmin = laser_zmin
+        self.laser_zmax = laser_zmax
         # Initialize the variable self.spot
         if spot is None:
             if source_z is None:
@@ -77,12 +86,12 @@ class LaserAntenna(object):
         x0 = self.spot[0]
         y0 = self.spot[1]
         z0 = self.spot[2]
-        xmin = w3d.xmmin
-        xmax = w3d.xmmax
-        ymin = w3d.ymmin
-        ymax = w3d.ymmax
-        zmin = w3d.zmmin
-        zmax = w3d.zmmax
+        xmin = w3d.xmmin if self.laser_xmin is None else self.laser_xmin - w3d.dx
+        xmax = w3d.xmmax if self.laser_xmax is None else self.laser_xmax + w3d.dx
+        ymin = w3d.ymmin if self.laser_ymin is None else self.laser_ymin - w3d.dy
+        ymax = w3d.ymmax if self.laser_ymax is None else self.laser_ymax + w3d.dy
+        zmin = w3d.zmmin if self.laser_zmin is None else self.laser_zmin - w3d.dz
+        zmax = w3d.zmmax if self.laser_zmax is None else self.laser_zmax + w3d.dz
 
         if self.dim == "1d":
             # Ux is chosen orthogonal to self.vector in the plane (x,z)

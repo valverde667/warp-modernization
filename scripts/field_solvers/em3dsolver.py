@@ -36,6 +36,12 @@ class EM3D(SubcycledPoissonSolver):
                       'laser_source_z':None,
                       'laser_source_v':array([0., 0., 0.]),
                       'laser_emax':None,
+                      'laser_xmin': None,
+                      'laser_xmax': None,
+                      'laser_ymin': None,
+                      'laser_ymax': None,
+                      'laser_zmin': None,
+                      'laser_zmax': None,
                       'laser_depos_order_x':3,
                       'laser_depos_order_y':3,
                       'laser_depos_order_z':3,
@@ -615,7 +621,9 @@ class EM3D(SubcycledPoissonSolver):
                 self.laser_emax, self.laser_source_z,
                 self.laser_source_v,
                 self.laser_polangle,
-                w3d, dim, self.circ_m))
+                w3d, dim, self.circ_m, self.laser_xmin,
+                self.laser_xmax, self.laser_ymin, self.laser_ymax,
+                self.laser_zmin, self.laser_zmax))
 
 
 #===============================================================================
