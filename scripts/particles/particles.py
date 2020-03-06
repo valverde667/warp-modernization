@@ -1316,7 +1316,11 @@ def getpid(id=0, iw=0, gather=1, bcast=None, **kw):
     if dopid:
         ii = selectparticles(iw=iw, kwdict=kw)
         if (isinstance(ii, slice) and ii.stop > ii.start) or ii.size > 0:
-            pid = getattrwithsuffix(pgroup, 'pid', suffix)
+            try:
+                getter = getattr(pgroup, 'getpid' + suffix)
+                pid = getter(id=id)
+            except AttributeError:
+                pid = getattrwithsuffix(pgroup, 'pid', suffix)
         if isinstance(ii, slice) and ii.stop > ii.start:
             if id >= 0:
                 result = pid[ii,id]
