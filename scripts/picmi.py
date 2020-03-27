@@ -147,6 +147,13 @@ class GaussianBunchDistribution(picmistandard.PICMI_GaussianBunchDistribution):
             particleboundaries3d(top.pgroup, -1, False)
 
 
+class _Uniform_dens_func(object):
+    "The function is put into a class so that it can be dumped and restored"
+    def __init__(self, w):
+        self.w = w
+    def __call__(self, x, y, z):
+        return self.w
+
 class UniformDistribution(picmistandard.PICMI_UniformDistribution):
     def loaddistribution(self, species, layout, density_scale):
         xmin = self.lower_bound[0]
@@ -196,8 +203,6 @@ class UniformDistribution(picmistandard.PICMI_UniformDistribution):
 
             n_physical_particles_per_cell = density*w3d.dx*w3d.dy*w3d.dz
             w = n_physical_particles_per_cell/(p_nx*p_ny*p_nz)
-            def dens_func(x, y, z, w=w):
-                return w
 
             if top.vbeamfrm > 0:
                 injection_direction = +1
@@ -208,7 +213,7 @@ class UniformDistribution(picmistandard.PICMI_UniformDistribution):
                                             p_nx=p_nx, p_ny=p_ny, p_nz=p_nz,
                                             p_xmin=xmin, p_ymin=ymin, p_zmin=zmin,
                                             p_xmax=xmax, p_ymax=ymax, p_zmax=zmax,
-                                            dens_func=dens_func,
+                                            dens_func=_Uniform_dens_func(w),
                                             ux_m=ux_m, uy_m=uy_m, uz_m=uz_m,
                                             ux_th=ux_th, uy_th=uy_th, uz_th=uz_th,
                                             injection_direction=injection_direction)
@@ -239,6 +244,25 @@ class UniformDistribution(picmistandard.PICMI_UniformDistribution):
                                     lallindomain=warp.true,
                                     w=weight)
 
+
+class _Analytic_dens_func(object):
+    "The function is put into a class so that it can be dumped and restored"
+    def __init__(self, density, cell_volume_per_particle, z_boost_converter, density_scale, user_defined_kw):
+        self.density = density
+        self.cell_volume_per_particle = cell_volume_per_particle
+        self.z_boost_converter = z_boost_converter
+        self.density_scale = density_scale
+        self.user_defined_kw = user_defined_kw
+    def __call__(self, x, y, z):
+        # --- Include globals so that numpy is available
+        if top.boost_gamma > 1.:
+            z = z/self.z_boost_converter
+        dct = locals()
+        dct.update(self.user_defined_kw)
+        d = eval(self.density, globals(), dct)
+        if self.density_scale is not None:
+            d *= self.density_scale
+        return d*self.cell_volume_per_particle
 
 class AnalyticDistribution(picmistandard.PICMI_AnalyticDistribution):
     def loaddistribution(self, species, layout, density_scale):
@@ -277,7 +301,7 @@ class AnalyticDistribution(picmistandard.PICMI_AnalyticDistribution):
         else:
             density_boost_converter = 1.
             z_boost_converter = 1.
-            
+
         if isinstance(layout, GriddedLayout):
             # --- Note that layout.grid is ignored
             p_nx = layout.n_macroparticle_per_cell[0]
@@ -289,23 +313,14 @@ class AnalyticDistribution(picmistandard.PICMI_AnalyticDistribution):
 
             if isinstance(self.density_expression, str):
                 cell_volume_per_particle = w3d.dx*w3d.dy*w3d.dz/(p_nx*p_ny*p_nz)*density_boost_converter
-                def dens_func(x, y, z, density=self.density_expression, cell_volume_per_particle=cell_volume_per_particle, z_boost_converter=z_boost_converter, density_scale=density_scale):
-                    # --- Include globals so that numpy is available
-                    if top.boost_gamma > 1.:
-                        z = z/z_boost_converter
-                    dct = locals()
-                    dct.update(self.user_defined_kw)
-                    d = eval(density, globals(), dct)
-                    if density_scale is not None:
-                        d *= density_scale
-                    return d*cell_volume_per_particle
+                dens_func = _Analytic_dens_func(self.density_expression, cell_volume_per_particle,
+                                                z_boost_converter, density_scale, self.user_defined_kw)
             else:
                 n_physical_particles_per_cell = self.density_expression*w3d.dx*w3d.dy*w3d.dz*density_boost_converter
                 w = n_physical_particles_per_cell/(p_nx*p_ny*p_nz)
                 if density_scale is not None:
                     w *= density_scale
-                def dens_func(x, y, z, w=w):
-                    return w
+                dens_func = _Uniform_dens_func(w)
 
             if top.vbeamfrm > 0:
                 injection_direction = +1
@@ -403,7 +418,7 @@ class CylindricalGrid(picmistandard.PICMI_CylindricalGrid):
         if self.moving_window_velocity is not None:
             top.vbeam = top.vbeamfrm = self.moving_window_velocity[-1]
             top.lgridqnt = true
-    
+
 
 class Cartesian2DGrid(picmistandard.PICMI_Cartesian2DGrid):
     def init(self, kw):
@@ -477,7 +492,7 @@ class ElectromagneticSolver(picmistandard.PICMI_ElectromagneticSolver):
                         'npass_smooth','alpha_smooth','stride_smooth','dtcoef',
                         'l_2dxz','l_2drz','l_1dz','current_cor','spectral']
     __flaginputs__ = {**EM3D.__flaginputs__, **EM3DFFT.__flaginputs__}
-    
+
     def init(self, kw):
         self.em3dfft_args = {}
 
@@ -493,37 +508,37 @@ class ElectromagneticSolver(picmistandard.PICMI_ElectromagneticSolver):
     def initialize_solver_inputs(self):
         if self.method is not None:
             # Stencil controls the courant condition for each solver in WARP
-            # Yee solver: stencil = 0 (cdt=1./sqrt(d) dx, where d is dimensionality) 
+            # Yee solver: stencil = 0 (cdt=1./sqrt(d) dx, where d is dimensionality)
             # CKC, PSATD solvers: stencil=1 (cdt=dx)
-            # N.B: For PSTD solvers and GPSTD solvers the courant condition depends on 
-            # the solver order and is currently not automatically implemented in WARP. 
-            # In this case and by default, we currently set stencil=0 for these solvers 
-            # as well as other solvers. 
+            # N.B: For PSTD solvers and GPSTD solvers the courant condition depends on
+            # the solver order and is currently not automatically implemented in WARP.
+            # In this case and by default, we currently set stencil=0 for these solvers
+            # as well as other solvers.
             stencil = {'Yee':0, 'CKC':1, 'PSATD':1, 'PSTD':0, 'GPSTD':0}[self.method]
         else:
             stencil = 0
 
-        if self.method in ['PSATD','GPSTD','PSTD']: 
+        if self.method in ['PSATD','GPSTD','PSTD']:
             spectral = 1
-            if self.stencil_order is None: 
+            if self.stencil_order is None:
                 # If stencil order is not defined
-                # By default, use infinite order stencil 
+                # By default, use infinite order stencil
                 self.stencil_order = [-1, -1, -1]
-            if self.method == 'PSATD': 
-                ntsub = np.inf 
+            if self.method == 'PSATD':
+                ntsub = np.inf
             elif self.method == 'PSTD':
                 ntsub = 1
             elif self.method == 'GPSTD':
                 ntsub = 2
-        else: 
+        else:
             ntsub = 1
             spectral = 0
-            # If stencil_order not defined, 
+            # If stencil_order not defined,
             # use stencil_order = [2, 2, 2] by default
-            if self.stencil_order is None: 
+            if self.stencil_order is None:
                 self.stencil_order = [2, 2, 2]
-                
-        if isinstance(self.source_smoother, BinomialSmoother): 
+
+        if isinstance(self.source_smoother, BinomialSmoother):
             # --- Messy code that handles either None, a single value, or a triplet as input
             # --- for each of the quantities.
             npass_smooth = self.source_smoother.n_pass
@@ -557,27 +572,27 @@ class ElectromagneticSolver(picmistandard.PICMI_ElectromagneticSolver):
                     alpha.append(3./2.)
                 for stride in stride_smooth:
                     stride.append(stride[0])
-            if (self.grid.number_of_dimensions == 2): 
+            if (self.grid.number_of_dimensions == 2):
                 # --- With two dimensions, set to 0 passes in y.
                 for i in range(len(npass_smooth[0])):
                     npass_smooth[1][i] = 0
-        else: 
+        else:
             npass_smooth = [[ 0 ], [ 0 ], [ 0 ]]
             alpha_smooth = [[ 1.], [ 1.], [ 1.]]
-            stride_smooth = [[ 1 ], [ 1 ], [ 1 ]]      
-            
-        self.solver = EM3DFFT(stencil = stencil, 
+            stride_smooth = [[ 1 ], [ 1 ], [ 1 ]]
+
+        self.solver = EM3DFFT(stencil = stencil,
                               dtcoef = self.cfl,
-                              norderx = self.stencil_order[0], 
-                              nordery = self.stencil_order[1], 
-                              norderz = self.stencil_order[2], 
-                              ntsub = ntsub, 
-                              l_2dxz = self.grid.number_of_dimensions == 2, 
+                              norderx = self.stencil_order[0],
+                              nordery = self.stencil_order[1],
+                              norderz = self.stencil_order[2],
+                              ntsub = ntsub,
+                              l_2dxz = self.grid.number_of_dimensions == 2,
                               l_2drz = isinstance(self.grid, CylindricalGrid),
-                              l_1dz = self.grid.number_of_dimensions == 1, 
-                              spectral = spectral, 
+                              l_1dz = self.grid.number_of_dimensions == 1,
+                              spectral = spectral,
                               npass_smooth = npass_smooth,
-                              alpha_smooth = alpha_smooth, 
+                              alpha_smooth = alpha_smooth,
                               stride_smooth = stride_smooth,
                               **self.em3dfft_args)
 
@@ -599,7 +614,7 @@ class GaussianLaser(picmistandard.PICMI_GaussianLaser):
         add_laser(solver.solver, dim, self.a0, self.waist, self.duration*warp.clight,
                   self.centroid_position[2], self.focal_position[2],
                   lambda0=self.wavelength, theta_pol=theta_pol, source_z=antenna_z0,
-                  zeta=self.zeta, beta=self.beta, phi2=self.phi2, 
+                  zeta=self.zeta, beta=self.beta, phi2=self.phi2,
                   gamma_boost=gamma_boost, laser_file=None, laser_file_energy=None)
 
 
@@ -687,7 +702,7 @@ class Simulation(picmistandard.PICMI_Simulation):
         pass
 
 
-class FieldDiagnostic(picmistandard.PICMI_FieldDiagnostic): 
+class FieldDiagnostic(picmistandard.PICMI_FieldDiagnostic):
     def initialize_diag_inputs(self, sim):
         if any(self.lower_bound != self.grid.lower_bound) or any(self.upper_bound != self.grid.upper_bound):
             print('Warning: Warp cannot return a subdomain. Bounds set to grid bounds')
@@ -706,23 +721,23 @@ class FieldDiagnostic(picmistandard.PICMI_FieldDiagnostic):
                                                   sub_sampling = sub_sampling,
                                                   lparallel_output = self.parallelio,
                                                   write_dir = self.write_dir)
-        # Install after step 
+        # Install after step
         installafterstep(diag_field.write)
 
 
-class ParticleDiagnostic(picmistandard.PICMI_ParticleDiagnostic): 
+class ParticleDiagnostic(picmistandard.PICMI_ParticleDiagnostic):
     def initialize_diag_inputs(self, sim):
         species_dict = dict()
         # Check if self.species is a Species object or an iterable of Specie
-        if np.iterable(self.species): 
-            for sp in self.species: 
+        if np.iterable(self.species):
+            for sp in self.species:
                 if isinstance(sp, Species):
                     species_dict[sp.name] = sp.wspecies
-        else: 
+        else:
             if isinstance(self.species, Species):
                 species_dict[self.species.name] = self.species.wspecies
-        self.species_dict = species_dict 
-        
+        self.species_dict = species_dict
+
         # Init Warp diag
         diag_part = openpmd_diag.ParticleDiagnostic(period = self.period,
                                                     top = top,
@@ -734,7 +749,7 @@ class ParticleDiagnostic(picmistandard.PICMI_ParticleDiagnostic):
                                                     iteration_max = self.step_max,
                                                     lparallel_output = self.parallelio,
                                                     write_dir = self.write_dir)
-        # Install after step 
+        # Install after step
         installafterstep(diag_part.write)
 
 
@@ -768,7 +783,7 @@ class LabFrameFieldDiagnostic(picmistandard.PICMI_LabFrameFieldDiagnostic):
                                                          xmax_lab = None,
                                                          ymin_lab = None,
                                                          ymax_lab = None)
-        # Install after step 
+        # Install after step
         installafterstep(diag_field.write)
 
 
@@ -779,14 +794,14 @@ class LabFrameParticleDiagnostic(picmistandard.PICMI_LabFrameParticleDiagnostic)
     def initialize_diag_inputs(self, sim):
         species_dict = dict()
         # Check if self.species is a Species object or an iterable of Specie
-        if np.iterable(self.species): 
-            for sp in self.species: 
+        if np.iterable(self.species):
+            for sp in self.species:
                 if isinstance(sp, Species):
                     species_dict[sp.name] = sp.wspecies
-        else: 
+        else:
             if isinstance(self.species, Species):
                 species_dict[self.species.name] = self.species.wspecies
-        self.species_dict = species_dict 
+        self.species_dict = species_dict
 
         if self.grid.moving_window_velocity is not None:
             v_lab = self.grid.moving_window_velocity[-1]
