@@ -72,7 +72,7 @@ def get_dataset( dim, em, quantity, lgather, sub_sampling=[1,1,1],
     In the above Nx is either em.nxlocal (if lgather is False) or the global
     em.nx (if lgather is True). The same holds for Ny and Nz
     """
-     
+
     if dim=="circ":
         return( get_circ_dataset( em, quantity, lgather=lgather,
             iz_slice=iz_slice,sub_sampling=sub_sampling,
@@ -85,7 +85,7 @@ def get_dataset( dim, em, quantity, lgather, sub_sampling=[1,1,1],
         return( get_cart3d_dataset( em, quantity, lgather=lgather,
             iz_slice=iz_slice,sub_sampling=sub_sampling,
             transverse_centered=transverse_centered,start = start, nx_d = nx_d,ny_d= ny_d ) )
- 
+
 def get_circ_dataset( em, quantity, lgather, iz_slice=None,
         sub_sampling=[1,1,1], start=[0,0,0], transverse_centered=False ):
     """
@@ -109,7 +109,7 @@ def get_circ_dataset( em, quantity, lgather, iz_slice=None,
     em.nx (if lgather is True). The same holds for Nz.
     """
     # Extract either a slice or the full array
-  
+
 
 
     if quantity in ['Er', 'Et', 'Ez', 'Br', 'Bt', 'Bz', \
@@ -257,9 +257,9 @@ def get_cart3d_dataset( em, quantity, lgather, iz_slice=None,
 
     # Subsample field
     if (F is not None):
-        if(nx_dump is None): 
-            nx_dump = F.shape[0] 
-        if(ny_dump is None): 
+        if(nx_dump is None):
+            nx_dump = F.shape[0]
+        if(ny_dump is None):
             ny_dump = F.shape[1]
         end_x = min(F.shape[0],nx_dump+start[0])
         end_y = min(F.shape[1],ny_dump+start[1])

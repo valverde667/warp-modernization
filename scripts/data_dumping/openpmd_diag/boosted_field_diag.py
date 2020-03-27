@@ -14,7 +14,7 @@ from scipy.constants import c
 from field_diag import FieldDiagnostic
 from field_extraction import get_dataset
 from data_dict import z_offset_dict
-from warp_parallel import gather, me, mpiallgather
+from warp_parallel import gather, me, mpiallgather, comm_world
 try:
     from mpi4py import MPI
 except ImportError:
@@ -60,7 +60,7 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
 
         Ntot_snapshots_lab: int
             Total number of snapshots that this diagnostic will produce
-     
+
         t_min_lab: real (seconds)
             Time for the first snapshot in the lab frame.
             Snapshots are given at t = t_min_lab + i * dt_snapshot_lab -- with i = 0:Ntot_snapshots_lab-1
@@ -76,9 +76,9 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
         boost_dir: int (1 or -1)
             The direction of the Lorentz transformation from the lab frame
             to the boosted frame (along the z axis)
-                         
-        lparallel_output: boolean 
-            Enable/disable parallel IO 
+
+        lparallel_output: boolean
+            Enable/disable parallel IO
 
         xmin_lab, xmax_lab, ymin_lab, ymax_lab: floats (meters)
             Positions of the minimum and maximum of the virtual moving window,
@@ -115,9 +115,6 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
         self.inv_beta_boost = 1./self.beta_boost
         self.lparallel_output = lparallel_output
         self.t_min_lab = t_min_lab
-   
-        #if parallel output , needs to store the mpi group of comm_world
-        if(lparallel_output):  self.mpi_group = self.comm_world.Get_group()
 
 
         # Find the z resolution and size of the diagnostic *in the lab frame*
@@ -151,7 +148,7 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
             # Initialize a corresponding empty file
             if self.rank == 0:
                 self.create_file_empty_meshes( snapshot.filename, i,
-                snapshot.t_lab, Nz, snapshot.zmin_lab, dz_lab, self.top.dt, 
+                snapshot.t_lab, Nz, snapshot.zmin_lab, dz_lab, self.top.dt,
                 self.Nx_total , xmin_lab, self.Ny_total, ymin_lab   )
 
         # Print a message that records the time for initialization
@@ -165,23 +162,23 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
         # LabSnapshot, and abstracts the dimension
 
         start = np.array([self.shift_x_min,self.shift_y_min,0])
-        self.slice_handler = SliceHandler(self.gamma_boost, self.beta_boost, 
+        self.slice_handler = SliceHandler(self.gamma_boost, self.beta_boost,
                                           self.dim,start, self.nx_dump,
                                           self.ny_dump )
 
-    def get_indices_transverse_directions(self, xmin_lab, xmax_lab, 
+    def get_indices_transverse_directions(self, xmin_lab, xmax_lab,
                                           ymin_lab, ymax_lab):
-        
-        """ This routine compute global and local indices that needed when 
-        using xmin_lab ... ymax_lab parameters to dump only a portion of the 
+
+        """ This routine compute global and local indices that needed when
+        using xmin_lab ... ymax_lab parameters to dump only a portion of the
         fields with this diagnostics
-        Since the Lorentz transform is done along the z direction, 
+        Since the Lorentz transform is done along the z direction,
         indices along transverse directions remain the same for each dump during
         the simulation """
 
         # Get local indices of each mpi task
         self.indices = np.copy(self.global_indices)
-        self.shift_x_min = 0 
+        self.shift_x_min = 0
         self.shift_y_min = 0
         self.shift_x_max = 0
         self.shift_y_max = 0
@@ -198,12 +195,12 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
             if(ymin_lab is not None):
                 # Compute the shift introduced by ymin_lab for each proc
                 self.shift_y_min = int(max(0,(ymin_lab-self.em.ymminlocal)/self.dy))
-                self.indices[0,1] += self.shift_y_min   
-                # Compute the shift introduced by ymin_lab for the whole domain     
+                self.indices[0,1] += self.shift_y_min
+                # Compute the shift introduced by ymin_lab for the whole domain
                 self.iy_start_g = max(0,int((ymin_lab-self.w3d.ymmin)/self.dy))
             else:
                 self.iy_start_g = 0
-        
+
         if(xmax_lab is not None):
             # Compute the shift introduced by xmax_lab for each proc
             self.shift_x_max = int(max(0,(self.em.xmmaxlocal-xmax_lab)/self.dx))
@@ -216,7 +213,7 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
 
         # If current mpi subdomain does not intersect with the diag window
         # then set all to 0
-        if(xmax_lab is not None and xmax_lab < self.em.xmminlocal): 
+        if(xmax_lab is not None and xmax_lab < self.em.xmminlocal):
             self.indices[0,0] = 0
             self.indices[1,0] = 0
         if(xmin_lab is not None and xmin_lab > self.em.xmmaxlocal):
@@ -236,29 +233,29 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
         self.nx_dump = max(0,self.indices[1,0] - self.indices[0,0])
 
         # Compute number of data points to dump along y  by current mpi task
-        if self.dim == "3d" :   
+        if self.dim == "3d" :
             self.ny_dump = max(0,self.indices[1,1] - self.indices[0,1])
-        else: 
+        else:
              self.ny_dump = 0
 
         self.Nx_total = None
         self.Ny_total = None
 
         # Compute the total number of points to dump along x and y globally
-        if (self.comm_world is not None) and (self.comm_world.size > 1):
+        if (comm_world is not None) and (comm_world.size > 1):
             self.global_indices_list = gather( self.indices,
-                                               comm=self.comm_world )
-            self.Nx_total = gather(self.nx_dump,comm=self.comm_world)
+                                               comm=comm_world )
+            self.Nx_total = gather(self.nx_dump,comm=comm_world)
             self.Nx_total = sum(self.Nx_total)//(self.top.fsdecomp.nyprocs*self.top.fsdecomp.nzprocs)
 
-            
-            if self.dim == "3d" : 
-                self.Ny_total = gather(self.ny_dump, comm=self.comm_world)
+
+            if self.dim == "3d" :
+                self.Ny_total = gather(self.ny_dump, comm=comm_world)
                 self.Ny_total = sum(self.Ny_total)//(self.top.fsdecomp.nxprocs*self.top.fsdecomp.nzprocs)
-        
-       
+
+
         self.indices[:,0] -= self.ix_start_g
-        if(self.dim == "3d"): 
+        if(self.dim == "3d"):
             self.indices[:,1] -= self.iy_start_g
 
     def write( self ):
@@ -272,9 +269,9 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
 
         # Every self.period, write the buffered slices to disk
         if self.top.it % self.period == 0:
-            if not self.lparallel_output: 
+            if not self.lparallel_output:
               self.flush_to_disk()
-            else: 
+            else:
               self.flush_to_disk_parallel()
 
     def store_snapshot_slices( self ):
@@ -313,8 +310,8 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
                 snapshot.register_slice( slice_array, self.inv_dz_lab )
 
 
-    def flush_to_disk_parallel(self): 
-        """ 
+    def flush_to_disk_parallel(self):
+        """
         Write the buffered slices of fields to the disk using parallel h5py
         Erease the buffered slices of LabSnapshot objects
         Dada is NOT gathered to proc 0 before being save to disk
@@ -322,18 +319,18 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
         and each hdf5 file is opened calling the corresponding communicator.
         Then each mpi dumps fields on the relevent files.
         """
-      
+
         f2i = self.slice_handler.field_to_index
- 
+
         # allocates Ntot_snapshot arrays of different kinds
 
         field_array = [None]*self.Ntot_snapshots_lab
-          
+
         iz_min = [None]*self.Ntot_snapshots_lab
         iz_max = [None]*self.Ntot_snapshots_lab
         f = [None]*self.Ntot_snapshots_lab
-        
-        # this flag is turned true if current mpi is dumping on the i_th snapshot during this flush  
+
+        # this flag is turned true if current mpi is dumping on the i_th snapshot during this flush
         write_on = [None]*self.Ntot_snapshots_lab
         newgroup = [None]*self.Ntot_snapshots_lab
         dump_comm = [None]*self.Ntot_snapshots_lab
@@ -342,55 +339,57 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
 
         #limits of data dumping along x and y dirctions
         indices = self.indices
-        
+
         # Loop over boosted frame snapshots in order to build an mpi sub comm for each snapshot
-        # each communicator encodes informations about which processors need to dump data for this snapshot 
+        # each communicator encodes informations about which processors need to dump data for this snapshot
         # Then each mpi open relevent h5files in parallel, all h5files stay open until the flush is completed
-        
-        
+
+
         for i,snapshot in enumerate(self.snapshots):
-            #Compact succesive slices that have been buffered 
-            #over time into a single array 
+            #Compact succesive slices that have been buffered
+            #over time into a single array
             # This returns None, None, None for proc which has no slices
             field_array[i], iz_min[i], iz_max[i] = snapshot.compact_slices()
- 
+
             # if field_array is not None , then this proc will have to dump data
             write_on[i] = False
             #if write_on[i] == True then the current mpi needs to dump data for the i_th snap
             if (field_array[i] is not None): write_on[i] =True
             if(self.nx_dump <= 0) : write_on[i] = False
-            if(self.dim == "3d") :  
-               if(self.ny_dump <= 0) : write_on[i] = False 
+            if(self.dim == "3d") :
+               if(self.ny_dump <= 0) : write_on[i] = False
             # Erase the memory buffers
             snapshot.buffered_slices = []
             snapshot.buffer_z_indices = []
             # Creates the subcommunicator that will open the h5 file and dump data
-            in_list = -1 
+            in_list = -1
             if ( write_on[i] ):
                 in_list = me
             ranks_group_list[i] = mpiallgather( in_list )
-            
+
             ranks_group_list[i] = list(set(ranks_group_list[i]))
 
             # deletes -1 from the list of ranks
             ranks_group_list[i] = [x for x in ranks_group_list[i] if x >= 0 ]
 
-            newgroup[i] = self.mpi_group.Incl(ranks_group_list[i])
-            dump_comm[i] = self.comm_world.Create(newgroup[i])
-            #Each mpi opens relevent snapshot files for himself  
+            mpi_group = comm_world.Get_group()
+            newgroup[i] = mpi_group.Incl(ranks_group_list[i])
+            dump_comm[i] = comm_world.Create(newgroup[i])
+            #Each mpi opens relevent snapshot files for himself
             if(dump_comm[i]!= MPI.COMM_NULL):
                 f[i] = self.open_file( snapshot.filename, parallel_open=True, comm=dump_comm[i] )
-            else: 
+            else:
                 f[i] = None
-             
+
             newgroup[i].Free()
-        # Cleans unused data 
+            mpi_group.Free()
+        # Cleans unused data
         ranks_group_list = []
         newgroup = []
-        
-        # Dumps data on each snapshot using previously initiized mpi communicators. 
-        
-        for i,snapshot in enumerate(self.snapshots):  
+
+        # Dumps data on each snapshot using previously initiized mpi communicators.
+
+        for i,snapshot in enumerate(self.snapshots):
             if(write_on[i]):
                 if f[i] is not None:
                     field_path = "/data/%d/fields/" %snapshot.iteration
@@ -404,7 +403,7 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
                         path = "rho"
                         if field_grp[i] is not None:
                             dset = field_grp[i][path]
-                        else: 
+                        else:
                             dset = None
                         if self.dim == "2d":
                             data = field_array[i][ f2i[ quantity ] ]
@@ -429,9 +428,9 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
                                 t_i = time.clock()
                                 if field_grp is not None:
                                     dset = field_grp[i][path]
-                                else: 
+                                else:
                                     dset = None
-                                if self.dim == "2d": 
+                                if self.dim == "2d":
                                     data = field_array[i][ f2i[ quantity ] ]
                                 elif self.dim == "3d":
                                     data = field_array[i][ f2i[ quantity ] ]
@@ -452,16 +451,16 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
         #Further cleaning
         data = []
         field_array = []
-        f = [] 
+        f = []
         iz_min = []
         iz_max = []
         write_on = []
         dump_comm = []
         field_grp = []
         indices = []
-        
 
-        
+
+
 
 
 
@@ -477,7 +476,7 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
         """
         # Loop through the labsnapshots and flush the data
         for snapshot in self.snapshots:
-            
+
             # Compact the successive slices that have been buffered
             # over time into a single array
             # This returns None, None, None for proc which has no slices
@@ -488,7 +487,7 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
             snapshot.buffer_z_indices = []
 
             # Gather the compacted slices from several proc
-            if (self.comm_world is None) or (self.comm_world.size == 1):
+            if (comm_world is None) or (comm_world.size == 1):
                 # Serial simulation
                 global_field_array = field_array
                 global_iz_min = iz_min
@@ -500,16 +499,16 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
                     in_list = me
                 ranks_group_list = mpiallgather( in_list )
                 ranks_group_list = list(set(ranks_group_list))
-                mpi_group = self.comm_world.Get_group()
+                mpi_group = comm_world.Get_group()
                 self.ranks_group_list = ranks_group_list
                 newgroup = mpi_group.Incl(ranks_group_list)
-                dump_comm = self.comm_world.Create(newgroup)
+                dump_comm = comm_world.Create(newgroup)
                 # Gather data on proc 0 into this communicator
                 if dump_comm != MPI.COMM_NULL:
                     field_array_list_comm = dump_comm.gather( field_array )
                     iz_min_list_comm = dump_comm.gather( iz_min )
                     iz_max_list_comm = dump_comm.gather( iz_max )
-                
+
                 # First proc: merge the field arrays from each proc
                 if self.rank == 0:
                     # Check whether any processor had some slices
@@ -525,7 +524,7 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
                     # If there are some slices, gather them
                     else:
                         global_field_array, global_iz_min, global_iz_max = \
-                          self.gather_slices(field_array_list_comm, 
+                          self.gather_slices(field_array_list_comm,
                               iz_min_list_comm, iz_max_list_comm, dump_comm.Get_size())
 
                 # Free the dump communicator
@@ -730,7 +729,7 @@ class LabSnapshot:
         if(lparallel == False):
             if rank == 0:
               self.filename = os.path.join( write_dir, 'hdf5/data%08d.h5' %i)
-        else: 
+        else:
             self.filename = os.path.join( write_dir, 'hdf5/data%08d.h5' %i)
         self.iteration = i
 
@@ -1065,8 +1064,8 @@ class SliceHandler:
                     n1 = 10
                     if(self.dim == "2d"):
                         em.lorentz_transform2d(n1,n2,fields,gamma,cbeta,beta_c)
-                    else: 
-                        em.lorentz_transform3d(n1,n2,n3,fields,gamma,cbeta,beta_c)         
+                    else:
+                        em.lorentz_transform3d(n1,n2,n3,fields,gamma,cbeta,beta_c)
             else :
                 # Use temporary arrays when changing Ex and By in place
                 ex_lab = gamma*( fields[f2i['Ex']] + cbeta * fields[f2i['By']] )
@@ -1086,7 +1085,7 @@ class SliceHandler:
                 Jz_lab =  gamma*( fields[f2i['Jz']] + cbeta * fields[f2i['rho']] )
                 fields[ f2i['rho'], ... ] = rho_lab
                 fields[ f2i['Jz'], ... ] = Jz_lab
-    
+
         elif self.dim=="circ":
             # Use temporary arrays when changing Er and Bt in place
             er_lab = gamma*( fields[f2i['Er']] + cbeta * fields[f2i['Bt']] )

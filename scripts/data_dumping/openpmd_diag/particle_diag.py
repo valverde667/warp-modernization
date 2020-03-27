@@ -6,7 +6,7 @@ import h5py
 import numpy as np
 from scipy import constants
 from .generic_diag import OpenPMDDiagnostic
-from warp_parallel import gatherarray, mpiallgather
+from warp_parallel import gatherarray, mpiallgather, comm_world
 from .data_dict import macro_weighted_dict, weighting_power_dict, \
      particle_quantity_dict
 
@@ -213,7 +213,7 @@ class ParticleDiagnostic(OpenPMDDiagnostic) :
             select_array_dict[species_name] = self.apply_selection( species )
             # Get their total number
             n = select_array_dict[species_name].sum()
-            if self.comm_world is not None :
+            if comm_world is not None :
                 # In MPI mode: gather and broadcast an array containing
                 # the number of particles on each process
                 selected_nlocals_dict[species_name] = mpiallgather( n )

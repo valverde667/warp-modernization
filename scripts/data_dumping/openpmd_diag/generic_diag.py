@@ -10,6 +10,7 @@ import datetime
 import shutil
 from dateutil.tz import tzlocal
 import numpy as np
+import warp_parallel
 
 # Dictionaries of correspondance for openPMD
 from data_dict import unit_dimension_dict
@@ -78,10 +79,9 @@ class OpenPMDDiagnostic(object) :
         self.top = top
         self.w3d = w3d
         self.period = period
-        self.comm_world = comm_world
         self.lparallel_output = lparallel_output
         self.write_metadata_parallel = write_metadata_parallel
-        if (self.comm_world is None) or (self.comm_world.size==1):
+        if (comm_world is None) or (comm_world.size==1):
             self.lparallel_output = False
             self.write_metadata_parallel = False
 
@@ -119,8 +119,8 @@ class OpenPMDDiagnostic(object) :
         An h5py.File object, or None
         """
         if(parallel_open):
-          if (comm is None): 
-            comm = self.comm_world
+          if (comm is None):
+            comm = warp_parallel.comm_world
         # In serial mode, only the first proc opens/creates the file.
         if parallel_open == False and self.rank == 0 :
             # Create the filename and open hdf5 file

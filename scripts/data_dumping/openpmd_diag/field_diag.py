@@ -353,31 +353,31 @@ class FieldDiagnostic(OpenPMDDiagnostic):
             The timestep of the simulation
 
         Nx, Ny: int
-            The number of gridpoints along x, y in this diagnostics 
+            The number of gridpoints along x, y in this diagnostics
             If None then act as if Nx = nx_globa, Ny = ny_global
 
         xmin: float (meters)
-           The position of the lower boundary of the box along x 
+           The position of the lower boundary of the box along x
            If None, then act as if xmin = w3d.xmmin
 
         ymin: float (meters)
            The position of the lower boundary of the box along y
            If None, then act as if ymin = w3d.ymmin
 
-  
+
         """
         # Determine the shape of the datasets that will be written
         # Circ case
-        if(Nx is None): 
+        if(Nx is None):
             nx = self.nx+1
-        else: 
+        else:
             nx = Nx
         # 3d case
         if(self.dim == "3d"):
-            if(Ny is None): 
+            if(Ny is None):
                ny = self.ny + 1
             else:
-               ny = Ny 
+               ny = Ny
         if self.dim == "circ":
             data_shape = ( 2*self.em.circ_m+1, nx, Nz+1 )
         # 1D case
@@ -520,14 +520,14 @@ class FieldDiagnostic(OpenPMDDiagnostic):
         # Generic record attributes
         self.setup_openpmd_record( dset, quantity )
 
-        if(xmin is None): 
+        if(xmin is None):
             xmin_d = self.w3d.xmmin
-        else: 
+        else:
             xmin_d = xmin
         if(ymin is None):
             ymin_d = self.w3d.ymmin
         else:
-            ymin_d = ymin 
+            ymin_d = ymin
 
         # Geometry parameters
         # - thetaMode

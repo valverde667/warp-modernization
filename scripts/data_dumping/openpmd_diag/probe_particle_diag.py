@@ -14,7 +14,7 @@ import numpy as np
 import time
 from scipy.constants import c
 from particle_diag import ParticleDiagnostic
-from warp_parallel import gatherarray, mpiallgather
+from warp_parallel import gatherarray, mpiallgather, comm_world
 from data_dict import particle_quantity_dict
 
 class ParticleAccumulator(ParticleDiagnostic):
@@ -139,7 +139,7 @@ class ParticleAccumulator(ParticleDiagnostic):
         for species_name in self.species_dict:
             particle_array = self.particle_storer.compact_slices(species_name)
 
-            if self.comm_world is not None:
+            if comm_world is not None:
                 if (self.lparallel_output):
                     # Prepare parallel HDF5 output
                     parray_dict[species_name]=particle_array
@@ -150,13 +150,13 @@ class ParticleAccumulator(ParticleDiagnostic):
                 else:
                     # Prepare HDF5 output by the first proc, using MPI gathering
                     nlocals_dict[species_name]= None
-                    n_rank = self.comm_world.allgather(np.shape(particle_array)[1])
+                    n_rank = comm_world.allgather(np.shape(particle_array)[1])
 
                     # Note that gatherarray routine in parallel.py only works
                     # with 1D array. Here we flatten the 2D particle arrays
                     # before gathering.
                     g_curr = gatherarray(particle_array.flatten(),
-                        root=0, comm=self.comm_world )
+                        root=0, comm=comm_world )
 
                     if self.rank == 0:
                         # Get the number of quantities

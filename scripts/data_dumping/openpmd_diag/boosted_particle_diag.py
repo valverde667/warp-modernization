@@ -12,7 +12,7 @@ import numpy as np
 import time
 from scipy.constants import c
 from particle_diag import ParticleDiagnostic
-from warp_parallel import me, mpiallgather
+from warp_parallel import me, mpiallgather, comm_world
 try:
     from mpi4py import MPI
 except ImportError:
@@ -85,7 +85,7 @@ class BoostedParticleDiagnostic(ParticleDiagnostic):
         # Check user input
         boost_dir = int(boost_dir)
         assert boost_dir in [1,-1]
-        
+
         # Register the boost quantities
         self.em = em
         self.gamma_boost = gamma_boost
@@ -120,10 +120,6 @@ class BoostedParticleDiagnostic(ParticleDiagnostic):
             # Initialize a corresponding empty file
             self.create_file_empty_particles(
                 snapshot.filename, i, snapshot.t_lab, self.top.dt)
- 
-
-        if(self.lparallel_output) :
-            self.mpi_group = self.comm_world.Get_group() 
 
         # Print a message that records the time for initialization
         if self.rank == 0:
@@ -146,7 +142,7 @@ class BoostedParticleDiagnostic(ParticleDiagnostic):
             if not self.lparallel_output:
                 self.flush_to_disk()
             else:
-                self.flush_to_disk_parallel() 
+                self.flush_to_disk_parallel()
 
     def store_snapshot_slices( self ):
         """
@@ -178,7 +174,7 @@ class BoostedParticleDiagnostic(ParticleDiagnostic):
                         species, self.select, snapshot.prev_z_boost,
                         snapshot.current_z_boost, snapshot.t_lab )
                     snapshot.register_slice( slice_array, species_name )
-  
+
     def flush_to_disk_parallel(self):
         """
         Writes the buffered slices of particles to the disk using parallel IO. Erase the
@@ -186,38 +182,38 @@ class BoostedParticleDiagnostic(ParticleDiagnostic):
         """
 
 
-        #Init empty ntot_snapshot arrays of h5_file dictionnaries 
+        #Init empty ntot_snapshot arrays of h5_file dictionnaries
         #The dictionary is incremented with species_names
-        
+
         f = [None]*self.Ntot_snapshots_lab
 
 
-        #Init empty ntot_snapshot arrays of particle_arrays dictionnaries 
+        #Init empty ntot_snapshot arrays of particle_arrays dictionnaries
         #The dictionary is incremented with species_names
         particle_array = [None]*self.Ntot_snapshots_lab
- 
-        #Init empty ntot_snapshot arrays of boolean dictionnaries 
+
+        #Init empty ntot_snapshot arrays of boolean dictionnaries
         #The dictionary is incremented with species_names
         write_on =[None]*self.Ntot_snapshots_lab
-  
-        #Init empty ntot_snapshot arrays of integer_array dictionnaries 
+
+        #Init empty ntot_snapshot arrays of integer_array dictionnaries
         #The dictionary is incremented with species_names
         n_rank =[None]*self.Ntot_snapshots_lab
 
 
-        #Init empty ntot_snapshot arrays of integer dictionnaries 
+        #Init empty ntot_snapshot arrays of integer dictionnaries
         #The dictionary is incremented with species_names
-        #local_number number of particles to be dumped 
+        #local_number number of particles to be dumped
         nlocals_dict = [None]*self.Ntot_snapshots_lab
 
 
-        #Init empty ntot_snapshot arrays of ineteger dictionnaries 
+        #Init empty ntot_snapshot arrays of ineteger dictionnaries
         #The dictionary is incremented with species_names
-        #Global number of particles to be dumped 
+        #Global number of particles to be dumped
         nglobal_dict = [None]*self.Ntot_snapshots_lab
 
 
-        #Init empty ntot_snapshot array of MPI.COMM dictionnaries 
+        #Init empty ntot_snapshot array of MPI.COMM dictionnaries
         #The dictionary is incremented with species_names
         #For each snapshot and for each species, dump_comm is passed to h5py to dump data
         dump_comm = [None]*self.Ntot_snapshots_lab
@@ -227,17 +223,17 @@ class BoostedParticleDiagnostic(ParticleDiagnostic):
                 particle_array[i] = dict()
                 write_on[i] = dict()
                 n_rank[i] = dict()
-                dump_comm[i] = dict()       
+                dump_comm[i] = dict()
                 nlocals_dict[i] = dict()
                 nglobal_dict[i] = dict()
                 for species_name in self.species_dict:
                     f[i][species_name] = 0
-                    particle_array[i][species_name] = None 
+                    particle_array[i][species_name] = None
                     write_on[i][species_name] = False
-                    n_rank[i][species_name] = None 
+                    n_rank[i][species_name] = None
                     dump_comm[i][species_name] =  MPI.COMM_NULL
                     nlocals_dict[i][species_name] = None
-                    nglobal_dict[i][species_name] = None  
+                    nglobal_dict[i][species_name] = None
 
 
 
@@ -245,7 +241,7 @@ class BoostedParticleDiagnostic(ParticleDiagnostic):
 
         # Loop over snapshots and species to construct dump_comms and open h5_files
         for snapshot in self.snapshots:
-            i = snapshot.iteration 
+            i = snapshot.iteration
             for species_name in self.species_dict:
 
                 particle_array[i][species_name] = snapshot.compact_slices(species_name)
@@ -265,22 +261,24 @@ class BoostedParticleDiagnostic(ParticleDiagnostic):
                 # deletes -1 from the list of ranks
                 ranks_group_list = [x for x in ranks_group_list if x >= 0 ]
                 ranks_group_list = list(set(ranks_group_list))
-                newgroup = self.mpi_group.Incl(ranks_group_list)
+                mpi_group = comm_world.Get_group()
+                newgroup = mpi_group.Incl(ranks_group_list)
                 # Create communicator
-                dump_comm[i][species_name] = self.comm_world.Create(newgroup)
+                dump_comm[i][species_name] = comm_world.Create(newgroup)
                 newgroup.Free()
+                mpi_group.Free()
                 ranks_group_list = []
-                if(write_on[i][species_name]): 
+                if(write_on[i][species_name]):
                     if(dump_comm[i][species_name] is not None and dump_comm[i][species_name] != MPI.COMM_NULL  ):
-                        #each MPI opens relevent h5 files with adequate dump_com 
+                        #each MPI opens relevent h5 files with adequate dump_com
                         f[i][species_name]=self.open_file(snapshot.filename, parallel_open= \
                                                           self.lparallel_output,comm=dump_comm[i][species_name] )
-                 
-         
-   
+
+
+
         # loop over snapshots and species to flush data
         for snapshot in self.snapshots:
-            i= snapshot.iteration 
+            i= snapshot.iteration
             for species_name in self.species_dict:
                 if(write_on[i][species_name]):
                       n_part_to_dump = np.shape(particle_array[i][species_name])[1]
@@ -292,22 +290,22 @@ class BoostedParticleDiagnostic(ParticleDiagnostic):
 
         # loop over snapshots and species to  close files and free dump_comm
         for i in range(self.Ntot_snapshots_lab):
-            for species_name in self.species_dict: 
+            for species_name in self.species_dict:
                 if(write_on[i][species_name]):
                     f[i][species_name].close()
                 if dump_comm[i][species_name] != MPI.COMM_NULL:
                     dump_comm[i][species_name].Free()
 
 
-       # cleaning 
+       # cleaning
         f = []
-        dump_comm = []        
+        dump_comm = []
         particle_array = []
         write_on = []
-        n_rank = [] 
+        n_rank = []
         nlocals_dict = []
         nglobal_dict = []
-      
+
 
 
 
@@ -328,7 +326,7 @@ class BoostedParticleDiagnostic(ParticleDiagnostic):
             # over time into a single array
             for species_name in self.species_dict:
                 particle_array = snapshot.compact_slices(species_name)
-                if self.comm_world is not None:
+                if comm_world is not None:
                     # Create a communicator containing ranks that have
                     # particles to dump
                     in_list = 0
@@ -336,12 +334,12 @@ class BoostedParticleDiagnostic(ParticleDiagnostic):
                         in_list = me
                     ranks_group_list = mpiallgather( in_list )
                     ranks_group_list = list(set(ranks_group_list))
-                    mpi_group = self.comm_world.Get_group()
+                    mpi_group = comm_world.Get_group()
                     self.ranks_group_list = ranks_group_list
                     # Create group
                     newgroup = mpi_group.Incl(ranks_group_list)
                     # Create communicator
-                    dump_comm = self.comm_world.Create(newgroup)
+                    dump_comm = comm_world.Create(newgroup)
                     # Gather data on proc 0 into this communicator
                     if dump_comm != MPI.COMM_NULL:
                         list_part_array = dump_comm.gather( particle_array )
@@ -356,7 +354,7 @@ class BoostedParticleDiagnostic(ParticleDiagnostic):
                         p_array = np.concatenate(list_part_array, axis=1)
                 else:
                     p_array = particle_array
-                    
+
                 # Write this array to disk (if this snapshot has new slices)
                 if self.rank == 0 and p_array.size:
                     self.write_slices(p_array, species_name, snapshot,
@@ -369,7 +367,7 @@ class BoostedParticleDiagnostic(ParticleDiagnostic):
         Writes each quantity of the buffered dataset to the disk, the
         final step of the writing
         """
-        if not self.lparallel_output: 
+        if not self.lparallel_output:
             dset = species_grp[path]
             index = dset.shape[0]
 
@@ -379,9 +377,9 @@ class BoostedParticleDiagnostic(ParticleDiagnostic):
             # Write the data to the dataset at correct indices
             dset[index:] = data
         else:
-            dset = species_grp[path] 
+            dset = species_grp[path]
             index = dset.shape[0]
-            dset.resize(index+n_global, axis=0)            
+            dset.resize(index+n_global, axis=0)
 
             if n_rank is not None:
                 iold = index+sum(n_rank[0:self.rank])
@@ -395,7 +393,7 @@ class BoostedParticleDiagnostic(ParticleDiagnostic):
                     # Write the data to the dataset at correct indices
                     dset[index:] = data
 
-              
+
 
     def write_slices( self, particle_array, species_name, snapshot, p2i,n_rank=None,n_global=None,comm=None,h5_file=None ):
         """
@@ -415,7 +413,7 @@ class BoostedParticleDiagnostic(ParticleDiagnostic):
         p2i: dict
             Dictionary of correspondance between the particle quantities
             and the integer index in the particle_array
- 
+
         n_rank:  array of integer
             array of local number of particles that need to be dumped for each mpi task
 
@@ -426,26 +424,26 @@ class BoostedParticleDiagnostic(ParticleDiagnostic):
              mpi communicator used to dump the data when parallel IO
 
         h5_file : An h5py.File object
-            if parallel IO then  this routine does not open h5 files, 
-            instead h5 files are opened in flush_to_disk_parallel, and h5_file the returned object from open_file 
-            for current snapshot 
+            if parallel IO then  this routine does not open h5 files,
+            instead h5 files are opened in flush_to_disk_parallel, and h5_file the returned object from open_file
+            for current snapshot
 
         """
-        
+
         # Open the file without parallel I/O in this implementation
         # If using parallel IO then files have already been opened
         if not self.lparallel_output:
            f = self.open_file( snapshot.filename, parallel_open=False)
-        else: 
+        else:
            f = h5_file
         particle_path = "/data/%d/particles/%s" %(snapshot.iteration,
                                                     species_name)
         species_grp = f[particle_path]
 
-        if(self.lparallel_output): 
-            ng=n_global[species_name] 
-        else: 
-            ng = None   
+        if(self.lparallel_output):
+            ng=n_global[species_name]
+        else:
+            ng = None
         # Loop over the different quantities that should be written
         for particle_var in self.particle_data:
 
@@ -501,7 +499,7 @@ class BoostedParticleDiagnostic(ParticleDiagnostic):
         data = []
 
         #If serial IO then close files here
-        
+
         if not self.lparallel_output:
             f.close()
 
@@ -545,11 +543,11 @@ class LabSnapshot:
         self.dump_p_fields = dump_p_fields
         self.n_quantities = 0
 
-        if(dump_p_fields) : 
+        if(dump_p_fields) :
             self.n_quantities = 15
-        else: 
+        else:
             self.n_quantities = 9
- 
+
         self.em = em
         # Time and boundaries in the lab frame (constants quantities)
         self.zmin_lab = zmin_lab
@@ -649,10 +647,10 @@ class ParticleCatcher:
 
         dump_f : boolean
             Flag for field dumping
-        
+
         em : EM Object
-  
-       
+
+
         """
         # Some attributes neccessary for particle selections
         self.gamma_boost = gamma_boost
@@ -669,9 +667,9 @@ class ParticleCatcher:
             if self.top.ssnpid > 0:
                 self.particle_to_index['id'] = 9
 
-        else: 
+        else:
             self.particle_to_index = {'x':0, 'y':1, 'z':2, 'ux':3,
-                    'uy':4, 'uz':5, 'w':6, 'gamma':7, 't':8,'ex':9, 'ey':10, 'ez':11,'bx':12, 'by':13, 'bz':14} 
+                    'uy':4, 'uz':5, 'w':6, 'gamma':7, 't':8,'ex':9, 'ey':10, 'ez':11,'bx':12, 'by':13, 'bz':14}
             if self.top.ssnpid > 0:
                 self.particle_to_index['id'] = 15
     def get_particle_slice( self, species, prev_z_boost, current_z_boost ):
@@ -704,14 +702,14 @@ class ParticleCatcher:
         current_uy = self.get_quantity( species, "uy" )
         current_uz = self.get_quantity( species, "uz" )
         current_weights = self.get_quantity( species, "w" )
-        if(self.dump_p_fields): 
+        if(self.dump_p_fields):
             current_ex = self.get_quantity( species, "ex" )
             current_ey = self.get_quantity( species, "ey" )
             current_ez = self.get_quantity( species, "ez" )
             current_bx = self.get_quantity( species, "bx" )
             current_by = self.get_quantity( species, "by" )
             current_bz = self.get_quantity( species, "bz" )
-        
+
         if self.top.ssnpid > 0:
             current_id = self.get_quantity( species, "id" )
 
@@ -766,7 +764,7 @@ class ParticleCatcher:
             self.ez_captured = np.take(current_ez, selected_indices)
             self.bx_captured = np.take(current_bx, selected_indices)
             self.by_captured = np.take(current_by, selected_indices)
-            self.bz_captured = np.take(current_bz, selected_indices) 
+            self.bz_captured = np.take(current_bz, selected_indices)
 
         self.x_prev_captured = np.take(previous_x, selected_indices)
         self.y_prev_captured = np.take(previous_y, selected_indices)
@@ -814,7 +812,7 @@ class ParticleCatcher:
         - self.gamma_prev_captured*uzfrm
 
         # Field in lab frame
-        if(self.dump_p_fields): 
+        if(self.dump_p_fields):
             cbeta = self.beta_boost*c
             beta_ov_c = self.beta_boost*ic
 
@@ -881,7 +879,7 @@ class ParticleCatcher:
             self.bz_captured = \
               self.bz_prev_captured * weight_prev + self.bz_captured * weight_next
 
-    
+
 
     def gather_array(self, quantity):
         """
@@ -975,7 +973,7 @@ class ParticleCatcher:
                         current_z_boost )
 
         if (hasattr(self.em,"l_pxr")):
-            if(self.em.l_pxr): 
+            if(self.em.l_pxr):
                 if(self.dump_p_fields):
                     self.em.lorentz_transform_parts_with_fields(num_part, self.gamma_boost, self.beta_boost, self.top.time, self.top.dt,t_output,\
                                      self.x_captured, self.x_prev_captured,\
@@ -992,7 +990,7 @@ class ParticleCatcher:
                                      self.by_captured, self.by_prev_captured,\
                                      self.bz_captured, self.bz_prev_captured)
 
-                else: 
+                else:
                     self.em.lorentz_transform_parts_without_fields(num_part, self.gamma_boost, self.beta_boost, self.top.time, self.top.dt,t_output,\
                                      self.x_captured, self.x_prev_captured,\
                                      self.y_captured, self.y_prev_captured,\
@@ -1105,7 +1103,7 @@ class ParticleCatcher:
                 quantity_array = species.getuyold( gather=False )
             elif quantity == "uz":
                 quantity_array = species.getuzold( gather=False )
-            elif(quantity == "ex"): 
+            elif(quantity == "ex"):
                 quantity_array = species.getexold(gather = False)
             elif(quantity == "ey"):
                 quantity_array = species.geteyold(gather = False)
@@ -1116,7 +1114,7 @@ class ParticleCatcher:
             elif(quantity == "by"):
                 quantity_array = species.getbyold(gather = False)
             elif(quantity == "bz"):
-                quantity_array = species.getbzold(gather = False)          
+                quantity_array = species.getbzold(gather = False)
 
         return( quantity_array )
 
@@ -1139,7 +1137,7 @@ class ParticleCatcher:
             self.top.uzoldpid = self.top.nextpid()
         if(self.dump_p_fields):
             if not self.top.exoldpid:
-                self.top.exoldpid = self.top.nextpid() 
+                self.top.exoldpid = self.top.nextpid()
             if not self.top.eyoldpid:
                 self.top.eyoldpid = self.top.nextpid()
             if not self.top.ezoldpid:

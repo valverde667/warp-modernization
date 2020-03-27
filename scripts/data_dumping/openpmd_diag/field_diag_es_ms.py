@@ -6,6 +6,7 @@ from dateutil.tz import tzlocal
 import h5py as h5
 import numpy as np
 from warp import getselfe, getphi, getb, geta
+from warp_parallel import comm_world
 
 
 class StaticDiagnostic(object):
@@ -29,8 +30,7 @@ class StaticDiagnostic(object):
         self.solver = solver
         self.top = top
         self.w3d = w3d
-        self.comm_world = comm_world
-        if self.comm_world is None:
+        if comm_world is None:
             self.lparallel = 0
             self.rank = 0
         else:
