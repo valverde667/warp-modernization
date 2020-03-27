@@ -2,6 +2,8 @@ import numpy as np
 #from pywarpx import picmi
 from warp import picmi
 
+constants = picmi.constants
+
 ##########################
 # physics parameters
 ##########################
@@ -57,7 +59,7 @@ ymax = +30.e-6
 zmin = -15.e-6
 zmax = +5.e-6
 
-moving_window_velocity = [0., 0., picmi.c]
+moving_window_velocity = [0., 0., constants.c]
 
 plasma_number_per_cell_each_dim = [2, 4, 2]
 beam_number_per_cell_each_dim = [4, 8, 4]
@@ -70,12 +72,12 @@ beam_number_per_cell_each_dim = [4, 8, 4]
 
 laser = picmi.GaussianLaser(wavelength            = laser_wavelength,
                             waist                 = laser_waist,
-                            duration              = laser_length/picmi.c,
+                            duration              = laser_length/constants.c,
                             focal_position        = [0., 0., laser_focal_position],
                             centroid_position     = [0., 0., laser_z0],
                             polarization_angle    = laser_polarization,
                             propagation_direction = [0,0,1],
-                            E0 = laser_a0*2.*np.pi*picmi.m_e*picmi.c**2/(picmi.q_e*laser_wavelength)) # Maximum amplitude of the laser field (in V/m)
+                            E0 = laser_a0*2.*np.pi*constants.m_e*constants.c**2/(constants.q_e*laser_wavelength)) # Maximum amplitude of the laser field (in V/m)
 
 laser_antenna = picmi.LaserAntenna(position = [0., 0., laser_antenna_z],  # This point is on the laser plane
                                    normal_vector = [0., 0., 1.])  # The plane normal direction
@@ -157,13 +159,13 @@ part_diag = picmi.ParticleDiagnostic(period = 100,
 
 field_diag_lab = picmi.LabFrameFieldDiagnostic(grid = grid,
                                                num_snapshots = 20,
-                                               dt_snapshots = 0.5*(zmax - zmin)/picmi.c,
+                                               dt_snapshots = 0.5*(zmax - zmin)/constants.c,
                                                data_list = ["rho", "E", "B", "J"],
                                                write_dir = 'lab_diags')
 
 part_diag_lab = picmi.LabFrameParticleDiagnostic(grid = grid,
                                                  num_snapshots = 20,
-                                                 dt_snapshots = 0.5*(zmax - zmin)/picmi.c,
+                                                 dt_snapshots = 0.5*(zmax - zmin)/constants.c,
                                                  species = [electrons, ions, beam],
                                                  write_dir = 'lab_diags')
 
