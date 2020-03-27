@@ -358,7 +358,7 @@ class PicklableFunction:
                 # --- name in the list with the function.
                 self.func = result
             else:
-                raise Exception("The function couldn't be found")
+                raise Exception("The function %s couldn't be found"%self.func)
         else:
             result = self.func
         if not callable(result):
