@@ -997,14 +997,30 @@ def dump(filename=None,prefix='',suffix='',attr='dump',serial=0,pyvars=1,
             filename = filename + '_%05d_%05d%s.dump'%(me,npes,suffix)
     print filename
     # --- Make list of all of the new python variables.
-    interpreter_variables = []
+    interpreter_variables_list = []
     if pyvars:
         # --- Add to the list all variables which are not in the initial list
         for l,v in __main__.__dict__.iteritems():
             if isinstance(v,types.ModuleType): continue
             if l in skip: continue
             if l not in initial_global_dict_keys:
-                interpreter_variables.append(l)
+                interpreter_variables_list.append(l)
+    # --- These quantities must be written out and are added here explicitly
+    # --- since they may not be in __main__.
+    interpreter_variables_dict = {}
+    # --- The controller function container needs to be written out since the
+    # --- controllers functions may be changed by the user. The container
+    # --- properly reinstalls any saved controller functions.
+    # --- The name 'controllerfunctioncontainer' must be the same as what appears
+    # --- in the controllers module.
+    interpreter_variables_dict['controllerfunctioncontainer'] = controllerfunctioncontainer
+    # --- The registered solver contained needs to be written out since the
+    # --- list of registered solvers may be modified by the user. The
+    # --- container properly re-registers the field solvers without the
+    # --- solvers themselves having to deal with it.
+    # --- The name 'registeredsolverscontainer' must be the same as what appears
+    # --- in the fieldsolver module.
+    interpreter_variables_dict['registeredsolverscontainer'] = registeredsolverscontainer
     # --- Resize history arrays if requested.
     if resizeHist:
         top.lenhist = top.jhist
@@ -1012,10 +1028,10 @@ def dump(filename=None,prefix='',suffix='',attr='dump',serial=0,pyvars=1,
     # --- Call routine to make data dump
     if format == 'pickle':
         from .data_dumping import pickledump
-        pickledump.pickledump(filename,attr,interpreter_variables,serial,ff,
+        pickledump.pickledump(filename,attr,interpreter_variables_list,serial,ff,
                               varsuffix,verbose)
     else:
-        pydump(filename,attr,interpreter_variables,serial=serial,ff=ff,
+        pydump(filename,attr,interpreter_variables_list,varsdict=interpreter_variables_dict,serial=serial,ff=ff,
                varsuffix=varsuffix,verbose=verbose,datawriter=datawriter)
     # --- Update dump time
     top.dumptime = top.dumptime + (wtime() - timetemp)
@@ -1432,21 +1448,6 @@ else:
 # --- of global keys.
 initial_global_dict_keys = []
 initial_global_dict_keys = globals().keys()
-
-# --- The controller function container needs to be written out since the
-# --- controllers functions may be changed by the user. The container
-# --- properly reinstalls any saved controller functions.
-# --- The name 'controllerfunctioncontainer' must be the same as what appears
-# --- in the controllers module.
-initial_global_dict_keys.remove('controllerfunctioncontainer')
-
-# --- The registered solver contained needs to be written out since the
-# --- list of registered solvers may be modified by the user. The
-# --- container properly re-registers the field solvers without the
-# --- solvers themselves having to deal with it.
-# --- The name 'registeredsolverscontainer' must be the same as what appears
-# --- in the fieldsolver module.
-initial_global_dict_keys.remove('registeredsolverscontainer')
 
 # --- Save the versions string here so that it will be dumped into any
 # --- dump file.
