@@ -27,7 +27,7 @@
 #define dvnz(X) sign(abs(X)+SMALLPOS,X)
 
 ! Minimum Number of Grid Cells when coarsening using multigrid
-#define NMGMIN 5
+#define NMGMIN 4
 
 
 ! Define size of integers. Must be the same as the size of a long int in C.

@@ -1280,7 +1280,7 @@ c     message added by petermc, 1 Oct 2002
 
 c     --- Check if this is the coarsest level. If so, then don't do any further
 c     --- coarsening. This is the same check that is done in getmglevels.
-      if (nx >= NMGMIN .and. ny >= NMGMIN .and. nz > NMGMIN .and.
+      if (nx >= NMGMIN .and. ny >= NMGMIN .and. nz >= NMGMIN .and.
      &    mglevel < mgmaxlevels) then
 
         nxguardres = 1
