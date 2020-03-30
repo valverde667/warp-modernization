@@ -86,7 +86,7 @@ class Secondaries:
                       maxsec=None, pyecloud_secemi_object=None, pyecloud_fact_clean=None,
                       pyecloud_fact_split=None, pyecloud_nel_mp_ref=None):
 
-    # Some consistency checks for PyECLOUD mode
+        # Some consistency checks for PyECLOUD mode
         if pyecloud_secemi_object is not None:
             assert(l_set_params_user_only == 0)
             assert(l_usenew == 1)
@@ -138,9 +138,9 @@ class Secondaries:
         # self.emitted={}
         self.l_set_params_user_only=l_set_params_user_only
         self.mat_number=1
-    # These members should not be set when in PyECLOUD mode
+        self.set_params_user=set_params_user
+        # These members should not be set when in PyECLOUD mode
         if not self.flag_pyecloud:
-            self.set_params_user=set_params_user
             if maxsec is None:
                 if pos is None:
                     maxsec = 10
