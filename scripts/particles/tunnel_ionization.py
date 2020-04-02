@@ -236,9 +236,9 @@ class TunnelIonization(Ionization):
                         # --- so remove it.
                         put(ipg.gaminv,array(io)*self.stride+i1,0.)
                     else:
-                        # --- Remove the fraction ionized and give it to the emitted particles.
+                        # --- Remove the fraction ionized and give the weight to the emitted particles.
                         wi = wi*maximum(prob, self.minimum_weight)
-                        ipg.pid[array(io)*self.stride+i1] -= wi[io]
+                        ipg.pid[array(io)*self.stride+i1,top.wpid-1] -= wi[io]
 
                     # --- The position of the incident particle is at or near the incident particle
                     xnew = xi
