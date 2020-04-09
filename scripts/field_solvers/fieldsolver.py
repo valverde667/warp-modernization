@@ -406,8 +406,10 @@ class FieldSolver(object):
     __flaginputs__ = {'forcesymmetries':1,
                       'lreducedpickle':1,'lnorestoreonpickle':0,
                       'ldosolve':1,'l_internal_dosolve':1,
+                      'ldodeposition':1,
                       'gridvz':None,'lchild':False,
                       'userfsdecompnx':None,'userfsdecompny':None,'userfsdecompnz':None,
+                      'deposition_species':None,
                       }
 
     def __init__(self,**kw):
@@ -827,6 +829,8 @@ class FieldSolver(object):
     # --- These routines must at least be defined.
     def loadrho(self,pgroup=None,lzero=true,lfinalize_rho=true,**kw):
         'Charge deposition, uses particles from top directly'
+        if not self.ldodeposition:
+            return
         if pgroup is None: pgroup = top.pgroup
         self.advancezgrid()
         if lzero: self.zerorhop()
@@ -1333,6 +1337,8 @@ class SubcycledPoissonSolver(FieldSolver):
         # --- Note that the grid location is advanced even if no field solve
         # --- is being done.
         self.advancezgrid()
+        if not self.ldodeposition:
+            return
         # --- If ldosolve is false, then skip the gather of rho, unless
         # --- lzero is also false, in which case the solver is assumed to
         # --- be gathering the source (for example during an EGUN iteration).
@@ -1344,16 +1350,42 @@ class SubcycledPoissonSolver(FieldSolver):
         self.allocatedataarrays()
         if lzero: self.zerosourcep()
 
-        if pgroups is None: pgroups = [top.pgroup]
-        for pgroup in pgroups:
+        jslists = None
 
-            if w3d.js1fsapi >= 0: js1 = w3d.js1fsapi
-            else:                 js1 = 0
-            if w3d.js2fsapi >= 0: js2 = w3d.js2fsapi+1
-            else:                 js2 = pgroup.ns
+        if pgroups is None:
+            # --- If pgroups wasn't specified as an input argument.
+            if self.deposition_species is None:
+                # --- Default, most common case is to use top.pgroup.
+                pgroups = [top.pgroup]
+            else:
+                # --- A list of species to deposit was specified.
+                # --- Get the list of pgroups from each species.
+                # --- Note that there may be duplicates, but that is Ok
+                # --- since each jslist which only incude the species.
+                pgroups = []
+                # --- List of jslists from each species.
+                jslists = []
+                for species in self.deposition_species:
+                    for pgroup in species.iterpgroups():
+                        pgroups.append(pgroup)
+                        jslists.append(species.jslist)
 
-            jslist = kw.get('jslist',None)
-            if jslist is None: jslist = range(js1,js2)
+        # --- Check if jslist was an input argument
+        jslist = kw.get('jslist',None)
+        if jslist is None:
+            # --- If not, check if jslists is already defined
+            if jslists is None:
+                # --- If not, use values set in code, the most common case.
+                if w3d.js1fsapi >= 0: js1 = w3d.js1fsapi
+                else:                 js1 = 0
+                if w3d.js2fsapi >= 0: js2 = w3d.js2fsapi+1
+                else:                 js2 = pgroup.ns
+                jslists = [range(js1,js2)]
+        else:
+            # --- If so, use the input list
+            jslists = [jslist]
+
+        for pgroup, jslist in zip(pgroups, jslists):
 
             for js in jslist:
                 n = pgroup.nps[js]

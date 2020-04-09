@@ -59,6 +59,7 @@ class MultiGrid3D(SubcycledPoissonSolver):
   |    l_internal_dosolve=1: Another flag which sets whether a field solve is done.
   |                          With this flag, if false, the charge deposition is
   |                          still done.
+  |    ldodeposition=1: Flags whether the charge deposition is done
   |    gridvz=None: An option grid velocity, independent of top.vbeam.
   |                 Only used for special purposes.
   |    lchild=False: Internally used flag, true when the instance is a child
@@ -66,6 +67,7 @@ class MultiGrid3D(SubcycledPoissonSolver):
   |    userfsdecompnx=None: User specified decomposition for the field solver in x
   |    userfsdecompny=None: User specified decomposition for the field solver in y
   |    userfsdecompnz=None: User specified decomposition for the field solver in z
+  |    deposition_species=None: User specified list of species that are deposited
 
     """
 
