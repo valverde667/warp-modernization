@@ -491,7 +491,7 @@ class ElectromagneticSolver(picmistandard.PICMI_ElectromagneticSolver):
     __forbidden_kw__ = ['norderx','nordery','norderz','ntsub','stencil',
                         'npass_smooth','alpha_smooth','stride_smooth','dtcoef',
                         'l_2dxz','l_2drz','l_1dz','current_cor','spectral']
-    __flaginputs__ = {**EM3D.__flaginputs__, **EM3DFFT.__flaginputs__}
+    __flaginputs__ = {**FieldSolver.__flaginputs__, **EM3D.__flaginputs__, **EM3DFFT.__flaginputs__}
 
     def init(self, kw):
         self.em3dfft_args = {}
@@ -598,8 +598,23 @@ class ElectromagneticSolver(picmistandard.PICMI_ElectromagneticSolver):
 
 
 class ElectrostaticSolver(picmistandard.PICMI_ElectrostaticSolver):
+    __forbidden_kw__ = [] # no forbidden arguments
+    __flaginputs__ = {**FieldSolver.__flaginputs__}
+
+    def init(self, kw):
+        self.multigrid_args = {}
+
+        for warp_arg, val in kw.copy().items():
+            arg = warp_arg[len(codename)+1:] # strip off ‘warp_’
+
+            if arg in self.__forbidden_kw__:
+                raise ValueError('ElectrostaticSolver: %s cannot be specified by the user'%arg)
+            elif arg in self.__flaginputs__:
+                self.multigrid_args[arg] = val
+                kw.pop(warp_arg)
+
     def initialize_solver_inputs(self):
-        self.solver = MultiGrid3D()
+        self.solver = MultiGrid3D(**self.multigrid_args)
 
 
 class GaussianLaser(picmistandard.PICMI_GaussianLaser):
