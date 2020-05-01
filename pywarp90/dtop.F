@@ -2373,12 +2373,12 @@ c       --- if within grid, gather
           wy = gy - iy
           z(ip) = grid(ix  ,iy  )*(1. - wx)*(1. - wy)
           if (gx < nx) then
-            z(ip) = z(ip) + grid(ix+1,iy  )*      wx *(1. - wy)
+            z(ip) = grid(ix+1,iy  )*      wx *(1. - wy)
           endif
           if (gy < ny) then
-            z(ip) = z(ip) + grid(ix  ,iy+1)*(1. - wx)*      wy
+            z(ip) = grid(ix  ,iy+1)*(1. - wx)*      wy
           endif
-c         z(ip) = z(ip) + grid(ix+1,iy+1)*      wx *      wy
+c         z(ip) = grid(ix+1,iy+1)*      wx *      wy
         endif
 
       enddo
@@ -2428,6 +2428,61 @@ c       --- if within grid, gather
           iy = nint(gy)
           z(ip) = grid(ix,iy)
         endif
+
+      enddo
+
+      return
+      end
+c=============================================================================
+      subroutine getgrid2dnonuniform(np,x,y,z,nx,ny,grid,xmesh,ymesh)
+      integer(ISZ):: nx,ny,np
+      real(kind=8):: x(np), y(np), z(np)
+      real(kind=8):: grid(0:nx,0:ny)
+      real(kind=8):: xmesh(0:nx), ymesh(0:ny)
+
+c Gathers data from a node centered 2-D mesh with nonuniform spacing onto particle positions using
+c linear interpolation.
+c   np: number of particles
+c   x,y: arrays of particle positions
+c   z: array where the data will be put
+c   nx,ny: number of grid cells
+c   grid: input array of data to be gathered
+c   xmesh, ymesh: location of nodes, in increasing order
+
+      integer(ISZ):: ip,ix,iy
+      real(kind=8):: gx,gy,dxi,dyi,wx,wy
+
+c     --- loop over particles
+      do ip=1,np
+
+        if (x(ip) < xmesh(0)) cycle
+        if (y(ip) < ymesh(0)) cycle
+        if (x(ip) > xmesh(nx)) cycle
+        if (y(ip) > ymesh(ny)) cycle
+
+        ix = 0
+        iy = 0
+
+        do while (xmesh(ix+1) <= x(ip))
+          ix = ix + 1
+        enddo
+        do while (ymesh(iy+1) <= y(ip))
+          iy = iy + 1
+        enddo
+        if (ix == nx) ix = nx - 1
+        if (iy == ny) iy = ny - 1
+
+c       --- set grid cell inverse sizes
+        dxi = 1./(xmesh(ix+1) - xmesh(ix))
+        dyi = 1./(ymesh(iy+1) - ymesh(iy))
+
+        wx = (x(ip) - xmesh(ix))*dxi
+        wy = (y(ip) - ymesh(iy))*dyi
+
+        z(ip) = grid(ix  ,iy  )*(1. - wx)*(1. - wy) +
+     &          grid(ix+1,iy  )*      wx *(1. - wy) +
+     &          grid(ix  ,iy+1)*(1. - wx)*      wy  +
+     &          grid(ix+1,iy+1)*      wx *      wy
 
       enddo
 

@@ -3054,6 +3054,9 @@ getgridngp2d(np:integer,x(np):real,y(np):real,z(np):real,
              nx:integer,ny:integer,grid(0:nx,0:ny):real,
              xmin:real,xmax:real,ymin:real,ymax:real) subroutine
         # Gathers data from a 2-D grid using nearest grid point weighting.
+getgrid2dnonuniform(np:integer,x(np):real,y(np):real,z(np):real,
+                    nx:integer,ny:integer,grid(0:nx,0:ny):real,
+                    xmesh(0:nx):real,ymesh(0:ny):real) subroutine
 setgrid3d(np:integer,x(np):real,y(np):real,z(np):real,
           nx:integer,ny:integer,nz:integer,
           grid(0:nx,0:ny,0:nz):real,
