@@ -146,19 +146,32 @@ class MultiGrid2D(MultiGrid3D):
         conductorobject = self.getconductorobject(top.pgroup.fselfb[iselfb])
         self.lbuildquads = false
         #t0 = wtime()
-        multigrid2dsolve(iwhich,self.nx,self.nz,self.nxlocal,self.nzlocal,
-                         self.nxguardphi,self.nzguardphi,
-                         self.nxguardrho,self.nzguardrho,
-                         self.dx,self.dz*zfact,
-                         self._phi[:,self.nyguardphi,:],
-                         self._rho[:,self.nyguardrho,:],
-                         self.bounds,self.xmminlocal,
-                         self.mgparam,self.mgform,mgiters,self.mgmaxiters,
-                         self.mgmaxlevels,mgerror,self.mgtol,mgverbose,
-                         self.downpasses,self.uppasses,
-                         self.lcndbndy,self.laddconductor,self.icndbndy,
-                         f3d.gridmode,conductorobject,self.solvergeom==w3d.RZgeom,
-                         false,self.fsdecomp)
+        if self.electrontemperature == 0:
+            multigrid2dsolve(iwhich,self.nx,self.nz,self.nxlocal,self.nzlocal,
+                             self.nxguardphi,self.nzguardphi,
+                             self.nxguardrho,self.nzguardrho,
+                             self.dx,self.dz*zfact,
+                             self._phi[:,self.nyguardphi,:],
+                             self._rho[:,self.nyguardrho,:],
+                             self.bounds,self.xmminlocal,
+                             self.mgparam,self.mgform,mgiters,self.mgmaxiters,
+                             self.mgmaxlevels,mgerror,self.mgtol,mgverbose,
+                             self.downpasses,self.uppasses,
+                             self.lcndbndy,self.laddconductor,self.icndbndy,
+                             f3d.gridmode,conductorobject,self.solvergeom==w3d.RZgeom,
+                             false,self.fsdecomp)
+        else:
+            # --- This calls setupiondensitygrid2d internally
+            multigridberzsolve(self.nx,self.nz,self.nxlocal,self.nzlocal,self.dx,self.dz,
+                               self._phi[:,self.nyguardphi,:],
+                               self._rho[:,self.nyguardrho,:],
+                               self.bounds,self.xmminlocal,self.zmminlocal,
+                               self.mgparam,self.mgiters,self.mgmaxiters,
+                               self.mgmaxlevels,self.mgerror,self.mgtol,self.mgverbose,
+                               self.downpasses,self.uppasses,
+                               self.solvergeom==w3d.RZgeom,self.lcndbndy,self.laddconductor,self.icndbndy,
+                               self.gridmode,conductorobject,self.fsdecomp)
+
         #t1 = wtime()
         #print "Multigrid time = ",t1-t0
 

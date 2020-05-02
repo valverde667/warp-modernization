@@ -8,179 +8,15 @@ c  David P. Grote, LLNL, (510)423-7194
 c=============================================================================
 c=============================================================================
 c=============================================================================
-      subroutine multigridberzf(grid,accuracy)
-      use GRIDtypemodule
-      use BoltzmannElectrons
-      use Conductor3d
-      use InGen3d, only:solvergeom,RZgeom
-      use Constant, only:eps0
-      use Parallel
-      use DKInterp, only:interpdk,icalceps,iusing2deps
-      use FRZmgrid, only:lverbose
-      use multigrid_common_base, only: nb_iters,maxerr
-c     use ifcore
-      type(GRIDtype):: grid
-      real(kind=8):: accuracy,rmax,zmax
-c      real(kind=8),allocatable:: iondensityarray(:,:)
-c      real(kind=8),allocatable:: epsilon(:,:),epszfac(:,:)
-      real(kind=8):: aviondensity
-c      real(kind=8),allocatable:: electrontemparray(:,:)
-c     integer(4):: fff
-
-      integer(ISZ):: bounds(0:5)
-      integer(ISZ):: ixbemin,ixbemax,izbemin,izbemax,id
-      integer(ISZ):: i,j, ip1
-      logical(ISZ):: lrz,lanyuseparticledensity
-      integer(ISZ):: nlevels
-      real(kind=8):: wr,wz
-      logical(ISZ):: check,lzavparticledensity
-c     call for_set_fpe(FPE_M_TRAP_INV)
-c     fff = for_set_fpe(15_4)
-
-c     --- copy boundary positions from bound0, boundnz, and boundxy
-      bounds(0) = grid%ixlbnd
-      bounds(1) = grid%ixrbnd
-      bounds(4) = grid%izlbnd
-      bounds(5) = grid%izrbnd
-
-c     --- Check for luseparticledensity
-      lanyuseparticledensity = .false.
-      lzavparticledensity = .false.
-      do id=1,nberegions
-        if (luseparticledensity(id) > 0) then
-          lanyuseparticledensity = .true.
-          if (luseparticledensity(id) ==  2) lzavparticledensity = .true.
-          liondensitygrid2d(id) = .true.
-c         --- Shift min/max to grid frame
-          iondensitygrid2d%xmin = iondensitygrid2d%xmin + grid%rmin
-          iondensitygrid2d%xmax = iondensitygrid2d%xmax + grid%rmin
-          iondensitygrid2d%ymin = iondensitygrid2d%ymin + grid%zmin
-          iondensitygrid2d%ymax = iondensitygrid2d%ymax + grid%zmin
-c         --- Find the extrema of all of the regions
-          iondensitygrid2d%xmin = min(xbemin(id),iondensitygrid2d%xmin)
-          iondensitygrid2d%xmax = max(xbemax(id),iondensitygrid2d%xmax)
-          iondensitygrid2d%ymin = min(zbemin(id),iondensitygrid2d%ymin)
-          iondensitygrid2d%ymax = max(zbemax(id),iondensitygrid2d%ymax)
-c         --- Make sure that are within the grid bounds
-          iondensitygrid2d%xmin = max(grid%rmin,iondensitygrid2d%xmin)
-          iondensitygrid2d%xmax = min(grid%rmax,iondensitygrid2d%xmax)
-          iondensitygrid2d%ymin = max(grid%zmin,iondensitygrid2d%ymin)
-          iondensitygrid2d%ymax = min(grid%zmax,iondensitygrid2d%ymax)
-c         --- Shift min/max back to be relative to grid mins
-          iondensitygrid2d%xmin = iondensitygrid2d%xmin - grid%rmin
-          iondensitygrid2d%xmax = iondensitygrid2d%xmax - grid%rmin
-          iondensitygrid2d%ymin = iondensitygrid2d%ymin - grid%zmin
-          iondensitygrid2d%ymax = iondensitygrid2d%ymax - grid%zmin
-        endif
-        logelecdenmaxscale(id) = log(electrondensitymaxscale(id))
-      enddo
-c
-      if (lanyuseparticledensity) then
-c       --- Force the min's and max's to coincide with field grid values
-c       --- Note that the min's and max's are relative to the field grid,
-c       --- so for example, the location if xmin in the lab frame is
-c       --- iondensitygrid2d%xmin + grid%rmin. This is done so that
-c       --- grid%rmin etc are not needed when iondensitygrid2d is used.
-c       --- The mins and maxs are rounded to ensure that they are at or
-c       --- outside of the BE region.
-        wr = floor(iondensitygrid2d%xmin/grid%dr)
-        iondensitygrid2d%xmin = grid%dr*nint(wr)
-        wz = floor(iondensitygrid2d%ymin/grid%dz)
-        iondensitygrid2d%ymin = grid%dz*nint(wz)
-        wr = ceiling(iondensitygrid2d%xmax/grid%dr)
-        iondensitygrid2d%xmax = grid%dr*nint(wr)
-        wz = ceiling(iondensitygrid2d%ymax/grid%dz)
-        iondensitygrid2d%ymax = grid%dz*nint(wz)
-c       --- Now dx and dz can be set.
-        iondensitygrid2d%dx = grid%dr
-        iondensitygrid2d%dy = grid%dz
-c       --- and now the number of cells
-        iondensitygrid2d%nx =
-     &  nint((iondensitygrid2d%xmax-iondensitygrid2d%xmin)/iondensitygrid2d%dx)
-        iondensitygrid2d%ny =
-     &  nint((iondensitygrid2d%ymax-iondensitygrid2d%ymin)/iondensitygrid2d%dy)
-c       --- This will calculate nx and nzlocal and make sure the input is OK.
-        call setupgrid2dtype(iondensitygrid2d,check)
-        if (.not. check) then
-           call kaboom("ERROR: luseparticledensity is being used but the input data is inconsistent")
-           return
-        endif
-c     NOTE there is no analagous coding for electrontemperaturegrid2d as the user should
-c     set this up in a python script -- need to set all attributes of that object.
-
-c       --- Now, copy the rho data into the iondensitygrid2d grid
-        ixbemin = nint(iondensitygrid2d%xmin/grid%dr)
-c        ixbemax = nint(iondensitygrid2d%xmax/grid%dr)
-        ixbemax = ixbemin + iondensitygrid2d%nx
-        izbemin = nint(iondensitygrid2d%ymin/grid%dz)
-c        izbemax = nint(iondensitygrid2d%ymax/grid%dz)
-        izbemax = izbemin + iondensitygrid2d%ny
-
-c       Copy rho's into iondensitygrid2d.  If luseparticledensity = 2, then
-c        use the z-averaged value of rho.
-        if (lzavparticledensity) then
-           do i = ixbemin,ixbemax
-              ip1 = i+1
-c           NOTE grid%rho is 1-based, not 0-based, hence 1 offsets
-              aviondensity = 0
-              do j=izbemin+2,izbemax
-                 aviondensity=aviondensity+grid%rho(i+1,j)
-              enddo
-              aviondensity = aviondensity+0.5*(grid%rho(ip1,izbemin+1)
-     &           + grid%rho(ip1,izbemax+1))
-              aviondensity = aviondensity/max(1,izbemax-izbemin)
-              iondensitygrid2d%grid(i,:)= aviondensity
-           enddo
-        else
-           iondensitygrid2d%grid(:,:) = grid%rho(ixbemin+1:ixbemax+1,izbemin+1:izbemax+1)
-        endif
-        iondensitygrid2d%grid(:,:) = iondensitygrid2d%grid(:,:)/eps0
-      endif
-c
-
-c     --- Set flag for whether to do cylindrical or Cartesian.
-      lrz = (solvergeom == RZgeom)
-      nlevels = grid%nlevels
-
-c     --- Create arrays for polarization dielectric function.  These
-c     will be set to 1 as default; if we are interpolating any species,
-c     we calculate the dielectric in set_polarization, in w3d_interp.F
-c     Note we need these whether or not there are electrons at a 
-c     particular location, so this is not bounded by ixbemin,ixmbemax
-c     or izbemin,izbemax
- 
-      iusing2deps = 0
-      if (maxval(interpdk) > 0 .and. icalceps > 0) then
-        call set_polarization(grid%rho,
-     &    grid%nr,grid%nz,grid%dr,grid%dz,grid%rmin,grid%zmin)
-        iusing2deps = 1
-      endif
-c      print*,"epsilon,epszfac", epsilon(0,0),epszfac(0,0)
-c     The epsilon defined as above is normalized to eps0, and epszfac
-c     is the ratio of the epsilon for z derivs to that for x derivs.  
-
-      call multigridberzsolve(grid%nr,grid%nz,grid%nr,grid%nz,grid%dr,grid%dz,
-     &                        grid%phi,grid%rho,
-     &                        bounds,
-     &                        grid%rmin,grid%zmin,
-     &                        grid%mgparam,nb_iters,grid%ncmax,
-     &                        nlevels,maxerr,accuracy,lverbose,
-     &                        grid%npre,grid%npost,
-     &                        lrz,lcndbndy,laddconductor,icndbndy,
-     &                        grid%bndfirst,fsdecomp)
-
-      return
-      end
-c=============================================================================
       subroutine multigridberzsolve(nx,nz,nxlocal,nzlocal,dx,dz,phi,rho,
      &                              bounds,xmminlocal,zmminlocal,
      &                              mgparam,mgiters,mgmaxiters,
      &                              mgmaxlevels,mgerror,mgtol,mgverbose,
      &                              downpasses,uppasses,
      &                              lrz,lcndbndy,laddconductor,icndbndy,
-     &                              bnd,fsdecomp)
+     &                              gridmode,conductors,fsdecomp)
       use Subtimersfrz
-      use BNDtypemodule
+      use ConductorTypemodule
       use Constant
       use BoltzmannElectrons
       use DKInterp, only: iusing2deps,epsilon2d
@@ -198,8 +34,8 @@ c=============================================================================
       real(kind=8):: mgerror,mgtol
       integer(ISZ):: downpasses,uppasses
       logical(ISZ):: lrz,lcndbndy,laddconductor
-      integer(ISZ):: icndbndy
-      type(BNDtype):: bnd
+      integer(ISZ):: icndbndy,gridmode
+      type(ConductorType):: conductors
       type(Decomposition):: fsdecomp
 
 c Use the multigrid method for solving Poisson's equation on a 3-D Cartesian
@@ -226,6 +62,23 @@ c     --- and not needed yet.
         call kaboom("multigridberzsolve: does not yet work in parallel")
         return
       endif
+
+c     --- Do what it says, setup the iondensity grid in BoltzmannElectrons
+      call setupiondensitygrid2d(xmminlocal,zmminlocal,dx,dz,nxlocal,nzlocal,0,0,rho)
+
+c     --- Determine the points that make up the conductor.  This takes extra
+c     --- time and so should not be done if the grid is not moving in the lab
+c     --- frame.  Set gridmode to 1 to avoid this call. The data is then
+c     --- converted and expanded for the multigrid solver.
+
+      if (gridmode == 0) then
+        conductors%interior%n = 0
+        conductors%evensubgrid%n = 0
+        conductors%oddsubgrid%n = 0
+        if (laddconductor) call callpythonfunc("calladdconductor","controllers")
+      endif
+      call checkconductors(nx,0,nz,nxlocal,0,nzlocal,dx,dx,dz,
+     &                     conductors,fsdecomp)
 
 c     --- Make sure that the conductor data is consistent.
 c     --- This is presumably already taken care of elsewhere.
@@ -272,7 +125,7 @@ c       --- Do one vcycle.
         call vcycleberz(0,nx,nz,nxlocal,nzlocal,dx,dz,
      &                  xminodx,xmminlocal,zmminlocal,
      &                  phi,rho,regionid,bounds,mgparam,mgmaxlevels,
-     &                  downpasses,uppasses,lrz,lcndbndy,icndbndy,bnd,fsdecomp)
+     &                  downpasses,uppasses,lrz,lcndbndy,icndbndy,conductors,fsdecomp)
 
 c       --- Calculate the change in phi (the error).
 
@@ -333,16 +186,140 @@ c     --- Undo the change of rho
       return
       end
 c=============================================================================
+      subroutine setupiondensitygrid2d(xmmin,zmmin,dx,dz,nx,nz,
+     &                                 nxguardrho,nzguardrho,rho)
+      use BoltzmannElectrons
+      use Constant
+      use DKInterp, only:interpdk,icalceps,iusing2deps
+      real(kind=8):: xmmin,zmmin
+      integer(ISZ):: nx,nz
+      integer(ISZ):: nxguardrho,nzguardrho
+      real(kind=8):: rho(-nxguardrho:nx+nxguardrho,
+     &                   -nzguardrho:nz+nzguardrho)
+      real(kind=8):: dx,dz
+
+      integer(ISZ):: ixbemin,ixbemax,izbemin,izbemax,id
+      integer(ISZ):: i,j
+      logical(ISZ):: lanyuseparticledensity
+      real(kind=8):: wr,wz
+      real(kind=8):: aviondensity
+      logical(ISZ):: check,lzavparticledensity
+
+c     --- Check for luseparticledensity
+      lanyuseparticledensity = .false.
+      lzavparticledensity = .false.
+      do id=1,nberegions
+        if (luseparticledensity(id) > 0) then
+          lanyuseparticledensity = .true.
+          if (luseparticledensity(id) ==  2) lzavparticledensity = .true.
+          liondensitygrid2d(id) = .true.
+c         --- Shift min/max to grid frame
+          iondensitygrid2d%xmin = iondensitygrid2d%xmin + xmmin
+          iondensitygrid2d%xmax = iondensitygrid2d%xmax + xmmin
+          iondensitygrid2d%ymin = iondensitygrid2d%ymin + zmmin
+          iondensitygrid2d%ymax = iondensitygrid2d%ymax + zmmin
+c         --- Find the extrema of all of the regions
+          iondensitygrid2d%xmin = min(xbemin(id),iondensitygrid2d%xmin)
+          iondensitygrid2d%xmax = max(xbemax(id),iondensitygrid2d%xmax)
+          iondensitygrid2d%ymin = min(zbemin(id),iondensitygrid2d%ymin)
+          iondensitygrid2d%ymax = max(zbemax(id),iondensitygrid2d%ymax)
+c         --- Make sure that are within the grid bounds
+          iondensitygrid2d%xmin = max(xmmin,iondensitygrid2d%xmin)
+          iondensitygrid2d%xmax = min(xmmin+nx*dx,iondensitygrid2d%xmax)
+          iondensitygrid2d%ymin = max(zmmin,iondensitygrid2d%ymin)
+          iondensitygrid2d%ymax = min(zmmin+nz*dz,iondensitygrid2d%ymax)
+c         --- Shift min/max back to be relative to grid mins
+          iondensitygrid2d%xmin = iondensitygrid2d%xmin - xmmin
+          iondensitygrid2d%xmax = iondensitygrid2d%xmax - xmmin
+          iondensitygrid2d%ymin = iondensitygrid2d%ymin - zmmin
+          iondensitygrid2d%ymax = iondensitygrid2d%ymax - zmmin
+        endif
+        logelecdenmaxscale(id) = log(electrondensitymaxscale(id))
+      enddo
+c
+      if (lanyuseparticledensity) then
+c       --- Force the min's and max's to coincide with field grid values
+c       --- Note that the min's and max's are relative to the field grid,
+c       --- so for example, the location if xmin in the lab frame is
+c       --- iondensitygrid2d%xmin + xmmin. This is done so that
+c       --- xmmin etc are not needed when iondensitygrid2d is used.
+c       --- The mins and maxs are rounded to ensure that they are at or
+c       --- outside of the BE region.
+        wr = floor(iondensitygrid2d%xmin/dx)
+        iondensitygrid2d%xmin = dx*nint(wr)
+        wz = floor(iondensitygrid2d%ymin/dz)
+        iondensitygrid2d%ymin = dz*nint(wz)
+        wr = ceiling(iondensitygrid2d%xmax/dx)
+        iondensitygrid2d%xmax = dx*nint(wr)
+        wz = ceiling(iondensitygrid2d%ymax/dz)
+        iondensitygrid2d%ymax = dz*nint(wz)
+c       --- Now dx and dz can be set.
+        iondensitygrid2d%dx = dx
+        iondensitygrid2d%dy = dz
+c       --- and now the number of cells
+        iondensitygrid2d%nx = nint((iondensitygrid2d%xmax-iondensitygrid2d%xmin)/iondensitygrid2d%dx)
+        iondensitygrid2d%ny = nint((iondensitygrid2d%ymax-iondensitygrid2d%ymin)/iondensitygrid2d%dy)
+c       --- This will calculate nx and nzlocal and make sure the input is OK.
+        call setupgrid2dtype(iondensitygrid2d,check)
+        if (.not. check) then
+           call kaboom("ERROR: luseparticledensity is being used but the input data is inconsistent")
+           return
+        endif
+c     NOTE there is no analagous coding for electrontemperaturegrid2d as the user should
+c     set this up in a python script -- need to set all attributes of that object.
+
+c       --- Now, copy the rho data into the iondensitygrid2d grid
+        ixbemin = nint(iondensitygrid2d%xmin/dx)
+c       ixbemax = nint(iondensitygrid2d%xmax/dx)
+        ixbemax = ixbemin + iondensitygrid2d%nx
+        izbemin = nint(iondensitygrid2d%ymin/dz)
+c       izbemax = nint(iondensitygrid2d%ymax/dz)
+        izbemax = izbemin + iondensitygrid2d%ny
+
+c       Copy rho's into iondensitygrid2d.  If luseparticledensity = 2, then
+c       use the z-averaged value of rho.
+        if (lzavparticledensity) then
+           do i = ixbemin,ixbemax
+              aviondensity = 0.
+              do j=izbemin+1,izbemax-1
+                 aviondensity = aviondensity + rho(i,j)
+              enddo
+              aviondensity = aviondensity + 0.5*(rho(i,izbemin) + rho(i,izbemax))
+              aviondensity = aviondensity/max(1,izbemax-izbemin)
+              iondensitygrid2d%grid(i,:)= aviondensity
+           enddo
+        else
+           iondensitygrid2d%grid(:,:) = rho(ixbemin:ixbemax,izbemin:izbemax)
+        endif
+        iondensitygrid2d%grid(:,:) = iondensitygrid2d%grid(:,:)/eps0
+      endif
+c
+
+c     --- Create arrays for polarization dielectric function.  These
+c     will be set to 1 as default; if we are interpolating any species,
+c     we calculate the dielectric in set_polarization, in w3d_interp.F
+c     Note we need these whether or not there are electrons at a 
+c     particular location, so this is not bounded by ixbemin,ixmbemax
+c     or izbemin,izbemax
+ 
+      iusing2deps = 0
+      if (maxval(interpdk) > 0 .and. icalceps > 0) then
+        call set_polarization(rho,nx,nz,dx,dz,xmmin,zmmin)
+        iusing2deps = 1
+      endif
+
+      return
+      end
+c=============================================================================
       RECURSIVE subroutine vcycleberz(mglevel,nx,nz,nxlocal,nzlocal,dx,dz,
      &                                xminodx,xmminlocal,zmminlocal,
      &                                phi,rho,regionid,globalbounds,
      &                                mgparam,mgmaxlevels,downpasses,uppasses,
-     &                                lrz,lcndbndy,icndbndy,bnd,fsdecomp)
-      use BNDtypemodule
+     &                                lrz,lcndbndy,icndbndy,conductors,fsdecomp)
+      use ConductorTypemodule
       use BoltzmannElectrons
       use Multigrid3d_diagnostic
       use Decompositionmodule
-      use RRRRRR
       integer(ISZ):: mglevel
       integer(ISZ):: nx,nz
       integer(ISZ):: nxlocal,nzlocal
@@ -352,9 +329,9 @@ c=============================================================================
       integer(ISZ):: globalbounds(0:5)
       real(kind=8):: mgparam
       integer(ISZ):: mgmaxlevels,downpasses,uppasses
-      type(BNDtype):: bnd
       logical(ISZ):: lrz,lcndbndy
       integer(ISZ):: icndbndy
+      type(ConductorType):: conductors
       type(Decomposition):: fsdecomp
 
 c Routine that does the v-cycle for multigrid. Note that it is recursive.
@@ -366,9 +343,9 @@ c Routine that does the v-cycle for multigrid. Note that it is recursive.
       real(kind=8),allocatable:: phicoarsesave(:,:)
       integer(ISZ),allocatable:: regionidcoarse(:,:)
       integer(ISZ):: i,iszone=1
-      integer(ISZ):: nxcoarse,nzcoarse
+      integer(ISZ):: nxcoarse,nycoarse,nzcoarse
       integer(ISZ):: nxlocalcoarse,nzlocalcoarse
-      real(kind=8):: dxcoarse,dzcoarse
+      real(kind=8):: dxcoarse,dycoarse,dzcoarse
       real(kind=8):: dxcoarsesqi,dzcoarsesqi
       real(kind=8):: xminodxcoarse
       real(kind=8):: mgscalecoarse
@@ -416,21 +393,22 @@ c     --- Do initial relaxation iterations
       do i=1,downpasses
         call relaxberz(mglevel,nxlocal,nzlocal,phi,rho,regionid,
      &                 dxsqi,dzsqi,dx,dz,xminodx,
-     &                 localbounds,mgparam,lrz,lcndbndy,icndbndy,bnd,
+     &                 localbounds,mgparam,lrz,lcndbndy,icndbndy,conductors,
      &                 fsdecomp,whosendingdown,whosendingup)
       enddo
 
 c     --- Recurse until the bottom layer is reached.
-c     --- This assumes that the parameters at the coarse levels are
-c     --- already calculated.
-      if (associated(bnd%next) .and. mglevel < mgmaxlevels) then
+      if (nx >= NMGMIN .and. nz >= NMGMIN .and.
+     &    mglevel < mgmaxlevels) then
 
-        nxcoarse = bnd%next%nr
-        nzcoarse = bnd%next%nz
-        nxlocalcoarse = bnd%next%nr
-        nzlocalcoarse = bnd%next%nz
-        dxcoarse = bnd%next%dr
-        dzcoarse = bnd%next%dz
+c       --- Note that some y quantities are included as dummies since the
+c       --- routine will change the values.
+        call getnextcoarselevel3d(nx,0,nz,nxlocal,0,nzlocal,dx,dx,dz,
+     &                            nxcoarse,nycoarse,nzcoarse,
+     &                            dxcoarse,dycoarse,dzcoarse)
+
+        nxlocalcoarse = nxcoarse
+        nzlocalcoarse = nzcoarse
 
         dxcoarsesqi = 1./dxcoarse**2
         dzcoarsesqi = 1./dzcoarse**2
@@ -491,9 +469,9 @@ c       --- Calculate the coarsened phi
         phicoarse = 0.
         call restrict2d(nx,nz,nxlocal,nzlocal,1,1,phi,
      &                  nxcoarse,nzcoarse,nxlocalcoarse,nzlocalcoarse,
-     &                  phicoarse,
+     &                  1,1,phicoarse,
      &                  localbounds,localboundsc,lxoffset,lzoffset,.false.)
-        call cond_potmgberz(bnd%next,nxlocalcoarse,nzlocalcoarse,phicoarse,
+        call cond_potmgberz(conductors%interior,nxlocalcoarse,nzlocalcoarse,phicoarse,
      &                      mglevel+1)
         call applyboundaryconditions3d(nxlocalcoarse,0,nzlocalcoarse,1,0,1,
      &                                 phicoarse,
@@ -507,7 +485,7 @@ c       endif
 
 c       --- Calculate the coarsened Lphi, putting it into rhocoarse
         call Lphiberz(nxlocal,nzlocal,dxsqi,dzsqi,dx,dz,xminodx,phi,Lphi,regionid,
-     &                mglevel,localbounds,lrz,lcndbndy,icndbndy,bnd)
+     &                mglevel,localbounds,lrz,lcndbndy,icndbndy,conductors)
         Lphi(0:nxlocal,0:nzlocal) = rho - Lphi(0:nxlocal,0:nzlocal)
         call applyboundaryconditions3d(nxlocal,0,nzlocal,1,0,1,Lphi,
      &                                 1,localbounds,.true.,.false.)
@@ -519,7 +497,7 @@ c       rrr = Lphi
 c       endif
         call restrict2d(nx,nz,nxlocal,nzlocal,delx,delz,Lphi,
      &                  nxcoarse,nzcoarse,nxlocalcoarse,nzlocalcoarse,
-     &                  rhocoarse,
+     &                  0,0,rhocoarse,
      &                  localbounds,localboundsc,lxoffset,lzoffset,.false.)
 
         deallocate(Lphi)
@@ -529,9 +507,9 @@ c       --- Calculate L(R phi), adding it into rhocoarse
      &                dxcoarsesqi,dzcoarsesqi,dxcoarse,dzcoarse,xminodxcoarse,
      &                phicoarse,Lphicoarse,regionidcoarse,
      &                mglevel+1,localbounds,
-     &                lrz,lcndbndy,icndbndy,bnd%next)
+     &                lrz,lcndbndy,icndbndy,conductors)
         rhocoarse = rhocoarse + Lphicoarse(0:nxlocalcoarse,0:nzlocalcoarse)
-        call cond_potmgbezerorz(bnd%next,nxlocalcoarse,nzlocalcoarse,rhocoarse,
+        call cond_potmgbezerorz(conductors%interior,nxlocalcoarse,nzlocalcoarse,rhocoarse,
      &                          mglevel+1,0,0)
 
 c       --- Save the current coarsened phi since it is needed to apply
@@ -553,7 +531,7 @@ c       --- Continue at the next coarsest level.
      &                  phicoarse,rhocoarse,
      &                  regionidcoarse,
      &                  globalbounds,mgparam,mgmaxlevels,downpasses,uppasses,
-     &                  lrz,lcndbndy,icndbndy,bnd%next,fsdecomp)
+     &                  lrz,lcndbndy,icndbndy,conductors,fsdecomp)
 
 c       --- Add in the correction term.
         phicoarse = phicoarse - phicoarsesave
@@ -577,7 +555,7 @@ c     --- Do final relaxation passes.
       do i=1,uppasses
         call relaxberz(mglevel,nxlocal,nzlocal,phi,rho,regionid,
      &                 dxsqi,dzsqi,dx,dz,xminodx,
-     &                 localbounds,mgparam,lrz,lcndbndy,icndbndy,bnd,
+     &                 localbounds,mgparam,lrz,lcndbndy,icndbndy,conductors,
      &                 fsdecomp,whosendingdown,whosendingup)
         call clampphitophimaxberz(nxlocal,nzlocal,dx,dz,phi,rho,regionid)
       enddo
@@ -587,10 +565,9 @@ c     --- Do final relaxation passes.
 c=============================================================================
       subroutine relaxberz(mglevel,nxlocal,nzlocal,phi,rho,regionid,
      &                     dxsqi,dzsqi,dx,dz,xminodx,localbounds,
-     &                     mgparam,lrz,lcndbndy,icndbndy,bnd,
+     &                     mgparam,lrz,lcndbndy,icndbndy,conductors,
      &                     fsdecomp,whosendingdown,whosendingup)
-      use BNDtypemodule
-      use CONDtypemodule
+      use ConductorTypemodule
       use BoltzmannElectrons
       use Decompositionmodule
       integer(ISZ):: mglevel,nxlocal,nzlocal
@@ -601,7 +578,7 @@ c=============================================================================
       real(kind=8):: mgparam
       logical(ISZ):: lrz,lcndbndy
       integer(ISZ):: icndbndy
-      type(BNDtype):: bnd
+      type(ConductorType):: conductors
       type(Decomposition):: fsdecomp
       type(Decomposition):: whosendingdown
       type(Decomposition):: whosendingup
@@ -624,19 +601,19 @@ c boundaries are periodic.
       integer(ISZ):: ix,iz,ixx,izz
       integer(ISZ):: ixmin,ixmax,izmin,izmax
       integer(ISZ):: ix1
-      integer(ISZ):: ic,ii,id
+      integer(ISZ):: id
+      integer(ISZ):: ic,i1,i2
       real(kind=8):: rr,epsilontmp,normfac,phiav
       real(kind=8):: rhoe(0:nxlocal,0:nzlocal),rhoeote(0:nxlocal,0:nzlocal)
       real(kind=8):: denom,Lphi,expo
       real(kind=8):: boltzfac(0:nxlocal,0:nzlocal)
       real(kind=8):: iondensitytmp,electemptmp,boltzfac1,epszfactmp
-      type(CONDtype):: cnd
       integer,save:: printed=0
       real(kind=8):: phiold
 
 c     --- Put desired potential onto conductors in phi array.
-      call cond_potmgberz(bnd,nxlocal,nzlocal,phi,mglevel)
-      call condbndymgintberz(bnd,nxlocal,nzlocal,dx,dz,phi,mglevel)
+      call cond_potmgberz(conductors%interior,nxlocal,nzlocal,phi,mglevel)
+      call condbndymgintberz(conductors,nxlocal,nzlocal,dx,dz,phi,mglevel)
 c     print*, "IN RELAXBE, iondensity =", iondensity(0,0), iondensity(4,4)
 
 c     --- Set starting and ending parity.
@@ -667,15 +644,23 @@ c       --- Save values just outside conductor surfaces. Only save phi at the
 c       --- subgrid points which are to be used at the current level of
 c       --- grid refinement.
         if (lcndbndy) then
-          do ic = 1,bnd%nb_conductors
-            if (ic == 1) cnd = bnd%cndfirst
-            if (ic > 1) cnd = cnd%next
-            do ii = 1,cnd%nbbnd
-              ix = cnd%jj(ii) - 1
-              iz = cnd%kk(ii) - 1
-              cnd%phi0(ii) = phi(ix,iz)
+          if (parity == 0) then
+            i1 = conductors%evensubgrid%istart(mglevel)
+            i2 = conductors%evensubgrid%istart(mglevel+1)-1
+            do ic = i1,i2
+              ix = conductors%evensubgrid%indx(0,ic)
+              iz = conductors%evensubgrid%indx(2,ic)
+              conductors%evensubgrid%prevphi(ic) = phi(ix,iz)
             enddo
-          enddo
+          else
+            i1 = conductors%oddsubgrid%istart(mglevel)
+            i2 = conductors%oddsubgrid%istart(mglevel+1)-1
+            do ic = i1,i2
+              ix = conductors%oddsubgrid%indx(0,ic)
+              iz = conductors%oddsubgrid%indx(2,ic)
+              conductors%oddsubgrid%prevphi(ic) = phi(ix,iz)
+            enddo
+          endif
         endif
 
 c       precompute Boltzmann factor and some other arrays
@@ -775,14 +760,14 @@ c          print*, "summed phi =", sum(phi)
 c       --- Apply altered difference equation to the points near the
 c       --- surface of the conductor boundaries.
         if (lcndbndy) then
-         call condbndymgberz(bnd,parity,nxlocal,nzlocal,phi,rho,regionid,
+         call condbndymgberz(conductors,parity,nxlocal,nzlocal,phi,rho,regionid,
      &                       dxsqi,dzsqi,dx,dz,xminodx,mgparam,
      &                       mglevel,lrz,icndbndy)
         endif
 
 c       --- Put desired potential onto conductors in phi array.
-        call cond_potmgberz(bnd,nxlocal,nzlocal,phi,mglevel)
-        call condbndymgintberz(bnd,nxlocal,nzlocal,dx,dz,phi,mglevel)
+        call cond_potmgberz(conductors%interior,nxlocal,nzlocal,phi,mglevel)
+        call condbndymgintberz(conductors,nxlocal,nzlocal,dx,dz,phi,mglevel)
 
 c       --- set phi in the guard planes
 c       --- This must be done inside the loop over parities so that the
@@ -805,68 +790,56 @@ c      print*, "end of relaxberez, phi = ", phi(ixmax,izmax),phi(ixmax,izmax-1)
       return
       end
 c=============================================================================
-      subroutine cond_potmgberz(bnd,nxlocal,nzlocal,phi,mglevel)
-      use BNDtypemodule
-      use CONDtypemodule
-      type(BNDtype):: bnd
+      subroutine cond_potmgberz(interior,nxlocal,nzlocal,phi,mglevel)
+      use ConductorInteriorTypemodule
+      type(ConductorInteriorType):: interior
       integer(ISZ):: nxlocal,nzlocal,mglevel
       real(kind=8):: phi(-1:nxlocal+1,-1:nzlocal+1)
 
 c Set conductor points to the desired potential. The potential is used since
 c at all levels, phi is being operated on directly.
 
-      type(CONDtype):: cnd
       integer(ISZ):: ic,ii,ix,iz
 
 !$OMP DO
-      do ic = 1,bnd%nb_conductors
-        if (ic == 1) cnd = bnd%cndfirst
-        if (ic > 1) cnd = cnd%next
-        do ii = 1,cnd%ncond
-          ix = cnd%jcond(ii) - 1
-          iz = cnd%kcond(ii) - 1
-          phi(ix,iz) = cnd%voltage(ii)
+        do ic = interior%istart(mglevel),interior%istart(mglevel+1)-1
+          ix = interior%indx(0,ic)
+          iz = interior%indx(2,ic)
+          phi(ix,iz) = interior%volt(ic)
         enddo
 !$OMP END DO
-      enddo
 
       return
       end
 c=============================================================================
-      subroutine cond_potmgbezerorz(bnd,nxlocal,nzlocal,u,mglevel,delt,delz)
-      use BNDtypemodule
-      use CONDtypemodule
-      type(BNDtype):: bnd
+      subroutine cond_potmgbezerorz(interior,nxlocal,nzlocal,u,mglevel,delt,delz)
+      use ConductorInteriorTypemodule
+      type(ConductorInteriorType):: interior
       integer(ISZ):: nxlocal,nzlocal,mglevel,delt,delz
       real(kind=8):: u(-delt:nxlocal+delt,-delz:nzlocal+delz)
 
 c Set data at conductor points to zero.
 
-      type(CONDtype):: cnd
       integer(ISZ):: ic,ii,ix,iz
 
 !$OMP DO
-      do ic = 1,bnd%nb_conductors
-        if (ic == 1) cnd = bnd%cndfirst
-        if (ic > 1) cnd = cnd%next
-        do ii = 1,cnd%ncond
-          ix = cnd%jcond(ii) - 1
-          iz = cnd%kcond(ii) - 1
+        do ic = interior%istart(mglevel),interior%istart(mglevel+1)-1
+          ix = interior%indx(0,ic)
+          iz = interior%indx(2,ic)
           u(ix,iz) = 0.
         enddo
 !$OMP END DO
-      enddo
 
       return
       end
 c=============================================================================
-      subroutine condbndymgberz(bnd,parity,nxlocal,nzlocal,phi,rho,regionid,
+      subroutine condbndymgberz(conductors,parity,nxlocal,nzlocal,phi,rho,regionid,
      &                          dxsqi,dzsqi,dx,dz,xminodx,
      &                          mgparam,mglevel,lrz,icndbndy)
-      use BNDtypemodule
-      use CONDtypemodule
+      use ConductorTypemodule
+      use ConductorSubGridTypemodule
       use BoltzmannElectrons
-      type(BNDtype):: bnd
+      type(ConductorType):: conductors
       integer(ISZ):: parity
       integer(ISZ):: nxlocal,nzlocal,mglevel
       real(kind=8):: phi(-1:nxlocal+1,-1:nzlocal+1), rho(0:nxlocal,0:nzlocal)
@@ -898,42 +871,45 @@ c at all for convergence (the solver diverges with ppp=1). Also note that
 c here, ppp=1 for the base level since its rho is the raw rho and does
 c not include Lphi.
 
-      type(CONDtype):: cnd
       real(kind=8):: pik,pxm,pzm,pxp,pzp,denom,rhoe,Lphi,ppp,expo
       real(kind=8):: delx,delz,Cx,Cz,rr
       real(kind=8):: delxsqi,delzsqi
-      integer(ISZ):: ic,ii,i1,i2
+      integer(ISZ):: ic,ic1,ic2
       integer(ISZ):: ix,iz,id
       real(kind=8):: dxi,dzi,dxm,dxp,dzm,dzp
       real(kind=8):: iondensitytmp,electemptmp,epsilontmp
+
+      integer(ISZ),pointer:: indx(:,:)
+      real(kind=8),pointer:: dels(:,:),volt(:,:)
+
+      if (parity == 0) then
+        ic1 = conductors%evensubgrid%istart(mglevel)
+        ic2 = conductors%evensubgrid%istart(mglevel+1) - 1
+        indx => conductors%evensubgrid%indx
+        dels => conductors%evensubgrid%dels
+        volt => conductors%evensubgrid%volt
+      else
+        ic1 = conductors%oddsubgrid%istart(mglevel)
+        ic2 = conductors%oddsubgrid%istart(mglevel+1) - 1
+        indx => conductors%oddsubgrid%indx
+        dels => conductors%oddsubgrid%dels
+        volt => conductors%oddsubgrid%volt
+      endif
 
 c     --- These should really be passed in
       dxi = sqrt(dxsqi)
       dzi = sqrt(dzsqi)
 
 c     --- loop over points near surface of conductors
-      do ic = 1,bnd%nb_conductors
-        if (ic == 1) cnd = bnd%cndfirst
-        if (ic > 1) cnd = cnd%next
-        if (parity == 0) then
-c         --- red is even
-          i1 = 1
-          i2 = cnd%nbbndred
-        else
-c         --- black is odd
-          i1 = cnd%nbbndred + 1
-          i2 = cnd%nbbnd
-        endif
-
 !$OMP DO
-        do ii = i1,i2
+      do ic = ic1, ic2
 
-          ix = cnd%jj(ii) - 1
-          iz = cnd%kk(ii) - 1
+          ix = indx(0,ic)
+          iz = indx(2,ic)
           rr = ix + xminodx
 
 c         --- Set temporaries with initial values.
-          pik = cnd%phi0(ii)
+          pik = volt(0,ic)
           if (lrz) then
             if (rr == 0.) then
               pxm = 0.
@@ -956,22 +932,22 @@ c         --- Set temporaries with initial values.
           delz = 1.
           ppp = 1.
 
-          dxm = cnd%dxm(ii)*dxi
-          dxp = cnd%dxp(ii)*dxi
-          dzm = cnd%dzm(ii)*dzi
-          dzp = cnd%dzp(ii)*dzi
+          dxm = dels(0,ic)*dxi
+          dxp = dels(1,ic)*dxi
+          dzm = dels(4,ic)*dzi
+          dzp = dels(5,ic)*dzi
 
 c         --- the point lower in x is inside the conductor
           if (0. < dxm .and. dxm < 1.) then
             if (lrz) then
               if (rr > 0.) then
-                pxm = (1.-0.5/rr)*(cnd%volt0xm(ii) - pik)/dxm
+                pxm = (1.-0.5/rr)*(volt(0,ic) - pik)/dxm
                 Cx = Cx + (1.-0.5/rr)*(1./dxm - 1.)
                 if (icndbndy == 2) delx = delx - 0.5 + 0.5*dxm
                 ppp = min(ppp,dxm)
               endif
             else
-              pxm = (cnd%volt0xm(ii) - pik)/dxm
+              pxm = (volt(0,ic) - pik)/dxm
               Cx = Cx - 1. + 1./dxm
               if (icndbndy == 2) delx = delx - 0.5 + 0.5*dxm
               ppp = min(ppp,dxm)
@@ -990,14 +966,14 @@ c         --- the point higher in x is inside the conductor
           if (0. < dxp .and. dxp < 1.) then
             if (lrz) then
               if (rr == 0.) then
-                pxp = 4.*(cnd%volt0xp(ii) - pik)/dxp
+                pxp = 4.*(volt(1,ic) - pik)/dxp
                 Cx = 4./dxp
               else
-                pxp = (1.+0.5/rr)*(cnd%volt0xp(ii) - pik)/dxp
+                pxp = (1.+0.5/rr)*(volt(1,ic) - pik)/dxp
                 Cx = Cx + (1.+0.5/rr)*(1./dxp - 1.)
               endif
             else
-              pxp = (cnd%volt0xp(ii) - pik)/dxp
+              pxp = (volt(1,ic) - pik)/dxp
               Cx = Cx - 1. + 1./dxp
             endif
             if (icndbndy == 2) delx = delx - 0.5 + 0.5*dxp
@@ -1014,7 +990,7 @@ c         --- the point higher in x is inside the conductor
           endif
 c         --- the point lower in z is inside the conductor
           if (0. < dzm .and. dzm < 1.) then
-            pzm = (cnd%volt0zm(ii) - pik)/dzm
+            pzm = (volt(4,ic) - pik)/dzm
             Cz = Cz - 1. + 1./dzm
             if (icndbndy == 2) delz = delz - 0.5 + 0.5*dzm
             ppp = min(ppp,dzm)
@@ -1030,7 +1006,7 @@ c         --- the point lower in z is inside the conductor
           endif
 c         --- the point higher in z is inside the conductor
           if (0. < dzp .and. dzp < 1.) then
-            pzp = (cnd%volt0zp(ii) - pik)/dzp
+            pzp = (volt(5,ic) - pik)/dzp
             Cz = Cz - 1. + 1./dzp
             if (icndbndy == 2) delz = delz - 0.5 + 0.5*dzp
             ppp = min(ppp,dzp)
@@ -1070,46 +1046,58 @@ c         --- calculate the new phi based on the boundary conditions
             Lphi = (pxm+pxp)*delxsqi + (pzm+pzp)*delzsqi - rhoe
             phi(ix,iz) = pik - mgparam*(Lphi*ppp - rho(ix,iz))/denom
           endif
-        enddo
 !$OMP END DO
       enddo
 
       return
       end
 c=============================================================================
-      subroutine condbndymgintberz(bnd,nxlocal,nzlocal,dx,dz,phi,mglevel)
-      use BNDtypemodule
-      use CONDtypemodule
-      type(BNDtype):: bnd
+      subroutine condbndymgintberz(conductors,nxlocal,nzlocal,dx,dz,phi,mglevel)
+      use ConductorTypemodule
+      use ConductorSubGridTypemodule
+      type(ConductorType):: conductors
       integer(ISZ):: nxlocal,nzlocal,mglevel
       real(kind=8):: dx,dz
       real(kind=8):: phi(-1:nxlocal+1,-1:nzlocal+1)
 
 c Set the potential at points just beyond an internal Neumann boundary.
 
-      type(CONDtype):: cnd
-      integer(ISZ):: ic,ii,i1,i2,ix,iz
+      integer(ISZ):: ic,ic1,ic2,ix,iz
+      integer(ISZ):: parity
       real(kind=8):: dxi,dzi,dxm,dxp,dzm,dzp
+
+      integer(ISZ),pointer:: indx(:,:)
+      real(kind=8),pointer:: dels(:,:)
 
 c     --- These should really be passed in
       dxi = 1./dx
       dzi = 1./dz
 
-c     --- loop over points near surface of conductors
-      do ic = 1,bnd%nb_conductors
-        if (ic == 1) cnd = bnd%cndfirst
-        if (ic > 1) cnd = cnd%next
+      do parity = 0,1
 
+        if (parity == 0) then
+          ic1 = conductors%evensubgrid%istart(mglevel)
+          ic2 = conductors%evensubgrid%istart(mglevel+1) - 1
+          indx => conductors%evensubgrid%indx
+          dels => conductors%evensubgrid%dels
+        else
+          ic1 = conductors%oddsubgrid%istart(mglevel)
+          ic2 = conductors%oddsubgrid%istart(mglevel+1) - 1
+          indx => conductors%oddsubgrid%indx
+          dels => conductors%oddsubgrid%dels
+        endif
+
+c       --- loop over points near surface of conductors
 !$OMP DO
-        do ii = 1,cnd%nbbnd
+        do ic = ic1, ic2
 
-          ix = cnd%jj(ii) - 1
-          iz = cnd%kk(ii) - 1
+          ix = indx(0,ic)
+          iz = indx(2,ic)
 
-          dxm = cnd%dxm(ii)*dxi
-          dxp = cnd%dxp(ii)*dxi
-          dzm = cnd%dzm(ii)*dzi
-          dzp = cnd%dzp(ii)*dzi
+          dxm = dels(0,ic)*dxi
+          dxp = dels(1,ic)*dxi
+          dzm = dels(4,ic)*dzi
+          dzp = dels(5,ic)*dzi
 
           if (0. > dxm .and. dxm > -1.) phi(ix-1,iz) = phi(ix,iz)
           if (0. > dxp .and. dxp > -1.) phi(ix+1,iz) = phi(ix,iz)
@@ -1122,8 +1110,8 @@ c     --- loop over points near surface of conductors
           if (0. == dzp) phi(ix,iz-1) = phi(ix,iz)
 
         enddo
-      enddo
 !$OMP END DO
+      enddo
 
       return
       end
@@ -1131,8 +1119,8 @@ c=============================================================================
       subroutine Lphiberz(nxlocal,nzlocal,dxsqi,dzsqi,dx,dz,xminodx,
      &                    phi,Lphi,regionid,
      &                    mglevel,localbounds,
-     &                    lrz,lcndbndy,icndbndy,bnd)
-      use BNDtypemodule
+     &                    lrz,lcndbndy,icndbndy,conductors)
+      use ConductorTypemodule
       use BoltzmannElectrons
       integer(ISZ):: nxlocal,nzlocal
       real(kind=8):: dxsqi,dzsqi,dx,dz,xminodx
@@ -1144,7 +1132,7 @@ c=============================================================================
       integer(ISZ):: mglevel,localbounds(0:5)
       logical(ISZ):: lrz,lcndbndy
       integer(ISZ):: icndbndy
-      type(BNDtype):: bnd
+      type(ConductorType):: conductors
 
 c Calculate the Lphi on the grid including the BE term.
 c Note that this is note quite the residual since it does not have the
@@ -1251,11 +1239,11 @@ c       --- XZ
       endif
 
 c     --- Zero the Lphi inside conductors.
-      call cond_potmgbezerorz(bnd,nxlocal,nzlocal,Lphi,mglevel,1,1)
+      call cond_potmgbezerorz(conductors%interior,nxlocal,nzlocal,Lphi,mglevel,1,1)
 
       if (lcndbndy) then
 c       --- Calculate the Lphi near the conductor.
-        call condbndyLphiberz(bnd,nxlocal,nzlocal,phi,Lphi,regionid,dxsqi,dzsqi,
+        call condbndyLphiberz(conductors,nxlocal,nzlocal,phi,Lphi,regionid,dxsqi,dzsqi,
      &                        dx,dz,xminodx,mglevel,lrz,icndbndy)
       endif
 
@@ -1265,12 +1253,11 @@ c       --- Calculate the Lphi near the conductor.
       return
       end
 c=============================================================================
-      subroutine condbndyLphiberz(bnd,nx,nzlocal,phi,Lphi,regionid,dxsqi,dzsqi,
+      subroutine condbndyLphiberz(conductors,nx,nzlocal,phi,Lphi,regionid,dxsqi,dzsqi,
      &                            dx,dz,xminodx,mglevel,lrz,icndbndy)
-      use BNDtypemodule
-      use CONDtypemodule
+      use ConductorTypemodule
       use BoltzmannElectrons
-      type(BNDtype):: bnd
+      type(ConductorType):: conductors
       integer(ISZ):: nx,nzlocal,mglevel
       real(kind=8):: phi(-1:nx+1,-1:nzlocal+1), Lphi(-1:nx+1,-1:nzlocal+1)
       integer(ISZ):: regionid(0:nx,0:nzlocal)
@@ -1291,30 +1278,45 @@ c full finite difference of phi.
 c For icndbndy==1, these coefficients are just 1. For icndbndy==2, they
 c include the dels.
 
-      type(CONDtype):: cnd
       real(kind=8):: pik,pxm,pzm,pxp,pzp,denom,rhoe,ppp,expo
       real(kind=8):: delx,delz
       real(kind=8):: delxsqi,delzsqi
       real(kind=8):: rr
-      integer(ISZ):: ic,ii
+      integer(ISZ):: ic,ic1,ic2
       integer(ISZ):: ix,iz,id
       real(kind=8):: dxi,dzi,dxm,dxp,dzm,dzp
       real(kind=8):: iondensitytmp,electemptmp,epsilontmp
+
+      integer(ISZ):: parity
+      integer(ISZ),pointer:: indx(:,:)
+      real(kind=8),pointer:: dels(:,:),volt(:,:)
 
 c     --- These should really be passed in
       dxi = sqrt(dxsqi)
       dzi = sqrt(dzsqi)
 
-c     --- loop over points near surface of conductors
-      do ic = 1,bnd%nb_conductors
-        if (ic == 1) cnd = bnd%cndfirst
-        if (ic > 1) cnd = cnd%next
+      do parity = 0,1
 
+        if (parity == 0) then
+          ic1 = conductors%evensubgrid%istart(mglevel)
+          ic2 = conductors%evensubgrid%istart(mglevel+1) - 1
+          indx => conductors%evensubgrid%indx
+          dels => conductors%evensubgrid%dels
+          volt => conductors%evensubgrid%volt
+        else
+          ic1 = conductors%oddsubgrid%istart(mglevel)
+          ic2 = conductors%oddsubgrid%istart(mglevel+1) - 1
+          indx => conductors%oddsubgrid%indx
+          dels => conductors%oddsubgrid%dels
+          volt => conductors%oddsubgrid%volt
+        endif
+
+c       --- loop over points near surface of conductors
 !$OMP DO
-        do ii = 1,cnd%nbbnd
+        do ic = ic1, ic2
 
-          ix = cnd%jj(ii) - 1
-          iz = cnd%kk(ii) - 1
+          ix = indx(0,ic)
+          iz = indx(2,ic)
           rr = ix + xminodx
 
 c         --- Set temporaries with initial values.
@@ -1337,21 +1339,21 @@ c         --- Set temporaries with initial values.
           delz = 1.
           ppp = 1.
 
-          dxm = cnd%dxm(ii)*dxi
-          dxp = cnd%dxp(ii)*dxi
-          dzm = cnd%dzm(ii)*dzi
-          dzp = cnd%dzp(ii)*dzi
+          dxm = dels(0,ic)*dxi
+          dxp = dels(1,ic)*dxi
+          dzm = dels(4,ic)*dzi
+          dzp = dels(5,ic)*dzi
 
 c         --- the point lower in x is inside the conductor
           if (0. < dxm .and. dxm < 1.) then
             if (lrz) then
               if (rr > 0.) then
-                pxm = (1.-0.5/rr)*(cnd%volt0xm(ii) - pik)/dxm
+                pxm = (1.-0.5/rr)*(volt(0,ic) - pik)/dxm
                 if (icndbndy == 2) delx = delx - 0.5 + 0.5*dxm
                 ppp = min(ppp,dxm)
               endif
             else
-              pxm = (cnd%volt0xm(ii) - pik)/dxm
+              pxm = (volt(0,ic) - pik)/dxm
               if (icndbndy == 2) delx = delx - 0.5 + 0.5*dxm
               ppp = min(ppp,dxm)
             endif
@@ -1368,12 +1370,12 @@ c         --- the point higher in x is inside the conductor
           if (0. < dxp .and. dxp < 1.) then
             if (lrz) then
               if (rr == 0.) then
-                pxp = 4.*(cnd%volt0xp(ii) - pik)/dxp
+                pxp = 4.*(volt(1,ic) - pik)/dxp
               else
-                pxp = (1.+0.5/rr)*(cnd%volt0xp(ii) - pik)/dxp
+                pxp = (1.+0.5/rr)*(volt(1,ic) - pik)/dxp
               endif
             else
-              pxp = (cnd%volt0xp(ii) - pik)/dxp
+              pxp = (volt(1,ic) - pik)/dxp
             endif
             if (icndbndy == 2) delx = delx - 0.5 + 0.5*dxp
             ppp = min(ppp,dxp)
@@ -1388,7 +1390,7 @@ c         --- the point higher in x is inside the conductor
           endif
 c         --- the point lower in z is inside the conductor
           if (0. < dzm .and. dzm < 1.) then
-            pzm = (cnd%volt0zm(ii) - pik)/dzm
+            pzm = (volt(4,ic) - pik)/dzm
             if (icndbndy == 2) delz = delz - 0.5 + 0.5*dzm
             ppp = min(ppp,dzm)
           else if (-1. < dzm .and. dzm <= 0.) then
@@ -1402,7 +1404,7 @@ c         --- the point lower in z is inside the conductor
           endif
 c         --- the point higher in z is inside the conductor
           if (0. < dzp .and. dzp < 1.) then
-            pzp = (cnd%volt0zp(ii) - pik)/dzp
+            pzp = (volt(5,ic) - pik)/dzp
             if (icndbndy == 2) delz = delz - 0.5 + 0.5*dzp
             ppp = min(ppp,dzp)
           else if (-1. < dzp .and. dzp <= 0.) then
@@ -1449,6 +1451,7 @@ c         --- calculate the new phi based on the boundary conditions
             if (0. == dzp) Lphi(ix  ,iz-1) = 0.
 
           endif
+
         enddo
 !$OMP END DO
       enddo

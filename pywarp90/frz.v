@@ -292,6 +292,14 @@ setphirz(np:integer,xp:real,yp:real,zp:real,p:real,zgrid:real) subroutine
 setphixz(np:integer,xp:real,yp:real,zp:real,p:real,zgrid:real) subroutine
          # get phi in p from XZ grid at locations [x,y,z]
 
+multigridberzsolve(nx:integer,nz:integer,nxlocal:integer,nzlocal:integer,dx:real,dz:real,phi:real,rho:real,
+                   bounds(0:5):integer,xmminlocal:real,zmminlocal:real,
+                   mgparam:real,mgiters:integer,mgmaxiters:integer,
+                   mgmaxlevels:integer,mgerror:real,mgtol:real,mgverbose:integer,
+                   downpasses:integer,uppasses:integer,
+                   lrz:logical,lcndbndy:logical,laddconductor:logical,icndbndy:integer,
+                   gridmode:integer,conductors:ConductorType,fsdecomp:Decomposition) subroutine
+         # Solver the Poisson-Boltzmann system
 init_bworkgrid(nr:integer,nz:integer,dr:real,dz:real,rmin:real,zmin:real,
                bounds(0:5):integer,l_parallel:logical)
          subroutine

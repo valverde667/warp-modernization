@@ -6740,7 +6740,7 @@ c       rhocoarse = 0.
 c       --- Restriction - note that no scaling factor is needed
         call restrict2d(nx,nz,nxlocal,nzlocal,nxguardres,nzguardres,res,
      &                  nxcoarse,nzcoarse,nxlocalcoarse,nzlocalcoarse,
-     &                  rhocoarse,
+     &                  nxguardrho,nzguardrho,rhocoarse,
      &                  localbounds,localboundsc,lxoffset,lzoffset,.true.)
 
         if (lprintmgarraysumdiagnostic) then
@@ -7705,17 +7705,17 @@ c     --- zeroed out as it should be.
       end
 c=============================================================================
       subroutine restrict2d(nx,nz,nxlocal,nzlocal,nxguardres,nzguardres,u,
-     &                      nxcoarse,nzcoarse,
-     &                      nxlocalcoarse,nzlocalcoarse,ucoarse,
+     &                      nxcoarse,nzcoarse,nxlocalcoarse,nzlocalcoarse,
+     &                      nxguardu,nzguardu,ucoarse,
      &                      localbounds,localboundscoarse,lxoffset,lzoffset,
      &                      lapplydirichlet)
       use Multigrid3d,Only: mgcoarsening
       integer(ISZ):: nx,nz,nxlocal,nzlocal,nxguardres,nzguardres
-      integer(ISZ):: nxcoarse,nzcoarse,nxlocalcoarse,nzlocalcoarse
+      integer(ISZ):: nxcoarse,nzcoarse,nxlocalcoarse,nzlocalcoarse,nxguardu,nzguardu
       real(kind=8):: u(-nxguardres:nxlocal+nxguardres,
      &                 -nzguardres:nzlocal+nzguardres)
-      real(kind=8):: ucoarse(0:nxlocalcoarse,
-     &                       0:nzlocalcoarse)
+      real(kind=8):: ucoarse(-nxguardu:nxlocalcoarse+nxguardu,
+     &                       -nzguardu:nzlocalcoarse+nzguardu)
       integer(ISZ):: localbounds(0:5)
       integer(ISZ):: localboundscoarse(0:5)
       integer(ISZ):: lxoffset,lzoffset
@@ -8491,7 +8491,7 @@ c        epsiloncoarse = eps0
 c       --- Restriction - note that no scaling factor is needed
         call restrict2d(nx,nz,nxlocal,nzlocal,nxguardres,nzguardres,res,
      &                  nxcoarse,nzcoarse,nxlocalcoarse,nzlocalcoarse,
-     &                  rhocoarse,
+     &                  nxguardrho,nzguardrho,rhocoarse,
      &                  localbounds,localboundsc,
      &                  lxoffset,lzoffset,.true.)
 

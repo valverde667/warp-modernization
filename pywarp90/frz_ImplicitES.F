@@ -1161,13 +1161,13 @@ c       --- Alloate new work space
 c       --- Restriction
         call restrict2d(nx,nz,nxlocal,nzlocal,nxguardres,nzguardres,res,
      &                  nxcoarse,nzcoarse,nxlocalcoarse,nzlocalcoarse,
-     &                  rhocoarse,
+     &                  0,0,rhocoarse,
      &                  localbounds,localboundsc,lxoffset,lzoffset,.true.)
         if (withbadvance) then
           do ic=0,2
             call restrict2d(nx,nz,nxlocal,nzlocal,nxguardres,nzguardres,bongrid(:,:,ic),
      &                      nxcoarse,nzcoarse,nxlocalcoarse,nzlocalcoarse,
-     &                      bongridcoarse(0:nxlocalcoarse,0:nzlocalcoarse,ic),
+     &                      nxguardres,nzguardres,bongridcoarse(:,:,ic),
      &                      localbounds,localboundsc,lxoffset,lzoffset,.true.)
           enddo
           call applyboundaryconditions3d(nxlocalcoarse,0,nzlocalcoarse,
@@ -1179,7 +1179,7 @@ c       --- Restriction
         do ic=0,ns-1
           call restrict2d(nx,nz,nxlocal,nzlocal,nxguardres,nzguardres,chi0(:,:,ic),
      &                    nxcoarse,nzcoarse,nxlocalcoarse,nzlocalcoarse,
-     &                    chi0coarse(0:nxlocalcoarse,0:nzlocalcoarse,ic),
+     &                    nxguardres,nzguardres,chi0coarse(:,:,ic),
      &                    localbounds,localboundsc,lxoffset,lzoffset,.true.)
         enddo
         call applyboundaryconditions3d(nxlocalcoarse,0,nzlocalcoarse,

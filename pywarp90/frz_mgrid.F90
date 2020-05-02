@@ -4660,7 +4660,8 @@ IF(l_jump) then
  return
 END if
 if (maxval(electrontemperature) > 0) then
- call multigridberzf(grid,accuracy)
+ print*,"multigridberzsolve should be called directly"
+ call kaboom("multigridberzsolve should be called directly")
  return
 endif
 
