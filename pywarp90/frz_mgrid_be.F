@@ -608,13 +608,11 @@ c boundaries are periodic.
       real(kind=8):: denom,Lphi,expo
       real(kind=8):: boltzfac(0:nxlocal,0:nzlocal)
       real(kind=8):: iondensitytmp,electemptmp,boltzfac1,epszfactmp
-      integer,save:: printed=0
       real(kind=8):: phiold
 
 c     --- Put desired potential onto conductors in phi array.
       call cond_potmgberz(conductors%interior,nxlocal,nzlocal,phi,mglevel)
       call condbndymgintberz(conductors,nxlocal,nzlocal,dx,dz,phi,mglevel)
-c     print*, "IN RELAXBE, iondensity =", iondensity(0,0), iondensity(4,4)
 
 c     --- Set starting and ending parity.
 #ifdef MPIPARALLEL
@@ -681,15 +679,12 @@ c       precompute Boltzmann factor and some other arrays
                   else
                      boltzfac(ix,iz) = 1.+ min(expo,logelecdenmaxscale(id))
                   endif
-c                  print*,ix,iz, epsilontmp
                   rhoe(ix,iz) = iondensitytmp*boltzfac(ix,iz)/epsilontmp
                   rhoeote(ix,iz) = rhoe(ix,iz)/(electemptmp)
                   if (lincludeiondensityinrho(id)) then
                     rhoe(ix,iz) = rhoe(ix,iz) - iondensitytmp/epsilontmp
                   endif
                   ix1 = ixmin + mod(ixmin + iz + parity,2)
-c                  if (ix == ix1+2 .and. iz==izmin+1 .and. printed .lt. 10) then
-c                   endif
                 endif
               endif
            enddo
@@ -745,14 +740,8 @@ c           valid
      &              -  phi(ix,iz)*2.*(dxsqi+epszfactmp) - rhoe(ix,iz)
               phiold = phi(ix,iz)
               phi(ix,iz) = phi(ix,iz) - mgparam*(Lphi - rho(ix,iz))/denom
-c              if (ix == ix1+2 .and. iz==izmin+1 .and. printed .lt. 1000) then
-c               print*, "printed,denom,Lphi,phiold,phi ", printed,denom,Lphi,phiold,phi(ix,iz)
-c               print*, "dxsqi,epszfacdz,rhoeote",dxsqi,epszfactmp,rhoeote(ix,iz)
-               printed = printed + 1
-c              endif
             enddo
           enddo
-c          print*, "summed phi =", sum(phi)
 !$OMP END DO
         endif
            
@@ -786,7 +775,6 @@ c     DOUBLY PERIODIC SYSTEM.
          phiav = sum(phi(1:nxlocal,1:nzlocal))/(nxlocal*nzlocal)
          phi = phi - phiav
       endif
-c      print*, "end of relaxberez, phi = ", phi(ixmax,izmax),phi(ixmax,izmax-1)
       return
       end
 c=============================================================================
@@ -1126,8 +1114,6 @@ c=============================================================================
       real(kind=8):: dxsqi,dzsqi,dx,dz,xminodx
       real(kind=8):: phi(-1:nxlocal+1,-1:nzlocal+1)
       real(kind=8):: Lphi(-1:nxlocal+1,-1:nzlocal+1)
-      real(kind=8):: boltzfac(0:nxlocal,0:nzlocal)
-      real(kind=8):: iondenstmp,normfac,epszfactmp
       integer(ISZ):: regionid(0:nxlocal,0:nzlocal)
       integer(ISZ):: mglevel,localbounds(0:5)
       logical(ISZ):: lrz,lcndbndy
@@ -1138,11 +1124,13 @@ c Calculate the Lphi on the grid including the BE term.
 c Note that this is note quite the residual since it does not have the
 c source term included, and so will no go to zero at convergence.
 
+      real(kind=8):: boltzfac(0:nxlocal,0:nzlocal)
       real(kind=8):: rhoe(-1:nxlocal+1,-1:nzlocal+1),expo,epsilontmp
       real(kind=8):: rr
       integer(ISZ):: ix,iz,ic,id
       integer(ISZ):: ixmin,ixmax,izmin,izmax
       real(kind=8):: iondensitytmp,electemptmp
+      real(kind=8):: normfac,epszfactmp
 
 c     --- Set the loop limits, including edges when appropriate.
       ixmin = 0
@@ -1154,11 +1142,6 @@ c     --- Set the loop limits, including edges when appropriate.
       if (localbounds(4) == 0) izmin = 1
       if (localbounds(5) == 0) izmax = nzlocal-1
 
-c     --- These are set here to avoid complaints from valgrind about
-c     --- uninitialized variables.
-      iondensitytmp = 0.
-      electemptmp = 0.
-
 c     precompute Boltzmann factor and some other arrays
       do ix = ixmin,ixmax
          do iz = izmin,izmax
@@ -1166,10 +1149,9 @@ c     precompute Boltzmann factor and some other arrays
             if (regionid(ix,iz) > 0) then
                id = regionid(ix,iz)
                call getlocaltemp(ix,iz,dx,dz,id,electemptmp)
-               call getlocaldens(ix,iz,dx,dz,id,iondenstmp)
+               call getlocaldens(ix,iz,dx,dz,id,iondensitytmp)
                call getlocalepsilon(ix,iz,dx,dz,epsilontmp)
-               if (iondensitytmp .ne. 0. .and.
-     &              electemptmp .ne. 0) then
+               if (iondensitytmp .ne. 0. .and. electemptmp .ne. 0) then
                   expo=(phi(ix,iz)-plasmapotential(id))/electemptmp
                   if (.not. luselinboltz) then
                      boltzfac(ix,iz) = exp(min(expo,logelecdenmaxscale(id)))
@@ -1532,7 +1514,6 @@ c     generate interpolated local iondensity and electron temperature
       real(kind=8):: xx,zz,wxx,wzz
       integer(ISZ):: ixx,izz
 
-c      print*,"ix,iz,id,liondensitygrid2d ", ix,iz,id,liondensitygrid2d
       iondensitytmp = 0.
       if (liondensitygrid2d(id)) then
         xx = ix*dx
@@ -1573,7 +1554,6 @@ c     generate interpolated local electemp and electron temperature
       real(kind=8):: xx,zz,wxx,wzz
       integer(ISZ):: ixx,izz
 
-c      print*,"ix,iz,id,electemperature ", ix,iz,id,electrontemperature(id)
       electemptmp = 0.
       if (lelectrontemperaturegrid2d(id)) then
         xx = ix*dx
@@ -1616,7 +1596,6 @@ c     generate interpolated local epsilon2d and electron temperature
       real(kind=8):: xx,zz,wxx,wzz
       integer(ISZ):: ixx,izz
 
-c      print*,"ix,iz,id,lepsilongrid2d ", ix,iz,id,lepsilon2d2d
       epsilontmp = 0.
       if (iusing2deps>0) then
         xx = ix*dx
@@ -1659,7 +1638,6 @@ c     generate interpolated local epsilon2d and electron temperature
       real(kind=8):: xx,zz,wxx,wzz
       integer(ISZ):: ixx,izz
 
-c      print*,"ix,iz,id,iusing2deps ", ix,iz,id,lepsilon2d2d
       epszfactmp = 0.
       if (iusing2deps>0) then
         xx = ix*dx
