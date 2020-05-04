@@ -9,6 +9,11 @@ if warpoptions.options is not None:
 else:
     serial = False
 
+import os
+if 'NERSC_HOST' in os.environ and 'SLURM_JOB_ID' not in os.environ:
+    # On NERSC login nodes, trying to import mpi4py causes a crash.
+    serial = True
+
 if not serial:
     # --- Try import mpi (pyMPI)
     #     - if not found, try to from mpi4py import MPI as mpi (mpi4py)
