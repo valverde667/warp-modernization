@@ -18,7 +18,7 @@ class TunnelIonization(Ionization):
         self.Ea=echarge/(self.rbohr**2*4.*pi*eps0)
         self.Wa=self.Ea/(emass*echarge/(4.*pi*eps0*self.hbar))
 
-    def add_tunnel_ionization(self,incident_species,target_species=None,emitted_species=None,cross_section=None,**kw):
+    def add_tunnel_ionization(self,incident_species,target_species=None,emitted_species=None,**kw):
         """An electron will be detached from the incident species when it
         interacts with the target electric field, resulting in a reduced charge state
         particle and an electron.  If the cross section is not given, it will be
@@ -39,8 +39,6 @@ class TunnelIonization(Ionization):
             if es is Electron: l_need_electron = False
             if isinstance(es,Species) and es.type is Electron: l_need_electron = False
         if l_need_electron: e_species.append(Electron)
-
-        cross_section = self.setupcross_section(incident_species,e_species,cross_section,target_species)
 
         self.add(incident_species,emitted_species,
                  l_remove_incident=True,**kw)
