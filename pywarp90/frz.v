@@ -298,7 +298,7 @@ multigridberzsolve(nx:integer,nz:integer,nxlocal:integer,nzlocal:integer,dx:real
                    mgmaxlevels:integer,mgerror:real,mgtol:real,mgverbose:integer,
                    downpasses:integer,uppasses:integer,
                    lrz:logical,lcndbndy:logical,laddconductor:logical,icndbndy:integer,
-                   gridmode:integer,conductors:ConductorType,fsdecomp:Decomposition) subroutine
+                   gridmode:integer,conductors:ConductorType,lapplyphiclamp:logical,fsdecomp:Decomposition) subroutine
          # Solver the Poisson-Boltzmann system
 init_bworkgrid(nr:integer,nz:integer,dr:real,dz:real,rmin:real,zmin:real,
                bounds(0:5):integer,l_parallel:logical)

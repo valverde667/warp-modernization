@@ -14,7 +14,7 @@ c=============================================================================
      &                              mgmaxlevels,mgerror,mgtol,mgverbose,
      &                              downpasses,uppasses,
      &                              lrz,lcndbndy,laddconductor,icndbndy,
-     &                              gridmode,conductors,fsdecomp)
+     &                              gridmode,conductors,lapplyphiclamp,fsdecomp)
       use Subtimersfrz
       use ConductorTypemodule
       use Constant
@@ -33,7 +33,7 @@ c=============================================================================
       integer(ISZ):: mgiters,mgmaxiters,mgmaxlevels,mgverbose
       real(kind=8):: mgerror,mgtol
       integer(ISZ):: downpasses,uppasses
-      logical(ISZ):: lrz,lcndbndy,laddconductor
+      logical(ISZ):: lrz,lcndbndy,laddconductor,lapplyphiclamp
       integer(ISZ):: icndbndy,gridmode
       type(ConductorType):: conductors
       type(Decomposition):: fsdecomp
@@ -125,7 +125,7 @@ c       --- Do one vcycle.
         call vcycleberz(0,nx,nz,nxlocal,nzlocal,dx,dz,
      &                  xminodx,xmminlocal,zmminlocal,
      &                  phi,rho,regionid,bounds,mgparam,mgmaxlevels,
-     &                  downpasses,uppasses,lrz,lcndbndy,icndbndy,conductors,fsdecomp)
+     &                  downpasses,uppasses,lrz,lcndbndy,icndbndy,conductors,lapplyphiclamp,fsdecomp)
 
 c       --- Calculate the change in phi (the error).
 
@@ -315,7 +315,7 @@ c=============================================================================
      &                                xminodx,xmminlocal,zmminlocal,
      &                                phi,rho,regionid,globalbounds,
      &                                mgparam,mgmaxlevels,downpasses,uppasses,
-     &                                lrz,lcndbndy,icndbndy,conductors,fsdecomp)
+     &                                lrz,lcndbndy,icndbndy,conductors,lapplyphiclamp,fsdecomp)
       use ConductorTypemodule
       use BoltzmannElectrons
       use Multigrid3d_diagnostic
@@ -329,7 +329,7 @@ c=============================================================================
       integer(ISZ):: globalbounds(0:5)
       real(kind=8):: mgparam
       integer(ISZ):: mgmaxlevels,downpasses,uppasses
-      logical(ISZ):: lrz,lcndbndy
+      logical(ISZ):: lrz,lcndbndy,lapplyphiclamp
       integer(ISZ):: icndbndy
       type(ConductorType):: conductors
       type(Decomposition):: fsdecomp
@@ -531,7 +531,7 @@ c       --- Continue at the next coarsest level.
      &                  phicoarse,rhocoarse,
      &                  regionidcoarse,
      &                  globalbounds,mgparam,mgmaxlevels,downpasses,uppasses,
-     &                  lrz,lcndbndy,icndbndy,conductors,fsdecomp)
+     &                  lrz,lcndbndy,icndbndy,conductors,lapplyphiclamp,fsdecomp)
 
 c       --- Add in the correction term.
         phicoarse = phicoarse - phicoarsesave
@@ -541,7 +541,11 @@ c       --- Add in the correction term.
         call expand2d(nx,nz,nxlocal,nzlocal,1,1,phi,
      &                nxcoarse,nzcoarse,nxlocalcoarse,nzlocalcoarse,phicoarse,
      &                localbounds,lxoffset,lzoffset)
-        call clampphitophimaxberz(nxlocal,nzlocal,dx,dz,phi,rho,regionid)
+        if (lapplyphiclamp) then
+          call clampphitophimaxberz(nxlocal,nzlocal,dx,dz,phi,rho,regionid)
+          call cond_potmgberz(conductors%interior,nxlocal,nzlocal,phi,
+     &                        mglevel)
+        endif
 
         deallocate(Lphicoarse)
         deallocate(phicoarsesave)
@@ -557,7 +561,11 @@ c     --- Do final relaxation passes.
      &                 dxsqi,dzsqi,dx,dz,xminodx,
      &                 localbounds,mgparam,lrz,lcndbndy,icndbndy,conductors,
      &                 fsdecomp,whosendingdown,whosendingup)
-        call clampphitophimaxberz(nxlocal,nzlocal,dx,dz,phi,rho,regionid)
+        if (lapplyphiclamp) then
+          call clampphitophimaxberz(nxlocal,nzlocal,dx,dz,phi,rho,regionid)
+          call cond_potmgberz(conductors%interior,nxlocal,nzlocal,phi,
+     &                        mglevel)
+        endif
       enddo
 
       return

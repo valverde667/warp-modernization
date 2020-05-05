@@ -42,6 +42,7 @@ class MultiGrid2D(MultiGrid3D):
         # --- Save input parameters
         self.processdefaultsfrompackage(MultiGrid2D.__w3dinputs__,w3d,kw)
         self.processdefaultsfrompackage(MultiGrid2D.__f3dinputs__,f3d,kw)
+        self.lapplyphiclamp = kw.pop('lapplyphiclamp', false)
 
         # --- If there are any remaning keyword arguments, raise an error.
         assert len(kw.keys()) == 0,"Bad keyword arguemnts %s"%kw.keys()
@@ -170,7 +171,7 @@ class MultiGrid2D(MultiGrid3D):
                                self.mgmaxlevels,self.mgerror,self.mgtol,self.mgverbose,
                                self.downpasses,self.uppasses,
                                self.solvergeom==w3d.RZgeom,self.lcndbndy,self.laddconductor,self.icndbndy,
-                               self.gridmode,conductorobject,self.fsdecomp)
+                               self.gridmode,conductorobject,self.lapplyphiclamp,self.fsdecomp)
 
         #t1 = wtime()
         #print "Multigrid time = ",t1-t0
