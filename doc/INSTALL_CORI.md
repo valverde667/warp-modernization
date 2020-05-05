@@ -2,59 +2,72 @@
 
 There are three options for using Warp on Cori.
 
-1. Use the publicly available, pre-built installation. To use it, the python3 module must be loaded,
-   and set the environment variable PYTHONUSERBASE to /global/common/software/warp/cori/public.
+1. Use the publicly available, pre-built installation. (Recommended)
 
 2. Build your own installation, following the instructions below.
 
-3. Use the Shifter version, following the instructions further down.
+3. Use the Shifter version, following the instructions further down. (Recommended for jobs with a large number of processors)
 
-# Installing Warp with mpi4py on Cori
+# Using the publicly available installation
 
-This section describes how to install Warp on the Cori cluster.
-This installation is done by compiling the sources.
+Warp is installed in a publicly available directory space.
+To use it, load the most recent cray-python module.
+```
+module load cray-python/3.7.3.2
+```
+This version is setup using a virtual environment.
+To activate the environment, run one of the following commands.
+For csh and tcsh
+```
+source /global/cfs/cdirs/m2852/warp/warp_cori/bin/activate.csh
+```
+For bash
+```
+source /global/cfs/cdirs/m2852/warp/warp_cori/bin/activate
+```
+The activation will set the appropriate environment variables and execute path to use this installation.
+
+# Installing Warp on Cori (with mpi4py)
+
+This section describes how to install Warp on the Cori cluster, compiling the sources.
 
 ## Setting up the environnement
 
-Create a directory where Warp and its associated packages will be installed. For example:
-```
-mkdir $SCRATCH/warp_install
-```
-NB: This directory is ideally in the `$SCRATCH` directory, for fast reading
-access. Also, the `$SCRATCH` directory is specific to each cluster and is thus
-well-adapted for system-specific installation, whereas the
-`$HOME` directory is shared for all the clusters.
-
-Set the environment variable PYTHONUSERBASE to that location:
-
-For tcsh (add this to .tchrc.ext:
-
-```
-setenv PYTHONUSERBASE $SCRATCH/warp_install
-```
-
-For bash (add this to .bashrc.ext:
-```
-export PYTHONUSERBASE=$SCRATCH/warp_install
-```
-
-Add the following module commands to either .tcshrc.ext or .bashrc.ext as appropriate.
-Note that the installation of Warp works better using the gnu environment.
+First, setup the modules needed.
+The following module commands are recommented.
+Note that the installation of Warp works better using the gnu environment. For python, use the most recent version of cray-python.
 ```
 module swap PrgEnv-intel PrgEnv-gnu
-module load python3
+module load cray-python/3.7.3.2
 module load h5py-parallel
 ```
 
-Log out of Cori and then log back in again.
-
-## Installing Forthon
-
-As explained on the Warp website, Forthon is installed with this command:
-
+Warp should be installed within a virtual environment.
+Creating the virtual environment creates the directory space where Warp will be installed.
+It is recommended that this be in $SCRATCH space for optimum read access.
+To create the environment:
 ```
-pip install Forthon --user
+python3 -m venv $SCRATCH/warp_install
 ```
+Then activate the virtual environment.
+For csh and tcsh
+```
+source $SCRATCH/warp_install/bin/activate.csh
+```
+For bash
+```
+source $SCRATCH/warp_install/bin/activate
+```
+The activation will set the appropriate environment variables and execute path to use this installation.
+
+Several Python packages need to be installed.
+```
+pip install numpy
+pip install Forthon
+```
+
+To install mpi4py, following the instructions on here https://docs.nersc.gov/programming/high-level-environments/python/mpi4py/.
+For pygist, following the instructions on the main Warp installation page.
 
 ## Installing Warp itself
 
@@ -63,56 +76,50 @@ This can be done anywhere within $HOME or $SCRATCH.
 
 ### Installing with gnu
 
-- Go to the `warp/pywarp90` directory and create a file called `Makefile.local3.pympi`,
-  adding the following lines to this file:
+- Go to the `warp/pywarp90` directory and create a file called `Makefile.local3.pympi`, adding the following lines to this file:
 ```
 FCOMP = -F gfortran --fargs "-fPIC" --cargs "-fPIC"
 FCOMPEXEC = --fcompexec ftn
-FORTHON = $(PYTHONUSERBASE)/bin/Forthon
-INSTALLOPTIONS = --user
 ```
 
 - Then, in the directory `warp/pywarp90`, enter `make pinstall`. The compilation will take a few minutes.
 
+For a serial version, copy `Makefile.local3.pympi` to `Makefile.local3` and run `make install`.
+
 ### Installing with the Intel compiler
 
-- Setup the modules to use the intel compiler: `module load PrgEnv-intel`  
+- Setup the modules to use the intel compiler: `module load PrgEnv-intel`
 
 - Go to the `warp/pywarp90` directory and create a file called `Makefile.local3.pympi`.
 
-If you want to compile for Haswell Architecture, enter the following lines in this file :
+If you want to compile for Haswell Architecture, enter the following lines in this file:
 
 ```
 FCOMP = -F intel --fargs "-fPIC -O3 -xCORE-AVX2" --cargs "-fPIC"
-FCOMPEXEC =  --fcompexec ftn
-FORTHON = $(PYTHONUSERBASE)/bin/Forthon
-INSTALLOPTIONS = --user
+FCOMPEXEC = --fcompexec ftn
 ```
 
 For MIC architecture, such as Intel Xeon Phi KNL, replace `-xCORE-AVX2` by `-xMIC-AVX512`.
 This activates the use of AVX512 instructions for best performance on KNL.
-However, note that KNL supports previous Intel instructions and your code will
-work even compiled for Haswell (Cori phase 1) or Ivy Bridge (Edison) architectures.
+However, note that KNL supports previous Intel instructions and your code will work even compiled for Haswell (Cori phase 1) or Ivy Bridge (Edison) architectures.
 
 ```
 FCOMP = -F intel --fargs "-fPIC -O3 -xMIC-AVX512" --cargs "-fPIC"
-FCOMPEXEC =  --fcompexec ftn
-FORTHON = $(PYTHONUSERBASE)/bin/Forthon
-INSTALLOPTIONS = --user
+FCOMPEXEC = --fcompexec ftn
 ```
 
 - Then, in the directory `warp/pywarp90`, enter `make pinstall`. The compilation will take a few minutes.
 
+For a serial version, copy `Makefile.local3.pympi` to `Makefile.local3` and run `make install`.
+
 ### Running simulations
 
-In order to run a simulation, create a new directory (in $SCRATCH)
-and copy your Warp input script to this directory.
-(The folder `scripts/examples` of the
-[Warp repository](https://bitbucket.org/berkeleylab/warp/src) contains
-several examples of input scripts.)
+In order to run a simulation, create a new directory (in $SCRATCH) and copy your Warp input script to this directory.
+(The folder `scripts/examples` of the [Warp repository](https://bitbucket.org/berkeleylab/warp/src) contains several examples of input scripts.)
 
-Then create a submission script named `submission_script`. Here is an
-example of a typical submission script, where warp_script.py is your input file.
+Then create a submission script named `submission_script`.
+Here is an example of a typical submission script, where warp_script.py is your input file.
+Note that $VENVHOME is either the publicly available virtual environment or the one created by you.
 ```
 #!/bin/bash
 #SBATCH --job-name=test_simulation
@@ -123,30 +130,26 @@ example of a typical submission script, where warp_script.py is your input file.
 #SBATCH -e test_simulation.err
 #SBATCH -o test_simulation.out
 
+source $VENVHOME/bin/activate
 srun -n 32 python warp_script.py -p 2 1 16
 ```
 
-Submit the simulation by typing `sbatch submission_script`. The
-progress of the simulation can be seen by typing ```squeue -u `whoami` ```.
+Submit the simulation by typing `sbatch submission_script`.
+The progress of the simulation can be seen by typing ```squeue -u `whoami` ```.
 
 # Using Shifter
 
-You can also use Shifter
-[Shifter](http://www.nersc.gov/research-and-development/user-defined-images/)
-to run Warp on Cori. Shifter runs in a Linux container (similar to
-Docker), and allows to easily port codes from one
-architecture to another.
+You can also use Shifter [Shifter](http://www.nersc.gov/research-and-development/user-defined-images/) to run Warp on Cori.
+Shifter runs in a Linux container (similar to Docker), and allows to easily port codes from one architecture to another.
 
 ## Running simulations with Shifter
 
-In order to run a simulation, create a new directory
-and copy your Warp input script to this directory.
-(The folder `scripts/examples/` of the
-[Warp repository](https://bitbucket.org/berkeleylab/warp/src) contains
-several examples of input scripts.)
+In order to run a simulation, create a new directory and copy your Warp input script to this directory.
+(The folder `scripts/examples/` of the [Warp repository](https://bitbucket.org/berkeleylab/warp/src) contains several examples of input scripts.)
 
-Then create a submission script named `submission_script`. Here is an
-example of a typical submission script, where warp_script.py is your input file.
+Then create a submission script named `submission_script`.
+Here is an example of a typical submission script, where warp_script.py is your input file.
+Note that all python modules need to be unloaded.
 ```
 #!/bin/bash
 #SBATCH --job-name=test_cori_shifter
@@ -159,16 +162,13 @@ example of a typical submission script, where warp_script.py is your input file.
 #SBATCH --image=docker:rlehe/warp:latest
 #SBATCH --volume=<your$SCRATCH>:/home/warp_user/run
 
-module unload python3
+module unload python
+module unload cray-python
 
 setenv OMP_NUM_THREADS 1
 srun -n 32 -c 2 shifter python warp_script.py -p 4 1 8
 ```
-Note that the options `--image=docker:rlehe/warp:latest` and `--
-volume=<your$SCRATCH>:/home/warp_user/run` are essential
-and should be copied exactly (**do not** replace `warp_user` or
-`rlehe` by your username), with the exception of `<your$SCRATCH>`,
-which should be replaced by the full path to your SCRATCH directory.
+Note that the options `--image=docker:rlehe/warp:latest` and `--volume=<your$SCRATCH>:/home/warp_user/run` are essential and should be copied exactly (**do not** replace `warp_user` or `rlehe` by your username), with the exception of `<your$SCRATCH>`, which should be replaced by the full path to your SCRATCH directory.
 
-Then submit the simulation by typing `sbatch submission_script`.  The
-progress of the simulation can be seen by typing ```squeue -u `whoami` ```.
+Then submit the simulation by typing `sbatch submission_script`.
+The progress of the simulation can be seen by typing ```squeue -u `whoami` ```.
