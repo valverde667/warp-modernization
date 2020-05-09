@@ -565,7 +565,8 @@ class Species(object):
             pass
 
     def get_density(self, xmin=None, xmax=None, nx=None, ymin=None, ymax=None, ny=None, zmin=None, zmax=None,
-                    nz=None, lost=0, charge=0, dens=None, l_minmax_grid=true, l_dividebyvolume=1, l4symtry=None, l2symtry=None):
+                    nz=None, charge=0, dens=None, l_minmax_grid=true, l_dividebyvolume=1, l4symtry=None, l2symtry=None,
+                    **kw):
         if l_minmax_grid:
             if xmin is None: xmin = w3d.xmmin
             if xmax is None: xmax = w3d.xmmax
@@ -576,12 +577,12 @@ class Species(object):
             if l4symtry is None: l4symtry = w3d.l4symtry
             if l2symtry is None: l2symtry = w3d.l2symtry
         else:
-            if xmin is None: xmin = min(self.getx())
-            if xmax is None: xmax = max(self.getx())
-            if ymin is None: ymin = min(self.gety())
-            if ymax is None: ymax = max(self.gety())
-            if zmin is None: zmin = min(self.getz())
-            if zmax is None: zmax = max(self.getz())
+            if xmin is None: xmin = min(self.getx(**kw))
+            if xmax is None: xmax = max(self.getx(**kw))
+            if ymin is None: ymin = min(self.gety(**kw))
+            if ymax is None: ymax = max(self.gety(**kw))
+            if zmin is None: zmin = min(self.getz(**kw))
+            if zmax is None: zmax = max(self.getz(**kw))
             if l4symtry is None: l4symtry = false
             if l2symtry is None: l2symtry = false
         if dens is None:
@@ -633,9 +634,9 @@ class Species(object):
                 return
         for pg in pgroups:
             for js in self.jslist:
-                x = getx(js=js, lost=lost, gather=0, pgroup=pg)
-                y = gety(js=js, lost=lost, gather=0, pgroup=pg)
-                z = getz(js=js, lost=lost, gather=0, pgroup=pg)
+                x = getx(js=js, gather=0, pgroup=pg, **kw)
+                y = gety(js=js, gather=0, pgroup=pg, **kw)
+                z = getz(js=js, gather=0, pgroup=pg, **kw)
                 if w3d.solvergeom == w3d.RZgeom:
                     x = sqrt(x*x + y*y)
                 np = shape(x)[0]
@@ -643,7 +644,7 @@ class Species(object):
                     if top.wpid == 0:
                         w = pg.sw[js]*ones(np, 'd')
                     else:
-                        w = pg.sw[js]*getpid(js=js, id=top.wpid-1, gather=0, pgroup=pg)
+                        w = pg.sw[js]*getpid(js=js, id=top.wpid-1, gather=0, pgroup=pg, **kw)
                     if charge:
                         w *= pg.sq[js]
                     if w3d.solvergeom is w3d.Zgeom:
@@ -1251,7 +1252,7 @@ class Species(object):
                     nr = np
                 nr = nint(nr)
                 np = nr
-                r = getmesh1d(0.5/nr, 1./nr, nr-1)
+                r = linspace(0.5/nr, 1.-0.5/nr, nr)
                 z = ones(np)
 
             # --- Perform a transpose so that the data is ordered with increasing z.

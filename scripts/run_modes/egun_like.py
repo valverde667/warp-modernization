@@ -105,7 +105,7 @@ def plottraces():
     refresh()
 
 
-def gun(iter=1, ipsave=None, save_same_part=None, maxtime=None,
+def gun(iter=1, ipsave=None, save_same_part=None, maxtime=None, min_particles=0,
         laccumulate_zmoments=None, rhoparam=None, averagerho=None,
         lstatusline=true, insertbeforeiter=None, insertafteriter=None,
         ipstep=None, egundata_window=-1, plottraces_window=-1,
@@ -120,6 +120,7 @@ def gun(iter=1, ipsave=None, save_same_part=None, maxtime=None,
     - save_same_part=0: when true, save same particles each time step instead
                         of random particles, i.e. saves particle trajectories
     - maxtime=3*transittime: maximum time each iteration will run
+    - min_particles=0 minimum number of paricles remaining to end an iteration
     - laccumulate_zmoments=false: When set to true, z-moments are accumulated
                                   over multiple iterations. Note that
                                   getzmom.zmmnt(3) must be called by the user to
@@ -462,7 +463,7 @@ def gun(iter=1, ipsave=None, save_same_part=None, maxtime=None,
         # --- automatically in the code.  Save particle data each time step on last
         # --- iteration only.
         maxvz = 2.*_vzfuzz+1.
-        while npssum > 0 and top.time-gun_time < maxtime:
+        while npssum > min_particles and top.time-gun_time < maxtime:
             # --- stop current iteration of time larger than some
             # --- threshold
             if ntblocks > 1:
@@ -632,6 +633,10 @@ def gun(iter=1, ipsave=None, save_same_part=None, maxtime=None,
             print("or look for other problems.")
             print("maxtime = ", maxtime)
 
+        if npssum > 0:
+            print("Warning: there were %d particles remaining at the end of the iteration"%npssum)
+            print("min_particles = ", min_particles)
+
         gun_steps = tmp_gun_steps
         gun_iter = gun_iter + 1
         gun_time = top.time - gun_time
@@ -751,7 +756,8 @@ def recovergun():
 
 
 ########################################################################
-def gunmg(iter=1, itersub=None, ipsave=None, save_same_part=None, maxtime=None,
+def gunmg(iter=1, itersub=None, ipsave=None, save_same_part=None,
+          maxtime=None, min_particles=0,
           laccumulate_zmoments=None, rhoparam=None, averagerho=None,
           lstatusline=true, insertbeforeiter=None, insertafteriter=None, ipstep=None, 
           nmg=0, conductors=None, egundata_window=-1, plottraces_window=-1,
@@ -767,6 +773,7 @@ def gunmg(iter=1, itersub=None, ipsave=None, save_same_part=None, maxtime=None,
     - save_same_part=0 when true, save same particles each time step instead
       of random particles, i.e. saves particle trajectories
     - maxtime=3*transittime maximum time each iteration will run
+    - min_particles=0 minimum number of paricles remaining to end an iteration
     - laccumulate_zmoments=false: When set to true, z-moments are accumulated
       over multiple iterations. Note that getzmom.zmmnt(3) must be called
       by the user to finish the moments calculation.
@@ -793,7 +800,7 @@ def gunmg(iter=1, itersub=None, ipsave=None, save_same_part=None, maxtime=None,
     global egundata_xprmsz, egundata_yprmsz, egundata_epsnxz, egundata_epsnyz
     # if nmg=0, do a normal gun solve
     if nmg == 0:
-        return gun(iter, ipsave, save_same_part, maxtime,
+        return gun(iter, ipsave, save_same_part, maxtime, min_particles,
                    laccumulate_zmoments, rhoparam, averagerho,
                    lstatusline, insertbeforeiter, insertafteriter,
                    ipstep, egundata_window, plottraces_window,
@@ -920,7 +927,7 @@ def gunmg(iter=1, itersub=None, ipsave=None, save_same_part=None, maxtime=None,
             if iter > 1:
                 # first iteration is performed with top.inj_param=1
                 # (except i=0)
-                gun(1, 0, save_same_part, maxtime,
+                gun(1, 0, save_same_part, maxtime, min_particles,
                     laccumulate_zmoments, rhoparam, averagerho,
                     lstatusline, insertbeforeiter, insertafteriter,
                     ipstep, egundata_window, plottraces_window,
@@ -933,7 +940,7 @@ def gunmg(iter=1, itersub=None, ipsave=None, save_same_part=None, maxtime=None,
                 # inj_param=0.5
                 top.inj_param = 0.5
                 if iter > 2:
-                    gun(iter-2, 0, save_same_part, maxtime,
+                    gun(iter-2, 0, save_same_part, maxtime, min_particles,
                         laccumulate_zmoments, rhoparam, averagerho,
                         lstatusline, insertbeforeiter, insertafteriter,
                         ipstep, egundata_window, plottraces_window,
@@ -961,7 +968,7 @@ def gunmg(iter=1, itersub=None, ipsave=None, save_same_part=None, maxtime=None,
                     rhonext = fzeros([nrnext+1, nznext+1], 'd')
                 installafterstep(setrhonext)
             # perform last iteration
-            gun(1, ipsave, save_same_part, maxtime,
+            gun(1, ipsave, save_same_part, maxtime, min_particles,
                    laccumulate_zmoments, rhoparam, averagerho,
                    lstatusline, insertbeforeiter, insertafteriter,
                    ipstep, egundata_window, plottraces_window,
@@ -982,7 +989,7 @@ def gunmg(iter=1, itersub=None, ipsave=None, save_same_part=None, maxtime=None,
 
 ########################################################################
 def gunamr(iter=1, itersub=None, ipsave=None, save_same_part=None,
-           maxtime=None, nmg=0, AMRlevels=0, laccumulate_zmoments=None,
+           min_particles=0, maxtime=None, nmg=0, AMRlevels=0, laccumulate_zmoments=None,
            rhoparam=None, averagerho=None, lstatusline=true,
            insertbeforeiter=None, insertafteriter=None, conductors=None,
            ipstep=None, egundata_window=-1, plottraces_window=-1,
@@ -996,6 +1003,7 @@ def gunamr(iter=1, itersub=None, ipsave=None, save_same_part=None,
     - save_same_part=0 when true, save same particles each time step instead
       of random particles, i.e. saves particle trajectories
     - maxtime=3*transittime maximum time each iteration will run
+    - min_particles=0 minimum number of paricles remaining to end an iteration
     - laccumulate_zmoments=false: When set to true, z-moments are accumulated
       over multiple iterations. Note that getzmom.zmmnt(3) must be called
       by the user to finish the moments calculation.
@@ -1020,14 +1028,14 @@ def gunamr(iter=1, itersub=None, ipsave=None, save_same_part=None,
     global zd, egundata_curr, egundata_xrmsz, egundata_yrmsz
     global egundata_xprmsz, egundata_yprmsz, egundata_epsnxz, egundata_epsnyz
     if nmg > 0:
-        gunmg(itersub, itersub, ipsave, save_same_part, maxtime,
+        gunmg(itersub, itersub, ipsave, save_same_part, maxtime, min_particles,
               laccumulate_zmoments, rhoparam, averagerho,
               lstatusline, insertbeforeiter, insertafteriter,
               nmg, conductors, egundata_window, plottraces_window,
               egundata_nz, egundata_zmin, egundata_zmax, resetlostpart,
               current, currentiz, ntblocks)
     else:
-        gun(itersub, ipsave, save_same_part, maxtime,
+        gun(itersub, ipsave, save_same_part, maxtime, min_particles,
             laccumulate_zmoments, rhoparam, averagerho,
             lstatusline, insertbeforeiter, insertafteriter, None,
             egundata_window, plottraces_window, egundata_nz,
@@ -1057,7 +1065,7 @@ def gunamr(iter=1, itersub=None, ipsave=None, save_same_part=None,
             else:
                 ipsavetemp = None
                 ipsteptemp = None
-            gun(1, ipsavetemp, save_same_part, maxtime,
+            gun(1, ipsavetemp, save_same_part, maxtime, min_particles,
                 laccumulate_zmoments, None, None,
                 lstatusline, insertbeforeiter, insertafteriter,
                 ipsteptemp, egundata_window, plottraces_window,
@@ -1065,7 +1073,7 @@ def gunamr(iter=1, itersub=None, ipsave=None, save_same_part=None,
                 current, currentiz, ntblocks)
             iter = iter - 1
         if iter > 0:
-            gun(iter, ipsave, save_same_part, maxtime,
+            gun(iter, ipsave, save_same_part, maxtime, min_particles,
                 laccumulate_zmoments, rhoparam, averagerho,
                 lstatusline, insertbeforeiter, insertafteriter,
                 None, egundata_window, plottraces_window,

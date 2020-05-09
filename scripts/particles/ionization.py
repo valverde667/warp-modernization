@@ -675,10 +675,20 @@ class Ionization:
                                        (zi >= zmin) & (zi <= zmax), dp, 0.)
                     else:
                         dp = zeros(ni, 'd')
-                        getgrid3d(ni, xi, yi, zi, dp,
-                                  self.nx, self.ny, self.nz, ndens,
-                                  self.xmin, self.xmax, self.ymin, self.ymax, self.zmin, self.zmax,
-                                  w3d.l2symtry, w3d.l4symtry)
+                        if w3d.solvergeom == w3d.RZgeom:
+                            ri = sqrt(xi*xi + yi*yi)
+                            getgrid2d(ni, ri, zi, dp,
+                                      self.nx, self.nz, ndens,
+                                      self.xmin, self.xmax, self.zmin, self.zmax)
+                        elif w3d.solvergeom == w3d.XZgeom:
+                            getgrid2d(ni, xi, zi, dp,
+                                      self.nx, self.nz, ndens,
+                                      self.xmin, self.xmax, self.zmin, self.zmax)
+                        else:
+                            getgrid3d(ni, xi, yi, zi, dp,
+                                      self.nx, self.ny, self.nz, ndens,
+                                      self.xmin, self.xmax, self.ymin, self.ymax, self.zmin, self.zmax,
+                                      w3d.l2symtry, w3d.l4symtry)
                     # --- get local target fluid velocity
                     if target_fluidvel is None:
                         if target_species is None:
