@@ -463,7 +463,10 @@ restrict3d(nx:integer,ny:integer,nz:integer,
                -nzguardres:nzlocal+nzguardres):real,
            nxcoarse:integer,nycoarse:integer,nzcoarse:integer,
            nxlocalcoarse:integer,nylocalcoarse:integer,nzlocalcoarse:integer,
-           rhocoarse(0:nxlocalcoarse,0:nylocalcoarse,0:nzlocalcoarse):real,
+           nxguardrho:integer,nyguardrho:integer,nzguardrho:integer,
+           rhocoarse(-nxguardrho:nxlocalcoarse+nxguardrho,
+                     -nyguardrho:nylocalcoarse+nyguardrho,
+                     -nzguardrho:nzlocalcoarse+nzguardrho):real,
            ff:real,bounds(0:5):integer,boundscoarse(0:5):integer,
            lxoffset:integer,lyoffset:integer,lzoffset:integer)
    subroutine

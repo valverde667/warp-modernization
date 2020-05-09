@@ -459,10 +459,11 @@ c     --- Create and setup array which holds the BE region ids
 
 c       --- Calculate the coarsened phi
         phicoarse = 0.
-        call restrictbe3d(nx,ny,nz,
-     &                    nxguardphi,nyguardphi,nzguardphi,phi,
-     &                    nxcoarse,nycoarse,nzcoarse,1,1,1,phicoarse,
-     &                    bounds)
+        call restrict3d(nx,ny,nz,nx,ny,nz,
+     &                  nxguardphi,nyguardphi,nzguardphi,phi,
+     &                  nxcoarse,nycoarse,nzcoarse,
+     &                  nxcoarse,nycoarse,nzcoarse,
+     &                  1,1,1,phicoarse,1.,bounds,bounds,0,0,0)
         call cond_potmgbe(conductors%interior,nxcoarse,nycoarse,nzcoarse,1,1,1,
      &                    phicoarse,mglevel+1)
         call applytransversebcbe3d(nxcoarse,nycoarse,nzcoarse,1,1,1,
@@ -524,10 +525,19 @@ c       --- Add in the correction term.
           print*,"Max change in phi = ",maxval(abs(phicoarse))," at MG level ",mglevel
         endif
         deallocate(phicoarsesave)
-        call expandbe3d(nx,ny,nz,
-     &                  nxguardphi,nyguardphi,nzguardphi,phi,
-     &                  nxcoarse,nycoarse,nzcoarse,phicoarse,
-     &                  bounds)
+        call expand3d(nx,ny,nz,nx,ny,nz,
+     &                nxguardphi,nyguardphi,nzguardphi,phi,
+     &                nxcoarse,nycoarse,nzcoarse,
+     &                nxcoarse,nycoarse,nzcoarse,phicoarse,
+     &                bounds,0,0,0,conductors,.false.)
+         call applyboundaryconditions3d(nx,ny,nz,
+     &                                  nxguardphi,nyguardphi,nzguardphi,
+     &                                  phi,1,
+     &                                  bounds,.true.,.false.)
+!       call expandbe3d(nx,ny,nz,
+!    &                  nxguardphi,nyguardphi,nzguardphi,phi,
+!    &                  nxcoarse,nycoarse,nzcoarse,phicoarse,
+!    &                  bounds)
         call clampphitophimaxbe3d(nx,ny,nz,
      &                            nxguardphi,nyguardphi,nzguardphi,
      &                            nxguardrho,nyguardrho,nzguardrho,
@@ -764,7 +774,7 @@ c=============================================================================
      &                     iondensitygrid3d)
       use Constant
       use ConductorTypemodule
-      use BoltzmannElectrons
+      use BoltzmannElectrons,Only: electrontemperature, plasmapotential, electrondensitymaxscale
       use Grid3dtypemodule
       integer(ISZ):: mglevel,nx,ny,nz
       integer(ISZ):: nxguardphi,nyguardphi,nzguardphi
@@ -1013,7 +1023,7 @@ c=============================================================================
      &                        mgparam,bounds,mglevel,icndbndy,iondensitygrid3d)
       use Constant
       use ConductorSubGridTypemodule
-      use BoltzmannElectrons
+      use BoltzmannElectrons,Only: electrontemperature, plasmapotential, electrondensitymaxscale
       use Grid3dtypemodule
       type(ConductorSubGridType):: subgrid
       integer(ISZ):: nx,ny,nz
@@ -1256,7 +1266,7 @@ c=============================================================================
      &                  lcndbndy,icndbndy,conductors,iondensitygrid3d)
       use Constant
       use ConductorTypemodule
-      use BoltzmannElectrons
+      use BoltzmannElectrons,Only: electrontemperature, plasmapotential, electrondensitymaxscale
       use Grid3dtypemodule
       integer(ISZ):: nx,ny,nz
       integer(ISZ):: nxguardphi,nyguardphi,nzguardphi
@@ -1374,7 +1384,7 @@ c=============================================================================
      &                          bounds,mglevel,icndbndy,iondensitygrid3d)
       use Constant
       use ConductorSubGridTypemodule
-      use BoltzmannElectrons
+      use BoltzmannElectrons,Only: electrontemperature, plasmapotential, electrondensitymaxscale
       use Grid3dtypemodule
       type(ConductorSubGridType):: subgrid
       integer(ISZ):: nx,ny,nz,mglevel
@@ -1606,7 +1616,7 @@ c=============================================================================
      &                                dx,dy,dz,phi,rho,regionid,
      &                                iondensitygrid3d)
       use Constant
-      use BoltzmannElectrons
+      use BoltzmannElectrons,Only: electrontemperature, plasmapotential, electrondensitymaxscale,luseparticledensity
       use Grid3dtypemodule
       integer(ISZ):: nx,ny,nz
       real(kind=8):: dx,dy,dz

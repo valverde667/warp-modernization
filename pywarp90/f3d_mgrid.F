@@ -772,7 +772,7 @@ c       --- Restrict fine rho to coarse rho
      &                  nxguardrho,nyguardrho,nzguardrho,rho,
      &                  nxcoarse,nycoarse,nzcoarse,
      &                  nxlocalcoarse,nylocalcoarse,nzlocalcoarse,
-     &                  rhocoarse,ff,localbounds,localboundsc,
+     &                  0,0,0,rhocoarse,ff,localbounds,localboundsc,
      &                  lxoffset,lyoffset,lzoffset)
 
         if (lprecalccoeffs) conductors%coeffs => conductors%coeffs%coarser
@@ -1435,7 +1435,7 @@ c       --- Restriction
      &                  nxguardres,nyguardres,nzguardres,res,
      &                  nxcoarse,nycoarse,nzcoarse,
      &                  nxlocalcoarse,nylocalcoarse,nzlocalcoarse,
-     &                  rhocoarse,ff,localbounds,localboundsc,
+     &                  0,0,0,rhocoarse,ff,localbounds,localboundsc,
      &                  lxoffset,lyoffset,lzoffset)
         if (lprintmgarraysumdiagnostic) then
           call mggetarraysum(nxlocalcoarse,nylocalcoarse,nzlocalcoarse,0,0,0,
@@ -1582,6 +1582,7 @@ c=============================================================================
      &                      nxguardres,nyguardres,nzguardres,res,
      &                      nxcoarse,nycoarse,nzcoarse,
      &                      nxlocalcoarse,nylocalcoarse,nzlocalcoarse,
+     &                      nxguardrho,nyguardrho,nzguardrho,
      &                      rhocoarse,
      &                      ff,localbounds,localboundscoarse,
      &                      lxoffset,lyoffset,lzoffset)
@@ -1591,10 +1592,13 @@ c=============================================================================
       integer(ISZ):: nxguardres,nyguardres,nzguardres
       integer(ISZ):: nxcoarse,nycoarse,nzcoarse
       integer(ISZ):: nxlocalcoarse,nylocalcoarse,nzlocalcoarse
+      integer(ISZ):: nxguardrho,nyguardrho,nzguardrho
       real(kind=8):: res(-nxguardres:nxlocal+nxguardres,
      &                   -nyguardres:nylocal+nyguardres,
      &                   -nzguardres:nzlocal+nzguardres)
-      real(kind=8):: rhocoarse(0:nxlocalcoarse,0:nylocalcoarse,0:nzlocalcoarse)
+      real(kind=8):: rhocoarse(-nxguardrho:nxlocalcoarse+nxguardrho,
+     &                         -nyguardrho:nylocalcoarse+nyguardrho,
+     &                         -nzguardrho:nzlocalcoarse+nzguardrho)
       real(kind=8):: ff
       integer(ISZ):: localbounds(0:5)
       integer(ISZ):: localboundscoarse(0:5)
@@ -10091,7 +10095,7 @@ c       is not prescaled with mgparam/(2*(dxsqi+dysqi+dzsqi))
      &                  nxguardres,nyguardres,nzguardres,res,
      &                  nxcoarse,nycoarse,nzcoarse,
      &                  nxlocalcoarse,nylocalcoarse,nzlocalcoarse,
-     &                  rhocoarse,
+     &                  0,0,0,rhocoarse,
      &                  1.0,localbounds,localboundsc,
      &                  lxoffset,lyoffset,lzoffset)
 

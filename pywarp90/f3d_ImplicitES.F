@@ -1220,10 +1220,10 @@ c       --- Alloate new work space
         chi0coarse = 0.
 
 c       --- Restriction
-        call restrict3d(nx,ny,nz,nxlocal,nylocal,nzlocal,res,delx,dely,delz,
+        call restrict3d(nx,ny,nz,nxlocal,nylocal,nzlocal,delx,dely,delz,res,
      &                  nxcoarse,nycoarse,nzcoarse,
      &                  nxlocalcoarse,nylocalcoarse,nzlocalcoarse,
-     &                  rhocoarse,0,0,0,1.,localbounds,localboundsc,
+     &                  0,0,0,rhocoarse,1.,localbounds,localboundsc,
      &                  lxoffset,lyoffset,lzoffset)
         if (lprintmgarraysumdiagnostic) then
           call mggetarraysum(nxlocalcoarse,nylocalcoarse,nzlocalcoarse,0,0,0,rhocoarse,coarsedecomp,0,sss)
@@ -1232,11 +1232,11 @@ c       --- Restriction
         endif
 
         do ic=0,ns-1
-          call restrict3d(nx,ny,nz,nxlocal,nylocal,nzlocal,chi0(:,:,:,ic),
-     &                    delx,dely,delz,
+          call restrict3d(nx,ny,nz,nxlocal,nylocal,nzlocal,
+     &                    delx,dely,delz,chi0(:,:,:,ic),
      &                    nxcoarse,nycoarse,nzcoarse,
      &                    nxlocalcoarse,nylocalcoarse,nzlocalcoarse,
-     &                    chi0coarse(:,:,:,ic),delx,dely,delz,
+     &                    delx,dely,delz,chi0coarse(:,:,:,ic),
      &                    1.,localbounds,localboundsc,
      &                    lxoffset,lyoffset,lzoffset)
         enddo
@@ -1245,11 +1245,11 @@ c       --- Restriction
      &                                 localboundsc,.false.,.true.)
         if (withbadvance) then
           do ic=0,2
-            call restrict3d(nx,ny,nz,nxlocal,nylocal,nzlocal,bongrid(:,:,:,ic),
-     &                      delx,dely,delz,
+            call restrict3d(nx,ny,nz,nxlocal,nylocal,nzlocal,
+     &                      delx,dely,delz,bongrid(:,:,:,ic),
      &                      nxcoarse,nycoarse,nzcoarse,
      &                      nxlocalcoarse,nylocalcoarse,nzlocalcoarse,
-     &                      bongridcoarse(:,:,:,ic),delx,1,delz,
+     &                      delx,dely,delz,bongridcoarse(:,:,:,ic),
      &                      1.,localbounds,localboundsc,
      &                      lxoffset,lyoffset,lzoffset)
           enddo

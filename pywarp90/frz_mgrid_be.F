@@ -92,7 +92,6 @@ c     --- Prepare rho by dividing it by -eps0
       else
          rho = -rho/eps0
       endif
-      iondensity = iondensity/eps0
 
 c     --- Calculate grid min in grid cells.
 c     --- Note that it needs to be a real number in case xmminlocal is not an
@@ -176,7 +175,6 @@ c     --- Undo the change of rho
       else
          rho = -rho*eps0
       endif
-      iondensity = iondensity*eps0
 
 !$OMP END PARALLEL
 
@@ -291,7 +289,6 @@ c       use the z-averaged value of rho.
         else
            iondensitygrid2d%grid(:,:) = rho(ixbemin:ixbemax,izbemin:izbemax)
         endif
-        iondensitygrid2d%grid(:,:) = iondensitygrid2d%grid(:,:)/eps0
       endif
 c
 
@@ -1457,21 +1454,24 @@ c=============================================================================
       integer(ISZ):: regionid(0:nxlocal,0:nzlocal)
 
       integer(ISZ):: ix,iz,id
+      integer(ISZ):: ix1,iz1
       real(kind=8):: expo,phimax,rhomax
       real(kind=8):: iondensitytmp,electemptmp
 
 c     --- Clamp phi to phimax. The phimax is calculated assuming that
 c     --- the max electron density will be the max of the iondensity and 
 c     --- and the ion particle density (rho).
-      do iz=0,nzlocal
-        do ix=0,nxlocal
-          if (regionid(ix,iz) > 0) then
-            id = regionid(ix,iz)
-            call getlocaldens(ix,iz,dx,dz,id,iondensitytmp)
-            call getlocaltemp(ix,iz,dx,dz,id,electemptmp)
-            if (iondensitytmp == 0.) cycle
+      do iz=-1,nzlocal+1
+        do ix=-1,nxlocal+1
+          ix1 = max(0, min(nxlocal, ix))
+          iz1 = max(0, min(nzlocal, iz))
+          if (regionid(ix1,iz1) > 0) then
+            id = regionid(ix1,iz1)
+            call getlocaldens(ix1,iz1,dx,dz,id,iondensitytmp)
+            call getlocaltemp(ix1,iz1,dx,dz,id,electemptmp)
+            !if (iondensitytmp == 0.) cycle
             if (luseparticledensity(id) > 0) then
-              rhomax = max(electrondensitymaxscale(id),-rho(ix,iz)/iondensitytmp)
+              rhomax = max(electrondensitymaxscale(id),-rho(ix1,iz1)/iondensitytmp)
             else
               rhomax = electrondensitymaxscale(id)
             endif
@@ -1514,6 +1514,7 @@ c       --- Constrain the mins and maxes to be within the BE region.
 c=============================================================================
       subroutine getlocaldens(ix,iz,dx,dz,id,iondensitytmp)
 c     generate interpolated local iondensity and electron temperature
+      use Constant
       use BoltzmannElectrons
       integer(ISZ):: ix,iz,id
       real(kind=8):: dx,dz,reixx,reizz
@@ -1548,6 +1549,8 @@ c     generate interpolated local iondensity and electron temperature
       else if (iondensity(id) .ne. 0.) then
         iondensitytmp = iondensity(id)
       endif
+
+      iondensitytmp = iondensitytmp/eps0
 
       return
       end
