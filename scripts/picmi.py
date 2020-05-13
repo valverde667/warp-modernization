@@ -616,7 +616,7 @@ class ElectrostaticSolver(picmistandard.PICMI_ElectrostaticSolver):
     def initialize_solver_inputs(self):
         self.solver = MultiGrid3D(**self.multigrid_args)
 
-class MagnetostaticSolver(picmistandard.PICMI_ElectrostaticSolver):
+class MagnetostaticSolver(picmistandard.PICMI_MagnetostaticSolver):
     __forbidden_kw__ = [] # no forbidden arguments
     __flaginputs__ = {**FieldSolver.__flaginputs__, 'luse2D': True}
 
