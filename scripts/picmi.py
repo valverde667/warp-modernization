@@ -616,6 +616,24 @@ class ElectrostaticSolver(picmistandard.PICMI_ElectrostaticSolver):
     def initialize_solver_inputs(self):
         self.solver = MultiGrid3D(**self.multigrid_args)
 
+class MagnetostaticSolver(picmistandard.PICMI_MagnetostaticSolver):
+    __forbidden_kw__ = [] # no forbidden arguments
+    __flaginputs__ = {**FieldSolver.__flaginputs__, 'luse2D': True}
+
+    def init(self, kw):
+        self.magnetostatic_args = {}
+
+        for warp_arg, val in kw.copy().items():
+            arg = warp_arg[len(codename)+1:] # strip off ‘warp_’
+
+            if arg in self.__forbidden_kw__:
+                raise ValueError('MagnetostaticSolver: %s cannot be specified by the user'%arg)
+            elif arg in self.__flaginputs__:
+                self.magnetostatic_args[arg] = val
+                kw.pop(warp_arg)
+
+    def initialize_solver_inputs(self):
+        self.solver = MagnetostaticMG(**self.magnetostatic_args)
 
 class GaussianLaser(picmistandard.PICMI_GaussianLaser):
     def initialize_laser_inputs(self, solver, antenna, gamma_boost):
