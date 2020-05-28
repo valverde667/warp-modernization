@@ -90,6 +90,12 @@ class ParticleDiagnostic(OpenPMDDiagnostic) :
                     lparallel_output=lparallel_output, write_dir=write_dir,
                     write_metadata_parallel=write_metadata_parallel )
 
+        # This check is needed when running in parallel. The order of the
+        # particle_data needs to be the same on all processors and this is
+        # only gauranteed with either list or tuple. A set for example won't work.
+        assert isinstance(particle_data, list) or isinstance(particle_data, tuple),\
+               Exception('ParticleDiagnostic: particle_data must be either a list or tuple')
+
         # Register the arguments
         self.particle_data = particle_data
         self.species_dict = species

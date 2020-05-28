@@ -1379,7 +1379,7 @@ class SubcycledPoissonSolver(FieldSolver):
                 if w3d.js1fsapi >= 0: js1 = w3d.js1fsapi
                 else:                 js1 = 0
                 if w3d.js2fsapi >= 0: js2 = w3d.js2fsapi+1
-                else:                 js2 = pgroup.ns
+                else:                 js2 = top.ns
                 jslists = [range(js1,js2)]
         else:
             # --- If so, use the input list

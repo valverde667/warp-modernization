@@ -10733,6 +10733,7 @@ c     --- Loop over x plane
                 xx = q1(1) + t*(q2(1) - q1(1)) + xcent
                 ! If the volume is positive, q1 is facing the outside of the surface.
                 v0 = SignedVolume(q1,P1,P2,P3)
+                if (xx < q1(1)) v0 = -v0
                 call insertintercept(xx,ii,v0>0.,iy,iz,intercepts%nxicpt,ny,nz,intercepts%xintercepts,isentering)
               endif
             endif
@@ -10793,6 +10794,7 @@ c     --- Loop over y plane
                 yy = q1(2) + t*(q2(2) - q1(2)) + ycent
                 ! If the volume is positive, q1 is facing the outside of the surface.
                 v0 = SignedVolume(q1,P1,P2,P3)
+                if (yy < q1(2)) v0 = -v0
                 call insertintercept(yy,ii,v0>0.,ix,iz,intercepts%nyicpt,nx,nz,intercepts%yintercepts,isentering)
               endif
             endif
@@ -10853,6 +10855,7 @@ c     --- Loop over z plane
                 zz = q1(3) + t*(q2(3) - q1(3)) + zcent
                 ! If the volume is positive, q1 is facing the outside of the surface.
                 v0 = SignedVolume(q1,P1,P2,P3)
+                if (zz < q1(3)) v0 = -v0
                 call insertintercept(zz,ii,v0>0.,ix,iy,intercepts%nzicpt,nx,ny,intercepts%zintercepts,isentering)
               endif
             endif
