@@ -58,7 +58,8 @@ class Species(picmistandard.PICMI_Species):
                                      charge_state = self.charge_state,
                                      mass = self.mass,
                                      lvariableweights = True,
-                                     weight = 1.)
+                                     weight = 1.,
+                                     fselfb = self.fselfb)
 
     def initialize_species_inputs(self, layout):
 
