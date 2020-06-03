@@ -1997,7 +1997,8 @@ class EM3D(SubcycledPoissonSolver):
         if self.mode==2:
             self.dosolvemode2()
             return
-        #if any(top.fselfb != 0.):raise Exception('Error:EM solver does not work if fselfb != 0.')
+        if self.deposition_species is None:
+            if any(top.fselfb != 0.): raise Exception('Error:EM solver does not work if fselfb != 0.')
         if self.deposition_species is not None:
             for sp in self.deposition_species:
                 if top.fselfb[sp.jslist[0]] != 0.: raise Exception('Error:EM solver does not work if fselfb != 0.')
