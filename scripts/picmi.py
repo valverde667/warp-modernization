@@ -51,6 +51,8 @@ class Species(picmistandard.PICMI_Species):
         # --- will be set to 1, and the variable weight will hold
         # --- the actual weight.
 
+        self.fselfb = kw.pop('warp_fselfb', None)
+
         wtype = species_type_dict.get(self.particle_type, None)
         self.wspecies = warp.Species(type = wtype,
                                      name = self.name,
@@ -58,7 +60,8 @@ class Species(picmistandard.PICMI_Species):
                                      charge_state = self.charge_state,
                                      mass = self.mass,
                                      lvariableweights = True,
-                                     weight = 1.)
+                                     weight = 1.,
+                                     fselfb = self.fselfb)
 
     def initialize_species_inputs(self, layout):
 

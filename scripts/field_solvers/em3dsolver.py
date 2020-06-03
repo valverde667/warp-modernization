@@ -1997,7 +1997,11 @@ class EM3D(SubcycledPoissonSolver):
         if self.mode==2:
             self.dosolvemode2()
             return
-        if any(top.fselfb != 0.):raise Exception('Error:EM solver does not work if fselfb != 0.')
+        if self.deposition_species is None:
+            if any(top.fselfb != 0.): raise Exception('Error:EM solver does not work if fselfb != 0.')
+        else:
+            for sp in self.deposition_species:
+                if top.fselfb[sp.jslist[0]] != 0.: raise Exception('Error:EM solver does not work if fselfb != 0.')
         if self.l_verbose:print 'solve 1st half'
         if top.dt != self.dtinit:raise Exception('Time step has been changed since initialization of EM3D.')
         if self.fields.spectral:
