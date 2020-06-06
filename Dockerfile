@@ -1,4 +1,4 @@
-FROM ubuntu:18.10
+FROM ubuntu
 
 # Install a few packages, as root
 RUN apt-get update \
@@ -11,14 +11,26 @@ RUN apt-get update \
     gcc \
     gfortran \
     libx11-dev \
-    openmpi-bin libopenmpi-dev \
     python3 \
     python3-pip \
     python3-numpy \
-    python3-scipy \
-    python3-mpi4py \
-    python3-h5py \
-    && rm -rf /var/lib/apt/lists/*
+    python3-scipy
+
+# openmpi depends on tzdata which requires interactive selection of the time zone.
+# Setting noninteractive turns that off.
+# In the past, this was not needed - something changed (for the worse).
+RUN DEBIAN_FRONTEND="noninteractive" \
+    TZ="America/Los_Angeles" \
+    apt-get install -y \
+        openmpi-bin \
+        libopenmpi-dev \
+        python3-mpi4py \
+        python3-h5py
+
+# Some space could be saved by removing the apt-get data
+# But it's small and makes it a pain to add more packages
+# interactively, so skip.
+#RUN rm -rf /var/lib/apt/lists/*
 
 # This is a bit of a hack so that the name "python" is defined.
 RUN ln -sf /usr/bin/python3 /usr/bin/python
