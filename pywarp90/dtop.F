@@ -1644,6 +1644,79 @@ c        if (0. <= gx .and. gx <= nx) then
       return
       end
 c=============================================================================
+      subroutine getgrid1dcubic(np,x,z,nx,grid,xmin,xmax)
+      integer(ISZ):: nx,np
+      real(kind=8):: x(np), z(np)
+      real(kind=8):: grid(0:nx)
+      real(kind=8):: xmin,xmax
+
+c Gathers data from a node centered 1-D mesh onto particle positions using
+c cubic weighting (Catmull-Rom).
+c The interpolated value and its derivative are continuous.
+c   np: number of particles
+c   x: array of particle positions
+c   z: array where the data will be put
+c   nx: number of grid cells
+c   grid: input array of data to be gathered
+c   xmin,xmax: extent of the grid, i.e. grid(0) is at xmin, grid(nx) is at xmax
+
+      integer(ISZ):: ip,ix
+      real(kind=8):: gx,dxi,wx
+
+      double precision :: w, dataim1, datai, dataip1, dataip2
+      double precision :: a1, a2, a3, b1, b2
+
+      if (xmax == xmin) then
+        call kaboom("getgrid1dcubic: the grid extent is zero, xmin==xmax")
+        return
+      endif
+
+c     --- set grid cell inverse size
+      dxi = nx/(xmax - xmin)
+
+c     --- loop over particles
+      do ip=1,np
+
+c       --- find location on grid
+        gx = (x(ip) - xmin)*dxi
+
+c       --- if within grid, gather
+c        if (0. <= gx .and. gx <= nx) then
+        if (0. <= gx .and. gx < nx) then
+
+          ix = int(gx)
+
+          if (ix > 0) then
+            dataim1 = grid(ix-1)
+          else
+            dataim1 = grid(0)
+          endif
+
+          datai = grid(ix)
+          dataip1 = grid(ix+1)
+
+          if (ix < nx-1) then
+            dataip2 = grid(ix+2)
+          else
+            dataip2 = grid(nx)
+          endif
+
+          wx = gx - ix
+
+          a1 = (0.-w)*dataim1 + (w+1.)*datai
+          a2 = (1.-w)*datai   + (w   )*dataip1
+          a3 = (2.-w)*dataip1 + (w-1.)*dataip2
+          b1 = (1.-w)*0.5*a1 + (w+1.)*0.5*a2
+          b2 = (2.-w)*0.5*a2 + (w   )*0.5*a3
+          z(ip) = (1.-w)*b1 + w*b2
+
+        endif
+
+      enddo
+
+      return
+      end
+c=============================================================================
       subroutine getgridngp1d(np,x,z,nx,grid,xmin,xmax)
       integer(ISZ):: nx,np
       real(kind=8):: x(np), z(np)

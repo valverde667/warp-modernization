@@ -3001,6 +3001,10 @@ getgrid1d(np:integer,x(np):real,z(np):real,nx:integer,grid(0:nx):real,
           xmin:real,xmax:real)
         subroutine
         # Gathers data from a 1-D grid using linear weighting.
+getgrid1dcubic(np:integer,x(np):real,z(np):real,nx:integer,grid(0:nx):real,
+          xmin:real,xmax:real)
+        subroutine
+        # Gathers data from a 1-D grid using cubic weighting.
 getgridngp1d(np:integer,x(np):real,z(np):real,
              nx:integer,grid(0:nx):real,
              xmin:real,xmax:real) subroutine
