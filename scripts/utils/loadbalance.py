@@ -455,8 +455,8 @@ recalculated on a finer mesh to give better balancing.
             w3d.zmmaxp = w3d.zmmin + (ppdecomp.iz[top.izproc] +
                                       ppdecomp.nz[top.izproc])*w3d.dz
 
-            top.izpslave[:] = ppdecomp.iz
-            top.nzpslave[:] = ppdecomp.nz
+            top.izpdecomp[:] = ppdecomp.iz
+            top.nzpdecomp[:] = ppdecomp.nz
             top.zpslmin[:] =  ppdecomp.zmin
             top.zpslmax[:] =  ppdecomp.zmax
 
@@ -760,8 +760,8 @@ of the domains.
         w3d.xmmaxlocal = top.fsdecomp.xmax[top.ixproc]
         w3d.ymmaxlocal = top.fsdecomp.ymax[top.iyproc]
         w3d.zmmaxlocal = top.fsdecomp.zmax[top.izproc]
-        top.izfsslave = top.fsdecomp.iz
-        top.nzfsslave = top.fsdecomp.nz
+        top.izfsdecomp = top.fsdecomp.iz
+        top.nzfsdecomp = top.fsdecomp.nz
 
     def copydecomposition(self,d1,d2):
         # --- The items commented out are not used.

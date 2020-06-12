@@ -308,7 +308,7 @@ class FieldSolver3dBase(object):
             getrhoforfieldsolve3d(self.nx,self.ny,self.nzlocal,self.rho,
                               self.nx,self.ny,self.nzlocal,self.rhop,
                               me,self.nzprocs,
-                              top.izfsslave,top.nzfsslave,top.izpslave,top.nzpslave)
+                              top.izfsdecomp,top.nzfsdecomp,top.izpdecomp,top.nzpdecomp)
 
     def makerhoperiodic_parallel(self):
         tag = 70

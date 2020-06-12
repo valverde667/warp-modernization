@@ -3417,7 +3417,6 @@ comm_world    integer /0/ -dump   # world communicator used by Warp
 lcomm_world_initted logical /.false./ # set to true with comm_world has been set
 lcomm_cartesian logical /.false./ # set to true if you want a cartesian topology for the communicator 
 nprocs        integer /1/ -dump   # Number of parallel processors
-nslaves       integer /1/         # Obsolete
 my_index      integer /0/ +parallel -dump # Processor index to array of task ids
 grid_overlap  integer /0/         # Overlap of field grid in processors
 lautodecomp   logical /.true./    # When false, the domain decompostion for the
@@ -3450,16 +3449,16 @@ userdecompz(0:nzprocs-1) _real # User supplied weighting for the z domain
 fsdecomp Decomposition
 ppdecomp Decomposition
 
-zslave(0:nzprocs-1)    _real    # User supplied weighting for the domain
-                                # decomposition of the particles.
-izfsslave(0:nzprocs-1) _integer # starting iz for which each slave does
-                                # a field solve calculation
-nzfsslave(0:nzprocs-1) _integer # number of z grid cells for which each
-                                # slave does a field solve calculation
-izpslave(0:nzprocs-1)  _integer # Starting iz of particle extent
-nzpslave(0:nzprocs-1)  _integer # Number of Z cells of particle extent
-zpslmin(0:nzprocs-1)   _real    # Particle Z minimum for each slave
-zpslmax(0:nzprocs-1)   _real    # Particle Z maximum for each slave
+zdecomp(0:nzprocs-1)    _real    # User supplied weighting for the domain
+                                 # decomposition of the particles.
+izfsdecomp(0:nzprocs-1) _integer # starting iz for which each processor does
+                                 # a field solve calculation
+nzfsdecomp(0:nzprocs-1) _integer # number of z grid cells for which each
+                                 # processor does a field solve calculation
+izpdecomp(0:nzprocs-1)  _integer # Starting iz of particle extent
+nzpdecomp(0:nzprocs-1)  _integer # Number of Z cells of particle extent
+zpslmin(0:nzprocs-1)   _real     # Particle Z minimum for each processor
+zpslmax(0:nzprocs-1)   _real     # Particle Z maximum for each processor
 
 ******* Databuffers:
 # Primarily used as data buffers for message passing
@@ -3624,7 +3623,7 @@ timecopyparttogroup            real /0./
 timecopygrouptopart            real /0./
 timegetcrossingparticles       real /0./
 timesetcurr                    real /0./
-timezpartbnd_slave             real /0./
+timezpartbnd_parallel          real /0./
 timereorgparticles_parallel    real /0./
 timecheckzpartbnd              real /0./
 timeparallel_sum_mmnts         real /0./

@@ -2705,7 +2705,7 @@ c=============================================================================
             rho(:,nxlocal-nxguardrho:,:,:) = rho(:,:nxguardrho,:,:)
 #ifdef MPIPARALLEL
           else
-            call makesourceperiodic_slave_work(0,rho,nc,nxlocal,nylocal,nzlocal,
+            call makesourceperiodic_parallel_work(0,rho,nc,nxlocal,nylocal,nzlocal,
      &                    nxguardrho,nyguardrho,nzguardrho,
      &                    fsdecomp%nxprocs,fsdecomp%ixproc,fsdecomp%mpi_comm_x)
 #endif
@@ -2727,7 +2727,7 @@ c=============================================================================
             rho(:,:,nylocal-nyguardrho:,:) = rho(:,:,:nyguardrho,:)
 #ifdef MPIPARALLEL
           else
-            call makesourceperiodic_slave_work(1,rho,nc,nxlocal,nylocal,nzlocal,
+            call makesourceperiodic_parallel_work(1,rho,nc,nxlocal,nylocal,nzlocal,
      &                    nxguardrho,nyguardrho,nzguardrho,
      &                    fsdecomp%nyprocs,fsdecomp%iyproc,fsdecomp%mpi_comm_y)
 #endif
@@ -2749,7 +2749,7 @@ c=============================================================================
             rho(:,:,:,nzlocal-nzguardrho:) = rho(:,:,:,:nzguardrho)
 #ifdef MPIPARALLEL
           else
-            call makesourceperiodic_slave_work(2,rho,nc,nxlocal,nylocal,nzlocal,
+            call makesourceperiodic_parallel_work(2,rho,nc,nxlocal,nylocal,nzlocal,
      &                    nxguardrho,nyguardrho,nzguardrho,
      &                    fsdecomp%nzprocs,fsdecomp%izproc,fsdecomp%mpi_comm_z)
 #endif
@@ -7205,10 +7205,10 @@ c           --- line-charge calculated from ibeam/vbeam has not been scaled.
 
       deallocate(nptot)
 
+c#ifdef MPIPARALLEL
 c     --- This is not needed since the global number of particles is used
 c     --- above to calculate sw.
-c     --- if slave, recalculate sw
-c#ifdef MPIPARALLEL
+c     --- if parallel, recalculate sw
 c      call sw_globalsum(pgroup%ns,pgroup%sw)
 c#endif
 

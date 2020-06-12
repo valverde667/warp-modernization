@@ -495,19 +495,19 @@ Input:
         if solver is None: solver = w3d
 
         if self.solvergeom == solver.solvergeom and solver.solvergeom == w3d.XYZgeom:
-            self.restore_phi_3d_to_3d(iz-top.izfsslave[me],it,savedphi,solver.phi,
+            self.restore_phi_3d_to_3d(iz-top.izfsdecomp[me],it,savedphi,solver.phi,
                                       solver)
-            if top.izpslave[me] != top.izfsslave[me]:
+            if top.izpdecomp[me] != top.izfsdecomp[me]:
                 # --- This is not really correct, since phip will have a different
                 # --- shape and phi, so the dimensions should be passed in too.
-                self.restore_phi_3d_to_3d(iz-top.izpslave[me],it,savedphi,solver.phip,
+                self.restore_phi_3d_to_3d(iz-top.izpdecomp[me],it,savedphi,solver.phip,
                                           solver)
         elif self.solvergeom == solver.solvergeom and solver.solvergeom == w3d.RZgeom:
-            self.restore_phi_rz_to_rz(iz-top.izfsslave[me],it,savedphi,solver.phi,
+            self.restore_phi_rz_to_rz(iz-top.izfsdecomp[me],it,savedphi,solver.phi,
                                       solver)
         elif self.solvergeom == w3d.RZgeom and solver.solvergeom == w3d.XYZgeom:
             self.restore_phi_rz_to_3d(iz,it,savedphi,solver.phi)
-            if top.izpslave[me] != top.izfsslave[me]:
+            if top.izpdecomp[me] != top.izfsdecomp[me]:
                 self.restore_phi_rz_to_3d(iz,it,savedphi,solver.phip)
 
     #######################################################################

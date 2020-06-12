@@ -1427,8 +1427,8 @@ c       --- number of species as the z moments.
         vzmaxp = maxp(6,:)
         vzminp = minp(6,:)
 
-c       --- For slave, call routine which sums moments over processors.
 #ifdef MPIPARALLEL
+c       --- When parallel, call routine which sums moments over processors.
         call parallel_sum_mmnts(zmmnts0,zmmnts)
 #endif
 
@@ -7258,7 +7258,7 @@ c===========================================================================
       timetemp = wtime()
 
 #ifdef MPIPARALLEL
-c     --- For slave, call routine which sums moments over processors.
+c     --- When parallel, call routine which sums moments over processors.
       call parallel_sum_temperature
 #endif
 

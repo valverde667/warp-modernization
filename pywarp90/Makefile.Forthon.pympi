@@ -22,17 +22,17 @@ installso: toppy.$(SO) envpy.$(SO) w3dpy.$(SO) f3dpy.$(SO) wxypy.$(SO) fxypy.$(S
 install: installso
 	(cd ../scripts;$(PYTHON) setup.py install $(INSTALLOPTIONS))
 
-toppy.$(SO): top.F top_lattice.F top_fsl.F dtop.F util.F topslave.F top.v
-	$(FORTHON) -a $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) top top_lattice.F top_fsl.F dtop.F util.F topslave.F $(BUILDARGS)
+toppy.$(SO): top.F top_lattice.F top_fsl.F dtop.F util.F topparallel.F top.v
+	$(FORTHON) -a $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) top top_lattice.F top_fsl.F dtop.F util.F topparallel.F $(BUILDARGS)
 
 envpy.$(SO): toppy.$(SO) env.F env.v
 	$(FORTHON) -a $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) env $(BUILDARGS)
 
-w3dpy.$(SO): toppy.$(SO) w3d.F dw3d.F w3d_injection.F w3d_interp.F w3d_collisions.F w3d_utilities.F w3d_load.F w3dslave.F w3d.v
-	$(FORTHON) -a $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) --macros top.v w3d dw3d.F w3d_injection.F w3d_interp.F w3d_collisions.F w3d_load.F w3d_utilities.F w3dslave.F $(BUILDARGS)
+w3dpy.$(SO): toppy.$(SO) w3d.F dw3d.F w3d_injection.F w3d_interp.F w3d_collisions.F w3d_utilities.F w3d_load.F w3dparallel.F w3d.v
+	$(FORTHON) -a $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) --macros top.v w3d dw3d.F w3d_injection.F w3d_interp.F w3d_collisions.F w3d_load.F w3d_utilities.F w3dparallel.F $(BUILDARGS)
 
-f3dpy.$(SO): toppy.$(SO) w3dpy.$(SO) f3d.F f3d_mgrid.F f3d_ImplicitES.F f3d_mgrid_be.F f3d_bfield.F f3d_conductors.F fft.F f3d.v f3dslave.F
-	$(FORTHON) -a $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) --macros top.v f3d f3d_mgrid.F f3d_ImplicitES.F f3d_mgrid_be.F f3d_bfield.F f3d_conductors.F fft.F f3dslave.F $(BUILDARGS)
+f3dpy.$(SO): toppy.$(SO) w3dpy.$(SO) f3d.F f3d_mgrid.F f3d_ImplicitES.F f3d_mgrid_be.F f3d_bfield.F f3d_conductors.F fft.F f3d.v f3dparallel.F
+	$(FORTHON) -a $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) --macros top.v f3d f3d_mgrid.F f3d_ImplicitES.F f3d_mgrid_be.F f3d_bfield.F f3d_conductors.F fft.F f3dparallel.F $(BUILDARGS)
 
 wxypy.$(SO): toppy.$(SO) w3dpy.$(SO) wxy.F wxy.v
 	$(FORTHON) -a $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) wxy $(BUILDARGS)
@@ -43,8 +43,8 @@ fxypy.$(SO): toppy.$(SO) w3dpy.$(SO) f3dpy.$(SO) fxy.F fxy_mgrid.F fxy.v
 wrzpy.$(SO): toppy.$(SO) w3dpy.$(SO) wrz.F dwrz.F wrz.v
 	$(FORTHON) -a $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) --macros top.v wrz dwrz.F $(BUILDARGS)
 
-frzpy.$(SO): toppy.$(SO) w3dpy.$(SO) f3dpy.$(SO) frz.F frz_mgrid.F90 frz_mgrid_be.F frz_ImplicitES.F frz.v frzslave.F90
-	$(FORTHON) -a $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) --compile_first frzslave frz frz_mgrid.F90 frz_mgrid_be.F frz_ImplicitES.F $(BUILDARGS)
+frzpy.$(SO): toppy.$(SO) w3dpy.$(SO) f3dpy.$(SO) frz.F frz_mgrid.F90 frz_mgrid_be.F frz_ImplicitES.F frz.v frzparallel.F90
+	$(FORTHON) -a $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) --compile_first frzparallel frz frz_mgrid.F90 frz_mgrid_be.F frz_ImplicitES.F $(BUILDARGS)
 
 herpy.$(SO): toppy.$(SO) wrzpy.$(SO) her.F her.v
 	$(FORTHON) -a $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) her $(BUILDARGS)

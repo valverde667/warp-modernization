@@ -971,9 +971,6 @@ c This is the routine which divies up the work among the parallel processors.
       logical(MPIISZ), dimension(3):: periods=.TRUE.
 #endif
 
-c     --- nslaves is obsolete but still set it since it is used in places.
-      nslaves = nprocs
-
 c     --- This does the decomposition in z by default, but includes
 c     --- any user specified transverse decomposition.
       nzprocs = nprocs/(nxprocs*nyprocs)
@@ -1212,10 +1209,10 @@ c     --- tied to any grid.
 
 c     --- Copy the data over to the old arrays, until the rest of the code
 c     --- has caught up (and then they can be deleted).
-      izfsslave = fsdecomp%iz
-      nzfsslave = fsdecomp%nz
-      izpslave = ppdecomp%iz
-      nzpslave = ppdecomp%nz
+      izfsdecomp = fsdecomp%iz
+      nzfsdecomp = fsdecomp%nz
+      izpdecomp = ppdecomp%iz
+      nzpdecomp = ppdecomp%nz
       zpslmin =  ppdecomp%zmin
       zpslmax =  ppdecomp%zmax
 

@@ -69,7 +69,7 @@ TYPE(BNDtype), POINTER :: b
   IF(solvergeom==XYgeom) then
     nprocsrz = nprocgrid(1)
   else
-    if(l_parallel .and. any(nzpslave/=nz)) then
+    if(l_parallel .and. any(nzpdecomp/=nz)) then
       call kaboom('Error: w3d.nz must be a multiple of the number of processes npes.')
       return
     end if
@@ -983,7 +983,7 @@ TYPE(BNDtype), pointer :: b
   end do
 
   nlevels=MIN(nlevels,mgridrz_nlevels_max)
-!  nlevels=nint(mpi_global_compute_real(real(nlevels),MPI_MIN)) ! might be needed when nz is not the same for every slave.
+!  nlevels=nint(mpi_global_compute_real(real(nlevels),MPI_MIN)) ! might be needed when nz is not the same for every processor.
 
   g%nlevels = nlevels
 
@@ -7988,7 +7988,7 @@ end subroutine rhobndrz
 
 #ifdef MPIPARALLEL
    if(.not.basegrid%l_parallel) return
-   call perpot3d_slave(basegrid%phi(:,0:basegrid%nz+2),1,basegrid%nr,0,basegrid%nz,basegrid%nguardx,0)
+   call perpot3d_parallel(basegrid%phi(:,0:basegrid%nz+2),1,basegrid%nr,0,basegrid%nz,basegrid%nguardx,0)
 #endif
 
   return
@@ -8000,8 +8000,8 @@ implicit none
 
 #ifdef MPIPARALLEL
    if(.not.basegrid%l_parallel) return
-!       XXX commented until replaced by applyrhoboundaryconditions_slave
-!  call persource3d_slave(basegrid%rho(0,0),1,basegrid%nr,0,basegrid%nz)
+!       XXX commented until replaced by applyrhoboundaryconditions_parallel
+!  call persource3d_parallel(basegrid%rho(0,0),1,basegrid%nr,0,basegrid%nz)
 #endif
 
 end subroutine perrhorz

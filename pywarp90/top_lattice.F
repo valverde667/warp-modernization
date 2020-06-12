@@ -2353,8 +2353,8 @@ c     --- For each element type, check to see if any elements are in the mesh.
       linlmap(0)    = any(linlmap)
       linpyelem(0)  = any(linpyelem)
 
-c     --- All parallel slave processors must know if any processors
-c     --- are in a bend.  There is probably a better way of doing this.
+c     --- All parallel processors must know if any processors
+c     --- are in a bend. There is probably a better way of doing this.
 #ifdef MPIPARALLEL
       if (bends) then
         wi = 0.

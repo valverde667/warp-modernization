@@ -402,7 +402,7 @@ class FieldSolver(object):
                      'solvergeom']
     __topinputs__ = ['pbound0','pboundnz','pboundxy',
                      'nprocs','nxprocs','nyprocs','nzprocs',
-                     'lfsautodecomp','zslave','debug']
+                     'lfsautodecomp','zdecomp','debug']
     __flaginputs__ = {'forcesymmetries':1,
                       'lreducedpickle':1,'lnorestoreonpickle':0,
                       'ldosolve':1,'l_internal_dosolve':1,

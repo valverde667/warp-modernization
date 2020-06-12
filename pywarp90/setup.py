@@ -71,8 +71,8 @@ if sys.hexversion < 0x03000000:
                                  #'em2d_apml.o', 'em2d_apml_cummer.o', 'em2d_maxwell.o',
                                  'em3d_maxwell.o']
     if parallel:
-        warpobjects = warpobjects + ['f3dslave.o', 'frzslave.o', 'topslave.o',
-                                     'w3dslave.o']
+        warpobjects = warpobjects + ['f3dparallel.o', 'frzparallel.o', 'topparallel.o',
+                                     'w3dparallel.o']
 
     warpobjects = map(lambda p:os.path.join(builddir, p), warpobjects)
 

@@ -18,9 +18,9 @@ def getvalidationdata():
         # --- the answers will be different with differing numbers of processors.
         iz1 = 0
         if me < npes-1:
-            iz2 = top.izfsslave[me+1] - top.izfsslave[me]
+            iz2 = top.izfsdecomp[me+1] - top.izfsdecomp[me]
         else:
-            iz2 = iz1 + top.nzfsslave[me] + 1
+            iz2 = iz1 + top.nzfsdecomp[me] + 1
         return (globalsum(sum(getx(gather=0))),
                 globalsum(sum(gety(gather=0))),
                 globalsum(sum(getz(gather=0))),

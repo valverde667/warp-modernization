@@ -38,7 +38,7 @@ class MultiGrid3D(SubcycledPoissonSolver):
   | Input parameters from top:
   |    pbound0,pboundnz,pboundxy,
   |    nprocs,nxprocs,nyprocs,nzprocs,
-  |    lfsautodecomp,zslave,debug
+  |    lfsautodecomp,zdecomp,debug
 
   | Input parameters from f3d:
   |    gridmode,mgparam,downpasses,uppasses,

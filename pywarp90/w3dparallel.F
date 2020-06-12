@@ -1,6 +1,6 @@
 #include "top.h"
 c===========================================================================
-c Slave routines associated with the W3D package.
+c Parallel routines associated with the W3D package.
 c===========================================================================
 c===========================================================================
       subroutine init_w3d_parallel
@@ -8,7 +8,7 @@ c===========================================================================
       use Parallel
       use mpi
 
-c This is the routine which divies up the work among the slaves.
+c This is the routine which divies up the work among the processors
 
       logical(MPIISZ):: w3dinitialized
       data w3dinitialized/.false./
@@ -24,7 +24,7 @@ c This routine should only be called once.
       if (w3dinitialized) return
       w3dinitialized = .true.
 
-c get number of slaves and my_pe
+c get number of processors and my_pe
       call MPI_INITIALIZED(initialized,mpierror)
       if (.not. initialized) call MPI_INIT(mpierror)
       if (.not. lcomm_world_initted) then
@@ -336,10 +336,10 @@ c         --- Gather up the data sent to this processor.
       return
       end
 c=============================================================================
-      subroutine makesourceperiodic_slave_work(axis,source,nc,
-     &                                         nxlocal,nylocal,nzlocal,
-     &                                         nxguardrho,nyguardrho,nzguardrho,
-     &                                         nprocs,iproc,mpi_communicator)
+      subroutine makesourceperiodic_parallel_work(axis,source,nc,
+     &                                            nxlocal,nylocal,nzlocal,
+     &                                            nxguardrho,nyguardrho,nzguardrho,
+     &                                            nprocs,iproc,mpi_communicator)
       use Subtimersw3d
       use mpi
       integer(ISZ):: axis,nc,nxlocal,nylocal,nzlocal
@@ -434,7 +434,8 @@ c       --- The temp array can be deallocated now that the send is complete.
       endif
 
 !$OMP MASTER
-      if (lw3dtimesubs) timemakesourceperiodic_slave_work = timemakesourceperiodic_slave_work + wtime() - substarttime
+      if (lw3dtimesubs) timemakesourceperiodic_parallel_work =
+     &                  timemakesourceperiodic_parallel_work + wtime() - substarttime
 !$OMP END MASTER
 
       return
@@ -654,7 +655,7 @@ c     --- Free all of the types
       return
       end
 c=============================================================================
-      subroutine perpot3d_slave(pot,nc,nx,ny,nzlocal,delx,dely)
+      subroutine perpot3d_parallel(pot,nc,nx,ny,nzlocal,delx,dely)
       use Subtimersw3d
       use Parallel
       use mpi
@@ -697,7 +698,7 @@ c  Only first and last processors do anything.
       endif
 
 !$OMP MASTER
-      if (lw3dtimesubs) timeperpot3d_slave = timeperpot3d_slave + wtime() - substarttime
+      if (lw3dtimesubs) timeperpot3d_parallel = timeperpot3d_parallel + wtime() - substarttime
 !$OMP END MASTER
 
       return
@@ -933,36 +934,36 @@ c     --- so that the guard cells are filled properly.
 c     --- Data to be sent
       do i=0,nzprocs-1
         if (izproc == 0) then
-          izglobal = max(izfsslave(izproc)-1,izfsslave(i)-nzguardphi)
+          izglobal = max(izfsdecomp(izproc)-1,izfsdecomp(i)-nzguardphi)
         else
-          izglobal = max(izfsslave(izproc),izfsslave(i)-nzguardphi)
+          izglobal = max(izfsdecomp(izproc),izfsdecomp(i)-nzguardphi)
         endif
-        izmax = izfsslave(i) + nzfsslave(i) + nzguardphi
+        izmax = izfsdecomp(i) + nzfsdecomp(i) + nzguardphi
         if (izproc == nzprocs-1) then
-          izmaxfs  = izfsslave(izproc)+nzfsslave(izproc)+nzguardphi
+          izmaxfs  = izfsdecomp(izproc)+nzfsdecomp(izproc)+nzguardphi
         else
-          izmaxfs  = izfsslave(izproc)+nzfsslave(izproc)-1
+          izmaxfs  = izfsdecomp(izproc)+nzfsdecomp(izproc)-1
         endif
 
-        izsend(i) = izglobal - izfsslave(izproc)
+        izsend(i) = izglobal - izfsdecomp(izproc)
         nzsend(i) = min(izmax,izmaxfs) - izglobal + 1
       enddo
 
 c     --- Then, gather up the data sent to this processor.
       do i=0,nzprocs-1
         if (i == 0) then
-          izglobal = max(izfsslave(izproc)-nzguardphi,izfsslave(i)-1)
+          izglobal = max(izfsdecomp(izproc)-nzguardphi,izfsdecomp(i)-1)
         else
-          izglobal = max(izfsslave(izproc)-nzguardphi,izfsslave(i))
+          izglobal = max(izfsdecomp(izproc)-nzguardphi,izfsdecomp(i))
         endif
-        izmax   = izfsslave(izproc)+nzfsslave(izproc)+nzguardphi
+        izmax   = izfsdecomp(izproc)+nzfsdecomp(izproc)+nzguardphi
         if (i == nzprocs-1) then
-          izmaxfs  = izfsslave(i)+nzfsslave(i)+nzguardphi
+          izmaxfs  = izfsdecomp(i)+nzfsdecomp(i)+nzguardphi
         else
-          izmaxfs  = izfsslave(i)+nzfsslave(i)-1
+          izmaxfs  = izfsdecomp(i)+nzfsdecomp(i)-1
         endif
 
-        izrecv(i) = izglobal - izfsslave(izproc)
+        izrecv(i) = izglobal - izfsdecomp(izproc)
         nzrecv(i) = min(izmax,izmaxfs) - izglobal + 1
       enddo
 

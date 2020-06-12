@@ -693,9 +693,9 @@ c  line is on a single processor.
         call vpftz(nx_tran,ny_tran,nz,nxguardphi,nyguardphi,nzguardphi,
      &             phi_trnsps,norm,1,1,zwork)
 
-        if (iwhich == 2 .or. iwhich == 10 .or. ny <= nslaves) then
+        if (iwhich == 2 .or. iwhich == 10 .or. ny <= nprocs) then
 c         --- Transpose back if not doing the full field solve
-c         --- Note that if ny <= nslaves, transform back as well since the
+c         --- Note that if ny <= nprocs, transform back as well since the
 c         --- ordering of the x and y lines are modified and not compatible
 c         --- with the attenuation and rhotophi calls. This is a lazy fix,
 c         --- a better way would likely be to write appropriate copy loops

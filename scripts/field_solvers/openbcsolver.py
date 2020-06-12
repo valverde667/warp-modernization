@@ -23,7 +23,7 @@ class OpenBC3D(SubcycledPoissonSolver):
 
   | Input parameters from top:
   |    nprocs,nxprocs,nyprocs,nzprocs,
-  |    lfsautodecomp,zslave,debug
+  |    lfsautodecomp,zdecomp,debug
 
   | Other input paramters:
   |    lreducedpickle=1: When true, when the instance is pickled, the large

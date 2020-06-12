@@ -1285,15 +1285,15 @@ setupgrid2dtype(grid:Grid2dtype,check:logical) subroutine
       # If check is false, then the input is inconsistent.
 setupdecompositionw3d() subroutine
       # Setup the domain decomposition
-domaindecomposefields(nz:integer,nslaves:integer,lfsautodecomp:logical,
-        izfsslave(0:nslaves-1):integer,nzfsslave(0:nslaves-1):integer,
+domaindecomposefields(nz:integer,nprocs:integer,lfsautodecomp:logical,
+        izfsdecomp(0:nprocs-1):integer,nzfsdecomp(0:nprocs-1):integer,
         overlap:integer) subroutine
       # Do the domain decomposition for the field solver
-domaindecomposeparticles(nz:integer,nslaves:integer,
+domaindecomposeparticles(nz:integer,nprocs:integer,
                 nzguardrho:integer,zmmin:real,
-                dz:real,zslave(0:nslaves-1):real,lautodecomp:logical,
-                izpslave(0:nslaves-1):integer,nzpslave(0:nslaves-1):integer,
-                zpslmin(0:nslaves-1):real,zpslmax(0:nslaves-1):real) subroutine
+                dz:real,zdecomp(0:nprocs-1):real,lautodecomp:logical,
+                izpdecomp(0:nprocs-1):integer,nzpdecomp(0:nprocs-1):integer,
+                zpslmin(0:nprocs-1):real,zpslmax(0:nprocs-1):real) subroutine
       # Do the domain decomposition for the particles
 initializedecomp(decomp:Decomposition) subroutine
       # Does some setup for a decompostion object
@@ -1502,8 +1502,8 @@ timesw_globalsum real /0./
 timesumsourcepondomainboundaries real /0./
 timeapplyrhoboundaryconditions3d real /0./
 timesetsourceforfieldsolve3d_parallel real /0./
-timemakesourceperiodic_slave_work real /0./
-timeperpot3d_slave real /0./
+timemakesourceperiodic_parallel_work real /0./
+timeperpot3d_parallel real /0./
 timegetphipforparticles3d_parallel real /0./
 timegetphiforparticles3d real /0./
 timegetphiforfields3d real /0./

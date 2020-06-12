@@ -1807,8 +1807,8 @@ class EM3D(SubcycledPoissonSolver):
             # --- everything is reinstalled.
             try:
                 conductorobject = self.conductorobjects['p']
-                if (conductorobject.leveliz[0] != self.izpslave[self.my_index] or
-                    conductorobject.levelnz[0] != self.nzpslave[self.my_index]):
+                if (conductorobject.leveliz[0] != self.izpdecomp[self.my_index] or
+                    conductorobject.levelnz[0] != self.nzpdecomp[self.my_index]):
                     del self.conductorobjects['p']
                     del self.installedconductorlists['p']
             except KeyError:

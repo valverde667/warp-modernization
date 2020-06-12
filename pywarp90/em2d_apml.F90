@@ -591,7 +591,7 @@ subroutine move_bnd(b)
    end do
   end if
 
-  if(my_index<nslaves-1) then
+  if(my_index<nprocs-1) then
    do i = 1,2
     messid=101
 !    write(0,*) my_index,' sends data to ',my_index+1

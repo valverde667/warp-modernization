@@ -185,7 +185,7 @@ end if
                   my_index-1,messid,comm_world_mpiisz,mpistatus,mpierror)
 !    write(0,*) 'done'
   end if
-  if(my_index<nslaves-1) then
+  if(my_index<nprocs-1) then
     messid=101
 !    write(0,*) my_index,' sends data to ',my_index+1
     call MPI_ISEND(f%Bz(f%nx,:),size(f%Bz(1,:)),MPI_DOUBLE_PRECISION, &
@@ -510,7 +510,7 @@ end if
                   my_index-1,messid,comm_world_mpiisz,mpistatus,mpierror)
 !    write(0,*) 'done'
   end if
-  if(my_index<nslaves-1) then
+  if(my_index<nprocs-1) then
     messid=101
 !    write(0,*) my_index,' sends data to ',my_index+1
     call MPI_ISEND(f%Ez(f%nx,:),size(f%Ez(1,:)),MPI_DOUBLE_PRECISION, &

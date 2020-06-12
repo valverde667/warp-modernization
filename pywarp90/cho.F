@@ -109,8 +109,8 @@ c       --- Initialize data describing the mesh and pass it to Chombo.
         subdomains(2,1,:) = 0
         subdomains(2,2,:) = ny
 #ifdef MPIPARALLEL
-        subdomains(3,1,:) = izpslave
-        subdomains(3,2,:) = izpslave + nzpslave
+        subdomains(3,1,:) = izpdecomp
+        subdomains(3,2,:) = izpdecomp + nzpdecomp
 #else
         subdomains(3,1,:) = 0
         subdomains(3,2,:) = nzlocal

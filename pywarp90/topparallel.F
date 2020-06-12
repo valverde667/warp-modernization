@@ -1,6 +1,6 @@
 #include "top.h"
 c=============================================================================
-c Slave routines related to top package.
+c Parallel routines related to top package.
 c D. P. Grote
 c=============================================================================
 c===========================================================================
@@ -864,7 +864,7 @@ c       call MPI_TYPE_FREE(mpinewtype,mpierror)
 c       deallocate(blocklengths,displacements)
 
 !$OMP MASTER
-      if (ltoptimesubs) timezpartbnd_slave = timezpartbnd_slave + wtime() - substarttime
+      if (ltoptimesubs) timezpartbnd_parallel = timezpartbnd_parallel + wtime() - substarttime
 !$OMP END MASTER
 
       return

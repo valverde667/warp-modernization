@@ -5474,8 +5474,8 @@ def ppdecompositionz(scale=1.,minscale=0.,gap=0.2):
     mm = 1. - gap
     for i in range(top.nprocs):
         z = z + [1.]
-        zmin = top.izfsslave[i]*w3d.dz + w3d.zmmin
-        zmax = (top.izfsslave[i] + top.nzfsslave[i])*w3d.dz + w3d.zmmin
+        zmin = top.izfsdecomp[i]*w3d.dz + w3d.zmmin
+        zmax = (top.izfsdecomp[i] + top.nzfsdecomp[i])*w3d.dz + w3d.zmmin
         x = x + [zmin,zmax,zmax,zmin,zmin]
         y = y + list(i*dd + 0.5*dd*array([-mm,-mm,mm,mm,-mm]))
     for i in range(top.nprocs):
@@ -5486,8 +5486,8 @@ def ppdecompositionz(scale=1.,minscale=0.,gap=0.2):
         y = y + list(i*dd + 0.5*dd*array([0,0,mm,mm,0]))
     for i in range(top.nprocs):
         z = z + [3.]
-        zmin = top.izfsslave[i]*w3d.dz
-        zmax = top.izfsslave[i]*w3d.dz + top.nzfsslave[i]*w3d.dz
+        zmin = top.izfsdecomp[i]*w3d.dz
+        zmax = top.izfsdecomp[i]*w3d.dz + top.nzfsdecomp[i]*w3d.dz
         x = x + [zmin,zmax,zmax,zmin,zmin]
         y = y + list(i*dd + 0.5*dd*array([-mm,-mm,0,0,-mm]))
     plfp(array(z),y,x,5*ones(len(z),'l'),cmin=0,cmax=4,local=1)

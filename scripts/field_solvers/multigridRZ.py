@@ -685,8 +685,8 @@ class MultiGrid2DDielectric(MultiGrid2D):
             # --- everything is reinstalled.
             try:
                 conductorobject = self.conductorobjects['p']
-                if (conductorobject.leveliz[0] != self.izpslave[self.my_index] or
-                    conductorobject.levelnz[0] != self.nzpslave[self.my_index]):
+                if (conductorobject.leveliz[0] != self.izpdecomp[self.my_index] or
+                    conductorobject.levelnz[0] != self.nzpdecomp[self.my_index]):
                     del self.conductorobjects['p']
                     del self.installedconductorlists['p']
             except KeyError:
@@ -1308,8 +1308,8 @@ class MultiGridRZunsupported(MultiGrid3D):
         self._rho = self.source
         if isinstance(self.potential,float): return
 
-#   if self.izfsslave is None: self.izfsslave = top.izfsslave
-#   if self.nzfsslave is None: self.nzfsslave = top.nzfsslave
+#   if self.izfsdecomp is None: self.izfsdecomp = top.izfsdecomp
+#   if self.nzfsdecomp is None: self.nzfsdecomp = top.nzfsdecomp
         mgiters = zeros(1,'l')
         mgerror = zeros(1,'d')
 
