@@ -3161,9 +3161,9 @@ class Plane(Assembly):
     def getextent(self):
         # --- Just assume that the conductor extends everywhere since it can be tricky
         # --- to calculate its extent within the grid.
-        ConductorExtent([-largepos,-largepos,-largepos],
-                        [+largepos,+largepos,+largepos],
-                        [self.xcent,self.ycent,self.zcent])
+        return ConductorExtent([-largepos,-largepos,-largepos],
+                               [+largepos,+largepos,+largepos],
+                               [self.xcent,self.ycent,self.zcent])
 
 
 #============================================================================
