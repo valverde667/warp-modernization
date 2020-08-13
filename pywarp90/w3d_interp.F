@@ -883,7 +883,7 @@ c      call geteb(pgroup,npd,is,ipmin,x,y,z,ex,ey,ez,bx,by,bz)
 c     bx(:) = 0.
 c     by(:) = 0.
 c     bz(:) = 0.
-      call exteb3d(npd,x,y,z,pgroup%uzp(ipmin),pgroup%gaminv(ipmin),-dtr,dtr,
+      call exteb3d(npd,x,y,z,pgroup%uzp(ipmin:),pgroup%gaminv(ipmin:),-dtr,dtr,
      &             bx,by,bz,ex,ey,ez,pgroup%sm(is),
      &             pgroup%sq(is),bendres,bendradi,dt)
 c     Now get the gradients of B**2
@@ -1048,7 +1048,7 @@ c      use InGen
       if (lw3dtimesubs) substarttime = wtime()
       dtr=.5*dt
       bx(:)=0.;by(:)=0.;bz(:)=0.
-      call exteb3d(npd,x,y,z,pgroup%uzp(ipmin),pgroup%gaminv(ipmin),-dtr,dtr,
+      call exteb3d(npd,x,y,z,pgroup%uzp(ipmin:),pgroup%gaminv(ipmin:),-dtr,dtr,
      &         bx,by,bz,ex,ey,ez,pgroup%sm(is),
      &         pgroup%sq(is),bendres,bendradi,dt)
       do i=1,npd
@@ -1423,16 +1423,16 @@ c     sets total E at particle positions
       call fetche3d(pgroup,ipmin,npd,is)
 c     add external fields.  Unfortunately this adds B fields, which we
 c     don't need to do again.  So give it dummy B fields to set.
-      call othere3d(npd,xp(ipmin),yp(ipmin),zp(ipmin),
+      call othere3d(npd,xp(ipmin:),yp(ipmin:),zp(ipmin:),
      &              zbeam,zimax,zimin,straight,ifeears,eears,
      &              eearsofz,dzzi,nzzarr,zzmin,dedr,dexdx,deydy,dbdr,
-     &              dbxdy,dbydx,ex(ipmin),ey(ipmin),ez(ipmin),
+     &              dbxdy,dbydx,ex(ipmin:),ey(ipmin:),ez(ipmin:),
      &              bx,by,bz)
 c    --- Set quad, dipole E and B
-      call exteb3d(npd,xp(ipmin),yp(ipmin),zp(ipmin),uzp(ipmin),
-     &              gaminv(ipmin),-halfdt,halfdt,
+      call exteb3d(npd,xp(ipmin:),yp(ipmin:),zp(ipmin:),uzp(ipmin:),
+     &              gaminv(ipmin:),-halfdt,halfdt,
      &              bx,by,bz,
-     &              ex(ipmin),ey(ipmin),ez(ipmin),sm(is),sq(is),
+     &              ex(ipmin:),ey(ipmin:),ez(ipmin:),sm(is),sq(is),
      &              bendres,bendradi,dt)
 
       lresetparticlee = .false.

@@ -953,9 +953,9 @@ c  gen phases.
 c  0. is passed in as a dummy for all of the particles coordinates
 c  which are not used at this time.
       if ((caller == "w3dexe" .and. lspecial) .or.caller == "w3dgen") then
-        call getzmmnt(1,0.,0.,0.,0.,0.,0.,0.,
+        call getzmmnt(1,[0.],[0.],[0.],[0.],[0.],[0.],[0.],
      &                0.,0.,0.,0.,0.,1,
-     &                nplive,0.,0.,0.,1,-1,ns,
+     &                nplive,[0.],[0.],[0.],1,-1,ns,
      &                tempmaxp,tempminp,tempzmmnts0,tempzmmnts)
       endif
 
@@ -970,8 +970,8 @@ c  do a half-advance to bring v to t.l. it
 
 c  Finalize the moments calculation and do other diagnostics.
       if ((caller == "w3dexe" .and. lspecial) .or.caller == "w3dgen") then
-        call getzmmnt(1,0.,0.,0.,0.,0.,0.,0.,
-     &                0.,0.,0.,0.,0.,3,nplive,0.,0.,0.,
+        call getzmmnt(1,[0.],[0.],[0.],[0.],[0.],[0.],[0.],
+     &                0.,0.,0.,0.,0.,3,nplive,[0.],[0.],[0.],
      &                1,1,ns,tempmaxp,tempminp,tempzmmnts0,tempzmmnts)
       endif
       call getlabwn()

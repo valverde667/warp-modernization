@@ -743,9 +743,9 @@ c  Initialize the moments arrays which are calculated during the synchv and
 c  gen phases.
 c  0. is passed in as a dummy for all of the particles coordinates
 c  which are not used at this time.
-      call getzmmnt(1,0.,0.,0.,0.,0.,0.,0.,
+      call getzmmnt(1,[0.],[0.],[0.],[0.],[0.],[0.],[0.],
      &              0.,0.,0.,0.,0.,1,
-     &              nplive,0.,0.,0.,1,-1,ns,
+     &              nplive,[0.],[0.],[0.],1,-1,ns,
      &              tempmaxp,tempminp,tempzmmnts0,tempzmmnts)
 
 c  If a flag was set making this a "special" step,
@@ -758,8 +758,8 @@ c  do a half-advance to bring v to t.l. it
       endif
 
 c  Finalize the moments calculation
-      call getzmmnt(1,0.,0.,0.,0.,0.,0.,0.,
-     &              0.,0.,0.,0.,0.,3,nplive,0.,0.,0.,
+      call getzmmnt(1,[0.],[0.],[0.],[0.],[0.],[0.],[0.],
+     &              0.,0.,0.,0.,0.,3,nplive,[0.],[0.],[0.],
      &              1,0,ns,tempmaxp,tempminp,tempzmmnts0,tempzmmnts)
 
 c  Gather moments used in diagnostics at "special" timesteps only.

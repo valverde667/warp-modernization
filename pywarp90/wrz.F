@@ -250,9 +250,9 @@ c  Create the dynamic arrays for z moments; calculate moments
            zmntmesh(k) = zmmntmin + k*(zmmntmax-zmmntmin)/nzmmnt
         enddo
         ismax = maxval(pgroup%sid)+1
-        call getzmmnt(1,0.,0.,0.,0.,0.,0.,0.,
+        call getzmmnt(1,[0.],[0.],[0.],[0.],[0.],[0.],[0.],
      &                0.,0.,0.,0.,0.,1,
-     &                nplive,0.,0.,0.,1,-1,ns,
+     &                nplive,[0.],[0.],[0.],1,-1,ns,
      &                tempmaxp,tempminp,tempzmmnts0,tempzmmnts)
 
         do is=1,ns
@@ -279,8 +279,8 @@ c             --- Use t=0 u data also as "old" data for extraps
      &                        uxpo,uypo,uzpo,is,isid,ismax,tempmaxp,tempminp,tempzmmnts0,tempzmmnts)
               endif
            enddo
-           call getzmmnt(1,0.,0.,0.,0.,0.,0.,0.,
-     &                   0.,0.,0.,0.,0.,3,nplive,0.,0.,0.,
+           call getzmmnt(1,[0.],[0.],[0.],[0.],[0.],[0.],[0.],
+     &                   0.,0.,0.,0.,0.,3,nplive,[0.],[0.],[0.],
      &                   1,1,ns,tempmaxp,tempminp,tempzmmnts0,tempzmmnts)
          enddo
       endif
@@ -317,7 +317,8 @@ c  Initial call to fieldsolver in order to initialize attz, kzsq, etc.
 
 c  Call the field solver so  we can plot phi on axis at t=0
 
-      call copyarry (rho, phi(0,0), nrz)
+      !call copyarry (rho, phi(0,0), nrz)
+      phi(0:nr,0:nz) = rho(0:nr,0:nz)
       call vprz (-1)
       if (periinz) call perphirz(phi(0,-1),nr,nz)
 
@@ -444,7 +445,8 @@ c           call zeroarry(rhov,nrz)
             enddo
             call perrhorz(rhov,nr,nz)
          endif
-         call copyarry (rho, phi(0,0), nrz)
+         !call copyarry (rho, phi(0,0), nrz)
+         phi(0:nr,0:nz) = rho(0:nr,0:nz)
          call vprz (-1)
          if (periinz) call perphirz(phi(0,-1),nr,nz)
       endif
@@ -612,7 +614,8 @@ c  Charge density and line charge plots
 
 c  Field-solve for potential (copy rho into phi first, compute e.s.e. after)
       if (lbeforefs) call callpythonfunc("beforefs","controllers")
-      call copyarry (rho, phi(0,0), nrz)
+      !call copyarry (rho, phi(0,0), nrz)
+      phi(0:nr,0:nz) = rho(0:nr,0:nz)
       call vprz (-1)
       if (periinz) call perphirz(phi(0,-1),nr,nz)
       if (lafterfs) call callpythonfunc("afterfs","controllers")
@@ -1069,9 +1072,9 @@ c     call zeroarry(curr,nz+1)
 c  Zero the moments if center is synchv
       if (center .eq. "synchv") then
 c       call getemits(1,xp,yp,pgroup%zp,pgroup%uxp,pgroup%uyp,pgroup%uzp,pgroup%gaminv,pgroup%sm(1),pgroup%sw(1),1,nplive)
-        call getzmmnt(1,0.,0.,0.,0.,0.,0.,0.,
+        call getzmmnt(1,[0.],[0.],[0.],[0.],[0.],[0.],[0.],
      &                0.,0.,0.,0.,0.,1,
-     &                nplive,0.,0.,0.,1,-1,ns,
+     &                nplive,[0.],[0.],[0.],1,-1,ns,
      &                tempmaxp,tempminp,tempzmmnts0,tempzmmnts)
       endif
 
@@ -1176,8 +1179,8 @@ c        call zeroarry(rhov,nrz)
 c      ---  Do final stuff for moments calculation
        if (center .eq. "synchv") then
 c       call getemits(1,xp,yp,pgroup%zp,pgroup%uxp,pgroup%uyp,pgroup%uzp,pgroup%gaminv,pgroup%sm(is),pgroup%sw(is),3,nplive)
-       call getzmmnt(1,0.,0.,0.,0.,0.,0.,0.,
-     &               0.,0.,0.,0.,0.,3,nplive,0.,0.,0.,
+       call getzmmnt(1,[0.],[0.],[0.],[0.],[0.],[0.],[0.],
+     &               0.,0.,0.,0.,0.,3,nplive,[0.],[0.],[0.],
      &               1,1,ns,tempmaxp,tempminp,tempzmmnts0,tempzmmnts)
        endif
 
@@ -2227,7 +2230,8 @@ c=============================================================================
 c Does the complete fieldsolver, including copying rho into phi and setting
 c boundary conditions.
 
-      call copyarry (rho, phi(0,0), nrz)
+      !call copyarry (rho, phi(0,0), nrz)
+      phi(0:nr,0:nz) = rho(0:nr,0:nz)
       call vprz (-1)
       if (periinz) call perphirz(phi(0,-1),nr,nz)
 

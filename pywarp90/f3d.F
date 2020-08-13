@@ -3174,12 +3174,12 @@ c     call dsidi(cmat3d,nc3d,nc3d,kpvt3d,tt1,tt2,scrtch,001)
 
 c     --- These routines are from LAPACK.
 #if WORDSIZE == 64
-      call ssytrf("U",nc3d,cmat3d,nc3d,kpvt3d,scrtch,(1+nx)*(1+ny),info)
+      call ssytrf("U",nc3d,cmat3d(:,:,0),nc3d,kpvt3d,scrtch,(1+nx)*(1+ny),info)
 #else
 #ifdef CYGWIN
-      call dsytrf_("U",nc3d,cmat3d,nc3d,kpvt3d,scrtch,(1+nx)*(1+ny),info)
+      call dsytrf_("U",nc3d,cmat3d(:,:,0),nc3d,kpvt3d,scrtch,(1+nx)*(1+ny),info)
 #else
-      call dsytrf("U",nc3d,cmat3d,nc3d,kpvt3d,scrtch,(1+nx)*(1+ny),info)
+      call dsytrf("U",nc3d,cmat3d(:,:,0),nc3d,kpvt3d,scrtch,(1+nx)*(1+ny),info)
 #endif
 #endif
       if (info .ne. 0) then
@@ -3189,12 +3189,12 @@ c       print*,info
       endif
 c     --- pcond3d is passed as workspace.
 #if WORDSIZE == 64
-      call ssytri("U",nc3d,cmat3d,nc3d,kpvt3d,pcond3d,info)
+      call ssytri("U",nc3d,cmat3d(:,:,0),nc3d,kpvt3d,pcond3d,info)
 #else
 #ifdef CYGWIN
-      call dsytri_("U",nc3d,cmat3d,nc3d,kpvt3d,pcond3d,info)
+      call dsytri_("U",nc3d,cmat3d(:,:,0),nc3d,kpvt3d,pcond3d,info)
 #else
-      call dsytri("U",nc3d,cmat3d,nc3d,kpvt3d,pcond3d,info)
+      call dsytri("U",nc3d,cmat3d(:,:,0),nc3d,kpvt3d,pcond3d,info)
 #endif
 #endif
 
@@ -3474,14 +3474,14 @@ c       call dsidi(cmat3d(1,1,iz),nc3d,nc3d,kpvt3d,tt1,tt2,scrtch,001)
 
 c       --- These routines are from LAPACK.
 #if WORDSIZE == 64
-        call ssytrf("U",nc3d,cmat3d(1,1,iz),nc3d,kpvt3d,scrtch,(1+nx)*(1+ny),
+        call ssytrf("U",nc3d,cmat3d(:,:,iz),nc3d,kpvt3d,scrtch,(1+nx)*(1+ny),
      &              info)
 #else
 #ifdef CYGWIN
-        call dsytrf_("U",nc3d,cmat3d(1,1,iz),nc3d,kpvt3d,scrtch,(1+nx)*(1+ny),
+        call dsytrf_("U",nc3d,cmat3d(:,:,iz),nc3d,kpvt3d,scrtch,(1+nx)*(1+ny),
      &              info)
 #else
-        call dsytrf("U",nc3d,cmat3d(1,1,iz),nc3d,kpvt3d,scrtch,(1+nx)*(1+ny),
+        call dsytrf("U",nc3d,cmat3d(:,:,iz),nc3d,kpvt3d,scrtch,(1+nx)*(1+ny),
      &              info)
 #endif
 #endif
@@ -3492,12 +3492,12 @@ c         print*,info
         endif
 c       --- pcond3d is passed as workspace.
 #if WORDSIZE == 64
-        call ssytri("U",nc3d,cmat3d(1,1,iz),nc3d,kpvt3d,pcond3d,info)
+        call ssytri("U",nc3d,cmat3d(:,:,iz),nc3d,kpvt3d,pcond3d,info)
 #else
 #ifdef CYGWIN
-        call dsytri_("U",nc3d,cmat3d(1,1,iz),nc3d,kpvt3d,pcond3d,info)
+        call dsytri_("U",nc3d,cmat3d(:,:,iz),nc3d,kpvt3d,pcond3d,info)
 #else
-        call dsytri("U",nc3d,cmat3d(1,1,iz),nc3d,kpvt3d,pcond3d,info)
+        call dsytri("U",nc3d,cmat3d(:,:,iz),nc3d,kpvt3d,pcond3d,info)
 #endif
 #endif
 
