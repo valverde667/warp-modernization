@@ -3982,11 +3982,13 @@ c                   iwork(npts) = sum of particles in elliptical shell
 c
 
       integer(ISZ):: ip,ipt,aindex
-      integer(ISZ):: tnptot,nplive 
+      integer(ISZ):: tnptot,nplive
+      integer(ISZ):: nplive_array(1)
       real(kind=8):: emitmax,eps,epsinvsq
       real(kind=8):: txsqbar,txpsqbar,txxpbar,txrms,txprms
       real(kind=8):: txp2,txxp,tx2
       real(kind=8):: txp2tot,txxptot,tx2tot
+      real(kind=8):: emitmax_array(1)
 
 c Rotate and translate the particles coordinates and moments to
 c principal axes.  Note that the rotated coordinates and moments
@@ -4018,7 +4020,9 @@ c correct physical area measure in x-x' phase space for the emittance.
       enddo
 
 #ifdef MPIPARALLEL
-      call parallelmaxrealarray(emitmax,1)
+      emitmax_array = emitmax
+      call parallelmaxrealarray(emitmax_array,1)
+      emitmax = emitmax_array(1)
 #endif
 
       if (emitbinmax .gt. 0.) emitmax = emitbinmax
@@ -4053,7 +4057,9 @@ c       --- accumulate moments
       enddo
 
 #ifdef MPIPARALLEL
-      call parallelsumintegerarray(nplive,1)
+      nplive_array = nplive
+      call parallelsumintegerarray(nplive_array,1)
+      nplive = nplive_array(1)
       call parallelsumrealarray(rwork,npts*3)
       call parallelsumintegerarray(iwork,npts)
 #endif
