@@ -1663,7 +1663,7 @@ c   xmin,xmax: extent of the grid, i.e. grid(0) is at xmin, grid(nx) is at xmax
       integer(ISZ):: ip,ix
       real(kind=8):: gx,dxi,wx
 
-      double precision :: w, dataim1, datai, dataip1, dataip2
+      double precision :: dataim1, datai, dataip1, dataip2
       double precision :: a1, a2, a3, b1, b2
 
       if (xmax == xmin) then
@@ -1703,12 +1703,12 @@ c        if (0. <= gx .and. gx <= nx) then
 
           wx = gx - ix
 
-          a1 = (0.-w)*dataim1 + (w+1.)*datai
-          a2 = (1.-w)*datai   + (w   )*dataip1
-          a3 = (2.-w)*dataip1 + (w-1.)*dataip2
-          b1 = (1.-w)*0.5*a1 + (w+1.)*0.5*a2
-          b2 = (2.-w)*0.5*a2 + (w   )*0.5*a3
-          z(ip) = (1.-w)*b1 + w*b2
+          a1 = (0. - wx)*dataim1 + (wx + 1.)*datai
+          a2 = (1. - wx)*datai   + (wx     )*dataip1
+          a3 = (2. - wx)*dataip1 + (wx - 1.)*dataip2
+          b1 = (1. - wx)*0.5*a1  + (wx + 1.)*0.5*a2
+          b2 = (2. - wx)*0.5*a2  + (wx     )*0.5*a3
+          z(ip) = (1. - wx)*b1 + wx*b2
 
         endif
 
