@@ -705,6 +705,9 @@ class Simulation(picmistandard.PICMI_Simulation):
 
         self.inputs_initialized = True
 
+        if self.time_step_size is not None:
+            top.dt = self.time_step_size
+
         if self.gamma_boost is not None:
             top.boost_gamma = self.gamma_boost
         else:
@@ -769,10 +772,13 @@ class FieldDiagnostic(picmistandard.PICMI_FieldDiagnostic):
     def initialize_diag_inputs(self, sim):
         if any(self.lower_bound != self.grid.lower_bound) or any(self.upper_bound != self.grid.upper_bound):
             print('Warning: Warp cannot return a subdomain. Bounds set to grid bounds')
-        sub_sampling = (np.array(self.grid.number_of_cells)/np.array(self.number_of_cells)).astype('l')
+        if self.number_of_cells is not None:
+            sub_sampling = (np.array(self.grid.number_of_cells)/np.array(self.number_of_cells)).astype('l')
+        else:
+            sub_sampling = [1,1,1]
         if self.grid.number_of_dimensions == 2:
             # A list of length 3 is expected.
-            sub_sampling = [sub_sampling[0], 1, sub_sampling[1]]
+            sub_sampling = [sub_sampling[0], 1, sub_sampling[-1]]
         diag_field = openpmd_diag.FieldDiagnostic(period = self.period,
                                                   top = top,
                                                   w3d = w3d,
