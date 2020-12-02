@@ -632,7 +632,19 @@ class ElectrostaticSolver(picmistandard.PICMI_ElectrostaticSolver):
                 kw.pop(warp_arg)
 
     def initialize_solver_inputs(self):
-        self.solver = MultiGrid3D(**self.multigrid_args)
+        if self.required_precision is not None:
+            self.multigrid_args['mgtol'] = self.required_precision
+        if self.maximum_iterations is not None:
+            self.multigrid_args['mgmaxiters'] = self.maximum_iterations
+
+        if self.grid.number_of_dimensions == 2:
+            if isinstance(self.grid, CylindricalGrid):
+                w3d.solvergeom = w3d.RZgeom
+            elif isinstance(self.grid, Cartesian2DGrid):
+                w3d.solvergeom = w3d.XZgeom
+            self.solver = MultiGrid2D(**self.multigrid_args)
+        elif self.grid.number_of_dimensions == 3:
+            self.solver = MultiGrid3D(**self.multigrid_args)
 
 class MagnetostaticSolver(picmistandard.PICMI_MagnetostaticSolver):
     __forbidden_kw__ = [] # no forbidden arguments
