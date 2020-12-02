@@ -211,14 +211,21 @@ class UniformDistribution(picmistandard.PICMI_UniformDistribution):
                 injection_direction = +1
             else:
                 injection_direction = -1
+            if layout.grid.number_of_dimensions == 3:
+                dim = '3d'
+            elif layout.grid.number_of_dimensions == 2:
+                if isinstance(layout.grid, CylindricalGrid):
+                    dim = 'circ'
+                else:
+                    dim = '2d'
             plasmainjector = PlasmaInjector(elec=species, ions=None, w3d=w3d, top=top,
-                                            dim='%dd'%layout.grid.number_of_dimensions,
+                                            dim=dim,
                                             p_nx=p_nx, p_ny=p_ny, p_nz=p_nz,
                                             p_xmin=xmin, p_ymin=ymin, p_zmin=zmin,
                                             p_xmax=xmax, p_ymax=ymax, p_zmax=zmax,
                                             dens_func=_Uniform_dens_func(w),
                                             ux_m=ux_m, uy_m=uy_m, uz_m=uz_m,
-                                            ux_th=ux_th, uy_th=uy_th, uz_th=uz_th,
+                                            ux_th=ux_th/warp.clight, uy_th=uy_th/warp.clight, uz_th=uz_th/warp.clight,
                                             injection_direction=injection_direction)
             if self.fill_in:
                 installuserinjection(plasmainjector.continuous_injection)
@@ -329,13 +336,21 @@ class AnalyticDistribution(picmistandard.PICMI_AnalyticDistribution):
                 injection_direction = +1
             else:
                 injection_direction = -1
-            plasmainjector = PlasmaInjector(elec=species, ions=None, w3d=w3d, top=top, dim='3d',
+            if layout.grid.number_of_dimensions == 3:
+                dim = '3d'
+            elif layout.grid.number_of_dimensions == 2:
+                if isinstance(layout.grid, CylindricalGrid):
+                    dim = 'circ'
+                else:
+                    dim = '2d'
+            plasmainjector = PlasmaInjector(elec=species, ions=None, w3d=w3d, top=top,
+                                            dim=dim,
                                             p_nx=p_nx, p_ny=p_ny, p_nz=p_nz,
                                             p_xmin=xmin, p_ymin=ymin, p_zmin=zmin,
                                             p_xmax=xmax, p_ymax=ymax, p_zmax=zmax,
                                             dens_func=dens_func,
                                             ux_m=ux_m, uy_m=uy_m, uz_m=uz_m,
-                                            ux_th=ux_th, uy_th=uy_th, uz_th=uz_th,
+                                            ux_th=ux_th/warp.clight, uy_th=uy_th/warp.clight, uz_th=uz_th/warp.clight,
                                             injection_direction=injection_direction)
             if self.fill_in:
                 installuserinjection(plasmainjector.continuous_injection)
