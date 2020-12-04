@@ -109,13 +109,13 @@ def exp_by_squaring_matrixlist(x, n, matcompress=None):
     if n == 1:return x
     y = np.identity(len(x)).tolist()
     while n > 1:
-      if float(n/2)==float(n)/2: # if n is even then
+      if float(np.int(n/2))==float(n)/2: # if n is even then
         x = multmat(x,x,matcompress=matcompress)
-        n /= 2
+        n = np.int(n/2)
       else:
         y = multmat(x,y,matcompress=matcompress)
         x = multmat(x,x,matcompress=matcompress)
-        n = (n-1)/2
+        n = np.int((n-1)/2)
     return multmat(x,y,matcompress=matcompress)
 
 def FD_weights(z,n,m):
