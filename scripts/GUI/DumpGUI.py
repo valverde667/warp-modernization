@@ -99,6 +99,6 @@ class wxDialog1(wx.Dialog):
         self.attr = self.Attributes.GetValue()
         self.filename = self.Filename.GetValue()
         self.varsuffix = self.Varsuffix.GetValue()
-        if self.varsuffix is '': self.varsuffix=None
+        if self.varsuffix == '': self.varsuffix=None
         dump(filename=self.filename,attr=self.attr,pyvars=self.pyvars,varsuffix=self.varsuffix)
         self.Destroy()

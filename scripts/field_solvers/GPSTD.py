@@ -702,9 +702,9 @@ class GPSTD(Fourier_Space):
 
             # --- update diagonal first
             # --- if matrix value is 1., do nothing
-            if not mymat[i][i] is 1.:
+            if mymat[i][i] != 1.:
                 updated_fields[ki] = True
-                if mymat[i][i] is 0.:
+                if mymat[i][i] == 0.:
                 # --- if matrix value is 0., zero out array
                     self.Ffields[i][...] = 0.
                 else:
@@ -713,7 +713,7 @@ class GPSTD(Fourier_Space):
 
             # --- update field for non-diagonal matrix elements.
             for j in range(n):
-                if i!=j and not mymat[i][j] is 0.:
+                if i!=j and mymat[i][j] != 0.:
                     # --- update only if matrix element is non-zero
                     updated_fields[ki] = True
                     kj = self.fields_name[j]

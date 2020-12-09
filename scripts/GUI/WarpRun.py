@@ -976,7 +976,7 @@ class WarpRun(wx.Frame):
                     if(len(firstword)>=1):
                         if(firstword[0]=='#'):
                             docomment=true
-                    if not docomment and self.prefix is '... ':
+                    if not docomment and self.prefix == '... ':
                         if(self.line[0]<>' '):
                             if(len(self.line)>=4):
                                 if(self.line[:4]<>'else' and self.line[:4]<>'elif'):
@@ -1015,7 +1015,7 @@ class WarpRun(wx.Frame):
                                 self.Console.WriteText(self.prefix+self.line+os.linesep)
                                 more=self.ConsolePanel.sendcommand(self.line,addlist=0)
                             if(more):
-                                if action is 'next': redo=true
+                                if action == 'next': redo=true
                                 self.prefix='... '
                             else:
                                 self.prefix=''

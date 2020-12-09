@@ -1434,7 +1434,7 @@ def plotc(zz,xx=None,yy=None,ireg=None,color='fg',levs=None,contours=7,
         ireg = ones(s,'i')
     else:
         assert shape(ireg) == shape(zz),"Shape of ireg must be the same as zz"
-    if contours is 0: contours = None
+    if contours == 0: contours = None
     if levs is not None: contours = levs
     if isinstance(contours,list): contours = array(contours)
     if isinstance(contours,tuple): contours = array(contours)
@@ -1981,7 +1981,7 @@ def ppgeneric(y=None,x=None,kwdict={},**kw):
     if filled and contours is None: contours = 8
 
     # --- Make sure that contours is not zero, which breaks some code.
-    if contours is 0: contours = None
+    if contours == 0: contours = None
 
     # --- If particle data was passed in and no specific plots were requested,
     # --- just plot the particles.

@@ -96,6 +96,6 @@ class wxDialog1(wxDialog):
         self.varsuffix = self.Varsuffix.GetValue()
         self.filename = self.Filename.GetValue()
         self.skip = [self.Skip.GetValue()]
-        if self.varsuffix is '': self.varsuffix=None
+        if self.varsuffix == '': self.varsuffix=None
         restore(filename=self.filename,verbose=self.verbose,skip=self.skip,varsuffix=self.varsuffix)
         self.Destroy()
