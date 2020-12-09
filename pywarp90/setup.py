@@ -17,7 +17,7 @@ except:
     raise SystemExit('Distutils problem')
 
 optlist, args = getopt.getopt(sys.argv[1:], 'gt:F:',
-                              ['parallel', 'fargs=', 'cargs=', 'fcompexec='])
+                              ['parallel', 'fargs=', 'cargs=', 'fcompexec=','mpifort_compiler='])
 
 machine = sys.platform
 debug   = 0
@@ -30,12 +30,14 @@ for o in optlist:
     elif o[0] == '-F': fcomp = o[1]
     elif o[0] == '--parallel': parallel = 1
     elif o[0] == '--fcompexec': fcompexec = o[1]
+    elif o[0] == '--mpifort_compiler': mpifort_compiler = o[1]
 
 sys.argv = ['setup.py'] + args
-fcompiler = FCompiler(machine=machine,
-                      debug=debug,
-                      fcompname=fcomp,
-                      fcompexec=fcompexec)
+fcompiler = FCompiler(machine = machine,
+                      debug = debug,
+                      fcompname = fcomp,
+                      fcompexec = fcompexec,
+                      mpifort_compiler = mpifort_compiler)
 
 dummydist = Distribution()
 dummydist.parse_command_line()
