@@ -5943,10 +5943,14 @@ class EM3D(SubcycledPoissonSolver):
           # Calculate the relativistic contraction factor along z
           gaminv = getgaminv( pgroup=relat_pgroup, jslist=relat_jslist )
           zfact = numpy.mean(1./gaminv)
+          # smooth rho
+          self.smootharray(esolver.rho)
           # Call the relativisitic Poisson solver
           esolver.solve(iwhich=0,zfact=zfact)
         else:
           esolver.loadrho()
+          # smooth rho
+          self.smootharray(esolver.rho)
           esolver.solve()
 
         # For non-relativistic bunch, calculate the vector potential
@@ -5963,6 +5967,10 @@ class EM3D(SubcycledPoissonSolver):
                                   )
             bsolver.conductordatalist = self.conductordatalist
             bsolver.loadj()
+            # smooth currents
+            self.smootharray(esolver.source[0,...])
+            self.smootharray(esolver.source[1,...])
+            self.smootharray(esolver.source[2,...])
             bsolver.solve()
             if self.solvergeom == w3d.RZgeom:
                 bsolver.field[0,0,...] = 0.
