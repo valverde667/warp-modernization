@@ -79,7 +79,7 @@ class Smoother(object):
         applies smoother to array f.
         """
         # --- determine rank of array
-        r = rank(f)
+        r = ndim(f)
         # 1D
         if r == 1:
             nx = shape(f)[0]

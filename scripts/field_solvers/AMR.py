@@ -241,7 +241,7 @@ class AMRTree(VisualizableClass):
       get average of absolute value of grad(f).
       f is supposed to be in Fortran ordering.
         """
-        if rank(f)==2:
+        if ndim(f)==2:
             s=shape(f)
             nx = s[0]
             ny = s[1]
@@ -304,7 +304,7 @@ class AMRTree(VisualizableClass):
         # get average of absolute value of gradient of f
         fg = self.getabsgrad(f,dx,dy,dz)
 
-        dim = rank(f)
+        dim = ndim(f)
 
         # get edges using vertical lines
         maxfg = fg.max(0)
@@ -347,7 +347,7 @@ class AMRTree(VisualizableClass):
         """
         if Rdens<=1: return 0*f
         # get dimension (2-D or 3-D)
-        dim = rank(f)
+        dim = ndim(f)
         # get number of refinement levels
         n = nint(log(Rdens)/log(MRfact))
         # get nb cells proportional to f
@@ -377,7 +377,7 @@ class AMRTree(VisualizableClass):
         # next loop removes isolated blocks of lmax cells or less
         # this needs improvements
         if lmax>0:
-            if rank(f)==3:
+            if ndim(f)==3:
                 nx=shape(f)[0]
                 ny=shape(f)[1]
                 nz=shape(f)[2]
@@ -388,7 +388,7 @@ class AMRTree(VisualizableClass):
                     fl = where(f==r and t<=lmax,1,0)
                     f = where(fl==1,r,f)
                     r=r/MRfact
-            if rank(f)==2:
+            if ndim(f)==2:
                 nr=shape(f)[0]
                 nz=shape(f)[1]
                 t = fzeros([nr,nz],'l')
@@ -425,7 +425,7 @@ class AMRTree(VisualizableClass):
         return cond,cond2
 
     def get_area_fraction(self,f,j,k,l,ix,iy,iz,ixm,iym,izm,ib,progressive=true):
-        if rank(f)==2:
+        if ndim(f)==2:
             if(progressive):
                 return float(sum(sum(f[j-ixm:j+ix,k-iym:k+iy]>=ib)))/((ix+ixm)*(iy+iym))
             else:
@@ -441,7 +441,7 @@ class AMRTree(VisualizableClass):
         if maxnd(abs(f)) == 0.: return
         p = progressive
         nlevels = nint(log(maxnd(f))/log(b))+1
-        dim = rank(f)
+        dim = ndim(f)
         nx = shape(f)[0]
         ny = shape(f)[1]
         if dim==3:
@@ -581,7 +581,7 @@ class AMRTree(VisualizableClass):
     def setlistold(self,f,rl,b,progressive=true,nooverlap=true):
         p = progressive
         nlevels = nint(log(maxnd(f))/log(b))+1
-        dim = rank(f)
+        dim = ndim(f)
         nx = shape(f)[0]
         ny = shape(f)[1]
         if dim==3:

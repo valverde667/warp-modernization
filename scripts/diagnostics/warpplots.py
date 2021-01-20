@@ -2253,13 +2253,13 @@ def ppgeneric(y=None,x=None,kwdict={},**kw):
         if xmesh is None:
             xmesh = xmin + dx*arange(nx+1)[:,newaxis]*ones(ny+1,'d') + xcoffset
         else:
-            if rank(xmesh) == 1:
+            if ndim(xmesh) == 1:
                 xmesh = xmesh[:,newaxis]*ones(ny+1,'d')
         if ymesh is None:
             ymesh = (ymin + dy*arange(ny+1)*ones(nx+1,'d')[:,newaxis] +
                      transpose([ycoffset]))
         else:
-            if rank(ymesh) == 1:
+            if ndim(ymesh) == 1:
                 ymesh = ymesh*ones(nx+1,'d')[:,newaxis]
 
     # --- Make filled contour plot of grid first since it covers everything

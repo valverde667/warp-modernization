@@ -2361,7 +2361,7 @@ def addnewemlt(zs,ze,ap=0.,ax=0.,ay=0.,ph=0.,sf=0.,sc=1.,id=None,
   Required arguments:
     - zs, ze: specify the start and end of the element
   One and only one of the following must be supplied (if both are supplied, id
-  takes precedence):
+  (takes precedence):
     - id: data set ID corresponding to already existing emlt multipole data
           Note that this index is one based - for the first data set, set id=1.
     - es: 1- or 2-D array containing the multipole data. First dimension is data
@@ -2576,7 +2576,7 @@ def addnewmmlt(zs,ze,ap=0.,ax=0.,ay=0.,ph=0.,sf=0.,sc=1.,id=None,
   Required arguments:
     - zs, ze: specify the start and end of the element
   One and only one of the following must be supplied (if both are supplied, id
-  takes precedence):
+  (takes precedence):
     - id: data set ID corresponding to already existing mmlt multipole data
           Note that this index is one based - for the first data set, set id=1.
     - ms: 1- or 2-D array containing the multipole data. First dimension is data
@@ -2843,7 +2843,7 @@ def addnewegrd(zs,ze,id=None,xs=0.,ys=0.,ap=0.,ax=0.,ay=0.,ox=0.,oy=0.,
   Required arguments:
     - zs, ze: specify the start and end of the element
   Optionally, id may be specified, using a previously defined dataset
-  takes precedence):
+  (takes precedence):
     - id: data set ID corresponding to already existing egrd data
           Note that this index is one based - for the first data set, set id=1.
   Or, one or more 3-D field arrays may be specified
@@ -2863,13 +2863,11 @@ def addnewegrd(zs,ze,id=None,xs=0.,ys=0.,ap=0.,ax=0.,ay=0.,ox=0.,oy=0.,
             scaling factor.
     """
     # --- Make sure that enough input was given to create the E arrays
-    assert (id is not None) or \
-           ((ex is not None or ey is not None or ez is not None) and \
-            (dx is not None and dy is not None)) or \
-           (dx is not None and dy is not None and
-            nx is not None and ny is not None and nz is not None),\
-           """either an 'id' or a dataset, ex, ey, or ez, with dx and dy, or all
-  of dx, dy, nx, ny, nz, must be passed in"""
+    # --- either id or the E arrays
+    assert bool(id is not None) ^ \
+           bool((ex is not None or ey is not None or ez is not None) and \
+                (dx is not None and dy is not None)), \
+           "either an 'id' or a dataset, ex, ey, or ez, with dx and dy must be passed in"
     # --- Make sure that at least some of the element is in the proper range,
     # --- z >= 0., and if zlatperi != 0, z <= zlatperi.
     assert (zs < ze),"element start must be less than element end"
@@ -3008,7 +3006,7 @@ def addnewbgrd(zs,ze,id=None,xs=0.,ys=0.,ap=0.,ax=0.,ay=0.,ox=0.,oy=0.,
   Required arguments:
     - zs, ze: specify the start and end of the element
   Optionally, id may be specified, using a previously defined dataset
-  takes precedence):
+  (takes precedence):
     - id: data set ID corresponding to already existing bgrd data
           Note that this index is one based - for the first data set, set id=1.
   Or, one or more 3-D field arrays may be specified
@@ -3025,14 +3023,12 @@ def addnewbgrd(zs,ze,id=None,xs=0.,ys=0.,ap=0.,ax=0.,ay=0.,ox=0.,oy=0.,
     - func: a function that takes one argument, the time, and returns the
             scaling factor.
     """
-    # --- Make sure that enough input was given to create the B arrays
-    assert (id is not None) or \
-           ((bx is not None or by is not None or bz is not None) and \
-            (dx is not None and dy is not None)) or \
-           (dx is not None and dy is not None and
-            nx is not None and ny is not None and nz is not None),\
-           """either an 'id' or a dataset, bx, by, or bz, with dx and dy, or all
-  of dx, dy, nx, ny, nz, must be passed in"""
+    # --- Make sure that the correct input was given to create the B arrays,
+    # --- either id or the B arrays
+    assert bool(id is not None) ^ \
+           bool((bx is not None or by is not None or bz is not None) and \
+                (dx is not None and dy is not None)), \
+           "either an 'id' or a dataset, bx, by, or bz, with dx and dy must be passed in"
     # --- Make sure that at least some of the element is in the proper range,
     # --- z >= 0., and if zlatperi != 0, z <= zlatperi.
     assert (zs < ze),"element start must be less than element end"
@@ -3109,7 +3105,7 @@ def addnewbsqgrad(zs,ze,id=None,xs=0.,ys=0.,ap=0.,ax=0.,ay=0.,ox=0.,oy=0.,
   Required arguments:
     - zs, ze: specify the start and end of the element
   Optionally, id may be specified, using a previously defined dataset
-  takes precedence):
+  (takes precedence):
     - id: data set ID corresponding to already existing bsqgrad data
           Note that this index is one based - for the first data set, set id=1.
   Or, the 4-D field array may be specified
@@ -3229,7 +3225,7 @@ def addnewpgrd(zs,ze,id=None,xs=0.,ys=0.,ap=0.,ax=0.,ay=0.,ox=0.,oy=0.,
   Required arguments:
     - zs, ze: specify the start and end of the element
   Optionally, id may be specified, using a previously defined dataset
-  takes precedence):
+  (takes precedence):
     - id: data set ID corresponding to already existing pgrd data
           Note that this index is one based - for the first data set, set id=1.
   Or, 3-D phi array may be specified
@@ -3246,8 +3242,11 @@ def addnewpgrd(zs,ze,id=None,xs=0.,ys=0.,ap=0.,ax=0.,ay=0.,ox=0.,oy=0.,
             scaling factor.
     """
     # --- Make sure either an 'id' or a dataset, 'es', was passed in.
-    assert (id is not None or phi is not None), \
-           "either an 'id' or the dataset phi must be passed in"
+    # --- either id or the E arrays
+    assert bool(id is not None) ^ \
+           bool((phi is not None) and \
+                (dx is not None and dy is not None)), \
+           "either an 'id' or a dataset, phi, with dx and dy must be passed in"
     # --- Make sure that at least some of the element is in the proper range,
     # --- z >= 0., and if zlatperi != 0, z <= zlatperi.
     assert (zs < ze),"element start must be less than element end"
