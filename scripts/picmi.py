@@ -513,6 +513,8 @@ class ElectromagneticSolver(picmistandard.PICMI_ElectromagneticSolver):
 
     def init(self, kw):
         self.em3dfft_args = {}
+        self.conductors = []
+        self.conductor_dfill = None
 
         for warp_arg, val in kw.copy().items():
             arg = warp_arg[len(codename)+1:] # strip off ‘warp_’
@@ -521,6 +523,12 @@ class ElectromagneticSolver(picmistandard.PICMI_ElectromagneticSolver):
                 raise ValueError('ElectromagneticSolver: %s cannot be specified by the user'%arg)
             elif arg in self.__flaginputs__:
                 self.em3dfft_args[arg] = val
+                kw.pop(warp_arg)
+            elif arg == 'conductors':
+                self.conductors = val
+                kw.pop(warp_arg)
+            elif arg == 'conductor_dfill':
+                self.conductor_dfill = val
                 kw.pop(warp_arg)
 
     def initialize_solver_inputs(self):
@@ -614,6 +622,13 @@ class ElectromagneticSolver(picmistandard.PICMI_ElectromagneticSolver):
                               stride_smooth = stride_smooth,
                               **self.em3dfft_args)
 
+        if not np.iterable(self.conductors):
+            self.conductors = [self.conductors]
+        if not np.iterable(self.conductor_dfill):
+            self.conductor_dfill = len(self.conductors)*[self.conductor_dfill]
+        for conductor, dfill in zip(self.conductors, self.conductor_dfill):
+            self.solver.installconductor(conductor, dfill=dfill)
+
 
 class ElectrostaticSolver(picmistandard.PICMI_ElectrostaticSolver):
     __forbidden_kw__ = [] # no forbidden arguments
@@ -621,6 +636,8 @@ class ElectrostaticSolver(picmistandard.PICMI_ElectrostaticSolver):
 
     def init(self, kw):
         self.multigrid_args = {}
+        self.conductors = []
+        self.conductor_dfill = None
 
         for warp_arg, val in kw.copy().items():
             arg = warp_arg[len(codename)+1:] # strip off ‘warp_’
@@ -629,6 +646,12 @@ class ElectrostaticSolver(picmistandard.PICMI_ElectrostaticSolver):
                 raise ValueError('ElectrostaticSolver: %s cannot be specified by the user'%arg)
             elif arg in self.__flaginputs__:
                 self.multigrid_args[arg] = val
+                kw.pop(warp_arg)
+            elif arg == 'conductors':
+                self.conductors = val
+                kw.pop(warp_arg)
+            elif arg == 'conductor_dfill':
+                self.conductor_dfill = val
                 kw.pop(warp_arg)
 
     def initialize_solver_inputs(self):
@@ -646,12 +669,22 @@ class ElectrostaticSolver(picmistandard.PICMI_ElectrostaticSolver):
         elif self.grid.number_of_dimensions == 3:
             self.solver = MultiGrid3D(**self.multigrid_args)
 
+        if not np.iterable(self.conductors):
+            self.conductors = [self.conductors]
+        if not np.iterable(self.conductor_dfill):
+            self.conductor_dfill = len(self.conductors)*[self.conductor_dfill]
+        for conductor, dfill in zip(self.conductors, self.conductor_dfill):
+            self.solver.installconductor(conductor, dfill=dfill)
+
+
 class MagnetostaticSolver(picmistandard.PICMI_MagnetostaticSolver):
     __forbidden_kw__ = [] # no forbidden arguments
     __flaginputs__ = {**FieldSolver.__flaginputs__, 'luse2D': True}
 
     def init(self, kw):
         self.magnetostatic_args = {}
+        self.conductors = []
+        self.conductor_dfill = None
 
         for warp_arg, val in kw.copy().items():
             arg = warp_arg[len(codename)+1:] # strip off ‘warp_’
@@ -661,9 +694,23 @@ class MagnetostaticSolver(picmistandard.PICMI_MagnetostaticSolver):
             elif arg in self.__flaginputs__:
                 self.magnetostatic_args[arg] = val
                 kw.pop(warp_arg)
+            elif arg == 'conductors':
+                self.conductors = val
+                kw.pop(warp_arg)
+            elif arg == 'conductor_dfill':
+                self.conductor_dfill = val
+                kw.pop(warp_arg)
 
     def initialize_solver_inputs(self):
         self.solver = MagnetostaticMG(**self.magnetostatic_args)
+
+        if not np.iterable(self.conductors):
+            self.conductors = [self.conductors]
+        if not np.iterable(self.conductor_dfill):
+            self.conductor_dfill = len(self.conductors)*[self.conductor_dfill]
+        for conductor, dfill in zip(self.conductors, self.conductor_dfill):
+            self.solver.installconductor(conductor, dfill=dfill)
+
 
 class GaussianLaser(picmistandard.PICMI_GaussianLaser):
     def initialize_laser_inputs(self, solver, antenna, gamma_boost):
