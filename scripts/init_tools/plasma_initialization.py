@@ -218,6 +218,8 @@ class PlasmaInjector( object ):
         # is because the dens_func is given at t=0)
         if self.dens_func is not None:
             w = self.dens_func( x0, y0, z0 - self.v_plasma*self.top.time )
+            if np.size(w) == 1:
+                w = w*np.ones(len(x0))
             x0 = x0[w>0.]
             y0 = y0[w>0.]
             z0 = z0[w>0.]
