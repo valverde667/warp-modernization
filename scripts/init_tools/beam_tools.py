@@ -72,6 +72,8 @@ def initialize_beam_fields( em, dim, beam, w3d, top,
 #        l_setcowancoefs=True,
 #        l_correct_num_Cherenkov=True )
 
+    em_help.conductordatalist = em.conductordatalist
+
     # Get the initial fields
     em_help.initstaticfields( relat_species=beam, relat_pgroup=beam_pgroup,
                              relat_jslist=beam_jslist )
