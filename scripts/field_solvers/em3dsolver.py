@@ -5942,6 +5942,8 @@ class EM3D(SubcycledPoissonSolver):
           esolver.loadrho( pgroups=[relat_pgroup], jslist=relat_jslist )
           # Calculate the relativistic contraction factor along z
           gaminv = getgaminv( pgroup=relat_pgroup, jslist=relat_jslist )
+          if len(gaminv) == 0:
+              raise Exception('EM3D.initstaticfields: there are no particles in the relativistic group')
           zfact = numpy.mean(1./gaminv)
           # smooth rho
           self.smootharray(esolver.rho)
