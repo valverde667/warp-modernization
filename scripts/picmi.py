@@ -224,7 +224,7 @@ class UniformDistribution(picmistandard.PICMI_UniformDistribution):
                                             p_xmin=xmin, p_ymin=ymin, p_zmin=zmin,
                                             p_xmax=xmax, p_ymax=ymax, p_zmax=zmax,
                                             dens_func=_Uniform_dens_func(w),
-                                            ux_m=ux_m, uy_m=uy_m, uz_m=uz_m,
+                                            ux_m=ux_m/warp.clight, uy_m=uy_m/warp.clight, uz_m=uz_m/warp.clight,
                                             ux_th=ux_th/warp.clight, uy_th=uy_th/warp.clight, uz_th=uz_th/warp.clight,
                                             injection_direction=injection_direction)
             if self.fill_in:
@@ -349,7 +349,7 @@ class AnalyticDistribution(picmistandard.PICMI_AnalyticDistribution):
                                             p_xmin=xmin, p_ymin=ymin, p_zmin=zmin,
                                             p_xmax=xmax, p_ymax=ymax, p_zmax=zmax,
                                             dens_func=dens_func,
-                                            ux_m=ux_m, uy_m=uy_m, uz_m=uz_m,
+                                            ux_m=ux_m/warp.clight, uy_m=uy_m/warp.clight, uz_m=uz_m/warp.clight,
                                             ux_th=ux_th/warp.clight, uy_th=uy_th/warp.clight, uz_th=uz_th/warp.clight,
                                             injection_direction=injection_direction)
             if self.fill_in:
