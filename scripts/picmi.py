@@ -24,6 +24,8 @@ class constants:
     m_e = warp.Electron.mass
     m_p = warp.Proton.mass
 
+picmistandard.register_constants(constants)
+
 # --- Always assume that relativity should be turned on.
 warp.top.lrelativ = warp.true
 
