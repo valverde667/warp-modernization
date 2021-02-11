@@ -1601,7 +1601,7 @@ class SubcycledPoissonSolver(FieldSolver):
         self.dosolve(iwhich,zfact,isourcepndtscopies,indts,iselfb)
         self.getpotentialpforparticles(isourcepndtscopies,indts,iselfb)
 
-    def solve(self,iwhich=0,zfact=None):
+    def solve(self,iwhich=0,zfact=None, iselfblist=None):
         if not self.ldosolve: return
         self.allocatedataarrays()
         # --- This is only needed in cases when the source is accumulated over
@@ -1619,7 +1619,10 @@ class SubcycledPoissonSolver(FieldSolver):
                 (top.ndtsaveraging == 0 and not sum(top.ldts))): continue
             # --- Note that the field solve is done even if there are no species
             # --- (i.e. when top.nsselfb==0)
-            for iselfb in range(max(1,top.nsselfb)-1,-1,-1):
+            if iselfblist is None:
+                iselfblist = list(range(max(1,top.nsselfb)-1,-1,-1))
+ 
+            for iselfb in iselfblist:
                 self.dosolveonpotential(iwhich,zfact,top.nrhopndtscopies-1,indts,iselfb)
 
         # --- Is this still needed? It seems to slow things down alot.
