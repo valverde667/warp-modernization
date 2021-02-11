@@ -5948,7 +5948,7 @@ class EM3D(SubcycledPoissonSolver):
           # smooth rho
           self.smootharray(esolver.rho)
           # Call the relativisitic Poisson solver
-          esolver.solve(iwhich=0,zfact=zfact, iselfblist=[relat_jslist[0]])
+          esolver.solve(iwhich=0,zfact=zfact, iselfblist=[relat_pgroup.iselfb[relat_jslist[0]]])
         else:
           esolver.loadrho()
           # smooth rho
