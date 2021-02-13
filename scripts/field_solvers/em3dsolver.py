@@ -5926,6 +5926,10 @@ class EM3D(SubcycledPoissonSolver):
                 ESolver = MultiGrid3D
         else:
             ESolver = MultiGrid2D
+        # Setup the relativistic self fields
+        iselfb_list = self.iselfb_list
+        if relat_pgroup is not None:
+            iselfb_list = [relat_pgroup.iselfb[relat_jslist[0]]]
         # Initialize electrostatic solver
         esolver = ESolver(nxguardphi=self.nxguard+1,
                           nyguardphi=self.nyguard+1,
@@ -5933,6 +5937,7 @@ class EM3D(SubcycledPoissonSolver):
                           nxguarde=self.nxguard,
                           nyguarde=self.nyguard,
                           nzguarde=self.nzguard,
+                          iselfb_list = iselfb_list,
 #                          mgtol = 1.e-20,
                           )
         esolver.conductordatalist = self.conductordatalist
@@ -5948,7 +5953,7 @@ class EM3D(SubcycledPoissonSolver):
           # smooth rho
           self.smootharray(esolver.rho)
           # Call the relativisitic Poisson solver
-          esolver.solve(iwhich=0,zfact=zfact, iselfblist=[relat_pgroup.iselfb[relat_jslist[0]]])
+          esolver.solve(iwhich=0,zfact=zfact)
         else:
           esolver.loadrho()
           # smooth rho

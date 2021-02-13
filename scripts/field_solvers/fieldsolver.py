@@ -410,6 +410,7 @@ class FieldSolver(object):
                       'gridvz':None,'lchild':False,
                       'userfsdecompnx':None,'userfsdecompny':None,'userfsdecompnz':None,
                       'deposition_species':None,
+                      'iselfb_list':None,
                       }
 
     def __init__(self,**kw):
@@ -1393,6 +1394,8 @@ class SubcycledPoissonSolver(FieldSolver):
                 if pgroup.ldts[js]:
                     indts = top.ndtstorho[pgroup.ndts[js]-1]
                     iselfb = pgroup.iselfb[js]
+                    if self.iselfb_list is not None and iselfb not in self.iselfb_list:
+                        continue
                     self.setsourcepforparticles(0,indts,iselfb)
 
                     if self.debug:
@@ -1435,6 +1438,8 @@ class SubcycledPoissonSolver(FieldSolver):
         for indts in range(top.nsndts):
             if top.ldts[indts]:
                 for iselfb in range(top.nsselfb):
+                    if self.iselfb_list is not None and iselfb not in self.iselfb_list:
+                        continue
                     self.setsourcepforparticles(0,indts,iselfb)
                     self.aftersetsourcep()
 
@@ -1446,6 +1451,8 @@ class SubcycledPoissonSolver(FieldSolver):
                 ((top.ndtsaveraging == 0 or top.ndtsaveraging == 1)
                  and not sum(top.ldts))): continue
             for iselfb in range(top.nsselfb):
+                if self.iselfb_list is not None and iselfb not in self.iselfb_list:
+                    continue
                 isndts = min(indts,top.nsndtsphi)
                 self.setsourceforfieldsolve(top.nrhopndtscopies-1,isndts,iselfb)
                 self.applysourceboundaryconditions()
@@ -1601,7 +1608,7 @@ class SubcycledPoissonSolver(FieldSolver):
         self.dosolve(iwhich,zfact,isourcepndtscopies,indts,iselfb)
         self.getpotentialpforparticles(isourcepndtscopies,indts,iselfb)
 
-    def solve(self,iwhich=0,zfact=None, iselfblist=None):
+    def solve(self,iwhich=0,zfact=None):
         if not self.ldosolve: return
         self.allocatedataarrays()
         # --- This is only needed in cases when the source is accumulated over
@@ -1619,10 +1626,12 @@ class SubcycledPoissonSolver(FieldSolver):
                 (top.ndtsaveraging == 0 and not sum(top.ldts))): continue
             # --- Note that the field solve is done even if there are no species
             # --- (i.e. when top.nsselfb==0)
-            if iselfblist is None:
-                iselfblist = list(range(max(1,top.nsselfb)-1,-1,-1))
+            if self.iselfb_list is None:
+                iselfb_list = list(range(max(1,top.nsselfb)-1,-1,-1))
+            else:
+                iselfb_list = self.iselfb_list
  
-            for iselfb in iselfblist:
+            for iselfb in iselfb_list:
                 self.dosolveonpotential(iwhich,zfact,top.nrhopndtscopies-1,indts,iselfb)
 
         # --- Is this still needed? It seems to slow things down alot.
