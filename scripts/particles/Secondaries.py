@@ -453,7 +453,7 @@ class Secondaries:
 
         if self.l_verbose>1:print 'start secondaries generation'
 
-        if self.l_record_timing:t1 = time.clock()
+        if self.l_record_timing:t1 = time.perf_counter()
 
         # --- reset 'emitted' list to zero
         for js in self.inter:
@@ -485,7 +485,7 @@ class Secondaries:
         pxsum = 0.
         pysum = 0.
         pzsum = 0.
-        if self.l_record_timing:t2 = time.clock()
+        if self.l_record_timing:t2 = time.perf_counter()
         tinit=tgen=tprepadd=tadd=0.
         # compute number of secondaries and create them
         for ints in self.inter:
@@ -1087,7 +1087,7 @@ class Secondaries:
                             # if self.l_record_timing:
                             #   tadd+=wtime()-tstart
 
-        if self.l_record_timing:t3 = time.clock()
+        if self.l_record_timing:t3 = time.perf_counter()
         # --- make sure that all particles are added
         for js in self.x:
             self.flushpart(js)
@@ -1150,9 +1150,9 @@ class Secondaries:
         # particleboundaries3d(top.pgroup,-1,false)
         # w3d.lcallscraper=1
         # top.npslost=0
-        if self.l_record_timing:t4 = time.clock()
+        if self.l_record_timing:t4 = time.perf_counter()
         if self.l_record_timing:self.timings.append([t4-t1,t2-t1,t3-t2,t4-t3,tinit,tgen,tprepadd,tadd])
-        # print 'time Secondaries = ',time.clock()-t1,'s',t2-t1,t3-t2,t4-t3
+        # print 'time Secondaries = ',time.perf_counter()-t1,'s',t2-t1,t3-t2,t4-t3
         if self.l_verbose>1:print 'secondaries generation finished'
 
     def call_set_params_user(self,maxsec,mat_num=None):

@@ -132,7 +132,7 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
         self.snapshots = []
         # Record the time it takes
         if self.rank == 0:
-            measured_start = time.clock()
+            measured_start = time.perf_counter()
             print('\nInitializing the lab-frame diagnostics: %d files...' %(
                 Ntot_snapshots_lab) )
         self.Ntot_snapshots_lab = Ntot_snapshots_lab
@@ -153,7 +153,7 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
 
         # Print a message that records the time for initialization
         if self.rank == 0:
-            measured_end = time.clock()
+            measured_end = time.perf_counter()
             print('Time taken for initialization of the files: %.5f s' %(
                 measured_end-measured_start) )
 
@@ -425,7 +425,7 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
                             for coord in self.coords:
                                 quantity = "%s%s" %(fieldtype, coord)
                                 path = "%s/%s" %(fieldtype, coord)
-                                t_i = time.clock()
+                                t_i = time.perf_counter()
                                 if field_grp is not None:
                                     dset = field_grp[i][path]
                                 else:

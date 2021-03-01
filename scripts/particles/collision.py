@@ -247,7 +247,7 @@ class LangevinCollisions(object):
         # --- Only do the collisions every ncint steps.
         if top.it%self.ncint > 0: return
 
-        starttime = time.clock()
+        starttime = time.perf_counter()
 
         # --- Loop over the field species, colliding all of the test species
         # --- against it. This way, the averages are only calculated once for
@@ -414,5 +414,5 @@ class LangevinCollisions(object):
                                      self.vthsqinit[test],self.vthsqinit[field],
                                      top.dt*self.ncint,loglambda,self.epvth)
 
-        endtime = time.clock()
+        endtime = time.perf_counter()
         self.timer += (endtime - starttime)

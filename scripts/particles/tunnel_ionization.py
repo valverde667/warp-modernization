@@ -150,7 +150,7 @@ class TunnelIonization(Ionization):
         if self.minimum_weight < 1:
             assert top.wpid > 0, Exception('In TunnelIonization, with minimum_weight < 1, particles must have variable weights')
         if dt is None:dt=top.dt/top.boost_gamma
-        if self.l_timing:t1 = time.clock()
+        if self.l_timing:t1 = time.perf_counter()
         for incident_species in self.inter:
             npinc = 0
             ispushed=0
@@ -319,4 +319,4 @@ class TunnelIonization(Ionization):
                 self.flushpart(pg,js)
                 processlostpart(pg,js+1,top.clearlostpart,top.time,top.zbeam)
 
-        if self.l_timing:print 'time ionization = ',time.clock()-t1,'s'
+        if self.l_timing:print 'time ionization = ',time.perf_counter()-t1,'s'

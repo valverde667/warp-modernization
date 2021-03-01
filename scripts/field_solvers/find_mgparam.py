@@ -138,13 +138,13 @@ def field_solve(phisave,solver,pkg3d):
         pkg3d.phi[...] = phisave
 
     if solver == f3d:
-        beforetime = time.time()
+        beforetime = time.perf_counter()
         vp3d(-1)
-        aftertime = time.time()
+        aftertime = time.perf_counter()
     else:
-        beforetime = time.time()
+        beforetime = time.perf_counter()
         solver.solve(-1)
-        aftertime = time.time()
+        aftertime = time.perf_counter()
 
     try:
         nprocs = solver.nprocs

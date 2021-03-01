@@ -120,7 +120,7 @@ recalculated on a finer mesh to give better balancing.
 
     def doloadbalance(self,lforce=False,doloadrho=None,dofs=None,
                       doparticleboundaries=0,reorg=None):
-        starttime = time.time()
+        starttime = time.perf_counter()
         if self.when is None: return
 
         # --- Set lloadbalanced flag to false. It will be set to true below
@@ -130,7 +130,7 @@ recalculated on a finer mesh to give better balancing.
         if not lparallel:
             if self.verbose:
                 print "Skipping loadbalance since running in serial"
-            endtime = time.time()
+            endtime = time.perf_counter()
             self.runtime += (endtime - starttime)
             return
 
@@ -151,7 +151,7 @@ recalculated on a finer mesh to give better balancing.
             if not lforce and (top.it%ii) != 0:
                 if self.verbose:
                     print "Skipping loadbalance since it is not time for it"
-                endtime = time.time()
+                endtime = time.perf_counter()
                 self.runtime += (endtime - starttime)
                 return
 
@@ -176,7 +176,7 @@ recalculated on a finer mesh to give better balancing.
         if nplive == 0:
             if self.verbose:
                 print "Skipping loadbalance since there are no particles"
-            endtime = time.time()
+            endtime = time.perf_counter()
             self.runtime += (endtime - starttime)
             return
 
@@ -390,7 +390,7 @@ recalculated on a finer mesh to give better balancing.
         if not lforce and (top.it%ii) != 0:
             if self.verbose:
                 print "Skipping loadbalance since it is not time for it"
-            endtime = time.time()
+            endtime = time.perf_counter()
             self.runtime += (endtime - starttime)
             return
 
@@ -514,7 +514,7 @@ recalculated on a finer mesh to give better balancing.
 
         top.lloadbalanced = true
 
-        endtime = time.time()
+        endtime = time.perf_counter()
         self.runtime += (endtime - starttime)
 
     def dodecomposition(self,axis,ii,minp,maxp,spread,

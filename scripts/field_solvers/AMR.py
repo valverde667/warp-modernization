@@ -934,7 +934,7 @@ class AMRTree(VisualizableClass):
 
         # generate nbcells from self.f or use self.nbcells_user if provided
         if self.nbcells_user is None:
-            if l_timing: starttime = time.clock()
+            if l_timing: starttime = time.perf_counter()
             l_nbcellsnone=1
             # set self.f to the charge density array by default
             if self.f_user is not None:
@@ -973,7 +973,7 @@ class AMRTree(VisualizableClass):
                                          MRfact=self.MRfact,lmax=self.maxcells_isolated_blocks)
             self.f = None
             if l_timing:
-                endtime = time.clock()
+                endtime = time.perf_counter()
                 print 'created nbcells in ',endtime-starttime,' seconds.'
         else:
             if callable(self.nbcells_user):
@@ -983,27 +983,27 @@ class AMRTree(VisualizableClass):
 
         if self.nbcells is not None:
             # generate list of blocks from array nbcells
-            if l_timing: starttime = time.clock()
+            if l_timing: starttime = time.perf_counter()
             if self.solvergeom==w3d.XYZgeom:
                 self.setlist(self.nbcells[:-1,:-1,:-1],w3d.AMRcoalescing,self.MRfact,true)
             else:
                 self.setlist(self.nbcells[:-1,:-1],w3d.AMRcoalescing,self.MRfact,true)
             if l_timing:
-                endtime = time.clock()
+                endtime = time.perf_counter()
                 print 'generated list in ',endtime-starttime,' seconds.'
 
             if not l_allocate_blocks:return
 
             # allocate blocks from list self.listblocks
-            if l_timing: starttime = time.clock()
+            if l_timing: starttime = time.perf_counter()
             self.setblocks()
             if l_timing:
-                endtime = time.clock()
+                endtime = time.perf_counter()
                 print 'generated blocks in ',endtime-starttime,' seconds.'
 
             # clear inactive regions in each blocks
             if not w3d.AMRuse_inactive_regions:
-                if l_timing: starttime = time.clock()
+                if l_timing: starttime = time.perf_counter()
                 if self.solvergeom==w3d.XYZgeom:
                     self.blocks.clearinactiveregions(self.nbcells)
                 else:
@@ -1013,11 +1013,11 @@ class AMRTree(VisualizableClass):
                     except:
                         self.blocks.clearinactiveregions(self.nbcells)
                 if l_timing:
-                    endtime = time.clock()
+                    endtime = time.perf_counter()
                     print 'Cleared inactive regions in ',endtime-starttime,' seconds.'
 
         # set conductor data
-        if l_timing: starttime = time.clock()
+        if l_timing: starttime = time.perf_counter()
         if self.solvergeom==w3d.XYZgeom:
             for cond,dfill in zip(self.conductors,self.conductorsdfill):
                 self.blocks.installconductor(cond,dfill=dfill)
@@ -1052,10 +1052,10 @@ class AMRTree(VisualizableClass):
                 for cond,dfill in zip(self.conductors,self.conductorsdfill):
                     self.blocks.installconductor(cond,dfill=dfill)
         if l_timing:
-            endtime = time.clock()
+            endtime = time.perf_counter()
             print 'generated conductors in ',endtime-starttime,' seconds.'
 
-        if l_timing: starttime = time.clock()
+        if l_timing: starttime = time.perf_counter()
         # load charge density on new set of blocks
         if self.solvergeom == w3d.XYZgeom:
             # --- Call the solvers loadrho routine directly since AMR instance
@@ -1068,7 +1068,7 @@ class AMRTree(VisualizableClass):
             except:
                 self.blocks.loadrho(lzero=true,lfinalize_rho=true,lrootonly=0)
         if l_timing:
-            endtime = time.clock()
+            endtime = time.perf_counter()
             print 'loaded rho in ',endtime-starttime,' seconds.'
 
         self.beforefs()

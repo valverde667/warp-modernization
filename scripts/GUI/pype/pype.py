@@ -67,7 +67,7 @@ if 1:
     import string
     STRINGPRINTABLE = string.printable[:]
     STRINGPRINTABLE = dict(zip(map(ord, STRINGPRINTABLE), len(STRINGPRINTABLE)*[None]))
-    ST = str(long(time.time()*100))
+    ST = str(long(time.perf_counter()*100))
     OUTF = "%s/.%s.tmp"%(homedir, ST)
     INF = OUTF+".out"
 
@@ -1496,7 +1496,7 @@ class MainWindow(wxFrame):
         while self.toparse:
             win = self.toparse.pop(0)
             if win in self.control:
-                start = time.time()
+                start = time.perf_counter()
 
                 win.ConvertEOLs(fmt_mode[win.format])
                 out = wxStyledTextCtrl.GetText(win).replace('\t', win.GetTabWidth()*' ')
@@ -1515,7 +1515,7 @@ class MainWindow(wxFrame):
                     t = ', tooltips and todo'
                 self.SetStatusText(("Browsable source tree, autocomplete%s"+
                                     " updated for %s in %.1f seconds.")%(t,
-                                    win.filename, time.time()-start))
+                                    win.filename, time.perf_counter()-start))
                 win.refresh = 0
         self.parsing = 0
 

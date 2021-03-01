@@ -519,7 +519,7 @@ class Ionization:
         if dt is None:
             dt = top.dt
         if self.l_timing:
-            t1 = time.clock()
+            t1 = time.perf_counter()
         for target_species in self.target_dens:
             self.target_dens[target_species]['ndens_updated'] = 0
         for incident_species in self.inter:
@@ -852,7 +852,7 @@ class Ionization:
                 processlostpart(top.pgroup, js+1, top.clearlostpart, top.time, top.zbeam)
 
         if self.l_timing:
-            print 'time ionization = ', time.clock() - t1, 's'
+            print 'time ionization = ', time.perf_counter() - t1, 's'
 
 
 class GridNotInitialized(Exception):

@@ -3,7 +3,7 @@
 #sys.meta_path.append(simple_finder())
 
 import time
-warpstarttime = time.time()
+warpstarttime = time.perf_counter()
 
 # import all of the neccesary packages
 import __main__
@@ -247,7 +247,7 @@ top.pgroup = ParticleGroup()
 top.pgroup.gchange()
 
 # --- Get start time
-top.starttime = time.time()
+top.starttime = time.perf_counter()
 top.starttimedump = top.starttime
 
 # --- Set the starting social security number. It is set so that the
@@ -1453,7 +1453,7 @@ initial_global_dict_keys = globals().keys()
 # --- dump file.
 warpversions = versionstext()
 
-warpendtime = time.time()
+warpendtime = time.perf_counter()
 
 if not warpoptions.quietImport:
     print warpversions[:-1] # --- the last line feed is skipped

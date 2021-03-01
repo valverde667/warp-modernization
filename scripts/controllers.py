@@ -260,19 +260,19 @@ class ControllerFunction:
 
     def callfuncsinlist(self,*args,**kw):
         printentering(self.name, 2)
-        bb = time.time()
+        bb = time.perf_counter()
         for f in self.controllerfunclist():
             #barrier()
-            t1 = time.time()
+            t1 = time.perf_counter()
             printentering(str(f), 3)
             f(*args,**kw)
             printexiting(str(f), 3)
             #barrier()
-            t2 = time.time()
+            t2 = time.perf_counter()
             # --- For the timers, use the function (or method) name as the key.
             # --- This is done since instancemethods cannot be pickled.
             self.timers[f.__name__] = self.timers.get(f.__name__,0.) + (t2 - t1)
-        aa = time.time()
+        aa = time.perf_counter()
         printexiting(self.name, 2)
         return aa - bb
 
@@ -398,10 +398,10 @@ class PicklableFunction:
         return 0
 
     def callfunc(self,*args,**kw):
-        t1 = time.time()
+        t1 = time.perf_counter()
         f = self.callablefunc()
         result = f(*args,**kw)
-        t2 = time.time()
+        t2 = time.perf_counter()
         self.time += t2 - t1
         return result
 

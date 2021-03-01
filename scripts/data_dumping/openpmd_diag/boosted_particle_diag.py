@@ -102,7 +102,7 @@ class BoostedParticleDiagnostic(ParticleDiagnostic):
 
         # Record the time it takes
         if self.rank == 0:
-            measured_start = time.clock()
+            measured_start = time.perf_counter()
             print('\nInitializing the lab-frame diagnostics: %d files...' %(
                 Ntot_snapshots_lab) )
 
@@ -123,7 +123,7 @@ class BoostedParticleDiagnostic(ParticleDiagnostic):
 
         # Print a message that records the time for initialization
         if self.rank == 0:
-            measured_end = time.clock()
+            measured_end = time.perf_counter()
             print('Time taken for initialization of the files: %.5f s' %(
                 measured_end - measured_start) )
 
