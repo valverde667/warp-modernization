@@ -6304,8 +6304,8 @@ class ZCone(ZSrfrvIn):
 
         zmin = -length/2.
         zmax = +length/2.
-        zdata = [zmin,zmax]
-        rofzdata = [r_zmin,r_zmax]
+        zdata = [zmin,zmin,zmax,zmax]
+        rofzdata = [0.,r_zmin,r_zmax,0.]
 
         ZSrfrvIn.__init__(self,' ',zmin,zmax,
                           voltage=voltage,xcent=xcent,ycent=ycent,zcent=zcent,
