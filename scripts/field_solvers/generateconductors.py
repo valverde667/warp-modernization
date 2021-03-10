@@ -45,6 +45,7 @@ Other:
  Beamletplate(za,zb,z0,thickness,...)
 
 Surfaces of revolution:
+ ZSrfrv(rsrf,zsrf,rad,rc,zc,...) (recommended for surfaces of revolution)
  ZSrfrvOut(rofzfunc,zmin,zmax,rmax,...)
  ZSrfrvIn(rofzfunc,zmin,zmax,rmin,...)
  ZSrfrvInOut(rminofz,rmaxofz,zmin,zmax,...)
