@@ -1073,64 +1073,59 @@ class EllipticAssembly(Assembly):
 
     def ellipseconductorf(self,*argtuple):
         arglist = list(argtuple)
-        if self.ellipticity != 1.:
-            y = arglist[-9]
-            delmy = arglist[-5]
-            delpy = arglist[-4]
-            arglist[-9] = y/self.ellipticity
+        y = arglist[-9]
+        delmy = arglist[-5]
+        delpy = arglist[-4]
+        arglist[-9] = y/self.ellipticity
 
         self.circlegeneratorf(*arglist)
 
-        if self.ellipticity != 1.:
-            delmy[:] = delmy*self.ellipticity
-            delpy[:] = delpy*self.ellipticity
+        delmy *= self.ellipticity
+        delpy *= self.ellipticity
 
     def ellipseconductorfnew(self,*argtuple):
         arglist = list(argtuple)
         intercepts = arglist[-2]
-        if self.ellipticity != 1.:
-            intercepts.ymmin = intercepts.ymmin/self.ellipticity
-            intercepts.dy = intercepts.dy/self.ellipticity
+
+        ymmin_save = intercepts.ymmin
+        dy_save = intercepts.dy
+        intercepts.ymmin = intercepts.ymmin/self.ellipticity
+        intercepts.dy = intercepts.dy/self.ellipticity
 
         self.circlegeneratorfnew(*arglist)
 
-        if self.ellipticity != 1.:
-            intercepts.ymmin *= self.ellipticity
-            intercepts.dy *= self.ellipticity
-            intercepts.yintercepts *= self.ellipticity
+        intercepts.ymmin = ymmin_save
+        intercepts.dy = dy_save
+        intercepts.yintercepts *= self.ellipticity
 
     def ellipseconductord(self,*argtuple):
         arglist = list(argtuple)
-        if self.ellipticity != 1.:
-            x = arglist[-4]
-            y = arglist[-3]
-            distance = arglist[-1]
-            arglist[-3] = y/self.ellipticity
+        x = arglist[-4]
+        y = arglist[-3]
+        distance = arglist[-1]
+        arglist[-3] = y/self.ellipticity
 
         self.circlegeneratord(*arglist)
 
-        if self.ellipticity != 1.:
-            tt = arctan2(y,x)
-            dx = distance*cos(tt)
-            dy = distance*sin(tt)*self.ellipticity
-            distance[:] = sqrt(dx**2 + dy**2)*sign(distance)
+        tt = arctan2(y,x)
+        dx = distance*cos(tt)
+        dy = distance*sin(tt)*self.ellipticity
+        distance[:] = sqrt(dx**2 + dy**2)*sign(distance)
 
     def ellipseintercept(self,*argtuple):
         arglist = list(argtuple)
-        if self.ellipticity != 1.:
-            y = arglist[-10]
-            vy = arglist[-7]
-            xi = arglist[-5]
-            yi = arglist[-4]
-            iphi = arglist[-1]
-            arglist[-10] = y/self.ellipticity
-            arglist[-7] = vy/self.ellipticity
+        y = arglist[-10]
+        vy = arglist[-7]
+        xi = arglist[-5]
+        yi = arglist[-4]
+        iphi = arglist[-1]
+        arglist[-10] = y/self.ellipticity
+        arglist[-7] = vy/self.ellipticity
 
         self.circlegeneratori(*arglist)
 
-        if self.ellipticity != 1.:
-            yi[:] = yi*self.ellipticity
-            iphi[:] = arctan2(sin(iphi),self.ellipticity*cos(iphi))
+        yi[:] = yi*self.ellipticity
+        iphi[:] = arctan2(sin(iphi),self.ellipticity*cos(iphi))
 
     def __getstate__(self):
         """
