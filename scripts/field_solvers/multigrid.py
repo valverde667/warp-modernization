@@ -892,8 +892,8 @@ class MultiGrid3D(SubcycledPoissonSolver):
         # --- This takes care of clear out the conductor information if needed.
         # --- Note that f3d.gridmode is passed in below - this still allows the
         # --- user to use the addconductor method if needed.
-        if self.gridmode == 0: self.clearconductors([top.pgroup.fselfb[iselfb]])
-        conductorobject = self.getconductorobject(top.pgroup.fselfb[iselfb])
+        if self.gridmode == 0: self.clearconductors([beta*clight])
+        conductorobject = self.getconductorobject(beta*clight)
         if self.electrontemperature == 0:
             multigrid3dsolve(iwhich,self.nx,self.ny,self.nz,
                              self.nxlocal,self.nylocal,self.nzlocal,
