@@ -2700,6 +2700,12 @@ c         The loop is in bendfieldsol3d
 c     --- If no field solve, return
       if ( bfstype <= -1) return
 
+      if (bfstype == 12) then
+c       --- The Python level solver handles all of the solve
+        call bvp3d(iwhich,bfstype)
+        return
+      endif
+
 c     --- Make sure that j has been finalized and is ready for the solve
       if (.not. ljfinalized) call finalizej()
 
@@ -2710,7 +2716,7 @@ c     --- to ensure that it is set when the field solver is called.
      &                bfield%zmminlocal,zgrid)
       endif
 
-      if (bfstype == 7 .or. bfstype == 12) then
+      if (bfstype == 7) then
 c       --- multigrid field solvers - deal with bends directly and set
 c       --- axial boundary conditions
         call bvp3d(iwhich,bfstype)
