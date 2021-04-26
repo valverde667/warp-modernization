@@ -2414,14 +2414,15 @@ def getj(comp=None,ix=None,iy=None,iz=None,bcast=1,local=0,fullplane=0,
             nxguardj = bfield.nxguardj
             nyguardj = bfield.nyguardj
             nzguardj = bfield.nzguardj
+            
+            j = bfield.j[:,nxguardj:-nxguardj or None,
+                           nyguardj:-nyguardj or None,
+                           nzguardj:-nzguardj or None]
+            
         else:
-            bfield = solver
-            nxguardj = bfield.nxguardrho
-            nyguardj = bfield.nyguardrho
-            nzguardj = bfield.nzguardrho
-        j = bfield.j[:,nxguardj:-nxguardj or None,
-                       nyguardj:-nyguardj or None,
-                       nzguardj:-nzguardj or None]
+            j = solver.getj()
+        
+        
         Jx = j[0,...]
         JY = j[1,...]
         JZ = j[2,...]
@@ -2472,15 +2473,12 @@ def setj(val,comp=None,ix=None,iy=None,iz=None,local=0,solver=None):
         nxguardj = bfield.nxguardj
         nyguardj = bfield.nyguardj
         nzguardj = bfield.nzguardj
+        
+        j = bfield.j[:,nxguardj:-nxguardj or None,
+                       nyguardj:-nyguardj or None,
+                       nzguardj:-nzguardj or None]
     else:
-        bfield = solver
-        nxguardj = bfield.nxguardrho
-        nyguardj = bfield.nyguardrho
-        nzguardj = bfield.nzguardrho
-
-    j = bfield.j[:,nxguardj:-nxguardj or None,
-                   nyguardj:-nyguardj or None,
-                   nzguardj:-nzguardj or None]
+        j = solver.getj()
 
     setdecomposedarray(j[ic,...],val,ix=ix,iy=iy,iz=iz,
                        local=local,solver=solver)
@@ -2527,18 +2525,20 @@ def getb(comp=None,ix=None,iy=None,iz=None,bcast=1,local=0,fullplane=0,
             nxguardb = bfield.nxguardb
             nyguardb = bfield.nyguardb
             nzguardb = bfield.nzguardb
+            
+            b = bfield.b[:,nxguardb:-nxguardb or None,
+                           nyguardb:-nyguardb or None,
+                           nzguardb:-nzguardb or None]
         else:
-            bfield = solver
-            nxguardb = bfield.nxguarde
-            nyguardb = bfield.nyguarde
-            nzguardb = bfield.nzguarde
-
-        b = bfield.b[:,nxguardb:-nxguardb or None,
-                       nyguardb:-nyguardb or None,
-                       nzguardb:-nzguardb or None]
+            b = solver.getb()
+        
         Bx = b[0,...]
         By = b[1,...]
         Bz = b[2,...]
+        if solver.ny == 0:
+            Bx = Bx[:,0,:]
+            By = By[:,0,:]
+            Bz = Bz[:,0,:]
 
     if comp == 'B':
         Bx = getdecomposedarray(Bx,ix=ix,iy=iy,iz=iz,
@@ -2586,15 +2586,11 @@ def setb(val,comp=None,ix=None,iy=None,iz=None,local=0,solver=None):
         nxguardb = bfield.nxguardb
         nyguardb = bfield.nyguardb
         nzguardb = bfield.nzguardb
+        b = bfield.b[:,nxguardb:-nxguardb or None,
+                       nyguardb:-nyguardb or None,
+                       nzguardb:-nzguardb or None]
     else:
-        bfield = solver
-        nxguardb = bfield.nxguarde
-        nyguardb = bfield.nyguarde
-        nzguardb = bfield.nzguarde
-
-    b = bfield.b[:,nxguardb:-nxguardb or None,
-                   nyguardb:-nyguardb or None,
-                   nzguardb:-nzguardb or None]
+        b = solver.getb()
 
     setdecomposedarray(b[ic,...],val,ix=ix,iy=iy,iz=iz,
                        local=local,solver=solver)
@@ -2630,32 +2626,41 @@ def geta(comp=None,ix=None,iy=None,iz=None,bcast=1,local=0,fullplane=0,
         nxguarda = bfield.nxguarda
         nyguarda = bfield.nyguarda
         nzguarda = bfield.nzguarda
+        
+        a = bfield.a[:,nxguarda:-nxguarda or None,
+                       nyguarda:-nyguarda or None,
+                       nzguarda:-nzguarda or None]
     else:
-        bfield = solver
-        nxguarda = bfield.nxguardphi
-        nyguarda = bfield.nyguardphi
-        nzguarda = bfield.nzguardphi
+        a = solver.geta()
+        
+    Ax = a[0,...]
+    Ay = a[1,...]
+    Az = a[2,...]
+    if solver.ny == 0:
+        Ax = Ax[:,0,:]
+        Ay = Ay[:,0,:]
+        Az = Az[:,0,:]
 
-    a = bfield.a[:,nxguarda:-nxguarda or None,
-                   nyguarda:-nyguarda or None,
-                   nzguarda:-nzguarda or None]
 
     if comp == 'A':
-        Ax = getdecomposedarray(a[0,...],ix=ix,iy=iy,iz=iz,
+        Ax = getdecomposedarray(Ax,ix=ix,iy=iy,iz=iz,
                                 bcast=bcast,local=local,fullplane=fullplane,
                                 xyantisymmetric=(ic in [0,1]),
                                 solver=solver)
-        Ay = getdecomposedarray(a[1,...],ix=ix,iy=iy,iz=iz,
+        Ay = getdecomposedarray(Ay,ix=ix,iy=iy,iz=iz,
                                 bcast=bcast,local=local,fullplane=fullplane,
                                 xyantisymmetric=(ic in [0,1]),
                                 solver=solver)
-        Az = getdecomposedarray(a[2,...],ix=ix,iy=iy,iz=iz,
+        Az = getdecomposedarray(Az,ix=ix,iy=iy,iz=iz,
                                 bcast=bcast,local=local,fullplane=fullplane,
                                 xyantisymmetric=(ic in [0,1]),
                                 solver=solver)
         return sqrt(Ax**2 + Ay**2 + Az**2)
     else:
-        return getdecomposedarray(a[ic,...],ix=ix,iy=iy,iz=iz,
+        if   ic == 0: A = Ax
+        elif ic == 1: A = Ay
+        elif ic == 2: A = Az
+        return getdecomposedarray(A,ix=ix,iy=iy,iz=iz,
                                   bcast=bcast,local=local,fullplane=fullplane,
                                   xyantisymmetric=(ic in [0,1]),
                                   solver=solver)
@@ -2683,15 +2688,12 @@ def seta(val,comp=None,ix=None,iy=None,iz=None,local=0,solver=None):
         nxguarda = bfield.nxguarda
         nyguarda = bfield.nyguarda
         nzguarda = bfield.nzguarda
+        
+        a = bfield.a[:,nxguarda:-nxguarda or None,
+                       nyguarda:-nyguarda or None,
+                       nzguarda:-nzguarda or None]
     else:
-        bfield = solver
-        nxguarda = bfield.nxguardphi
-        nyguarda = bfield.nyguardphi
-        nzguarda = bfield.nzguardphi
-
-    a = bfield.a[:,nxguarda:-nxguarda or None,
-                   nyguarda:-nyguarda or None,
-                   nzguarda:-nzguarda or None]
+        a = solver.geta()
 
     setdecomposedarray(a[ic,...],val,ix=ix,iy=iy,iz=iz,
                        local=local,solver=solver)

@@ -55,7 +55,8 @@ recalculated on a finer mesh to give better balancing.
                  doitnow=0,doloadrho=0,dofs=0,verbose=0,
                  spreadx=1.,spready=1.,spreadz=1.,
                  laligntogrid=False,mincellsperdomain=2,
-                 loadbalancefieldsolver=False,fieldtoparticleeffortratio=0.1):
+                 loadbalancefieldsolver=False,fieldtoparticleeffortratio=0.1,
+                 linstall=True):
         if when is None:
             self.when = {10:1,100:10,1000000:20}
         else:
@@ -111,11 +112,13 @@ recalculated on a finer mesh to give better balancing.
         # --- Also, if loadbalancing were done every step, this would
         # --- gaurantee that particles would never be accidently lost
         # --- since the particles would not move in between load balances.
-        installbeforescraper(self.doloadbalance)
+        self.linstall = linstall
+        if self.linstall:
+            installbeforescraper(self.doloadbalance)
 
     def __setstate__(self,dict):
         self.__dict__.update(dict)
-        if not isinstalledbeforescraper(self.doloadbalance):
+        if not isinstalledbeforescraper(self.doloadbalance) and self.linstall:
             installbeforescraper(self.doloadbalance)
 
     def doloadbalance(self,lforce=False,doloadrho=None,dofs=None,
@@ -196,6 +199,7 @@ recalculated on a finer mesh to give better balancing.
                 if top.pgroup.nps[js] == 0: continue
                 i1 = top.pgroup.ins[js] - 1
                 i2 = i1 + top.pgroup.nps[js]
+                
                 if top.nxprocs > 1:
                     xx = top.pgroup.xp[i1:i2]
                     xminp = min(xminp,minnd(xx))
@@ -216,9 +220,16 @@ recalculated on a finer mesh to give better balancing.
                     zmaxp = max(zmaxp,maxnd(zz))
                 else:
                     zminp = w3d.zmmin + top.zbeam
-                    zmaxp = w3d.zmmax + top.zbeam
-            xminp,yminp,zminp = parallelmin([xminp,yminp,zminp])
-            xmaxp,ymaxp,zmaxp = parallelmax([xmaxp,ymaxp,zmaxp])
+                    zmaxp = w3d.zmmax + top.zbeam     
+            # xminp, yminp, zminp = parallelmin([xminp,yminp,zminp])
+            # xmaxp, ymaxp, zmaxp = parallelmax([xmaxp,ymaxp,zmaxp])
+            xminp = parallelmin(xminp)
+            xmaxp = parallelmax(xmaxp)
+            yminp = parallelmin(yminp)
+            yminp = parallelmax(ymaxp)
+            zminp = parallelmin(zminp)
+            zmaxp = parallelmax(zmaxp)
+            
             # --- Make sure that the mins and maxes are within the bounds
             # --- of the grid. This is needed since there may be some
             # --- particles that are out of bounds (since this happens just
@@ -336,7 +347,7 @@ recalculated on a finer mesh to give better balancing.
                 if self.verbose:
                     print "Load balancing since particles near upper end ",
                     print "of mesh in z ",ppdecomp.zmax[-1],w3d.zmmax,zmaxp,
-                    print ppdecomp.zmax[-1]-2*w3d.dz
+                    print ppdecomp.zmax[-1]-2*w3d.dz,top.zbeam
 
         # --- Check if lowermost particle is close to edge of last processor
         # --- If so, then force a reloadbalance.
@@ -346,7 +357,7 @@ recalculated on a finer mesh to give better balancing.
                 if self.verbose:
                     print "Load balancing since particles near lower end ",
                     print "of mesh in z ",ppdecomp.zmin[0],w3d.zmmin,zminp,
-                    print ppdecomp.zmin[0]+2*w3d.dz
+                    print ppdecomp.zmin[0]+2*w3d.dz,top.zbeam
 
         # --- Shift into the grid frame
         xminp = xminp - w3d.xmmin
@@ -366,16 +377,16 @@ recalculated on a finer mesh to give better balancing.
         padupperx = self.calcpadupper(0,ii,self.padupperx,
                                      top.pgroup.getpyobject('uxp'),
                                      w3d.dx,usemoments)
-        padlowery = self.calcpadlower(0,ii,self.padlowery,
+        padlowery = self.calcpadlower(1,ii,self.padlowery,
                                      top.pgroup.getpyobject('uyp'),
                                      w3d.dy,usemoments)
-        paduppery = self.calcpadupper(0,ii,self.paduppery,
+        paduppery = self.calcpadupper(1,ii,self.paduppery,
                                      top.pgroup.getpyobject('uyp'),
                                      w3d.dy,usemoments)
-        padlowerz = self.calcpadlower(0,ii,self.padlowerz,
+        padlowerz = self.calcpadlower(2,ii,self.padlowerz,
                                      top.pgroup.getpyobject('uzp'),
                                      w3d.dz,usemoments)
-        padupperz = self.calcpadupper(0,ii,self.padupperz,
+        padupperz = self.calcpadupper(2,ii,self.padupperz,
                                      top.pgroup.getpyobject('uzp'),
                                      w3d.dz,usemoments)
 
@@ -573,21 +584,35 @@ recalculated on a finer mesh to give better balancing.
             # --- It makes sure that all domains are at least mincellsperdomain long.
             idomain = domain/dd
             idomain[0] = nint(idomain[0])
-            for i in range(1,npes+1):
+            
+            if self.verbose:
+                print "nprocs: ",nprocs
+                print "domain",domain
+                print "1:idomain",idomain
+            
+            for i in range(1,nprocs+1):
                 idomain[i] = nint(idomain[i])
                 if idomain[i] - idomain[i-1] < self.mincellsperdomain:
                     idomain[i] = idomain[i-1] + self.mincellsperdomain
             if idomain[-1] > nnglobal:
                 idomain[-1] = nnglobal
-                for i in range(npes-1,-1,-1):
+                for i in range(nprocs-1,-1,-1):
                     if idomain[i+1] - idomain[i] < self.mincellsperdomain:
                         idomain[i] = idomain[i+1] - self.mincellsperdomain
 
             domain = dd*idomain
+            
+            if self.verbose:
+                print "2:idomain",idomain
 
         # --- Set domain of each processor.
         ppdecompmin[:] = mmin + domain[:-1]
         ppdecompmax[:] = mmin + domain[1:]
+
+        if self.verbose:
+            print "Mins: ",ppdecompmin
+            print "Maxs: ",ppdecompmax
+            print "dels: ",(ppdecompmax-ppdecompmin)
 
         domaindecomposeparticles(nnglobal,nprocs,npextra,mmin,dd,
                                  zeros(nprocs,'d'),true,
