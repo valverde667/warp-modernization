@@ -220,13 +220,9 @@ recalculated on a finer mesh to give better balancing.
                     zmaxp = max(zmaxp,maxnd(zz))
                 else:
                     zminp = w3d.zmmin + top.zbeam
-                    zmaxp = w3d.zmmax + top.zbeam 
-            xminp = parallelmin(xminp)
-            xmaxp = parallelmax(xmaxp)
-            yminp = parallelmin(yminp)
-            yminp = parallelmax(ymaxp)
-            zminp = parallelmin(zminp)
-            zmaxp = parallelmax(zmaxp)
+                    zmaxp = w3d.zmmax + top.zbeam
+            xminp,yminp,zminp = parallelmin(array([xminp,yminp,zminp]))
+            xmaxp,ymaxp,zmaxp = parallelmax(array([xmaxp,ymaxp,zmaxp]))
             
             # --- Make sure that the mins and maxes are within the bounds
             # --- of the grid. This is needed since there may be some
