@@ -221,8 +221,6 @@ recalculated on a finer mesh to give better balancing.
                 else:
                     zminp = w3d.zmmin + top.zbeam
                     zmaxp = w3d.zmmax + top.zbeam     
-            # xminp, yminp, zminp = parallelmin([xminp,yminp,zminp])
-            # xmaxp, ymaxp, zmaxp = parallelmax([xmaxp,ymaxp,zmaxp])
             xminp = parallelmin(xminp)
             xmaxp = parallelmax(xmaxp)
             yminp = parallelmin(yminp)

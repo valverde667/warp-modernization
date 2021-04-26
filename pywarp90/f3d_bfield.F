@@ -2128,7 +2128,6 @@ c       --- and Verboncoeur, J. of Comp. Phys.,
       cdens = cdens*q*w
 
       if (nw == 0) then
-c        gw = g
         cdensw = cdens
       endif
 
@@ -2210,7 +2209,6 @@ c       --- normal loop
           u0 = u0*cdensw(ix  )
           u1 = u1*cdensw(ix+1)
 
-c          if (nw == np) gw = g*wghtp(ip)
           vv(0) = ux*gaminv(ip)
           vv(1) = uy*gaminv(ip)
           vv(2) = uzp(ip)*gaminv(ip)
