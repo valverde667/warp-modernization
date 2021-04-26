@@ -220,7 +220,7 @@ recalculated on a finer mesh to give better balancing.
                     zmaxp = max(zmaxp,maxnd(zz))
                 else:
                     zminp = w3d.zmmin + top.zbeam
-                    zmaxp = w3d.zmmax + top.zbeam     
+                    zmaxp = w3d.zmmax + top.zbeam 
             xminp = parallelmin(xminp)
             xmaxp = parallelmax(xmaxp)
             yminp = parallelmin(yminp)
@@ -582,7 +582,7 @@ recalculated on a finer mesh to give better balancing.
             # --- It makes sure that all domains are at least mincellsperdomain long.
             idomain = domain/dd
             idomain[0] = nint(idomain[0])
-            
+
             if self.verbose:
                 print "nprocs: ",nprocs
                 print "domain",domain

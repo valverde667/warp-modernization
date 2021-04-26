@@ -261,9 +261,9 @@ class ParticleDiagnostic(OpenPMDDiagnostic) :
 
             # Write the datasets for each particle datatype
             if n_global > 0:
-                self.write_particles( species_grp, 
-                                      species, 
-                                      n_rank, 
+                self.write_particles( species_grp,
+                                      species,
+                                      n_rank,
                                       select_array )
 
         # Close the file
