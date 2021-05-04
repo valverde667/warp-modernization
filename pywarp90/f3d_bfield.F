@@ -1943,30 +1943,30 @@ c         --- normal loop
             vv(1) = uyp(ip)*gaminv(ip)
             vv(2) = uzp(ip)*gaminv(ip)
 
-            j(0,ix  ,iy  ,iz  ) = j(0,ix  ,iy  ,iz  ) + u0*v0*w0*vv(0)
-            j(0,ix+1,iy  ,iz  ) = j(0,ix+1,iy  ,iz  ) + u1*v0*w0*vv(0)
-            j(0,ix  ,iy+1,iz  ) = j(0,ix  ,iy+1,iz  ) + u0*v1*w0*vv(0)
-            j(0,ix+1,iy+1,iz  ) = j(0,ix+1,iy+1,iz  ) + u1*v1*w0*vv(0)
-            j(0,ix  ,iy  ,iz+1) = j(0,ix  ,iy  ,iz+1) + u0*v0*w1*vv(0)
-            j(0,ix+1,iy  ,iz+1) = j(0,ix+1,iy  ,iz+1) + u1*v0*w1*vv(0)
-            j(0,ix  ,iy+1,iz+1) = j(0,ix  ,iy+1,iz+1) + u0*v1*w1*vv(0)
-            j(0,ix+1,iy+1,iz+1) = j(0,ix+1,iy+1,iz+1) + u1*v1*w1*vv(0)
-            j(1,ix  ,iy  ,iz  ) = j(1,ix  ,iy  ,iz  ) + u0*v0*w0*vv(1)
-            j(1,ix+1,iy  ,iz  ) = j(1,ix+1,iy  ,iz  ) + u1*v0*w0*vv(1)
-            j(1,ix  ,iy+1,iz  ) = j(1,ix  ,iy+1,iz  ) + u0*v1*w0*vv(1)
-            j(1,ix+1,iy+1,iz  ) = j(1,ix+1,iy+1,iz  ) + u1*v1*w0*vv(1)
-            j(1,ix  ,iy  ,iz+1) = j(1,ix  ,iy  ,iz+1) + u0*v0*w1*vv(1)
-            j(1,ix+1,iy  ,iz+1) = j(1,ix+1,iy  ,iz+1) + u1*v0*w1*vv(1)
-            j(1,ix  ,iy+1,iz+1) = j(1,ix  ,iy+1,iz+1) + u0*v1*w1*vv(1)
-            j(1,ix+1,iy+1,iz+1) = j(1,ix+1,iy+1,iz+1) + u1*v1*w1*vv(1)
-            j(2,ix  ,iy  ,iz  ) = j(2,ix  ,iy  ,iz  ) + u0*v0*w0*vv(2)
-            j(2,ix+1,iy  ,iz  ) = j(2,ix+1,iy  ,iz  ) + u1*v0*w0*vv(2)
-            j(2,ix  ,iy+1,iz  ) = j(2,ix  ,iy+1,iz  ) + u0*v1*w0*vv(2)
-            j(2,ix+1,iy+1,iz  ) = j(2,ix+1,iy+1,iz  ) + u1*v1*w0*vv(2)
-            j(2,ix  ,iy  ,iz+1) = j(2,ix  ,iy  ,iz+1) + u0*v0*w1*vv(2)
-            j(2,ix+1,iy  ,iz+1) = j(2,ix+1,iy  ,iz+1) + u1*v0*w1*vv(2)
-            j(2,ix  ,iy+1,iz+1) = j(2,ix  ,iy+1,iz+1) + u0*v1*w1*vv(2)
-            j(2,ix+1,iy+1,iz+1) = j(2,ix+1,iy+1,iz+1) + u1*v1*w1*vv(2)
+            j(0,ix  ,iy  ,iz  ) = j(0,ix  ,iy  ,iz  ) + u0*v0*w0*gw*vv(0)
+            j(0,ix+1,iy  ,iz  ) = j(0,ix+1,iy  ,iz  ) + u1*v0*w0*gw*vv(0)
+            j(0,ix  ,iy+1,iz  ) = j(0,ix  ,iy+1,iz  ) + u0*v1*w0*gw*vv(0)
+            j(0,ix+1,iy+1,iz  ) = j(0,ix+1,iy+1,iz  ) + u1*v1*w0*gw*vv(0)
+            j(0,ix  ,iy  ,iz+1) = j(0,ix  ,iy  ,iz+1) + u0*v0*w1*gw*vv(0)
+            j(0,ix+1,iy  ,iz+1) = j(0,ix+1,iy  ,iz+1) + u1*v0*w1*gw*vv(0)
+            j(0,ix  ,iy+1,iz+1) = j(0,ix  ,iy+1,iz+1) + u0*v1*w1*gw*vv(0)
+            j(0,ix+1,iy+1,iz+1) = j(0,ix+1,iy+1,iz+1) + u1*v1*w1*gw*vv(0)
+            j(1,ix  ,iy  ,iz  ) = j(1,ix  ,iy  ,iz  ) + u0*v0*w0*gw*vv(1)
+            j(1,ix+1,iy  ,iz  ) = j(1,ix+1,iy  ,iz  ) + u1*v0*w0*gw*vv(1)
+            j(1,ix  ,iy+1,iz  ) = j(1,ix  ,iy+1,iz  ) + u0*v1*w0*gw*vv(1)
+            j(1,ix+1,iy+1,iz  ) = j(1,ix+1,iy+1,iz  ) + u1*v1*w0*gw*vv(1)
+            j(1,ix  ,iy  ,iz+1) = j(1,ix  ,iy  ,iz+1) + u0*v0*w1*gw*vv(1)
+            j(1,ix+1,iy  ,iz+1) = j(1,ix+1,iy  ,iz+1) + u1*v0*w1*gw*vv(1)
+            j(1,ix  ,iy+1,iz+1) = j(1,ix  ,iy+1,iz+1) + u0*v1*w1*gw*vv(1)
+            j(1,ix+1,iy+1,iz+1) = j(1,ix+1,iy+1,iz+1) + u1*v1*w1*gw*vv(1)
+            j(2,ix  ,iy  ,iz  ) = j(2,ix  ,iy  ,iz  ) + u0*v0*w0*gw*vv(2)
+            j(2,ix+1,iy  ,iz  ) = j(2,ix+1,iy  ,iz  ) + u1*v0*w0*gw*vv(2)
+            j(2,ix  ,iy+1,iz  ) = j(2,ix  ,iy+1,iz  ) + u0*v1*w0*gw*vv(2)
+            j(2,ix+1,iy+1,iz  ) = j(2,ix+1,iy+1,iz  ) + u1*v1*w0*gw*vv(2)
+            j(2,ix  ,iy  ,iz+1) = j(2,ix  ,iy  ,iz+1) + u0*v0*w1*gw*vv(2)
+            j(2,ix+1,iy  ,iz+1) = j(2,ix+1,iy  ,iz+1) + u1*v0*w1*gw*vv(2)
+            j(2,ix  ,iy+1,iz+1) = j(2,ix  ,iy+1,iz+1) + u0*v1*w1*gw*vv(2)
+            j(2,ix+1,iy+1,iz+1) = j(2,ix+1,iy+1,iz+1) + u1*v1*w1*gw*vv(2)
 
           enddo
 !$OMP END DO
@@ -2027,18 +2027,18 @@ c         --- normal loop
             vv(1) = uyp(ip)*gaminv(ip)
             vv(2) = uzp(ip)*gaminv(ip)
 
-            j(0,ix  ,0,iz  ) = j(0,ix  ,0,iz  ) + u0*w0*vv(0)
-            j(0,ix+1,0,iz  ) = j(0,ix+1,0,iz  ) + u1*w0*vv(0)
-            j(0,ix  ,0,iz+1) = j(0,ix  ,0,iz+1) + u0*w1*vv(0)
-            j(0,ix+1,0,iz+1) = j(0,ix+1,0,iz+1) + u1*w1*vv(0)
-            j(1,ix  ,0,iz  ) = j(1,ix  ,0,iz  ) + u0*w0*vv(1)
-            j(1,ix+1,0,iz  ) = j(1,ix+1,0,iz  ) + u1*w0*vv(1)
-            j(1,ix  ,0,iz+1) = j(1,ix  ,0,iz+1) + u0*w1*vv(1)
-            j(1,ix+1,0,iz+1) = j(1,ix+1,0,iz+1) + u1*w1*vv(1)
-            j(2,ix  ,0,iz  ) = j(2,ix  ,0,iz  ) + u0*w0*vv(2)
-            j(2,ix+1,0,iz  ) = j(2,ix+1,0,iz  ) + u1*w0*vv(2)
-            j(2,ix  ,0,iz+1) = j(2,ix  ,0,iz+1) + u0*w1*vv(2)
-            j(2,ix+1,0,iz+1) = j(2,ix+1,0,iz+1) + u1*w1*vv(2)
+            j(0,ix  ,0,iz  ) = j(0,ix  ,0,iz  ) + u0*w0*gw*vv(0)
+            j(0,ix+1,0,iz  ) = j(0,ix+1,0,iz  ) + u1*w0*gw*vv(0)
+            j(0,ix  ,0,iz+1) = j(0,ix  ,0,iz+1) + u0*w1*gw*vv(0)
+            j(0,ix+1,0,iz+1) = j(0,ix+1,0,iz+1) + u1*w1*gw*vv(0)
+            j(1,ix  ,0,iz  ) = j(1,ix  ,0,iz  ) + u0*w0*gw*vv(1)
+            j(1,ix+1,0,iz  ) = j(1,ix+1,0,iz  ) + u1*w0*gw*vv(1)
+            j(1,ix  ,0,iz+1) = j(1,ix  ,0,iz+1) + u0*w1*gw*vv(1)
+            j(1,ix+1,0,iz+1) = j(1,ix+1,0,iz+1) + u1*w1*gw*vv(1)
+            j(2,ix  ,0,iz  ) = j(2,ix  ,0,iz  ) + u0*w0*gw*vv(2)
+            j(2,ix+1,0,iz  ) = j(2,ix+1,0,iz  ) + u1*w0*gw*vv(2)
+            j(2,ix  ,0,iz+1) = j(2,ix  ,0,iz+1) + u0*w1*gw*vv(2)
+            j(2,ix+1,0,iz+1) = j(2,ix+1,0,iz+1) + u1*w1*gw*vv(2)
 
           enddo
 
@@ -2128,7 +2128,6 @@ c       --- and Verboncoeur, J. of Comp. Phys.,
       cdens = cdens*q*w
 
       if (nw == 0) then
-        gw = g
         cdensw = cdens
       endif
 
@@ -2210,7 +2209,6 @@ c       --- normal loop
           u0 = u0*cdensw(ix  )
           u1 = u1*cdensw(ix+1)
 
-          if (nw == np) gw = g*wghtp(ip)
           vv(0) = ux*gaminv(ip)
           vv(1) = uy*gaminv(ip)
           vv(2) = uzp(ip)*gaminv(ip)
@@ -2630,7 +2628,8 @@ c=============================================================================
       use BFieldGrid
 
 c     --- Ensure that the Bp array is setup properly
-      if(solvergeom==XYZgeom) then
+      if(solvergeom==XYZgeom .or.
+     &   solvergeom==RZgeom) then
 c       --- Note the -1 is passed in for ns as a flag to skip the
 c       --- setting up of jptmp.
         call setupbfieldsforparticles3d(-1,(/0/),0,bfield,bfieldp)
@@ -2720,7 +2719,6 @@ c     --- to ensure that it is set when the field solver is called.
 c       --- multigrid field solvers - deal with bends directly and set
 c       --- axial boundary conditions
         call bvp3d(iwhich,bfstype)
-
       else if (.not. linbend) then
 c       --- If not in bend, call VP3D
         call bvp3d(iwhich,bfstype)

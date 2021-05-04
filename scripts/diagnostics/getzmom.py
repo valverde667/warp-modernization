@@ -56,38 +56,48 @@ zmmnt(itask=0,js=None, jslist=range(0,top.ns))
     if (itask == 0 or itask == 2):
         for js in jslist:
             isid = top.pgroup.sid[js] + 1
-            for ipmin in range(top.pgroup.ins[js]-1,
-                               top.pgroup.ins[js]+top.pgroup.nps[js]-1,
-                               groupsize):
-                ip = min(groupsize,
-                         top.pgroup.ins[js]+top.pgroup.nps[js]-ipmin-1)
-                try:
-                    weighted = top.wpid
-                except AttributeError:
-                    weighted = 0
-                x = top.pgroup.xp[ipmin:ipmin+ip]
-                y = top.pgroup.yp[ipmin:ipmin+ip]
-                z = top.pgroup.zp[ipmin:ipmin+ip]
-                ux = top.pgroup.uxp[ipmin:ipmin+ip]
-                uy = top.pgroup.uyp[ipmin:ipmin+ip]
-                uz = top.pgroup.uzp[ipmin:ipmin+ip]
-                gaminv = top.pgroup.gaminv[ipmin:ipmin+ip]
-                if(not weighted):
-                    getzmmnt(ip, x, y, z, ux, uy, uz, gaminv,
-                             top.pgroup.sq[js], top.pgroup.sm[js],
-                             top.pgroup.sw[js], top.dt, top.pgroup.dtscale[js],
-                             2, top.nplive, ux, uy, uz, js+1, isid, ismax,
-                             top.tempmaxp, top.tempminp,
-                             top.tempzmmnts0, top.tempzmmnts)
-                else:
-                    pid = top.pgroup.pid[ipmin:ipmin+ip, top.wpid-1]
-                    getzmmnt_weights(ip, x, y, z, ux, uy, uz, gaminv, pid,
-                                     top.pgroup.sq[js], top.pgroup.sm[js],
-                                     top.pgroup.sw[js], top.dt,
-                                     top.pgroup.dtscale[js], 2, top.nplive,
-                                     ux, uy, uz, js+1, isid, ismax,
-                                     top.tempmaxp, top.tempminp,
-                                     top.tempzmmnts0, top.tempzmmnts)
+            if top.pgroup.nps[js] > 0:
+                for ipmin in range(top.pgroup.ins[js]-1,
+                                   top.pgroup.ins[js]+top.pgroup.nps[js]-1,
+                                   groupsize):
+                    ip = min(groupsize,
+                             top.pgroup.ins[js]+top.pgroup.nps[js]-ipmin-1)
+                    try:
+                        weighted = top.wpid
+                    except AttributeError:
+                        weighted = 0
+                    x = top.pgroup.xp[ipmin:ipmin+ip]
+                    y = top.pgroup.yp[ipmin:ipmin+ip]
+                    z = top.pgroup.zp[ipmin:ipmin+ip]
+                    ux = top.pgroup.uxp[ipmin:ipmin+ip]
+                    uy = top.pgroup.uyp[ipmin:ipmin+ip]
+                    uz = top.pgroup.uzp[ipmin:ipmin+ip]
+                    gaminv = top.pgroup.gaminv[ipmin:ipmin+ip]
+                    if(not weighted):
+                        getzmmnt(ip, x, y, z, ux, uy, uz, gaminv,
+                                 top.pgroup.sq[js], top.pgroup.sm[js],
+                                 top.pgroup.sw[js], top.dt, top.pgroup.dtscale[js],
+                                 2, top.nplive, ux, uy, uz, js+1, isid, ismax,
+                                 top.tempmaxp, top.tempminp,
+                                 top.tempzmmnts0, top.tempzmmnts)
+                    else:
+                        pid = top.pgroup.pid[ipmin:ipmin+ip, top.wpid-1]
+                        getzmmnt_weights(ip, x, y, z, ux, uy, uz, gaminv, pid,
+                                         top.pgroup.sq[js], top.pgroup.sm[js],
+                                         top.pgroup.sw[js], top.dt,
+                                         top.pgroup.dtscale[js], 2, top.nplive,
+                                         ux, uy, uz, js+1, isid, ismax,
+                                         top.tempmaxp, top.tempminp,
+                                         top.tempzmmnts0, top.tempzmmnts)
+            else:
+                #  This is added so that if a node doesn't have particles it
+                # will still copy in the species weight for normalization.
+                getzmmnt(0, 0., 0., 0., 0., 0., 0., 0.,
+                         top.pgroup.sq[js], top.pgroup.sm[js],
+                         top.pgroup.sw[js], top.dt, top.pgroup.dtscale[js],
+                         2, top.nplive, 0., 0., 0., js+1, isid, ismax,
+                         top.tempmaxp, top.tempminp,
+                         top.tempzmmnts0, top.tempzmmnts)
 
     # Do final summing and averaging of the moments
     if (itask == 0 or itask == 3):

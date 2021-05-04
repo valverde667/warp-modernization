@@ -46,8 +46,13 @@ class MagnetostaticMG(SubcycledPoissonSolver):
 
         SubcycledPoissonSolver.__init__(self, kwdict=kw)
 
+        if 'lprecalccoeffs' in kw:
+            self.lprecalccoeffs = kw['lprecalccoeffs']
+        else:
+            self.lprecalccoeffs = False
+
         self.ncomponents = 3
-        self.lusevectorpotential = true
+        self.lusevectorpotential = True
 
         # --- Kludge - make sure that the multigrid3df routines never sets up
         # --- any conductors.
@@ -77,8 +82,8 @@ class MagnetostaticMG(SubcycledPoissonSolver):
 
         # --- At the start, assume that there are no bends. This is corrected
         # --- in the solve method when there are bends.
-        self.linbend = false
-
+        self.linbend = False
+        
     def __getstate__(self):
         dict = SubcycledPoissonSolver.__getstate__(self)
         if self.lreducedpickle:
@@ -95,6 +100,8 @@ class MagnetostaticMG(SubcycledPoissonSolver):
         if self.lreducedpickle and not self.lnorestoreonpickle:
             # --- Regenerate the conductor data
             self.conductors = ConductorType()
+        if 'lprecalccoeffs' not in self.__dict__:
+            self.lprecalccoeffs = 0
 
     def getconductorobject(self):
         for conductor in self.newconductorlist:

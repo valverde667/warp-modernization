@@ -85,16 +85,15 @@ class StaticDiagnostic(object):
         if self.rank == 0:
             f = h5.File(filename, 'a')
 
-            f.attrs["openPMD"] = np.string_("1.0.0")
+            f.attrs["openPMD"] = "1.0.0"
             f.attrs["openPMDextension"] = np.uint32(1)
-            f.attrs["software"] = np.string_("warp")
-            f.attrs["softwareVersion"] = np.string_("4")
-            f.attrs["date"] = np.string_(
-                datetime.datetime.now(tzlocal()).strftime('%Y-%m-%d %H:%M:%S %z'))
-            f.attrs["meshesPath"] = np.string_("fields/")
-            f.attrs["particlesPath"] = np.string_("particles/")
+            f.attrs["software"] = "warp"
+            f.attrs["softwareVersion"] = "4"
+            f.attrs["date"] = datetime.datetime.now(tzlocal()).strftime('%Y-%m-%d %H:%M:%S %z')
+            f.attrs["meshesPath"] = "fields/"
+            f.attrs["particlesPath"] = "particles/"
             # Setup the basePath
-            f.attrs["basePath"] = np.string_("/data/%T/")
+            f.attrs["basePath"] = "/data/%T/"
             base_path = "/data/%d/" % self.top.it
             bp = f.require_group(base_path)
 
@@ -104,8 +103,8 @@ class StaticDiagnostic(object):
             bp.attrs["timeUnitSI"] = 1.
 
             # https://github.com/openPMD/openPMD-standard/blob/latest/STANDARD.md#iterations-and-time-series
-            f.attrs["iterationEncoding"] = np.string_("fileBased")
-            f.attrs["iterationFormat"] =  np.string_("%s%%T.h5" % write_dir)
+            f.attrs["iterationEncoding"] = "fileBased"
+            f.attrs["iterationFormat"] =  "%s%%T.h5" % write_dir
 
             self.basePath = base_path
             self.meshPath = f.attrs["meshesPath"]
@@ -254,7 +253,7 @@ class MagnetostaticFieldDiagnostic(StaticDiagnostic):
         else:
             self.bfield = []
             for dim in ['x', 'y', 'z']:
-                self.bfield.append(getb(comp=dim))
+                self.bfield.append(getb(comp=dim, solver=self.solver))
 
             self.bfield = np.array(self.bfield)
 
@@ -264,7 +263,7 @@ class MagnetostaticFieldDiagnostic(StaticDiagnostic):
         else:
             self.a = []
             for dim in ['x', 'y', 'z']:
-                self.a.append(geta(comp=dim))
+                self.a.append(geta(comp=dim, solver=self.solver))
 
             self.a = np.array(self.a)
 
@@ -282,5 +281,4 @@ class MagnetostaticFieldDiagnostic(StaticDiagnostic):
         if self.rank == 0:
             self.writeDataset(self.bfield, prefix='%s%sB' % (self.basePath, self.meshPath))
             self.writeDataset(self.a, prefix='%s%svector_potential' % (self.basePath, self.meshPath))
-
-        self.file.close()
+            self.file.close()

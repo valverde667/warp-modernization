@@ -257,9 +257,14 @@ class ParticleDiagnostic(OpenPMDDiagnostic) :
             species = self.species_dict[species_name]
             select_array = select_array_dict[species_name]
             n_rank = selected_nlocals_dict[species_name]
+            n_global = selected_nglobal_dict[species_name]
 
             # Write the datasets for each particle datatype
-            self.write_particles( species_grp, species, n_rank, select_array )
+            if n_global > 0:
+                self.write_particles( species_grp,
+                                      species,
+                                      n_rank,
+                                      select_array )
 
         # Close the file
         if f is not None:
