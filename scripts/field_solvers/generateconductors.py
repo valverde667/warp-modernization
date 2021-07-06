@@ -1498,7 +1498,8 @@ class ConductorExtent:
     def __neg__(self):
         "This one is doesn't help much"
         return ConductorExtent([-largepos,-largepos,-largepos],
-                               [+largepos,+largepos,+largepos])
+                               [+largepos,+largepos,+largepos],
+                               zeros(3))
     def __add__(self,right):
         return ConductorExtent(minimum(self.mins,right.mins),
                                maximum(self.maxs,right.maxs),
