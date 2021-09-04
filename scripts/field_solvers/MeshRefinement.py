@@ -142,11 +142,11 @@ class MeshRefinement(VisualizableClass):
             # --- is input, it is broadcast to all three axis.
             if len(shape(refinement)) == 0:
                 refinement = 3*[refinement]
-            self.refinement = array(refinement)
+            self.refinement = nint(np.array(refinement))
             if len(shape(nguard)) == 0:
                 nguard = 3*[nguard]
-            self.nguard = array(nguard)
-            self.nguarddepos = array(nguarddepos)
+            self.nguard = nint(np.array(nguard))
+            self.nguarddepos = nint(np.array(nguarddepos))
 
             self.totalrefinement = parent.totalrefinement*self.refinement
             self.deltas = parent.deltas/self.refinement
@@ -176,18 +176,16 @@ class MeshRefinement(VisualizableClass):
                 # --- includes the entire extent specified by mins and maxs.
                 self.mins = maximum(self.mins,self.root.mins)
                 self.maxs = minimum(self.maxs,self.root.maxs)
-                self.lower = (nint(floor((self.mins - self.root.minsglobal)/parent.deltas))*
-                             self.refinement)
-                self.upper = (nint(ceil((self.maxs - self.root.minsglobal)/parent.deltas))*
-                             self.refinement)
+                self.lower = (nint(floor((self.mins - self.root.minsglobal)/parent.deltas)*self.refinement))
+                self.upper = (nint(ceil((self.maxs - self.root.minsglobal)/parent.deltas)*self.refinement))
                 self.lower = maximum(self.root.lower*self.totalrefinement,self.lower)
                 self.upper = minimum(self.root.upper*self.totalrefinement,self.upper)
 
             else:
                 # --- The grid lower and upper bounds are input. The bounds are
                 # --- relative to the root grid, but scaled by the total refinement.
-                self.lower = nint(array(lower))
-                self.upper = nint(array(upper))
+                self.lower = nint(np.array(lower))
+                self.upper = nint(np.array(upper))
 
                 # --- Make sure that the input makes sense.
                 # --- Make sure that the block has a finite extent in all dimensions
@@ -221,11 +219,11 @@ class MeshRefinement(VisualizableClass):
             if fulllower is None:
                 self.fulllower = maximum(rootfulllower,self.lower - self.nguard*self.refinement)
             else:
-                self.fulllower = array(fulllower)
+                self.fulllower = nint(np.array(fulllower))
             if fullupper is None:
                 self.fullupper = minimum(rootfullupper,self.upper + self.nguard*self.refinement)
             else:
-                self.fullupper = array(fullupper)
+                self.fullupper = nint(np.array(fullupper))
 
             # --- Get the number of grid points along each dimension
             self.dims = self.fullupper - self.fulllower
@@ -1749,12 +1747,12 @@ class MeshRefinement(VisualizableClass):
         ix1,iy1,iz1 = lower - self.fulllower
         ix2,iy2,iz2 = upper - self.fulllower + upperedge
         return self.childdomains[ix1:ix2,iy1:iy2,iz1:iz2]
-    def getlocalarray(self,array,lower,upper,r=[1,1,1],fulllower=None,
+    def getlocalarray(self,localarray,lower,upper,r=[1,1,1],fulllower=None,
                       upperedge=1):
         if fulllower is None: fulllower = self.fulllower
         ix1,iy1,iz1 = lower - fulllower
         ix2,iy2,iz2 = upper - fulllower + upperedge
-        return array[ix1:ix2:r[0],iy1:iy2:r[1],iz1:iz2:r[2]]
+        return localarray[ix1:ix2:r[0],iy1:iy2:r[1],iz1:iz2:r[2]]
 
     def setmgtol(self,mgtol=None):
         """
