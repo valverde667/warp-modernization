@@ -430,20 +430,20 @@ class Species(object):
     - charge=echarge: charge in Coulombs, will be obtained automatically from
                       type or charge_state
     - mass=emass: mass in kg, will be obtained automatically from type
-    - charge_state=0: charge_state of the ion or molecule
-    - weight=None: simulation weight, will be obtained automatically from
-                   other input
+    - charge_state=0: charge_state of an ion or molecule
+    - weight=0: simulation weight, number of real particles per simulation particle.
+                In some cases, this will be calculated automatically, for example with
+                the built in injection or beam loading. Otherwise, it should be set.
     - lvariableweights=False: When true, each particle is given its own weight
-                              (top.wpid is set)
+                              (defaulting to 1). This sets up top.wpid.
     - name='': species name
     - nautodt=1: number of species to setup for automatic subcycling.
                  The slowest will have dt = 2**(nautodt-1)*top.dt.
     - efetch=1: Method to use for fetching the self fields. See documentation
                 of top.efetch for more info.
     - fselfb=None: z velocity to use when applying relativistic corrections.
-                 No corrections are done if it is zero.
-    - limplicit=false: Flag to turn on the implicit particle advance for this
-                       species.
+                   No corrections are done if it is zero.
+    - limplicit=false: Flag to turn on the implicit particle advance for this species.
     - color='fg', marker='\1', msize=1.0: Default values used when making particle
                                           plots of the species.
     """
