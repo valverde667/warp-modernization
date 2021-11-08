@@ -2954,6 +2954,11 @@ applymmlt(np:integer,xp(np):real,yp(np):real,npz:integer,zp(npz):real,
           bx(np):real,by(np):real,bz(np):real)
             subroutine # Calculates the B field components from mmlt elements
                        # at the given locations.
+applydipo(np:integer,npz:integer,zp(np):real,uzp(np):real,gaminv(np):real,
+          dtl:real,dtr:real,dt:real,lslice:logical,
+          ex(np):real,ey(np):real,bx(np):real,by(np):real)
+            subroutine # Calculates the B field components from mmlt elements
+                       # at the given locations.
 getbend(np:integer,npz:integer,zp(npz):real,uzp(npz):real,gaminv(npz):real,
         bendres(np):real,bendradi(np):real,dtl:real,dtr:real,lslice:logical)
             subroutine # Get residence factor and raduis for bends
