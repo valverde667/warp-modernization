@@ -65,7 +65,7 @@ def fieldsolve(iwhich=0,lbeforefs=false,lafterfs=false):
         top.fstime += endtime - starttime
     else:
         currpkg = package()[0]
-        if (currpkg == "wxy"): fieldsolxy(iwhich)
+        if (currpkg == "wxy" and wxy.lvp3d is False): fieldsolxy(iwhich)
         else:                  fieldsol3d(iwhich)
 
     if lafterfs: controllers.afterfs()
@@ -99,7 +99,7 @@ def fetche(pgroup=None,ipmin=None,ip=None,js=None):
     if ipmin is None: ipmin = pgroup.ins[js]
     if ip is None: ip = pgroup.nps[js]
     currpkg = package()[0]
-    if (currpkg == "wxy"):
+    if (currpkg == "wxy" and wxy.lvp3d is False):
         fetchexy(pgroup,ipmin,ip,js+1,top.pgroup.ex,top.pgroup.ey,top.pgroup.ez)
     else:
         fetche3d(pgroup,ipmin,ip,js+1)
@@ -136,7 +136,7 @@ def loadj(pgroup=None,ins_i=-1,nps_i=-1,is_i=-1,lzero=true,lfinalize_rho=true):
     # --- Now call the appropriate compiled interface routine based on the
     # --- current package
     currpkg = package()[0]
-    if (currpkg == "wxy"):
+    if (currpkg == "wxy" and wxy.lvp3d is False):
         #loadrhoxy(ins_i,nps_i,is_i,lzero,lfinalize_rho)
         print "loadj not support in wxy yet"
     else:
@@ -1910,7 +1910,11 @@ def getdecomposedarray(arr,ix=None,iy=None,iz=None,bcast=1,local=0,
     if solver is None: solver = (getregisteredsolver() or w3d)
     if solver == w3d: decomp = top.fsdecomp
     else:             decomp = solver.fsdecomp
-    if len(arr.shape) == 2: iy = None
+    if len(arr.shape) == 2: 
+        iy = None
+        
+    if solver.solvergeom == w3d.XYgeom and wxy.lvp3d:
+        iz = None
 
     nx = decomp.nxglobal
     ny = decomp.nyglobal
@@ -1919,7 +1923,7 @@ def getdecomposedarray(arr,ix=None,iy=None,iz=None,bcast=1,local=0,
     if (decomp.nxprocs <= 1 and decomp.nyprocs <=1 and decomp.nzprocs <= 1):
         local = 1
 
-    if (nz == 0 and decomp.nzprocs > 1):
+    if (nz == 0 and decomp.nzprocs > 1 and wxy.lvp3d is False):
         # --- This is the slice code.
         local = 1
 
@@ -1983,7 +1987,7 @@ def getdecomposedarray(arr,ix=None,iy=None,iz=None,bcast=1,local=0,
             if ix is not None: sss[0] = 1
             if iy is not None: sss[1] = 1
             if iz is not None: sss[2] = 1
-            if nz == 0: del sss[2]
+            # if nz == 0: del sss[2]
             if ny == 0: del sss[1]
             if nx == 0: del sss[0]
             resultglobal = fzeros(sss,'d')

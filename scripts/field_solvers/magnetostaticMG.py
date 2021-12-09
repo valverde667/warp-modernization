@@ -11,7 +11,7 @@ except ImportError:
 
 
 ##############################################################################
-class MagnetostaticMG(SubcycledPoissonSolver):
+class MagnetostaticMG(MultiGrid3D):
 
     __bfieldinputs__ = ['mgparam', 'downpasses', 'uppasses',
                         'mgmaxiters', 'mgtol', 'mgmaxlevels', 'mgform', 'mgverbose',
@@ -61,10 +61,7 @@ class MagnetostaticMG(SubcycledPoissonSolver):
         # --- If there are any remaning keyword arguments, raise an error.
         assert len(kw.keys()) == 0, "Bad keyword arguemnts %s"%kw.keys()
 
-        # --- Create a conductor object, which by default is empty.
-        self.conductors = ConductorType()
-        self.conductorlist = []
-        self.newconductorlist = []
+        self.initializeconductors()
 
         # --- Give these variables dummy initial values.
         self.mgiters = zeros(3, 'l')
@@ -83,31 +80,57 @@ class MagnetostaticMG(SubcycledPoissonSolver):
         # --- At the start, assume that there are no bends. This is corrected
         # --- in the solve method when there are bends.
         self.linbend = False
-        
+     
     def __getstate__(self):
         dict = SubcycledPoissonSolver.__getstate__(self)
         if self.lreducedpickle:
-            del dict['conductors']
-            dict['newconductorlist'] += self.conductorlist
-            dict['conductorlist'] = []
+
+            # --- Write out an empy conductorobjects since it can be big. Also,
+            # --- write out an empty list of conductors so they will all be
+            # --- reinstalled upon restoration.
+            dict['conductorobjects'] = {}
+            dict['installedconductorlists'] = {}
         return dict
 
     def __setstate__(self, dict):
         SubcycledPoissonSolver.__setstate__(self, dict)
-        if 'newconductorlist' not in self.__dict__:
-            self.newconductorlist = self.conductorlist
-            self.conductorlist = []
-        if self.lreducedpickle and not self.lnorestoreonpickle:
-            # --- Regenerate the conductor data
-            self.conductors = ConductorType()
-        if 'lprecalccoeffs' not in self.__dict__:
-            self.lprecalccoeffs = 0
+        # --- Check if an old file is being restored
+        if 'conductorobjects' not in self.__dict__:
 
-    def getconductorobject(self):
-        for conductor in self.newconductorlist:
-            self.installconductor(conductor)
-        self.newconductorlist = []
-        return self.conductors
+            # --- Create the appropriate attributes that are now needed.
+            # --- This is not the best thing, since is replicates code in
+            # --- the __init__
+            self.conductorobjects = {}
+            self.installedconductorlists = {}
+            self.conductordatalist = []
+
+            # --- Get the list of conductors from old formats
+            if 'newconductorlist' in self.__dict__:
+                conductorlist = self.newconductorlist
+                del self.newconductorlist
+            elif 'conductorlist' in self.__dict__:
+                conductorlist = self.conductorlist
+                del self.conductorlist
+            else:
+                conductorlist = []
+            if 'lprecalccoeffs' not in self.__dict__:
+                self.lprecalccoeffs = 0
+
+            for conductor in conductorlist:
+                self.installconductor(conductor)
+
+    def installconductor(self,conductor,
+                              xmin=None,xmax=None,
+                              ymin=None,ymax=None,
+                              zmin=None,zmax=None,
+                              dfill=None):
+        # Force permittivity to zero just in case it is set
+        conductor.permittivity = None 
+        super().installconductor(conductor,
+                                 xmin=xmin,xmax=xmax,
+                                 ymin=ymin,ymax=ymax,
+                                 zmin=zmin,zmax=zmax,
+                                 dfill=dfill)
 
     def getpdims(self):
         # --- Returns the dimensions of the jp, bp, and ap arrays
@@ -246,39 +269,18 @@ class MagnetostaticMG(SubcycledPoissonSolver):
                                  self.source, self.bounds, self.fsdecomp,
                                  self.solvergeom==w3d.RZgeom)
 
-    def installconductor(self, conductor,
-                              xmin=None, xmax=None,
-                              ymin=None, ymax=None,
-                              zmin=None, zmax=None,
-                              dfill=None):
-        if conductor in self.conductorlist:
-            return
-        self.conductorlist.append(conductor)
-        installconductors(conductor, xmin, xmax, ymin, ymax, zmin, zmax, dfill,
-                          self.getzgrid(),
-                          self.nx, self.ny, self.nz,
-                          self.nxlocal, self.nylocal, self.nzlocal,
-                          self.xmmin, self.xmmax, self.ymmin, self.ymmax,
-                          self.zmmin, self.zmmax, 1., self.l2symtry, self.l4symtry,
-                          solvergeom=self.solvergeom,
-                          conductors=self.conductors, decomp=self.fsdecomp)
-
-    def hasconductors(self):
-        conductorobject = self.getconductorobject()
-        return (conductorobject.interior.n > 0 or
-                conductorobject.evensubgrid.n > 0 or
-                conductorobject.oddsubgrid.n > 0)
-
-    def clearconductors(self):
-        self.conductors.interior.n = 0
-        self.conductors.evensubgrid.n = 0
-        self.conductors.oddsubgrid.n = 0
 
     def find_mgparam(self, lsavephi=false, resetpasses=1):
         find_mgparam(lsavephi=lsavephi, resetpasses=resetpasses,
                      solver=self, pkg3d=self)
 
-    def dosolve(self, iwhich=0, *args):
+    def dosolve(self, iwhich=0, zfact=None, iselfb=0, *args):
+        if zfact is None:
+            beta = top.pgroup.fselfb[iselfb]/clight
+            zfact = 1./sqrt((1.-beta)*(1.+beta))
+        else:
+          beta = sqrt( (1.-1./zfact)*(1.+1./zfact) )
+          
         # --- Setup data for bends.
         rstar = fzeros(3+self.nzlocal, 'd')
         if top.bends:
@@ -286,7 +288,12 @@ class MagnetostaticMG(SubcycledPoissonSolver):
             self.linbend = min(rstar) < largepos
 
         self.source[...] = self.source*mu0*eps0
-        conductorobject = self.getconductorobject()
+        
+        # --- This takes care of clear out the conductor information if needed.
+        # --- Note that f3d.gridmode is passed in below - this still allows the
+        # --- user to use the addconductor method if needed.
+        if self.gridmode == 0: self.clearconductors([beta*clight])
+        conductorobject = self.getconductorobject(beta*clight)
 
         if self.solvergeom == w3d.RZgeom and not self.luse2D:
             init_bworkgrid(self.nxlocal, self.nzlocal, self.dx, self.dz,
@@ -329,7 +336,7 @@ class MagnetostaticMG(SubcycledPoissonSolver):
                                  self.mgtol[id], self.mgverbose[id],
                                  self.downpasses[id], self.uppasses[id],
                                  self.lcndbndy, self.laddconductor, self.icndbndy,
-                                 self.gridmode, conductorobject, self.solvergeom==w3d.RZgeom,
+                                 f3d.gridmode, conductorobject, self.solvergeom==w3d.RZgeom,
                                  lmagnetostaticrz, self.fsdecomp)
             elif (not self.luse2D) and self.solvergeom == w3d.RZgeom:
                 multigridrzb(iwhich, id, self.potential[id,
@@ -354,7 +361,7 @@ class MagnetostaticMG(SubcycledPoissonSolver):
                                  self.mgtol[id], self.mgverbose[id],
                                  self.downpasses[id], self.uppasses[id],
                                  self.lcndbndy, self.laddconductor, self.icndbndy,
-                                 self.gridmode, conductorobject, self.lprecalccoeffs,
+                                 f3d.gridmode, conductorobject, self.lprecalccoeffs,
                                  self.fsdecomp)
 
     # # --- This is slightly inefficient in some cases, since for example, the
@@ -482,9 +489,180 @@ class MagnetostaticFFT(MagnetostaticMG):
         # --- Unscale the current density
         self.source[...] = self.source/(mu0*eps0)
 
+##############################################################################
+class MagnetostaticMGSlice(MagnetostaticMG):
+
+    __bfieldinputs__ = ['mgparam', 'downpasses', 'uppasses',
+                        'mgmaxiters', 'mgtol', 'mgmaxlevels', 'mgform', 'mgverbose',
+                        'lcndbndy', 'icndbndy', 'laddconductor',
+                        'lcylindrical', 'lanalyticbtheta']
+    __f3dinputs__ = ['gridmode', 'mgparam', 'downpasses', 'uppasses',
+                     'mgmaxiters', 'mgtol', 'mgmaxlevels', 'mgform', 'mgverbose',
+                     'lcndbndy', 'icndbndy', 'laddconductor', 'lprecalccoeffs']
+
+    def __init__(self, **kw):
+        self.grid_overlap = 2
+
+        # --- Save input parameters
+        self.processdefaultsfrompackage(MagnetostaticMG.__f3dinputs__, f3d, kw)
+        self.processdefaultsfrompackage(MagnetostaticMG.__bfieldinputs__,
+                                        f3d.bfield, kw)
+
+
+        SubcycledPoissonSolver.__init__(self, kwdict=kw)
+
+        self.solvergeom = w3d.XYgeom
+        self.nzguardphi = 0
+        self.nzguardrho = 0
+        self.nzguarde   = 0
+    
+        # --- Force nz (which is not used here)
+        self.nz = 0
+        self.zmmin = -0.5
+        self.zmmax = 0.5
+        self.dz = 1.
+
+        if 'lprecalccoeffs' in kw:
+            self.lprecalccoeffs = kw['lprecalccoeffs']
+        else:
+            self.lprecalccoeffs = False
+
+        self.ncomponents = 3
+        self.lusevectorpotential = True
+
+        self.initializeconductors()
+
+        # --- Kludge - make sure that the multigrid3df routines never sets up
+        # --- any conductors.
+        f3d.gridmode = 1
+
+        # --- If there are any remaning keyword arguments, raise an error.
+        assert len(kw.keys()) == 0, "Bad keyword arguemnts %s"%kw.keys()
+
+        # --- Create a conductor object, which by default is empty.
+        self.conductors = ConductorType()
+        self.conductorlist = []
+        self.newconductorlist = []
+
+        # --- Give these variables dummy initial values.
+        self.mgiters = zeros(3, 'l')
+        self.mgerror = zeros(3, 'd')
+
+        # --- Make sure that these are arrays
+        self.mgmaxiters = ones(3)*self.mgmaxiters
+        self.mgmaxlevels = ones(3)*self.mgmaxlevels
+        self.mgparam = ones(3)*self.mgparam
+        self.mgform = ones(3)*self.mgform
+        self.mgtol = ones(3)*self.mgtol
+        self.mgverbose = ones(3)*self.mgverbose
+        self.downpasses = ones(3)*self.downpasses
+        self.uppasses = ones(3)*self.uppasses
+
+        # --- At the start, assume that there are no bends. This is corrected
+        # --- in the solve method when there are bends.
+        self.linbend = False
+
+    def getj(self):
+        'Returns the current density array'
+        return self.source[:,self.nxguardrho:-self.nxguardrho or None,
+                             self.nyguardrho:-self.nyguardrho or None,
+                             :]
+
+    def getb(self):
+        'Returns the B field array'
+        return self.field[:,self.nxguarde:-self.nxguarde or None,
+                            self.nyguarde:-self.nyguarde or None,
+                            :]
+
+    def geta(self):
+        'Returns the a array without the guard cells'
+        return self.potential[:,self.nxguardphi:-self.nxguardphi or None,
+                                self.nyguardphi:-self.nyguardphi or None,
+                                :]
+
+    def setsourcepatposition(self, x, y, z, ux, uy, uz, gaminv, wght, zgrid, q, w):
+        n = len(x)
+        if n == 0:
+            return
+        
+        if len(wght) > 0:
+            nw = len(wght)
+        else:
+            nw = n
+            wght = ones(n, 'd')
+            
+        # We want to scale the weights appropriately for vbeamfrm
+        wtmp = top.vbeamfrm*wght/(uz*gaminv)
+            
+        setj3d(self.sourcep, self.sourcep, n, x, y, z, zgrid, ux, uy, uz, gaminv,
+               q, w, nw, wtmp, top.depos,
+               self.nxp, self.nyp, self.nzp,
+               self.nxguardrho, self.nyguardrho, self.nzguardrho,
+               self.dx, self.dy, self.dz,
+               self.xmminp, self.ymminp, self.zmminp,
+               self.l2symtry, self.l4symtry, self.solvergeom==w3d.RZgeom)
+
+    def dosolve(self, iwhich=0, zfact = None, iselfb=0, *args):
+
+        if zfact is None:
+            beta = top.pgroup.fselfb[iselfb]/clight
+            zfact = 1./sqrt((1.-beta)*(1.+beta))
+        else:
+          beta = sqrt( (1.-1./zfact)*(1.+1./zfact) )        
+
+        self.source[...] = self.source*mu0*eps0
+        # --- This takes care of clear out the conductor information if needed.
+        # --- Note that f3d.gridmode is passed in below - this still allows the
+        # --- user to use the addconductor method if needed.
+        
+        # --- This takes care of clear out the conductor information if needed.
+        # --- Note that f3d.gridmode is passed in below - this still allows the
+        # --- user to use the addconductor method if needed.
+        if self.gridmode == 0: self.clearconductors([beta*clight])
+        conductorobject = self.getconductorobject(beta*clight)
+
+
+        # --- Note that the arrays being passed in are not contiguous, which means
+        # --- that copies are being done.
+        # --- If only initialization is being done (iwhich==1) then the bvp3d_work
+        # --- routine only needs to be called once. Proper arrays are still passed
+        # --- though they should never be needed during initialization.
+        idmax = 2
+        if iwhich == 1:
+            idmax = 0
+        for id in range(idmax+1):
+            multigrid2dslicesolve(iwhich, self.nx, self.ny, self.nxlocal, self.nylocal,
+                                    self.nxguardphi, self.nyguardphi,
+                                    self.nxguardrho, self.nyguardrho,
+                                    self.dx, self.dy,top.zbeam,
+                                    self.potential[id,:,:,self.nzguardphi],
+                                    self.source[id,:,:,self.nzguardrho],
+                                    self.bounds, self.xmminlocal, self.ymminlocal,
+                                    self.mgparam[id], self.mgform[id],
+                                    self.mgiters[id], self.mgmaxiters[id],
+                                    self.mgmaxlevels[id], self.mgerror[id],
+                                    self.mgtol[id], self.mgverbose[id],
+                                    self.downpasses[id], self.uppasses[id],
+                                    self.lcndbndy, self.laddconductor, self.icndbndy,
+                                    f3d.gridmode, conductorobject,
+                                    self.fsdecomp)
+
+        # --- Now take the curl of A to get B.
+        getbfroma3d(self.potential, self.field,
+                    self.nxlocal, self.nylocal, self.nzlocal,
+                    self.nxguardphi, self.nyguardphi, self.nzguardphi,
+                    self.nxguarde, self.nyguarde, self.nzguarde,
+                    self.dx, self.dy, self.dz, self.xmminlocal,
+                    self.solvergeom==w3d.RZgeom, self.lusevectorpotential)
+
+        # --- Unscale the current density
+        self.source[...] = self.source/(mu0*eps0)
+
+
 # --- This can only be done after MagnetostaticMG is defined.
 try:
     psyco.bind(MagnetostaticMG)
+    psyco.bind(MagnetostaticMGSlice)
     psyco.bind(MagnetostaticFFT)
 except NameError:
     pass

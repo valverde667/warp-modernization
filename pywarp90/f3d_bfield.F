@@ -534,51 +534,84 @@ c  Evaluation of B, vectorized over particles
       dzi = 1./dz
 
       if ((.not. (l2symtry .or. l4symtry)) .and. .not. lcylindrical) then
-        do ip = 1, np
+        if (nzlocal > 0) then
+          do ip = 1, np
 
-          i = (xp(ip) - xmminlocal) * dxi
-          j = (yp(ip) - ymminlocal) * dyi
-          k = (zp(ip) - zgrid - zmminlocal) * dzi
+            i = (xp(ip) - xmminlocal) * dxi
+            j = (yp(ip) - ymminlocal) * dyi
+            k = (zp(ip) - zgrid - zmminlocal) * dzi
 
-          u1 = (xp(ip) - xmminlocal) * dxi - i
-          v1 = (yp(ip) - ymminlocal) * dyi - j
-          w1 = (zp(ip) - zgrid - zmminlocal) * dzi - k
+            u1 = (xp(ip) - xmminlocal) * dxi - i
+            v1 = (yp(ip) - ymminlocal) * dyi - j
+            w1 = (zp(ip) - zgrid - zmminlocal) * dzi - k
 
-          u0 = 1. - u1
-          v0 = 1. - v1
-          w0 = 1. - w1
+            u0 = 1. - u1
+            v0 = 1. - v1
+            w0 = 1. - w1
 
-          bx(ip) = bx(ip)
-     &           + u0*v0*w0*b(0,i  ,j  ,k  )
-     &           + u1*v0*w0*b(0,i+1,j  ,k  )
-     &           + u0*v1*w0*b(0,i  ,j+1,k  )
-     &           + u1*v1*w0*b(0,i+1,j+1,k  )
-     &           + u0*v0*w1*b(0,i  ,j  ,k+1)
-     &           + u1*v0*w1*b(0,i+1,j  ,k+1)
-     &           + u0*v1*w1*b(0,i  ,j+1,k+1)
-     &           + u1*v1*w1*b(0,i+1,j+1,k+1)
+            bx(ip) = bx(ip)
+     &             + u0*v0*w0*b(0,i  ,j  ,k  )
+     &             + u1*v0*w0*b(0,i+1,j  ,k  )
+     &             + u0*v1*w0*b(0,i  ,j+1,k  )
+     &             + u1*v1*w0*b(0,i+1,j+1,k  )
+     &             + u0*v0*w1*b(0,i  ,j  ,k+1)
+     &             + u1*v0*w1*b(0,i+1,j  ,k+1)
+     &             + u0*v1*w1*b(0,i  ,j+1,k+1)
+     &             + u1*v1*w1*b(0,i+1,j+1,k+1)
 
-          by(ip) = by(ip)
-     &           + u0*v0*w0*b(1,i  ,j  ,k  )
-     &           + u1*v0*w0*b(1,i+1,j  ,k  )
-     &           + u0*v1*w0*b(1,i  ,j+1,k  )
-     &           + u1*v1*w0*b(1,i+1,j+1,k  )
-     &           + u0*v0*w1*b(1,i  ,j  ,k+1)
-     &           + u1*v0*w1*b(1,i+1,j  ,k+1)
-     &           + u0*v1*w1*b(1,i  ,j+1,k+1)
-     &           + u1*v1*w1*b(1,i+1,j+1,k+1)
+            by(ip) = by(ip)
+     &             + u0*v0*w0*b(1,i  ,j  ,k  )
+     &             + u1*v0*w0*b(1,i+1,j  ,k  )
+     &             + u0*v1*w0*b(1,i  ,j+1,k  )
+     &             + u1*v1*w0*b(1,i+1,j+1,k  )
+     &             + u0*v0*w1*b(1,i  ,j  ,k+1)
+     &             + u1*v0*w1*b(1,i+1,j  ,k+1)
+     &             + u0*v1*w1*b(1,i  ,j+1,k+1)
+     &             + u1*v1*w1*b(1,i+1,j+1,k+1)
 
-          bz(ip) = bz(ip)
-     &           + u0*v0*w0*b(2,i  ,j  ,k  )
-     &           + u1*v0*w0*b(2,i+1,j  ,k  )
-     &           + u0*v1*w0*b(2,i  ,j+1,k  )
-     &           + u1*v1*w0*b(2,i+1,j+1,k  )
-     &           + u0*v0*w1*b(2,i  ,j  ,k+1)
-     &           + u1*v0*w1*b(2,i+1,j  ,k+1)
-     &           + u0*v1*w1*b(2,i  ,j+1,k+1)
-     &           + u1*v1*w1*b(2,i+1,j+1,k+1)
+            bz(ip) = bz(ip)
+     &             + u0*v0*w0*b(2,i  ,j  ,k  )
+     &             + u1*v0*w0*b(2,i+1,j  ,k  )
+     &             + u0*v1*w0*b(2,i  ,j+1,k  )
+     &             + u1*v1*w0*b(2,i+1,j+1,k  )
+     &             + u0*v0*w1*b(2,i  ,j  ,k+1)
+     &             + u1*v0*w1*b(2,i+1,j  ,k+1)
+     &             + u0*v1*w1*b(2,i  ,j+1,k+1)
+     &             + u1*v1*w1*b(2,i+1,j+1,k+1)
 
-        enddo
+          enddo
+        else ! XY mode
+          do ip = 1, np
+
+            i = (xp(ip) - xmminlocal) * dxi
+            j = (yp(ip) - ymminlocal) * dyi
+
+            u1 = (xp(ip) - xmminlocal) * dxi - i
+            v1 = (yp(ip) - ymminlocal) * dyi - j
+
+            u0 = 1. - u1
+            v0 = 1. - v1
+
+            bx(ip) = bx(ip)
+     &             + u0*v0*b(0,i  ,j  ,0)
+     &             + u1*v0*b(0,i+1,j  ,0)
+     &             + u0*v1*b(0,i  ,j+1,0)
+     &             + u1*v1*b(0,i+1,j+1,0)
+
+            by(ip) = by(ip)
+     &             + u0*v0*b(1,i  ,j  ,0)
+     &             + u1*v0*b(1,i+1,j  ,0)
+     &             + u0*v1*b(1,i  ,j+1,0)
+     &             + u1*v1*b(1,i+1,j+1,0)
+
+            bz(ip) = bz(ip)
+     &             + u0*v0*b(2,i  ,j  ,0)
+     &             + u1*v0*b(2,i+1,j  ,0)
+     &             + u0*v1*b(2,i  ,j+1,0)
+     &             + u1*v1*b(2,i+1,j+1,0)
+
+          enddo
+        endif
 
       else if (lcylindrical) then
 
@@ -945,7 +978,7 @@ c     --- Do the calculation. In this case, guard cells have been added to
 c     --- A since having special cases for each B component on each
 c     --- boundary for each boundary condition begins to get very complicated.
 c     --- This assumes that A has a least one more guard cell than B.
-      if (nylocal > 0) then
+      if (nylocal > 0 .and. nzlocal > 0) then
         do iz=izmin,izmax
           do iy=iymin,iymax
             do ix=ixmin,ixmax
@@ -958,7 +991,7 @@ c     --- This assumes that A has a least one more guard cell than B.
             enddo
           enddo
         enddo
-      else
+      else if (nylocal == 0 .and. nzlocal > 0) then
         iy = 0
         do iz=izmin,izmax
           do ix=ixmin,ixmax
@@ -968,6 +1001,18 @@ c     --- This assumes that A has a least one more guard cell than B.
      &                      - tdxi*(a(2,ix+1,iy  ,iz  ) - a(2,ix-1,iy  ,iz  ))
             b(2,ix,iy,iz) = + tdxi*(a(1,ix+1,iy  ,iz  ) - a(1,ix-1,iy  ,iz  ))
      &                      - 0.
+          enddo
+        enddo
+      else if (nzlocal == 0 .and. nylocal > 0) then
+        iz=0
+        do iy=iymin,iymax
+          do ix=ixmin,ixmax
+            b(0,ix,iy,iz) = + tdyi*(a(2,ix  ,iy+1,iz  ) - a(2,ix  ,iy-1,iz  ))
+     &                      - 0.
+            b(1,ix,iy,iz) = + 0.
+     &                      - tdxi*(a(2,ix+1,iy  ,iz  ) - a(2,ix-1,iy  ,iz  ))
+            b(2,ix,iy,iz) = + tdxi*(a(1,ix+1,iy  ,iz  ) - a(1,ix-1,iy  ,iz  ))
+     &                      - tdyi*(a(0,ix  ,iy+1,iz  ) - a(0,ix  ,iy-1,iz  ))
           enddo
         enddo
       endif
@@ -1102,7 +1147,7 @@ c=============================================================================
       subroutine setj3d(j,j1d,np,xp,yp,zp,zgrid,uxp,uyp,uzp,gaminv,
      &                  q,w,nw,wghtp,depos,nxlocal,nylocal,nzlocal,
      &                  nxguardj,nyguardj,nzguardj,
-     7                  dx,dy,dz,
+     &                  dx,dy,dz,
      &                  xmminlocal,ymminlocal,zmminlocal,
      &                  l2symtry,l4symtry,lcylindrical)
       use GlobalVars
@@ -1139,7 +1184,7 @@ c       --- vectorized deposition
           call setj3dvector(j,j1d,np,xp,yp,zp,zgrid,uxp,uyp,uzp,gaminv,
      &                      q,w,nw,wghtp,depos,nxlocal,nylocal,nzlocal,
      &                      nxguardj,nyguardj,nzguardj,
-     7                      dx,dy,dz,
+     &                      dx,dy,dz,
      &                      xmminlocal,ymminlocal,zmminlocal,
      &                      l2symtry,l4symtry,lcylindrical)
 
@@ -1149,7 +1194,7 @@ c       --- scalar deposition
           call setj3dscalar(j,np,xp,yp,zp,zgrid,uxp,uyp,uzp,gaminv,
      &                      q,w,nw,wghtp,depos,nxlocal,nylocal,nzlocal,
      &                      nxguardj,nyguardj,nzguardj,
-     7                      dx,dy,dz,
+     &                      dx,dy,dz,
      &                      xmminlocal,ymminlocal,zmminlocal,
      &                      l2symtry,l4symtry,lcylindrical)
 
@@ -1160,14 +1205,14 @@ c       --- direct deposition
             call setj3ddirect1(j,np,xp,yp,zp,zgrid,uxp,uyp,uzp,gaminv,
      &                         q,w,nw,wghtp,depos,nxlocal,nylocal,nzlocal,
      &                         nxguardj,nyguardj,nzguardj,
-     7                         dx,dy,dz,
+     &                         dx,dy,dz,
      &                         xmminlocal,ymminlocal,zmminlocal,
      &                         l2symtry,l4symtry)
           else
             call setj3ddirect2(j,np,xp,yp,zp,zgrid,uxp,uyp,uzp,gaminv,
      &                         q,w,nw,wghtp,depos,nxlocal,nylocal,nzlocal,
      &                         nxguardj,nyguardj,nzguardj,
-     7                         dx,dy,dz,
+     &                         dx,dy,dz,
      &                         xmminlocal,ymminlocal,zmminlocal,
      &                         l2symtry,l4symtry)
           endif
@@ -1188,7 +1233,7 @@ c=============================================================================
       subroutine setj3dvector(j,j1d,np,xp,yp,zp,zgrid,uxp,uyp,uzp,gaminv,
      &                  q,w,nw,wghtp,depos,nxlocal,nylocal,nzlocal,
      &                  nxguardj,nyguardj,nzguardj,
-     7                  dx,dy,dz,
+     &                  dx,dy,dz,
      &                  xmminlocal,ymminlocal,zmminlocal,
      &                  l2symtry,l4symtry,lcylindrical)
       use GlobalVars
@@ -1492,7 +1537,7 @@ c=============================================================================
       subroutine setj3dscalar(j,np,xp,yp,zp,zgrid,uxp,uyp,uzp,gaminv,
      &                  q,w,nw,wghtp,depos,nxlocal,nylocal,nzlocal,
      &                  nxguardj,nyguardj,nzguardj,
-     7                  dx,dy,dz,
+     &                  dx,dy,dz,
      &                  xmminlocal,ymminlocal,zmminlocal,
      &                  l2symtry,l4symtry,lcylindrical)
       use GlobalVars
@@ -1825,7 +1870,7 @@ c       --- transverse boundaries.
 
 c  Begin main loop over species
 
-      if (nylocal > 0) then
+      if (nylocal > 0 .and. nzlocal > 0) then
 
 c       --- vectorized loop to compute indices, weights
         if (l2symtry) then
@@ -1973,7 +2018,7 @@ c         --- normal loop
 
         endif
 
-      else ! nylocal == 0
+      else if (nylocal == 0 .and. nzlocal > 0) then
 
 c       --- vectorized loop to compute indices, weights
         if (l4symtry) then
@@ -2044,6 +2089,36 @@ c         --- normal loop
 
         endif
 
+      else if (nylocal > 0 .and. nzlocal == 0) then
+c         --- normal loop
+          do ip = 1,np
+
+            ix = int((xp(ip) - xmminlocal)*dxi)
+            iy = int((yp(ip) - ymminlocal)*dyi)
+            u1 = (xp(ip) - xmminlocal)*dxi - ix
+            u0 = 1. - u1
+            v1 = (yp(ip) - ymminlocal)*dyi - iy
+            v0 = 1. - v1
+
+            if (nw == np) gw = g*wghtp(ip)
+            vv(0) = uxp(ip)*gaminv(ip)
+            vv(1) = uyp(ip)*gaminv(ip)
+            vv(2) = uzp(ip)*gaminv(ip)
+
+            j(0,ix  ,iy  ,0) = j(0,ix  ,iy  ,0) + u0*v0*gw*vv(0)
+            j(0,ix+1,iy  ,0) = j(0,ix+1,iy  ,0) + u1*v0*gw*vv(0)
+            j(0,ix  ,iy+1,0) = j(0,ix  ,iy+1,0) + u0*v1*gw*vv(0)
+            j(0,ix+1,iy+1,0) = j(0,ix+1,iy+1,0) + u1*v1*gw*vv(0)
+            j(1,ix  ,iy  ,0) = j(1,ix  ,iy  ,0) + u0*v0*gw*vv(1)
+            j(1,ix+1,iy  ,0) = j(1,ix+1,iy  ,0) + u1*v0*gw*vv(1)
+            j(1,ix  ,iy+1,0) = j(1,ix  ,iy+1,0) + u0*v1*gw*vv(1)
+            j(1,ix+1,iy+1,0) = j(1,ix+1,iy+1,0) + u1*v1*gw*vv(1)
+            j(2,ix  ,iy  ,0) = j(2,ix  ,iy  ,0) + u0*v0*gw*vv(2)
+            j(2,ix+1,iy  ,0) = j(2,ix+1,iy  ,0) + u1*v0*gw*vv(2)
+            j(2,ix  ,iy+1,0) = j(2,ix  ,iy+1,0) + u0*v1*gw*vv(2)
+            j(2,ix+1,iy+1,0) = j(2,ix+1,iy+1,0) + u1*v1*gw*vv(2)
+           
+          enddo
       endif
 
       return
@@ -2052,7 +2127,7 @@ c=============================================================================
       subroutine setj3ddirect2(j,np,xp,yp,zp,zgrid,uxp,uyp,uzp,gaminv,
      &                         q,w,nw,wghtp,depos,nxlocal,nylocal,nzlocal,
      &                         nxguardj,nyguardj,nzguardj,
-     7                         dx,dy,dz,
+     &                         dx,dy,dz,
      &                         xmminlocal,ymminlocal,zmminlocal,
      &                         l2symtry,l4symtry)
       use GlobalVars
@@ -2189,7 +2264,7 @@ c       --- normal loop
 
         enddo
 
-      else ! nylocal == 0
+      else !if (nylocal == 0)
 
         do ip = 1,np
 
@@ -2227,7 +2302,7 @@ c       --- normal loop
           j(2,ix+1,0,iz+1) = j(2,ix+1,0,iz+1) + u1*w1*vv(2)
 
         enddo
-
+      
       endif
 
       deallocate(cdens)

@@ -1400,10 +1400,12 @@ from .field_solvers.multigrid import MultiGridImplicit3D
 from .field_solvers.multigridRZ import MultiGridRZ
 from .field_solvers.multigridRZ import MultiGrid2D
 from .field_solvers.multigridRZ import MultiGrid2DDielectric
+from .field_solvers.multigridRZ import MultiGrid2DSlice
 from .field_solvers.multigridRZ import MultiGridImplicit2D
 from .field_solvers.em3dsolver import EM3D
 from .field_solvers.MeshRefinement import *
 from .field_solvers.magnetostaticMG import MagnetostaticMG
+from .field_solvers.magnetostaticMG import MagnetostaticMGSlice
 from .field_solvers.magnetostaticMG import MagnetostaticFFT
 from .field_solvers.MeshRefinementB import MRBlockB
 from .run_modes.implicitstep import ImplicitStep

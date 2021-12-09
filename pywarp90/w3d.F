@@ -3703,10 +3703,14 @@ c efetch, and ny.
 
         if (efetch == 1 .or. efetch == 6) then
 
-          if (ny == 0) then
+          if (ny == 0 .and. nz > 0) then
             call sete_from_phi_linear2d(phi1d,np,xp,yp,zp,zgrid,xmmin,zmmin,
      &                                  dx,dz,nx,nz,nxguardphi,nzguardphi,
      &                                  ex,ey,ez,l2symtry,l4symtry,lcylindrical)
+          else if (ny > 0 .and. nz == 0) then
+            call sete_from_phi_linear2dxy(phi1d,np,xp,yp,zp,xmmin,ymmin,
+     &                                    dx,dy,nx,ny,nxguardphi,nyguardphi,
+     &                                    ex,ey,ez)
           else
             call sete_from_phi_linear3d(phi1d,np,xp,yp,zp,zgrid,
      &                                  xmmin,ymmin,zmmin,
@@ -3976,6 +3980,107 @@ c         --- Adjust sign of E field for appropriate quadrant.
         enddo
 
       endif
+
+      return
+      end
+c===========================================================================
+      subroutine sete_from_phi_linear2dxy(phi1d,np,xp,yp,zp,xmmin,ymmin,
+     &                                    dx,dy,nx,ny,nxguardphi,nyguardphi,
+     &                                    ex,ey,ez)
+      integer(ISZ):: np,nx,ny
+      integer(ISZ):: nxguardphi,nyguardphi
+      real(kind=8):: xmmin,ymmin,dx,dy
+      real(kind=8):: phi1d(0:*)
+      real(kind=8):: xp(np),yp(np),zp(np)
+      real(kind=8):: ex(np),ey(np),ez(np)
+
+c Gets self electric field for particles
+c The field is obtained from directly finite differencing phi for each
+c particle, using linear weighting.
+
+c Note that the phi1d passed in is assumed to start at phi(-1,-1,-1).
+
+c Algorithm notes: phi array is dimensioned (-1:nx+1,-1:ny+1,-1:nz+1) outside,
+c but is made one dimensional in this routine
+c so cell index into 1d phi array for vectorized deposition is:
+c    i + j*(nx+1) + k*(nx+1)*(ny+1)
+c The field is:
+c    Ex = u0*w0*ex(i  ,k)
+c       + u1*w0*ex(i+1,k)
+c       + ...
+c where:
+c    ex(i,k) = (phi(i-1,k) - phi(i+1,k))/(2*dx)
+
+      integer(ISZ):: nnx,ip,i,k,inext,knext, ind0
+      real(kind=8):: dxi,dyi,tdxi,tdyi,u0,u1,w0,w1,xsign
+      real(kind=8):: ext,eyt,ezt
+      integer(ISZ):: noff(32)
+      save noff
+
+      nnx  = nx + 1 + 2*nxguardphi
+
+c  nnx is added to all offsets to account for
+c  the fact that the phi1d passed begins at phi(0,0,-1), so the location
+c  of phi(0,0,0) is equivalent to phi1d(nnx).
+
+      noff = 0
+      noff(1)  = - nnx
+      noff(2)  = - nnx   + 1
+      noff(7)  =                  - 1
+      noff(8)  =                  + 0
+      noff(9)  =                  + 1
+      noff(10) =                  + 2
+      noff(19) = + nnx            - 1
+      noff(20) = + nnx
+      noff(21) = + nnx            + 1
+      noff(22) = + nnx            + 2
+      noff(29) = + 2*nnx
+      noff(30) = + 2*nnx          + 1
+
+      noff = noff + nxguardphi + nnx*nyguardphi
+
+c  Evaluation of E, vectorized over particles
+      tdxi = 1. / (2.*dx)
+      tdyi = 1. / (2.*dy)
+      dxi = 1./dx
+      dyi = 1./dy
+      ezt = 0.
+
+      inext = (xp(1) - xmmin)*dxi
+      knext = (yp(1) - ymmin)*dyi
+
+      do ip = 1, np
+
+        i = inext
+        k = knext
+        if (ip < np) then
+          inext = (xp(ip+1) - xmmin)*dxi
+          knext = (yp(ip+1) - ymmin)*dyi
+        endif
+
+        ind0 = i + k*nnx
+
+        u1 = (xp(ip) - xmmin)*dxi - i
+        w1 = (yp(ip) - ymmin)*dyi - k
+
+        u0 = 1. - u1
+        w0 = 1. - w1
+
+        ext=tdxi*(u0*w0*(phi1d(noff( 7)+ind0) - phi1d(noff( 9)+ind0))
+     &          + u1*w0*(phi1d(noff( 8)+ind0) - phi1d(noff(10)+ind0))
+     &          + u0*w1*(phi1d(noff(19)+ind0) - phi1d(noff(21)+ind0))
+     &          + u1*w1*(phi1d(noff(20)+ind0) - phi1d(noff(22)+ind0)))
+
+        eyt=tdyi*(u0*w0*(phi1d(noff( 1)+ind0) - phi1d(noff(20)+ind0))
+     &          + u1*w0*(phi1d(noff( 2)+ind0) - phi1d(noff(21)+ind0))
+     &          + u0*w1*(phi1d(noff( 8)+ind0) - phi1d(noff(29)+ind0))
+     &          + u1*w1*(phi1d(noff( 9)+ind0) - phi1d(noff(30)+ind0)))
+
+        ex(ip) = ex(ip) + ext
+        ey(ip) = ey(ip) + eyt
+        ez(ip) = ez(ip) + ezt
+
+        enddo
 
       return
       end
@@ -7848,7 +7953,7 @@ c       --- transverse boundaries.
 !$OMP&                 iinext,jjnext,kknext,u1next,v1next,w1next)
 !$OMP&FIRSTPRIVATE(np)
 
-      if (ny > 0) then
+      if (ny > 0 .and. nz > 0) then
 
 c       --- vectorized loop to compute indices, weights
         if (l2symtry) then
@@ -7962,7 +8067,7 @@ c         --- normal loop
 !$OMP END DO
         endif
 
-      else if (ny == 0) then
+      else if (ny == 0 .and. nz > 0) then
 
 c       --- normal loop
         if (l4symtry) then
@@ -7999,7 +8104,31 @@ c       --- normal loop
           rho(ii+1,0,kk+1) = rho(ii+1,0,kk+1) + u1*w1*g
         enddo
 !$OMP END DO
+      else if (nz == 0 .and. ny > 0) then
+c       --- normal loop
+        iinext = int((xp(1) - xmmin)*dxi)
+        jjnext = int((yp(1) - ymmin)*dyi)
+        u1next = (xp(1) - xmmin)*dxi - iinext
+        v1next = (yp(1) - ymmin)*dyi - jjnext
 
+        do ip = 1,np
+          ii = iinext
+          jj = jjnext
+          u1 = u1next
+          v1 = v1next
+          if (ip < np) then
+            iinext = int((xp(ip+1) - xmmin)*dxi)
+            jjnext = int((yp(ip+1) - ymmin)*dyi)
+            u1next = (xp(ip+1) - xmmin)*dxi - iinext
+            v1next = (yp(ip+1) - ymmin)*dyi - jjnext
+          endif
+          u0 = 1. - u1
+          v0 = 1. - v1
+          rho(ii  ,jj  ,0) = rho(ii  ,jj  ,0) + u0*v0*g
+          rho(ii+1,jj  ,0) = rho(ii+1,jj  ,0) + u1*v0*g
+          rho(ii  ,jj+1,0) = rho(ii  ,jj+1,0) + u0*v1*g
+          rho(ii+1,jj+1,0) = rho(ii+1,jj+1,0) + u1*v1*g
+        enddo
       endif
 
 !$OMP END PARALLEL
@@ -9339,7 +9468,7 @@ c  This seems to be the fastest version.
       real(kind=8):: g0,g,dxi,dyi,dzi,u0,u1,v0,v1,w0,w1
       real(kind=8):: u1next,v1next,w1next
 
-      if (ny > 0) then
+      if (ny > 0 .and. nz > 0) then
 
         g0 = wght*q/(dx*dy*dz)
         dxi = 1./dx
@@ -9477,7 +9606,7 @@ c         --- normal loop
 !$OMP END DO
         endif
 
-      else if (ny == 0) then
+      else if (ny == 0 .and. nz > 0) then
 
         g0 = wght*q/(dx*dz)
         dxi = 1./dx
@@ -9558,10 +9687,37 @@ c         --- normal loop
           enddo
 !$OMP END DO
         endif
+      else if (nz == 0 .and. ny > 0) then
+        g0 = wght*q/(dx*dy)
+        dxi = 1./dx
+        dyi = 1./dy
 
+c       --- normal loop
+        iinext = int((xp(1) - xmmin)*dxi)
+        jjnext = int((yp(1) - ymmin)*dyi)
+        u1next = (xp(1) - xmmin)*dxi - iinext
+        v1next = (yp(1) - ymmin)*dyi - jjnext
+
+        do ip = 1,np
+          ii = iinext
+          jj = jjnext
+          u1 = u1next
+          v1 = v1next
+          if (ip < np) then
+            iinext = int((xp(ip+1) - xmmin)*dxi)
+            jjnext = int((yp(ip+1) - ymmin)*dyi)
+            u1next = (xp(ip+1) - xmmin)*dxi - iinext
+            v1next = (yp(ip+1) - ymmin)*dyi - jjnext
+          endif
+          g = g0*wfact(ip)
+          u0 = 1. - u1
+          v0 = 1. - v1
+          rho(ii  ,jj  ,0) = rho(ii  ,jj  ,0) + u0*v0*g
+          rho(ii+1,jj  ,0) = rho(ii+1,jj  ,0) + u1*v0*g
+          rho(ii  ,jj+1,0) = rho(ii  ,jj+1,0) + u0*v1*g
+          rho(ii+1,jj+1,0) = rho(ii+1,jj+1,0) + u1*v1*g
+        enddo
       endif
-
-!$OMP END PARALLEL
 
       return
       end
@@ -12194,7 +12350,7 @@ c      --- Put ny to zero for RZ geometry
       endif
 
 c     --- Put grid min's to zero as appropriate for the symmetry
-      if(solvergeom==XYZgeom) then
+      if(solvergeom==XYZgeom .or. solvergeom==XYgeom) then
         if (l2symtry) then
           ymmin = 0.
         elseif (l4symtry) then

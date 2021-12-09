@@ -6921,6 +6921,8 @@ c=============================================================================
       use Subtimerstop
       use Lattice
       use LatticeInternal
+      use Beam_acc, only : lrelativ
+      use Constant, only : clight
       integer(ISZ):: np
       real(kind=8):: xp(np),zp(np),uzp(np),gaminv(np)
       real(kind=8):: dtl,dtr,dt,q,m
@@ -6943,7 +6945,7 @@ c   ez       axial electric field
 
       real(kind=8):: qoverm
       real(kind=8):: dti,vz,gapez,frac,z1,z2,vn,zl,zr,cacclz,caccll,vni
-      real(kind=8):: zs,ze,zz
+      real(kind=8):: zs,ze,zz,gn,deltav,bt2
       real(kind=8):: frac1,frac2
       integer(ISZ):: io,ip,iz
       real(kind=8):: substarttime,wtime
@@ -7057,8 +7059,14 @@ c           --- Calculate the change in velocity and convert that into
 c           --- and Ez - the expression reduces to q*V/m for small V.
             if (zl <= cacclz .and. cacclz < zr) then
               gapez = cacclez(iz,io) + cacclxw(iz,io)*xp(ip)
-              ez(ip) = ez(ip) + (sqrt(vz**2 + 2.*qoverm*gapez*caccll)-vz)/
-     &                          qoverm*dti
+c              if (lrelativ) then
+c                gn = 1./gaminv(ip) + qoverm*gapez*caccll/clight**2
+c                bt2 = 1. - vz**2/clight**2 - gaminv(ip)**2
+c                deltav = clight*sqrt(1. - 1./gn**2 - bt2) - vz             
+c              else
+                deltav = sqrt(vz**2 + 2.*qoverm*gapez*caccll) - vz
+c              endif
+              ez(ip) = ez(ip) + deltav/qoverm*dti
             endif
           enddo
         enddo
@@ -7075,12 +7083,14 @@ c===========================================================================
       use Subtimerstop
       use Lattice
       use LatticeInternal
+      use Beam_acc, only : lrelativ
+      use Constant, only : clight
       integer(ISZ):: np
       real(kind=8):: zp(np),xp(np),uzp(np),gaminv(np)
       real(kind=8):: dtl,dtr,dt,m,q,time
 
       integer(ISZ):: io,ip,iz
-      real(kind=8):: gapez,zp2,delta,qoverm,cacclz,caccll,deltav,zr
+      real(kind=8):: gapez,zp2,delta,qoverm,cacclz,caccll,deltav,zr,gn,bt2
       real(kind=8):: zz,zs,ze
       real(kind=8):: vz(np),vzi(np)
       real(kind=8):: substarttime,wtime
@@ -7162,12 +7172,24 @@ c           --- "right" end of velocity advance step
 c           --- calculate correction on position
             if (zp(ip) > cacclz .and. cacclz > zr) then
               gapez = cacclez(iz,io) + cacclxw(iz,io)*xp(ip)
-              deltav = sqrt(vz(ip)**2 + 2.*qoverm*gapez*caccll) - vz(ip)
+c              if (lrelativ) then
+c                gn = 1./gaminv(ip) + qoverm*gapez*caccll/clight**2
+c                bt2 = 1. - vz(ip)**2/clight**2 - gaminv(ip)**2
+c                deltav = clight*sqrt(1. - 1./gn**2 - bt2) - vz(ip)              
+c              else
+                deltav = sqrt(vz(ip)**2 + 2.*qoverm*gapez*caccll) - vz(ip)
+c              endif
               zp(ip) = zp(ip) - (cacclz - zp(ip))*vzi(ip)*deltav
             endif
             if (zr > cacclz .and. cacclz > zp(ip) + vz(ip)*dt) then
               gapez = cacclez(iz,io) + cacclxw(iz,io)*xp(ip)
-              deltav = sqrt(vz(ip)**2 + 2.*qoverm*gapez*caccll) - vz(ip)
+c              if (lrelativ) then
+c                gn = 1./gaminv(ip) + qoverm*gapez*caccll/clight**2
+c                bt2 = 1. - vz(ip)**2/clight**2 - gaminv(ip)**2
+c                deltav = clight*sqrt(1. - 1./gn**2 - bt2) - vz(ip)              
+c              else
+                deltav = sqrt(vz(ip)**2 + 2.*qoverm*gapez*caccll) - vz(ip)
+c              endif
               zp(ip) = zp(ip) + (dt - (cacclz - zp(ip))*vzi(ip))*deltav
             endif
           enddo
@@ -7185,6 +7207,8 @@ c=============================================================================
       use Subtimerstop
       use Lattice
       use LatticeInternal
+      use Beam_acc, only : lrelativ
+      use Constant, only : clight
       integer(ISZ):: np
       real(kind=8):: dtl,dtr,m,q,dt
       real(kind=8):: xp(np),zp(np)
@@ -7200,7 +7224,7 @@ c less efficient to put the entire extebxy within that iteration loop so
 c the accl elements was seperated out.
 
       real(kind=8):: dti,oneodt,qoverm,moverq,gapez,z1,z2,vn,frac
-      real(kind=8):: cacclz,caccll,zl,zr
+      real(kind=8):: cacclz,caccll,zl,zr,gn,bt2,deltav
       real(kind=8):: dtl_a,dtr_a,dti_a,vz_a
       integer(ISZ):: io,iz,ip
       real(kind=8):: substarttime,wtime
@@ -7291,8 +7315,14 @@ c         --- and Ez - the expression reduces to q*V/m for small V.
             zr = zlframe + dtr_a*vz_a
             if (zl <= cacclz .and. cacclz < zr) then
               gapez = cacclez(iz,io) + cacclxw(iz,io)*xp(ip)
-              ez(ip) = ez(ip) + (sqrt(vz_a**2 + 2.*qoverm*gapez*caccll) - vz_a)
-     &                 *moverq*dti_a
+c              if (lrelativ) then
+c                gn = 1./gaminv(ip) + qoverm*gapez*caccll/clight**2
+c                bt2 = 1. - vz_a**2/clight**2 - gaminv(ip)**2
+c                deltav = clight*sqrt(1. - 1./gn**2 - bt2) - vz_a              
+c              else
+                deltav = sqrt(vz_a**2 + 2.*qoverm*gapez*caccll) - vz_a
+c              endif
+              ez(ip) = ez(ip) + deltav*moverq*dti_a
             endif
           enddo
         enddo
@@ -7313,6 +7343,8 @@ c===========================================================================
       use Subtimerstop
       use Lattice
       use LatticeInternal
+      use Beam_acc, only : lrelativ
+      use Constant, only : clight
       integer(ISZ):: np
       real(kind=8):: zp(np), xp(np), uzp(np), gaminv(np), dtp(np)
       real(kind=8):: dtl,dtr,dt,m,q,time
@@ -7321,7 +7353,7 @@ c Add residence correction to particle position when acceleration is done
 
       integer(ISZ):: io,ip,iz
       real(kind=8):: gapez,zp2,delta,qoverm,vz(np),vzi(np)
-      real(kind=8):: dtl_a,dtr_a
+      real(kind=8):: dtl_a,dtr_a,gn,bt2
       real(kind=8):: cacclz,caccll,zr,deltav
       real(kind=8):: substarttime,wtime
       if (ltoptimesubs) substarttime = wtime()
@@ -7387,12 +7419,24 @@ c           --- "right" end of velocity advance step
 c           --- calculate correction on position
             if (zlframe < cacclz .and. cacclz < zr) then
               gapez = cacclez(iz,io) + cacclxw(iz,io)*xp(ip)
-              deltav = sqrt(vz(ip)**2 + 2.*qoverm*gapez*caccll) - vz(ip)
+c              if (lrelativ) then
+c                gn = 1./gaminv(ip) + qoverm*gapez*caccll/clight**2
+c                bt2 = 1. - vz(ip)**2/clight**2 - gaminv(ip)**2
+c                deltav = clight*sqrt(1. - 1./gn**2 - bt2) - vz(ip)              
+c              else
+                deltav = sqrt(vz(ip)**2 + 2.*qoverm*gapez*caccll) - vz(ip)
+c              endif
               zp(ip) = zp(ip) - (cacclz - zlframe)*vzi(ip)*deltav
             endif
             if (zr < cacclz .and. cacclz < zlframe + vz(ip)*dtp(ip)) then
               gapez = cacclez(iz,io) + cacclxw(iz,io)*xp(ip)
-              deltav = sqrt(vz(ip)**2 + 2.*qoverm*gapez*caccll) - vz(ip)
+c              if (lrelativ) then
+c                gn = 1./gaminv(ip) + qoverm*gapez*caccll/clight**2
+c                bt2 = 1. - vz(ip)**2/clight**2 - gaminv(ip)**2
+c                deltav = clight*sqrt(1. - 1./gn**2 - bt2) - vz(ip)              
+c              else
+                deltav = sqrt(vz(ip)**2 + 2.*qoverm*gapez*caccll) - vz(ip)
+c              endif
               zp(ip) = zp(ip) + (dtp(ip) - (cacclz - zlframe)*vzi(ip))*deltav
             endif
           enddo
@@ -7429,7 +7473,7 @@ c by the calling routine.
       integer(ISZ):: io,astat,iz
       real(kind=8):: zs,ze,zc
       real(kind=8):: gapez,z1,z2,vn,frac,qoverm
-      real(kind=8):: zz,zl,zr,vbeamfrmo,deltav
+      real(kind=8):: zz,zl,zr,vbeamfrmo,deltav,gb,gbn,gbi
       real(kind=8):: zznew(1)
       real(kind=8):: substarttime,wtime
       if (ltoptimesubs) substarttime = wtime()
@@ -7441,6 +7485,14 @@ c     --- it may be used in the calling code.
       if (.not. accls .or. .not. linaccl(0) .or. vbeamfrm == 0.) return
 
       qoverm = echarge*zion/(aion*amu)
+
+      if (lrelativ) then
+        gbi = sqrt(1. - vbeam**2/clight**2)
+        gb = 1./gbi
+      else
+        gbi = 1.
+        gb = 1.
+      endif
 
       if (acclbeamframe .ne. 0.) then
         zz = acclbeamframe + zlframe
@@ -7511,35 +7563,34 @@ c         --- also change beam frame velocity
 
         else
 c         --- Zero-length gap
-
+          vn = vbeamfrm
 c         --- location of gap center
           zc = 0.5*(zs + ze)
 c         --- "left" end of velocity advance step
           zl = zz - 0.5*vbeamfrm*dt
 c         --- "right" end of velocity advance step
           zr = zz + 0.5*vbeamfrm*dt
-c         --- Save current beam velocity
-          vbeamfrmo = vbeamfrm
 c         --- add acceleration to beam velocity
           if (zl .le. zc .and. zc .lt. zr) then
-            vbeamfrm = sqrt(vbeamfrm**2 + 2.*qoverm*gapez*(ze - zs))
-            vbeam = vbeamfrm
+            if (lrelativ) then
+              gbn = gb + qoverm*gapez*(ze-zs)/clight**2
+              vn = clight*sqrt(1. - 1./gbn**2)              
+            else
+              vn = sqrt(vbeamfrm**2 + 2.*qoverm*gapez*(ze - zs))
+            endif
           endif
-c         --- calculate correction on position of beam frame
-          frac = 0.
-          deltav = 0.
-          if (zz < zc .and. zc < zr) then
-            frac = - (zc - zz)/(vbeamfrmo*dt)
-            deltav = vbeamfrm - vbeamfrmo
-          endif
-          if (zr < zc .and. zc < zz+vbeamfrmo*dt) then
-            frac = 1. - (zc - zz)/(vbeamfrmo*dt)
-            deltav = sqrt(vbeamfrm**2 + 2.*qoverm*gapez*(ze - zs))
-     &               - vbeamfrm
-          endif
-c         --- Set the correction to the beam frame position
-          zcorrection = zcorrection + frac*deltav*dt
+c         --- do correction on position
+          zznew = zz
+          call zgapcorr(1,zznew,(/0./),(/vbeamfrm*gb/),(/gbi/),
+     &                  -dt*0.5,dt*0.5,dt,
+     &                  aion*amu,zion*echarge,time)
+          zcorrection = zcorrection + zznew(1) - zz
+c         --- add acceleration to beam frame velocity
+          vbeamfrm = vn 
+c         --- also change beam frame velocity
+          vbeam = vbeamfrm
 
+ 
         endif
       enddo
 

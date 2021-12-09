@@ -4808,7 +4808,7 @@ def pcphixy(iz=None,fullplane=1,solver=None,local=0,**kw):
     else:
         kw['pplimits'] = (solver.xmmin,solver.xmmax,solver.ymmin,solver.ymmax)
     settitles("Electrostatic potential in x-y plane","X","Y","iz = "+repr(iz))
-    ppp = getphi(iz=iz,solver=solver,local=local)
+    ppp = getphi(iz=iz,solver=solver,local=local).squeeze()
     if me > 0 and not local: ppp = zeros((solver.nx+1,solver.ny+1),'d')
     setcmincmaxfromarray(ppp,kw)
     ppgeneric(grid=ppp,kwdict=kw,local=1,flipxaxis=0,flipyaxis=0)
