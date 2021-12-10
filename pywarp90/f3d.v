@@ -345,6 +345,27 @@ multigrid2dsolve(iwhich:integer,nx:integer,nz:integer,
                  gridmode:integer,conductors:ConductorType,lrz:logical,
                  lmagnetostatic:logical,
                  fsdecomp:Decomposition)
+    subroutine
+    # Solves Poisson's equation in 2D using the multigrid method. All input is
+    # through the argument list.
+    # 2D slice solver for w3d package
+multigrid2dslicesolve(iwhich:integer,nx:integer,ny:integer,
+                      nxlocal:integer,nylocal:integer,
+                      nxguardphi:integer,nyguardphi:integer,
+                      nxguardrho:integer,nyguardrho:integer,
+                      dx:real,dy:real,zgrid:real,
+                      phi(-nxguardphi:nxlocal+nxguardphi,
+                          -nyguardphi:nylocal+nyguardphi):real,
+                      rho(-nxguardrho:nxlocal+nxguardrho,
+                          -nyguardrho:nylocal+nyguardrho):real,
+                      bounds(0:5):integer,
+                      xmminlocal:real,ymminlocal:real,
+                      mgparam:real,mgform:integer,mgiters:integer,mgmaxiters:integer,
+                      mgmaxlevels:integer,mgerror:real,mgtol:real,mgverbose:integer,
+                      downpasses:integer,uppasses:integer,
+                      lcndbndy:logical,laddconductor:logical,icndbndy:integer,
+                      gridmode:integer,conductors:ConductorType,
+                      fsdecomp:Decomposition)
    subroutine
    # Solves Poisson's equation in 2D using the multigrid method. All input is
    # through the argument list.
@@ -435,6 +456,16 @@ residual2d(nxlocal:integer,nzlocal:integer,
            xminodx:real,lrz:logical,lmagnetostatic:logical,phi:real,rho:real,res:real,
            mglevel:integer,bounds(0:5):integer,mgform:integer,mgform2init:integer,
            lcndbndy:logical,icndbndy:integer,conductors:ConductorType)
+   subroutine
+   # Calculates the residual for 2d arrays
+residual2dslice(nxlocal:integer,nylocal:integer,
+                nxguardphi:integer,nyguardphi:integer,
+                nxguardrho:integer,nyguardrho:integer,
+                nxguardres:integer,nyguardres:integer,
+                dxsqi:real,dysqi:real,
+                xminodx:real,yminody:real,phi:real,rho:real,res:real,
+                mglevel:integer,bounds(0:5):integer,mgform:integer,mgform2init:integer,
+                lcndbndy:logical,icndbndy:integer,conductors:ConductorType)
    subroutine
    # Calculates the residual for 2d arrays
 residual2ddielectric(nxlocal:integer,nzlocal:integer,
@@ -1357,6 +1388,7 @@ lf3dtimesubs logical /.false./
 timemultigrid3dsolve real /0./
 timefullmultigrid3dsolve real /0./
 timemultigrid2dsolve real /0./
+timemultigrid2dslicesolve real /0./
 timemultigridrzsolve real /0./
 timegathersourcefromchild real /0./
 timegatherpotentialfromparents real /0./

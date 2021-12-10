@@ -3344,6 +3344,7 @@ def addgriddedgap(zcenter=None,gaplength=None,ap=None,apleft=None,apright=None,
                   l4symtry=None,l2symtry=None,
                   fringelen=None,
                   savephi=0,
+                  z_offsets=[0.],
                   **kw):
     """
   Adds a gap using gridded data, via a egrd element.
@@ -3460,7 +3461,7 @@ def addgriddedgap(zcenter=None,gaplength=None,ap=None,apleft=None,apright=None,
     Esolver.installconductor(piperght)
 
     # --- Set convergence tolerence (in Tesla)
-    Esolver.mgtol = voltage*tol*ones(3)
+    Esolver.mgtol = abs(voltage)*tol*ones(3)
 
     # --- Force some parameters, but save their
     # --- value so they can be restored after the solve.
@@ -3483,12 +3484,31 @@ def addgriddedgap(zcenter=None,gaplength=None,ap=None,apleft=None,apright=None,
     fieldp = Esolver.fieldp[:,Esolver.nxguarde:-Esolver.nxguarde or None,
                               Esolver.nyguarde:-Esolver.nyguarde or None,
                               Esolver.nzguarde:-Esolver.nzguarde or None]
-    return addnewegrd(Esolver.zmmin,Esolver.zmmax,
-                      dx=Esolver.dx,dy=Esolver.dy,
-                      ex=fieldp[0,...],
-                      ey=fieldp[1,...],
-                      ez=fieldp[2,...],
-                      rz=lcylindrical,ap=ap,**kw)
+    
+    egrdids = []
+    for iz, zoff in enumerate(z_offsets):
+        if iz is 0:
+            egid = addnewegrd(Esolver.zmmin+zoff,
+                              Esolver.zmmax+zoff,
+                              dx=Esolver.dx,dy=Esolver.dy,
+                              xs=Esolver.xmmin,
+                              ys=Esolver.ymmin,
+                              ex=fieldp[0,...],
+                              ey=fieldp[1,...],
+                              ez=fieldp[2,...],
+                              rz=lcylindrical,ap=ap,**kw)
+        else:
+            egid = addnewegrd(Esolver.zmmin+zoff,
+                              Esolver.zmmax+zoff,
+                              id=egrdids[0],
+                              xs=Esolver.xmmin,
+                              ys=Esolver.ymmin,
+                              rz=lcylindrical,ap=ap,
+                              **kw)
+        egrdids.append(egid[1])
+             
+    
+    return egrdids
 
 # ----------------------------------------------------------------------------
 pyelemfunctionsdict = {}

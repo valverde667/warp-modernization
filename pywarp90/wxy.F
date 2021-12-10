@@ -21,6 +21,25 @@ c=============================================================================
      &                             -nzguardphi:nzp+nzguardphi)
       end subroutine assignrhoandphiforfieldsolvexy
 
+      subroutine fetchexy(pgroup,ipmin,ip,is,ex,ey,ez)
+      use ParticleGroupmodule
+      use GlobalVars
+      use Subtimerswxy
+      use Picglb
+      use Picglb3d
+      use InGen,Only: fstype
+      use InPart,Only: efetch,depos_order
+      use InGenxy
+      use InGen3d
+      use InMesh3d
+      use Fields3dSolver
+      use Fields3dParticles,Only: selfep
+      use FieldSolveAPI
+      type(ParticleGroup),target:: pgroup
+      integer(ISZ):: ipmin,ip,is
+      real(kind=8), dimension(ip) :: ex,ey,ez
+      end subroutine fetchexy
+
       end interface
       end module wxy_interfaces
 c=============================================================================
@@ -116,7 +135,7 @@ c  Calculate step size if not set by the user.
 c  Set default values for the axial grid if using thin slice model.
 c  zmmin and zmmax are forced to 0.
 c  nz is forced to 0
-      if (.not. lthick) then
+      if (.not. lthick .and. .not. lvp3d) then
         zmminlocal = 0.
         zmmaxlocal = 0.
         zmmin = 0.
@@ -193,24 +212,7 @@ c  since all particles will be at the same element.
       zlmin = 0.
       zlmax = 0.
 
-c  adjust x and ymmin for symmetries
-
-      if (l2symtry) then
-        ymmin = 0.
-      elseif (l4symtry) then
-        xmmin = 0.
-        ymmin = 0.
-      endif
-
-c  Setup arrays for potential and charge density for the particles.
-
-      nxp = nx
-      nyp = ny
-#ifndef MPIPARALLEL
-      nzp = nz
-      zmminp = zmminlocal
-      zmmaxp = zmmaxlocal
-#endif
+      call setupFields3dParticles()
 
 c  Create the dynamic arrays for fields
 
@@ -239,40 +241,8 @@ c  Set the value of prwall, radius at which particles are lost
 
 c  Calculate mesh dimensioning quantities
 
-      call gchange("Mesh3d",0)
-
-      dx = (xmmax - xmmin) / nx
-      dy = (ymmax - ymmin) / ny
-      if (nz == 0) then
-        dz = 0.
-      else
-        dz = (zmmax - zmmin) / nz
-      endif
-      do i = 0, nx
-         xmesh(i) = i * dx + xmmin
-      enddo
-      do j = 0, ny
-         ymesh(j) = j * dy + ymmin
-      enddo
-      do k = 0, nz
-         zmesh(k) = k * dz + zmmin
-      enddo
-      do k = 0, nzlocal
-         zmeshlocal(k) = k * dz + zmminlocal
-      enddo
-
-      xpmin = xmmin
-      xpmax = xmmin + nx*dx
-      ypmin = ymmin
-      ypmax = ymmin + ny*dy
-      zpmin = zmmin
-      zpmax = zmmin + nz*dz
-      xpminlocal = xmmin
-      xpmaxlocal = xmmin + nx*dx
-      ypminlocal = ymmin
-      ypmaxlocal = ymmin + ny*dy
-      zpminlocal = zmmin
-      zpmaxlocal = zmmin + nz*dz
+      call setupgridextent()
+      call fixgridextent()
 
 c Calculate location of axis in mesh, the term dx*1.e-5 acts as fuzz
       ix_axis = nint(-xmmin/dx)
@@ -287,12 +257,29 @@ c Calculate location of axis in mesh, the term dx*1.e-5 acts as fuzz
         izlocal_axis = nint(-zmminlocal/dz)
       endif
 
+c  Setup arrays for potential and charge density for the particles.
+      xpmin = xmmin
+      xpmax = xmmin + nx*dx
+      ypmin = ymmin
+      ypmax = ymmin + ny*dy
+      zpmin = zmmin
+      zpmax = zmmin + nz*dz
+
 c Initialize grid when solvergeom=XYgeom
       if(AMRlevels>0) solvergeom=XYgeom
-      if(solvergeom==XYgeom) then
+      if(solvergeom==XYgeom .and. fstype /= 12) then
         fstype = 10
-        call init_base(nx,ny,dx,dy,xmmin,ymmin,.false.)
+
+!#ifdef MPIPARALLEL
+!        call init_base(nxlocal,nylocal,dx,dy,xmminlocal,ymminlocal,.true.)
+!#else
+        call init_base(nxlocal,nylocal,dx,dy,xmminlocal,ymminlocal,.false.)
+!#endif
       end if
+
+c  Initialize the B field solver if it is being used
+
+      call init_bfieldsolver(bfstype)
 
 c  Create the dynamic arrays for particles (set npmax to an estimated
 c  length for now, for those loading schemes that don't actually
@@ -403,7 +390,7 @@ c  Print interesting things to plot file and teletype
       call prntpara(dx,dy,dz,lprntpara,pgroup)
       call prntpa3d(lprntpara)
 c  Initial call to fieldsolver in order to initialize attx, kxsq, etc.
-      call vpxy (1)
+      call fieldsolxy(1)
 
 c  Initial fieldsolve, diagnostics
       call stepxy ("wxygen")
@@ -419,7 +406,7 @@ c=============================================================================
       use InGenxy
       use Picglb3d
       use Ctl_to_pic
-      use Particles,Only: pgroup
+      use Particles,Only: pgroup, wpid
       use Particlesxy
       use Subcycling,Only: zgridndts
 
@@ -471,12 +458,22 @@ c  The iteration is done to get the correct dt.
 c  Note that dt is only changed if the grid frame velocity was changed.
       zbeam0 = zbeam
       vbeamfrm0 = vbeamfrm
+c      vbeamfrm0 = vzbar
       do i=1,niter_dt
         zbeam = zbeam0
         vbeamfrm = vbeamfrm0
         call acclbfrm(zcorrection)
         if ((zbeam + vbeamfrm*dt + zcorrection - zbeam0) .ne. 0) then
           dt = dt*ds/(zbeam + vbeamfrm*dt + zcorrection - zbeam0)
+
+c  Since dt is adjusting, need to adjust particle weight down as well  
+          if (lscale_constant_current) then    
+            do is=1,pgroup%ns
+              do ip=pgroup%ins(is),pgroup%ins(is)+pgroup%nps(is)-1
+                pgroup%pid(ip,wpid) = pgroup%pid(ip,wpid)*vbeamfrm0/vbeamfrm
+              enddo
+            enddo
+          endif
         endif
       enddo
       zbeam = zbeam0
@@ -921,6 +918,7 @@ c=============================================================================
       use Subtimerswxy
       use Picglb
       use Picglb3d
+      use InGen,Only: fstype
       use InPart,Only: efetch,depos_order
       use InGenxy
       use InGen3d
@@ -928,7 +926,7 @@ c=============================================================================
       use Fields3dSolver
       use Fields3dParticles,Only: selfep
       use FieldSolveAPI
-      type(ParticleGroup):: pgroup
+      type(ParticleGroup),target:: pgroup
       integer(ISZ):: ipmin,ip,is
       real(kind=8), dimension(ip) :: ex,ey,ez,zpo
 
@@ -943,7 +941,21 @@ c=============================================================================
         ez = 0.
       endif
 
-      if(solvergeom/=XYgeom) then
+c     --- Just return if the efetch is turned off.
+      if (efetch(is) == 0) return
+
+      if(fstype == 12) then
+        pgroupfsapi => pgroup
+        jsfsapi = pgroup%sid(is - 1)
+        ndtsfsapi = pgroup%ndts(is - 1)
+        ipminfsapi = ipmin
+        npfsapi = ip
+        call callpythonfunc("fetcheregistered","field_solvers.fieldsolver")
+        NULLIFY(pgroupfsapi)
+        jsfsapi = -1
+        npfsapi = 0
+        ndtsfsapi = 0
+      elseif(solvergeom==XYZgeom) then
 c       --- Obtain the self-field from the electrostatic potential
         if (lwithez) then
 c         --- Note that zp, zgrid, and zmminlocal are all passed in as zero
@@ -972,7 +984,7 @@ c         --- since lcylindrical is false.
      &                nxguarde,nyguarde,
      &                efetch(is),depos_order,ex,ey,ez,l2symtry,l4symtry)
         endif
-      elseif(solvergeom==XYgeom) then
+      elseif(solvergeom==XYgeom .and. fstype /= 12) then
         call fieldweightxz(pgroup%xp(i1:i2),pgroup%yp(i1:i2),ex,ey,ip,zgridprv,
      &                     efetch(is))
       end if
@@ -1817,6 +1829,7 @@ c=============================================================================
       use Z_arrays
       use Z_Moments, only: nzmmnt,nszmmnt,tempmaxp,tempminp,tempzmmnts0,tempzmmnts
       use Damped_eom
+      use wxy_interfaces
       character(*):: center
       type(ParticleGroup):: pgroup
 
@@ -1946,17 +1959,18 @@ c  Loop over particle blocks; move each block separately
           i1 = ipmin
           i2 = ipmin + ip - 1
 
+c         --- Zero out B field arrays
+          bx(i1:i2) = 0.
+          by(i1:i2) = 0.
+          bz(i1:i2) = 0.
+
           call fetchexy(pgroup,ipmin,ip,is,ex(i1:i2),ey(i1:i2),ez(i1:i2))
+          call fetchb3d(pgroup,ipmin,ip,is)
 
 c         --- Scale the self E-field to get the lowest order relativistic
 c         --- correction.
           if (relativity == 1)
      &      call sete3d_relativity(ip,ex(i1:i2),ey(i1:i2),vbeam)
-
-c         --- Zero out B field arrays
-          bx(i1:i2) = 0.
-          by(i1:i2) = 0.
-          bz(i1:i2) = 0.
 
 c         --- Save old particle data
           if (center == "halfv" .or. center == "fullv") then
@@ -2286,7 +2300,12 @@ c       --- Apply particle boundary conditions.
         enddo
 
 c       --- Collect charge density (xy) and current (1d)
-        call loadrhoxy(pgroup,-1,-1,-1,.true.,lfinalize_rho)
+        if (lvp3d) then
+          call loadrho3d(pgroup,-1,-1,-1,.true.,lfinalize_rho)
+          call loadj3d(pgroup,-1,-1,-1,.true.,lfinalize_rho)
+        else
+          call loadrhoxy(pgroup,-1,-1,-1,.true.,lfinalize_rho)
+        endif
 
         if (ifgap) then
           do ipmin = ins(is), ins(is) + nps(is) - 1, nparpgrp
@@ -2340,6 +2359,7 @@ c=============================================================================
      &                    bound0,boundnz,lthick)
       use Subtimerswxy
       use GlobalVars,Only:periodic
+      use InGenxy, only: lvp3d
       integer(ISZ):: nx,ny,nzlocal
       integer(ISZ):: nxguardrho,nyguardrho,nzguardrho
       real(kind=8):: rho(-nxguardrho:nx+nxguardrho,
@@ -2372,7 +2392,7 @@ c  For thin slice model, average out rho along the axis.
 
 #ifdef MPIPARALLEL
 c     --- Sum up rho over the processors.
-      if (.not. lthick) then
+      if (.not. lthick .and. .not. lvp3d) then
         call parallelsumrealarray(rho,(1+nx)*(1+ny))
       endif
 #endif
@@ -4248,7 +4268,7 @@ c=============================================================================
       use ParticleGroupmodule
       use Subtimerswxy
       use GlobalVars
-      use InGen, Only: depos,vbeamfrm
+      use InGen, Only: depos,vbeamfrm,fstype
       use InGenxy
       use InGen3d
       use InPart,Only: depos_order
@@ -4291,130 +4311,134 @@ c     --- made changes.
         return
       endif
 
-c     --- zero rho if requested
-c     if (lzero) call zeroarry(rho,(nx+1)*(ny+1)*(nzlocal+1))
-      if(lzero) then
-        if(solvergeom==XYgeom) then
-          call reset_rzmgrid_rho()
-        else
-          rho = 0.
+      if (lvp3d) then
+        call loadrho3d(pgroup,ins_i,nps_i,is_i,lzero,lfinalize_rho)
+        call loadj3d(pgroup,ins_i,nps_i,is_i,lzero,lfinalize_rho)
+      else
+c       --- zero rho if requested
+c       if (lzero) call zeroarry(rho,(nx+1)*(ny+1)*(nzlocal+1))
+        if(lzero) then
+          if(solvergeom==XYgeom) then
+            call reset_rzmgrid_rho()
+          else
+            rho = 0.
+          end if
         end if
-      end if
-
-c     --- set limits on loop over species
-      if (is_i == -1) then
-        is1 = 1
-        is2 = pgroup%ns
-      else
-        is1 = is_i
-        is2 = is_i
-      endif
-
-c     --- set initial limits from input
-c     --- (will be changed if necessary in the loop)
-      ins_u = ins_i
-      nps_u = nps_i
-
-c     --- loop over species
-      do is=is1,is2
-
-c        --- get loop limits for particles if needed
-         if (ins_i == -1) ins_u = pgroup%ins(is)
-         if (nps_i == -1) nps_u = pgroup%nps(is)
-
-c        --- loop over particle blocks
-         if(solvergeom==XYgeom) then
-           do ipmin = ins_u, ins_u + nps_u - 1, nparpgrp
-             ip = min(nparpgrp, ins_u+nps_u-ipmin)
-             i1 = ipmin
-             i2 = ipmin + ip - 1
-             if(wpid==0) then
-               call rhoweightrz(pgroup%xp(i1:i2),pgroup%yp(i1:i2),
-     &                          pgroup%yp(i1:i2),ip,
-     &                          pgroup%sq(is)*pgroup%sw(is),
-     &                          nx,ny,dx,dy,xmmin,ymmin)
+  
+c         --- set limits on loop over species
+          if (is_i == -1) then
+            is1 = 1
+            is2 = pgroup%ns
+          else
+            is1 = is_i
+            is2 = is_i
+          endif
+  
+c         --- set initial limits from input
+c         --- (will be changed if necessary in the loop)
+          ins_u = ins_i
+          nps_u = nps_i
+  
+c         --- loop over species
+          do is=is1,is2
+  
+c            --- get loop limits for particles if needed
+             if (ins_i == -1) ins_u = pgroup%ins(is)
+             if (nps_i == -1) nps_u = pgroup%nps(is)
+  
+c            --- loop over particle blocks
+             if(solvergeom==XYgeom) then
+               do ipmin = ins_u, ins_u + nps_u - 1, nparpgrp
+                 ip = min(nparpgrp, ins_u+nps_u-ipmin)
+                 i1 = ipmin
+                 i2 = ipmin + ip - 1
+                 if(wpid==0) then
+                   call rhoweightrz(pgroup%xp(i1:i2),pgroup%yp(i1:i2),
+     &                              pgroup%yp(i1:i2),ip,
+     &                              pgroup%sq(is)*pgroup%sw(is),
+     &                              nx,ny,dx,dy,xmmin,ymmin)
+                 else
+                   call rhoweightrz_weights(pgroup%xp(i1:i2),pgroup%yp(i1:i2),
+     &                                      pgroup%yp(i1:i2),pgroup%pid(i1:i2,wpid),
+     &                                      ip,pgroup%sq(is)*pgroup%sw(is),
+     &                                      nx,ny,dx,dy,xmmin,ymmin)
+                 end if
+               enddo
              else
-               call rhoweightrz_weights(pgroup%xp(i1:i2),pgroup%yp(i1:i2),
-     &                                  pgroup%yp(i1:i2),pgroup%pid(i1:i2,wpid),
-     &                                  ip,pgroup%sq(is)*pgroup%sw(is),
-     &                                  nx,ny,dx,dy,xmmin,ymmin)
+               ip = nps_u
+               ipmin = ins_u
+               i1 = ipmin
+               i2 = ipmin + ip - 1
+               if (ip > 0) then
+                 if(wpid==0) then
+                   call setrhoxy(rho,ip,pgroup%xp(i1:i2),pgroup%yp(i1:i2),
+     &                           pgroup%zp(i1:i2),zgrid,
+     &                           pgroup%uzp(i1:i2),pgroup%gaminv(i1:i2),
+     &                           pgroup%sq(is),pgroup%sw(is),
+     &                           vbeamfrm,depos,depos_order,
+     &                           nx,ny,nzlocal,nxguardrho,nyguardrho,nzguardrho,
+     &                           dx,dy,dz,xmmin,ymmin,zmmin,l2symtry,l4symtry)
+                 else
+                   call setrhoxyw(rho,ip,pgroup%xp(i1:i2),pgroup%yp(i1:i2),
+     &                            pgroup%zp(i1:i2),zgrid,pgroup%pid(i1:i2,wpid),
+     &                            pgroup%uzp(i1:i2),pgroup%gaminv(i1:i2),
+     &                            pgroup%sq(is),pgroup%sw(is),
+     &                            vbeamfrm,depos,depos_order,
+     &                            nx,ny,nzlocal,nxguardrho,nyguardrho,nzguardrho,
+     &                            dx,dy,dz,xmmin,ymmin,zmmin,l2symtry,l4symtry)
+                 endif
+               endif
              end if
-           enddo
-         else
-           ip = nps_u
-           ipmin = ins_u
-           i1 = ipmin
-           i2 = ipmin + ip - 1
-           if (ip > 0) then
-             if(wpid==0) then
-               call setrhoxy(rho,ip,pgroup%xp(i1:i2),pgroup%yp(i1:i2),
-     &                       pgroup%zp(i1:i2),zgrid,
-     &                       pgroup%uzp(i1:i2),pgroup%gaminv(i1:i2),
-     &                       pgroup%sq(is),pgroup%sw(is),
-     &                       vbeamfrm,depos,depos_order,
-     &                       nx,ny,nzlocal,nxguardrho,nyguardrho,nzguardrho,
-     &                       dx,dy,dz,xmmin,ymmin,zmmin,l2symtry,l4symtry)
-             else
-               call setrhoxyw(rho,ip,pgroup%xp(i1:i2),pgroup%yp(i1:i2),
-     &                        pgroup%zp(i1:i2),zgrid,pgroup%pid(i1:i2,wpid),
-     &                        pgroup%uzp(i1:i2),pgroup%gaminv(i1:i2),
-     &                        pgroup%sq(is),pgroup%sw(is),
-     &                        vbeamfrm,depos,depos_order,
-     &                        nx,ny,nzlocal,nxguardrho,nyguardrho,nzguardrho,
-     &                        dx,dy,dz,xmmin,ymmin,zmmin,l2symtry,l4symtry)
-             endif
-           endif
-         end if
-      enddo
-
-      if(solvergeom==XYgeom) then
+          enddo
+  
+          if(solvergeom==XYgeom) then
 c  Distribute rho for AMR solver
-        call distribute_rho_rz()
+            call distribute_rho_rz()
 c  Enforce boundary conditions
-        call rhobndrz()
+            call rhobndrz()
 c  Copy charge density from frz.basegrid to w3d.rho
-        call get_rho_rz(rho,nx,ny,1,0)
-      else
-
-        if (lzero .and. lfinalize_rho) then
-
-c         --- Set the bounds array.
-          call setboundsfromflags(bounds,boundxy,bound0,boundnz,l2symtry,l4symtry)
-
-          if (bounds(0) == periodic .or. bounds(1) == periodic) then
-            rho(:nxguardrho,:,:) = rho(:nxguardrho,:,:) + rho(nx-nxguardrho:,:,:)
-            rho(nx-nxguardrho:,:,:) = rho(:nxguardrho,:,:)
-          endif
-          if (bounds(2) == periodic .or. bounds(3) == periodic) then
-            rho(:,:nyguardrho,:) = rho(:,:nyguardrho,:) + rho(:,ny-nyguardrho:,:)
-            rho(:,ny-nyguardrho:,:) = rho(:,:nyguardrho,:)
-          endif
-          if (bounds(0) == neumann) then
-            rho(:nxguardrho,:,:) = rho(:nxguardrho,:,:) +
-     &                             rho(nxguardrho:-nxguardrho:-1,:,:)
-          endif
-          if (bounds(1) == neumann) then
-            rho(nx-nxguardrho:,:,:) = rho(nx-nxguardrho:,:,:) +
-     &                                rho(nx+nxguardrho:nx-nxguardrho:-1,:,:)
-          endif
-          if (bounds(2) == neumann) then
-            rho(:,:nyguardrho,:) = rho(:,:nyguardrho,:) +
-     &                             rho(:,nyguardrho:-nyguardrho:-1,:)
-          endif
-          if (bounds(3) == neumann) then
-            rho(:,ny-nyguardrho:,:) = rho(:,ny-nyguardrho:,:) +
-     &                                rho(:,ny+nyguardrho:ny-nyguardrho:-1,:)
-          endif
-
-c         --- For FFT solver
-c         --- enforce axial periodicity if rho was zeroed
-          call fixrhoxy(rho,nx,ny,nzlocal,
-     &                  nxguardrho,nyguardrho,nzguardrho,
-     &                  bound0,boundnz,lthick)
-        endif
-
-      end if
-
+            call get_rho_rz(rho,nx,ny,1,0)
+          else
+  
+            if (lzero .and. lfinalize_rho) then
+  
+c           --- Set the bounds array.
+              call setboundsfromflags(bounds,boundxy,bound0,boundnz,l2symtry,l4symtry)
+  
+              if (bounds(0) == periodic .or. bounds(1) == periodic) then
+                rho(:nxguardrho,:,:) = rho(:nxguardrho,:,:) + rho(nx-nxguardrho:,:,:)
+                rho(nx-nxguardrho:,:,:) = rho(:nxguardrho,:,:)
+              endif
+              if (bounds(2) == periodic .or. bounds(3) == periodic) then
+                rho(:,:nyguardrho,:) = rho(:,:nyguardrho,:) + rho(:,ny-nyguardrho:,:)
+                rho(:,ny-nyguardrho:,:) = rho(:,:nyguardrho,:)
+              endif
+              if (bounds(0) == neumann) then
+                rho(:nxguardrho,:,:) = rho(:nxguardrho,:,:) +
+     &                                 rho(nxguardrho:-nxguardrho:-1,:,:)
+              endif
+              if (bounds(1) == neumann) then
+                rho(nx-nxguardrho:,:,:) = rho(nx-nxguardrho:,:,:) +
+     &                                    rho(nx+nxguardrho:nx-nxguardrho:-1,:,:)
+              endif
+              if (bounds(2) == neumann) then
+                rho(:,:nyguardrho,:) = rho(:,:nyguardrho,:) +
+     &                                 rho(:,nyguardrho:-nyguardrho:-1,:)
+              endif
+              if (bounds(3) == neumann) then
+                rho(:,ny-nyguardrho:,:) = rho(:,ny-nyguardrho:,:) +
+     &                                    rho(:,ny+nyguardrho:ny-nyguardrho:-1,:)
+              endif
+  
+c           --- For FFT solver
+c           --- enforce axial periodicity if rho was zeroed
+              call fixrhoxy(rho,nx,ny,nzlocal,
+     &                      nxguardrho,nyguardrho,nzguardrho,
+     &                      bound0,boundnz,lthick)
+            endif
+  
+        end if
+      endif ! lvp3d
       if (lafterloadrho) call callpythonfunc("afterloadrho","controllers")
 
       if (lwxytimesubs) timeloadrhoxy = timeloadrhoxy + wtime() - substarttime
@@ -4606,6 +4630,7 @@ c     --- Call appropriate field solver
       if (lvp3d) then
 c       --- 3D field solver
         call fieldsol3d(iwhich)
+        call bfieldsol3d(iwhich)
       else
 
 c       --- 2D fieldsolver

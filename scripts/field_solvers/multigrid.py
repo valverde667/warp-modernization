@@ -483,7 +483,7 @@ class MultiGrid3D(SubcycledPoissonSolver):
         ux = zeros((0,), 'd')
         uy = zeros((0,), 'd')
         uz = pgroup.uzp[i:i+n]
-        gaminv = zeros((0,), 'd')
+        gaminv = pgroup.gaminv[i:i+n]
         q  = pgroup.sq[js]
         w  = pgroup.sw[js]*pgroup.dtscale[js]
         if top.wpid==0:

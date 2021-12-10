@@ -9,6 +9,9 @@ wxy
 *********** Particlesxy dump parallel:
 dtpid      integer # ID in the pid array where the time step size for each
                    # particle is saved.
+lscale_constant_current logical /.false./ # Scales particle weights down as
+                                          # beamframe accelerates to conserve
+                                          # current in lab frame
 
 *********** InGenxy dump:
 ds       real /0./         # Axial step size, defaults to vbeam*dt

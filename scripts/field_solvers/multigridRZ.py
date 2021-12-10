@@ -1333,3 +1333,251 @@ try:
     psyco.bind(MultiGridImplicit2D)
 except NameError:
     pass
+
+##############################################################################
+class MultiGrid2DSlice(MultiGrid3D):
+    """
+  2-D field solver, axisymmetric and slab, based on the 2-D solver in f3d_mgrid.F
+    """
+
+    def __init__(self,lreducedpickle=1,**kw):
+        kw['lreducedpickle'] = lreducedpickle
+        self.grid_overlap = 2
+
+        SubcycledPoissonSolver.__init__(self,kwdict=kw)
+        self.solvergeom = w3d.XYgeom
+        self.ncomponents = 1
+        self.nzguardphi = 0
+        self.nzguardrho = 0
+        self.nzguarde   = 0
+    
+        # --- Force nz (which is not used here)
+        self.nz = 0
+        self.zmmin = -0.5
+        self.zmmax = 0.5
+        self.dz = 1.
+    
+
+        # --- Make sure that the bounds have acceptable values.
+        assert 0 <= min(self.bounds) and max(self.bounds) <= 2,"The boundary conditions have an incorrect value. They must be one of dirichlet, neumann or periodic."
+
+        # --- Kludge - make sure that the multigrid3df routines never sets up
+        # --- any conductors. This is not really needed here.
+        f3d.gridmode = 1
+
+        # --- Save input parameters
+        self.processdefaultsfrompackage(MultiGrid2D.__w3dinputs__,w3d,kw)
+        self.processdefaultsfrompackage(MultiGrid2D.__f3dinputs__,f3d,kw)
+        self.lapplyphiclamp = kw.pop('lapplyphiclamp', false)
+
+        # --- If there are any remaning keyword arguments, raise an error.
+        assert len(kw.keys()) == 0,"Bad keyword arguemnts %s"%kw.keys()
+
+        # --- Create conductor objects
+        self.initializeconductors()
+
+        # --- Give these variables dummy initial values.
+        self.mgiters = 0
+        self.mgerror = 0.
+
+    def getrho(self):
+        'Returns the rho array without the guard cells'
+        return self.source[self.nxguardrho:-self.nxguardrho or None,
+                           self.nyguardrho:-self.nyguardrho or None,
+                           :]
+
+    def getrhop(self):
+        'Returns the rhop array without the guard cells'
+        return self.sourcep[self.nxguardrho:-self.nxguardrho or None,
+                            self.nyguardrho:-self.nyguardrho or None,
+                            :]
+
+    def getphi(self):
+        'Returns the phi array without the guard cells'
+        return self.potential[self.nxguardphi:-self.nxguardphi or None,
+                              self.nyguardphi:-self.nyguardphi or None,
+                              :]
+
+    def getphip(self):
+        'Returns the phip array without the guard cells'
+        return self.potentialp[self.nxguardphi:-self.nxguardphi or None,
+                               self.nyguardphi:-self.nyguardphi or None,
+                               :]
+
+    def getselfe(self,*args,**kw):
+        return super(MultiGrid2D,self).getselfe(*args,**kw)
+
+    def getselfep(self,*args,**kw):
+        return super(MultiGrid2D,self).getselfep(*args,**kw)
+
+    def setsourcepatposition(self,x,y,z,ux,uy,uz,gaminv,wfact,zgrid,q,w,
+                             depos_order):
+        n = len(x)
+        if n == 0: return
+        if isinstance(self.sourcep,float): return
+        
+        
+        if len(wfact) > 0:
+            nw = len(wfact)
+        else:
+            nw = n
+            wfact = ones(n, 'd')
+        
+        # We want to scale the weights appropriately for vbeamfrm
+        wtmp = top.vbeamfrm*wfact/(uz*gaminv)
+        
+        setrho3dw(self.sourcep,n,x,y,z,zgrid,wtmp,q,w,top.depos,depos_order,
+                  self.nxp,self.nyp,self.nzp,
+                  self.nxguardrho,self.nyguardrho,self.nzguardrho,
+                  self.dx,self.dy,self.dz,
+                  self.xmminp,self.ymminp,self.zmminp,self.l2symtry,self.l4symtry,
+                  self.solvergeom==w3d.RZgeom)
+        
+
+    def fetchpotentialfrompositions(self,x,y,z,phi):
+        n = len(x)
+        if n == 0: return
+        if isinstance(self.potentialp,float): return
+        nxp = self.nxp + 2*self.nxguardphi
+        nyp = self.nyp + 2*self.nyguardphi
+        xmminp = self.xmminp - self.dx*self.nxguardphi
+        xmmaxp = self.xmmaxp + self.dx*self.nxguardphi
+        ymminp = self.ymminp - self.dy*self.nyguardphi
+        ymmaxp = self.ymmaxp + self.dy*self.nyguardphi
+        getgrid2d(n,x,y,phi,nxp,nyp,self.potentialp,
+                  xmminp,xmmaxp,ymminp,ymmaxp)
+
+    def fetchpotentialfsfrompositions(self,x,y,z,potential):
+        'Fetches potential from the field solver grid'
+        n = len(x)
+        if n == 0: return
+        if isinstance(self.potentialp,float): return
+        nxp = self.nxp + 2*self.nxguardphi
+        nyp = self.nyp + 2*self.nyguardphi
+        xmminp = self.xmminp - self.dx*self.nxguardphi
+        xmmaxp = self.xmmaxp + self.dx*self.nxguardphi
+        ymminp = self.ymminp - self.dy*self.nyguardphi
+        ymmaxp = self.ymmaxp + self.dy*self.nyguardphi
+        getgrid2d(n,x,y,phi,nxp,nyp,self.potential,
+                  xmminp,xmmaxp,ymminp,ymmaxp)
+
+    def dosolve(self,iwhich=0,zfact=None,isourcepndtscopies=None,indts=None,iselfb=None):
+        self.dosolvemultigrid(iwhich,zfact,isourcepndtscopies,indts,iselfb)
+        #self.dosolvesuperlu(iwhich,*args)
+
+    def dosolvemultigrid(self,iwhich=0,zfact=None,isourcepndtscopies=None,indts=None,iselfb=None):
+        if not self.l_internal_dosolve: return
+        # --- set for longitudinal relativistic contraction
+        if zfact is None:
+            beta = top.pgroup.fselfb[iselfb]/clight
+            zfact = 1./sqrt((1.-beta)*(1.+beta))
+        else:
+            beta =  sqrt( (1.-1./zfact)*(1.+1./zfact) )
+
+        # --- This is only done for convenience.
+        self._phi = self.potential
+        self._rho = self.source
+        if isinstance(self.potential,float): return
+
+        mgverbose = self.getmgverbose()
+        mgiters = zeros(1,'l')
+        mgerror = zeros(1,'d')
+        # --- This takes care of clear out the conductor information if needed.
+        # --- Note that f3d.gridmode is passed in below - this still allows the
+        # --- user to use the addconductor method if needed.
+        if self.gridmode == 0: self.clearconductors([top.pgroup.fselfb[iselfb]])
+        conductorobject = self.getconductorobject(top.pgroup.fselfb[iselfb])
+        self.lbuildquads = false
+        #t0 = wtime()
+
+        multigrid2dslicesolve(iwhich,self.nx,self.ny,self.nxlocal,self.nylocal,
+                                     self.nxguardphi,self.nyguardphi,
+                                     self.nxguardrho,self.nyguardrho,
+                                     self.dx,self.dy,top.zbeam,
+                                     self._phi[:,:,self.nzguardphi],
+                                     self._rho[:,:,self.nzguardrho],
+                                     self.bounds,self.xmminlocal,self.ymminlocal,
+                                     self.mgparam,self.mgform,mgiters,self.mgmaxiters,
+                                     self.mgmaxlevels,mgerror,self.mgtol,mgverbose,
+                                     self.downpasses,self.uppasses,
+                                     self.lcndbndy,self.laddconductor,self.icndbndy,
+                                     f3d.gridmode,conductorobject, self.fsdecomp)
+
+        #t1 = wtime()
+        #print "Multigrid time = ",t1-t0
+
+        self.mgiters = mgiters[0]
+        self.mgerror = mgerror[0]
+
+    ##########################################################################
+    # Define the basic plot commands
+    def pfxy(self,**kw): self.genericpf(kw,pfxy)
+    def pfxyg(self,**kw): self.genericpf(kw,pfxyg)
+
+    def getresidual(self):
+        res = zeros(shape(self._phi),'d')
+        dxsqi  = 1./self.dx**2
+        dysqi  = 1./self.dy**2
+        xminodx = self.xmminlocal/self.dx
+        yminody = self.ymminlocal/self.dy
+        rho = self._rho/eps0
+        conductorobject = self.getconductorobject()
+        residual2dslice(self.nxlocal,self.nylocal,
+                   self.nxguardphi,self.nyguardphi,
+                   self.nxguardrho,self.nyguardrho,
+                   self.nxguardphi,self.nyguardphi,
+                   dxsqi,dysqi,xminodx,yminody,
+                   self._phi[:,:,self.nzguardphi],
+                   rho[:,:,self.nzguardrho],
+                   res[:,:,self.nzguardphi],0,self.bounds,
+                   self.mgform,true,self.lcndbndy,self.icndbndy,conductorobject)
+        return res
+
+    def getimagecharges(self, includeboundaries=False, iselfb=0):
+        """This calculates the image charges inside of any conductors.
+        This is a bit of a hack. It calculates the residual, but turning off
+        the zeroing out of the residual inside any conductors and on the boundaries."""
+        if includeboundaries:
+            # --- Normally, with Dirichlet boundaries, the phi is linearly extrapolated into
+            # --- the guard cells since this gives better behavior when fetching the E fields.
+            # --- However, this makes the residual zero. This call fills the guard cells with the
+            # --- potential on the boundary. Also set bounds so that no boundary conditions are
+            # --- applied to the residual.
+            applyboundaryconditions3d(self.nxlocal,self.nylocal,self.nzlocal,
+                                      self.nxguardphi,self.nyguardphi,self.nzguardphi,
+                                      self._phi,1,self.bounds,false,true)
+            bounds = [-1,-1,-1,-1,-1,-1]
+        else:
+            bounds = self.bounds
+
+        conductorobject = self.getconductorobject(top.pgroup.fselfb[iselfb])
+        istartsave = conductorobject.interior.istart.copy()
+        conductorobject.interior.istart = 1
+
+        dxsqi  = 1./self.dx**2
+        dysqi  = 1./self.dy**2
+        xminodx = self.xmminlocal/self.dx
+        yminody = self.ymminlocal/self.dy
+        rho = self._rho/eps0
+        result = zeros(shape(self._phi),'d')
+        residual2dslice(self.nxlocal,self.nylocal,
+                        self.nxguardphi,self.nyguardphi,
+                        self.nxguardrho,self.nyguardrho,
+                        self.nxguardphi,self.nyguardphi,
+                        dxsqi,dysqi,xminodx,yminody,
+                        self._phi[:,:,self.nzguardphi],
+                        rho[:,:,self.nzguardrho],
+                        result[:,:,self.nyguardphi],0,bounds,
+                        self.mgform,true,self.lcndbndy,self.icndbndy,
+                        conductorobject)
+
+        conductorobject.interior.istart[:] = istartsave
+        if includeboundaries:
+            # --- Undo the applyboundaryconditions3d from above.
+            applyboundaryconditions3d(self.nxlocal,self.nylocal,self.nzlocal,
+                                      self.nxguardphi,self.nyguardphi,self.nzguardphi,
+                                      self._phi,1,self.bounds,true,false)
+
+        # --- Remove the premultiplying factor
+        result *= eps0
+        return result
