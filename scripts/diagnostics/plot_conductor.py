@@ -42,7 +42,7 @@ def plot_conductordoc():
 
 # --- Convenience function to plot the sub-grid data
 def plotcond(iy,ix,iz,izp,numb,ymin,xmin,dy,dx,color,mglevel,yscale,xscale,
-             conductors,local):
+             conductors,local,condmarker):
     if conductors is None: return
     interior = conductors.interior
     nn = interior.n
@@ -83,7 +83,7 @@ def plotcond(iy,ix,iz,izp,numb,ymin,xmin,dy,dx,color,mglevel,yscale,xscale,
         ii = compress(equal(cnumb,numb),ii)
     xx = (take(ixc,ii)*dx+xmin)*xscale
     yy = (take(iyc,ii)*dy+ymin)*yscale
-    plp(yy,xx,color=color,local=local)
+    plp(yy,xx,color=color,local=local,marker=condmarker)
 
 def plotsubgrid(iy,ix,iz,pp,izp,numb,ymin,xmin,dy,dx,color,subgridlen,mglevel,
                 yscale,xscale,inverted,conductors,local):
@@ -813,7 +813,7 @@ def plotcondfillnew(yy,xx,zz,iz,ymin,xmin,dy,dx,mglevel,yscale,xscale,
 def pfxy(iz=None,fullplane=1,cond=1,plotsg=1,fill=0,scale=1,
          plotphi=1,plotrho=0,plotselfe=0,comp='z',
          subgridlen=1.,phicolor=blue,rhocolor=red,selfecolor=green,
-         condcolor='fg',oddcolor=red,evencolor=green,numb=None,mglevel=0,
+         condcolor='fg',condmarker=point,oddcolor=red,evencolor=green,numb=None,mglevel=0,
          inverted=1,conductors=None,solver=None,kwdict=None,**kw):
     """
   Plots conductors and contours of electrostatic potential in X-Y plane
@@ -833,6 +833,7 @@ def pfxy(iz=None,fullplane=1,cond=1,plotsg=1,fill=0,scale=1,
     - rhocolor=red: color of rho contours
     - selfecolor=green: color of selfe contours or vectors
     - condcolor='fg' color of conductor points inside conductors
+    - condmarker=point: marker to plot at conductor points
     - oddcolor=red color of odd subgrid points
     - evencolor=green color of even subgrid points
     - subgridlen=1 maximum length of subgrid line which are plotted
@@ -922,15 +923,15 @@ def pfxy(iz=None,fullplane=1,cond=1,plotsg=1,fill=0,scale=1,
                          conductors,local)
     if cond:
         plotcond(1,0,2,iz,numb,ymmin,xmmin,dy,dx,condcolor,mglevel,yscale,xscale,
-                 conductors,local)
+                 conductors,local,condmarker)
         if fullplane and (solver.l2symtry or solver.l4symtry):
             plotcond(1,0,2,iz,numb,ymmin,xmmin,dy,dx,condcolor,mglevel,-yscale,xscale,
-                     conductors,local)
+                     conductors,local,condmarker)
         if fullplane and solver.l4symtry:
             plotcond(1,0,2,iz,numb,ymmin,xmmin,dy,dx,condcolor,mglevel,yscale,-xscale,
-                     conductors,local)
+                     conductors,local,condmarker)
             plotcond(1,0,2,iz,numb,ymmin,xmmin,dy,dx,condcolor,mglevel,
-                     -yscale,-xscale,conductors,local)
+                     -yscale,-xscale,conductors,local,condmarker)
     if plotsg:
         plotsubgrid(1,0,2,0,iz,numb,ymmin,xmmin,dy,dx,evencolor,
                     subgridlen,mglevel,yscale,xscale,inverted,conductors,local)
@@ -956,7 +957,7 @@ def pfzx(iy=None,fullplane=1,lbeamframe=0,
          cond=1,plotsg=1,fill=0,scale=1,
          plotphi=1,plotrho=0,plotselfe=0,comp='z',
          subgridlen=1.,phicolor=blue,rhocolor=red,selfecolor=green,
-         condcolor='fg',oddcolor=red,evencolor=green,numb=None,mglevel=0,
+         condcolor='fg',condmarker=point,oddcolor=red,evencolor=green,numb=None,mglevel=0,
          inverted=1,conductors=None,solver=None,kwdict=None,**kw):
     """
   Plots conductors and contours of electrostatic potential in Z-X plane
@@ -977,6 +978,7 @@ def pfzx(iy=None,fullplane=1,lbeamframe=0,
     - rhocolor=red: color of rho contours
     - selfecolor=green: color of selfe contours or vectors
     - condcolor='fg' color of conductor points inside conductors
+    - condmarker=point: marker to plot at conductor points
     - oddcolor=red color of odd subgrid points
     - evencolor=green color of even subgrid points
     - subgridlen=1 maximum length of subgrid line which are plotted
@@ -1072,10 +1074,10 @@ def pfzx(iy=None,fullplane=1,lbeamframe=0,
                         subgridlen,mglevel,-yscale,xscale,inverted,conductors,local)
     if cond:
         plotcond(0,2,1,iy,numb,xmmin,zmmin,dx,dz,condcolor,mglevel,yscale,xscale,
-                 conductors,local)
+                 conductors,local,condmarker)
         if fullplane and (solver.l4symtry or solver.solvergeom == w3d.RZgeom):
             plotcond(0,2,1,iy,numb,xmmin,zmmin,dx,dz,condcolor,mglevel,-yscale,xscale,
-                     conductors,local)
+                     conductors,local,condmarker)
 
 # z-r plane
 def pfzr(**kw):
@@ -1087,7 +1089,7 @@ def pfzy(ix=None,fullplane=1,lbeamframe=0,
          cond=1,plotsg=1,fill=0,scale=1,
          plotphi=1,plotrho=0,plotselfe=0,comp='z',
          subgridlen=1.,phicolor=blue,rhocolor=red,selfecolor=green,
-         condcolor='fg',oddcolor=red,evencolor=green,numb=None,mglevel=0,
+         condcolor='fg',condmarker=point,oddcolor=red,evencolor=green,numb=None,mglevel=0,
          inverted=1,conductors=None,solver=None,kwdict=None,**kw):
     """
   Plots conductors and contours of electrostatic potential in Z-Y plane
@@ -1108,6 +1110,7 @@ def pfzy(ix=None,fullplane=1,lbeamframe=0,
     - rhocolor=red: color of rho contours
     - selfecolor=green: color of selfe contours or vectors
     - condcolor='fg' color of conductor points inside conductors
+    - condmarker=point: marker to plot at conductor points
     - oddcolor=red color of odd subgrid points
     - evencolor=green color of even subgrid points
     - subgridlen=1 maximum length of subgrid line which are plotted
@@ -1193,10 +1196,10 @@ def pfzy(ix=None,fullplane=1,lbeamframe=0,
                          local)
     if cond:
         plotcond(1,2,0,ix,numb,ymmin,zmmin,dy,dz,condcolor,mglevel,yscale,xscale,
-                 conductors,local)
+                 conductors,local,condmarker)
         if fullplane and (solver.l2symtry or solver.l4symtry):
             plotcond(1,2,0,ix,numb,ymmin,zmmin,dy,dz,condcolor,mglevel,-yscale,xscale,
-                     conductors,local)
+                     conductors,local,condmarker)
     if plotsg:
         plotsubgrid(1,2,0,0,ix,numb,ymmin,zmmin,dy,dz,evencolor,
                     subgridlen,mglevel,yscale,xscale,inverted,conductors,local)
@@ -1217,7 +1220,7 @@ def pfzy(ix=None,fullplane=1,lbeamframe=0,
 def pfxyg(iz=None,fullplane=1,
           cond=1,plotsg=1,fill=0,plotphi=1,plotrho=0,plotselfe=0,comp='z',
           phicolor=blue,rhocolor=red,selfecolor=green,
-          subgridlen=1.,condcolor='fg',oddcolor=red,evencolor=green,
+          subgridlen=1.,condcolor='fg',condmarker=point,oddcolor=red,evencolor=green,
           numb=None,mglevel=0,inverted=1,conductors=None,solver=None,**kw):
     """
   Plots conductors and contours of electrostatic potential in X-Y plane in grid
@@ -1236,7 +1239,7 @@ def pfxyg(iz=None,fullplane=1,
 def pfzxg(iy=None,fullplane=1,lbeamframe=0,
           cond=1,plotsg=1,fill=0,plotphi=1,plotrho=0,plotselfe=0,comp='z',
           subgridlen=1.,phicolor=blue,rhocolor=red,selfecolor=green,
-          condcolor='fg',oddcolor=red,evencolor=green,numb=None,mglevel=0,
+          condcolor='fg',condmarker=point,oddcolor=red,evencolor=green,numb=None,mglevel=0,
           inverted=1,conductors=None,solver=None,**kw):
     """
   Plots conductors and contours of electrostatic potential in Z-X plane in grid
@@ -1259,7 +1262,7 @@ pfzrg = pfzxg
 def pfzyg(ix=None,fullplane=1,lbeamframe=0,
           cond=1,plotsg=1,fill=0,plotphi=1,plotrho=0,plotselfe=0,comp='z',
           subgridlen=1.,phicolor=blue,rhocolor=red,selfecolor=green,
-          condcolor='fg',oddcolor=red,evencolor=green,numb=None,mglevel=0,
+          condcolor='fg',condmarker=point,oddcolor=red,evencolor=green,numb=None,mglevel=0,
           inverted=1,conductors=None,solver=None,**kw):
     """
   Plots conductors and contours of electrostatic potential in Z-Y plane in grid
@@ -1658,7 +1661,7 @@ def findunique(i):
     return result
 
 def plotcondn(yy,xx,zz,iz,ymmin,xmmin,dy,dx,mglevel,signy,signx,conductors,
-              local):
+              local,condmarker):
     if conductors is None: return
     ncolor = len(color)
     if conductors.interior.n > 0: nn = conductors.interior.numb
@@ -1668,9 +1671,9 @@ def plotcondn(yy,xx,zz,iz,ymmin,xmmin,dy,dx,mglevel,signy,signx,conductors,
     nlist = warp_parallel.broadcast(nlist)
     for i in nlist:
         plotcond(yy,xx,zz,iz,i,ymmin,xmmin,dy,dx,color[i%ncolor],
-                 mglevel,signy,signx,conductors,local)
+                 mglevel,signy,signx,conductors,local,condmarker)
 
-def pfzxn(iy=None,numbs=None,colors=None,cmarker=point,smarker=circle,
+def pfzxn(iy=None,numbs=None,colors=None,condmarker=point,smarker=circle,
           scale=1,signz=1,signx=1,subgridlen=1.,fullplane=1,mglevel=0,
           inverted=1,conductors=f3d.conductors,solver=w3d,local=0):
     if iy is None:
@@ -1690,9 +1693,9 @@ def pfzxn(iy=None,numbs=None,colors=None,cmarker=point,smarker=circle,
         dz = 1.*signz
         xmmin = 0.
         zmmin = 0.
-    plotcondn(0,2,1,iy,xmmin,zmmin,dx,dz,mglevel,1,1,conductors,local)
+    plotcondn(0,2,1,iy,xmmin,zmmin,dx,dz,mglevel,1,1,conductors,local,condmarker)
     if fullplane and solver.l4symtry:
-        plotcondn(0,2,1,iy,xmmin,zmmin,dx,dz,mglevel,-1,1,conductors,local)
+        plotcondn(0,2,1,iy,xmmin,zmmin,dx,dz,mglevel,-1,1,conductors,local,condmarker)
     ncolor = len(colors)
     nlist = gatherarray(conductors.evensubgrid.numb[0,:conductors.evensubgrid.n])
     nlist = findunique(nlist)
