@@ -5,7 +5,7 @@
 #from wx import *
 import wx
 from warp import *
-import WarpRun
+from . import WarpRun
 import __main__
 
 modules ={'ConsoleClass':     [0, '', 'ConsoleClass.py'],
@@ -41,10 +41,10 @@ __main__.wgui = wgui
 
 def gui():
     if wgui.initialized:
-        print 'The GUI is already running.'
+        print('The GUI is already running.')
         return
     if wgui.closed:
-        print 'The GUI has already been opened and closed once and cannot be reopened in this session. Sorry.'
+        print('The GUI has already been opened and closed once and cannot be reopened in this session. Sorry.')
         return
     wgui.main.init()
     wgui.main.Show()

@@ -19,8 +19,8 @@ import numpy
 
 
 def tifrwdoc():
-    import tifrw
-    print tifrw.__doc__
+    from . import tifrw
+    print(tifrw.__doc__)
 
 
 ################## Save Array to Tif ##########################################

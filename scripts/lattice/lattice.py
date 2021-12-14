@@ -78,8 +78,8 @@ except ImportError:
 
 
 def latticedoc():
-    import lattice
-    print lattice.__doc__
+    from . import lattice
+    print(lattice.__doc__)
 
 # --- This function returns a random number from the given distribution.
 _errordist_getnextnumber = 0
@@ -218,7 +218,7 @@ class LINE(VisualizableClass):
             try:
                 dxlist.append(elem.getdxobject(kwdict=kw))
             except:
-                print 'Warning: element of type '+elem.type+' is not renderable in 3-D at this point.'
+                print('Warning: element of type '+elem.type+' is not renderable in 3-D at this point.')
         self.dxobject = Opyndx.DXCollection(*dxlist)
 
 # --- Create an equivalent class to LINE.
@@ -234,7 +234,7 @@ class Child:
   list of the parameters which are changed.
     """
     def __init__(self,parent,**changes):
-        if isinstance(parent,basestring):
+        if isinstance(parent,str):
             self.parent = eval(parent,__main__.__dict__,globals())
         else:
             self.parent = parent
@@ -1839,13 +1839,13 @@ def addnewdrft(zs,ze,ap=0.,ax=0.,ay=0.,ox=0.,oy=0.):
     # --- Shift the existing data in the arrays to open up a space for the
     # --- new element.
     if ie <= top.ndrft:
-        for e in edict.itervalues():
+        for e in edict.values():
             e[ie+1:] = e[ie:-1] + 0
 
     # --- Insert the new element. Note that edict correlates the lattice array
     # --- with the input arguments and ldict correlate the arguements with
     # --- their values.
-    for (xx,e) in edict.iteritems():
+    for (xx,e) in edict.items():
         e[ie] = ldict[xx]
 
     # --- resetlat must be called before the data can be used
@@ -1905,13 +1905,13 @@ def addnewbend(zs,ze,rc,ap=0.,ax=0.,ay=0.,ox=0.,oy=0.):
     # --- Shift the existing data in the arrays to open up a space for the
     # --- new element.
     if ie <= top.nbend:
-        for e in edict.itervalues():
+        for e in edict.values():
             e[ie+1:] = e[ie:-1] + 0
 
     # --- Insert the new element. Note that edict correlates the lattice array
     # --- with the input arguments and ldict correlate the arguements with
     # --- their values.
-    for (xx,e) in edict.iteritems():
+    for (xx,e) in edict.items():
         e[ie] = ldict[xx]
 
     # --- resetlat must be called before the data can be used
@@ -1970,13 +1970,13 @@ def addnewdipo(zs,ze,by=0.,bx=0.,ta=0.,tb=0.,ex=0.,ey=0.,ap=0.,ax=0.,ay=0.,
     # --- Shift the existing data in the arrays to open up a space for the
     # --- new element.
     if ie <= top.ndipo:
-        for e in edict.itervalues():
+        for e in edict.values():
             e[ie+1:] = e[ie:-1] + 0
 
     # --- Insert the new element. Note that edict correlates the lattice array
     # --- with the input arguments and ldict correlate the arguements with
     # --- their values.
-    for (xx,e) in edict.iteritems():
+    for (xx,e) in edict.items():
         e[ie] = ldict[xx]
 
     # --- resetlat must be called before the data can be used
@@ -2053,7 +2053,7 @@ def addnewquad(zs,ze,db=0.,de=0.,et=0.,bt=0.,ts=0.,dt=0.,vx=0.,vy=0.,
     # --- Shift the existing data in the arrays to open up a space for the
     # --- new element.
     if ie <= top.nquad:
-        for e in edict.itervalues():
+        for e in edict.values():
             if len(shape(e)) == 1:
                 e[ie+1:] = e[ie:-1] + 0
             else:
@@ -2063,7 +2063,7 @@ def addnewquad(zs,ze,db=0.,de=0.,et=0.,bt=0.,ts=0.,dt=0.,vx=0.,vy=0.,
     # --- Insert the new element. Note that edict correlates the lattice array
     # --- with the input arguments and ldict correlate the arguements with
     # --- their values.
-    for (xx,e) in edict.iteritems():
+    for (xx,e) in edict.items():
         if len(shape(e)) == 1:
             e[ie] = ldict[xx]
         else:
@@ -2121,13 +2121,13 @@ def addnewsext(zs,ze,db=0.,de=0.):
     # --- Shift the existing data in the arrays to open up a space for the
     # --- new element.
     if ie <= top.nsext:
-        for e in edict.itervalues():
+        for e in edict.values():
             e[ie+1:] = e[ie:-1] + 0
 
     # --- Insert the new element. Note that edict correlates the lattice array
     # --- with the input arguments and ldict correlate the arguements with
     # --- their values.
-    for (xx,e) in edict.iteritems():
+    for (xx,e) in edict.items():
         e[ie] = ldict[xx]
 
     # --- resetlat must be called before the data can be used
@@ -2225,7 +2225,7 @@ def addnewhele(zs,ze,ap=0.,ax=0.,ay=0.,ox=0.,oy=0.,rr=0.,rl=0.,gl=0.,gp=0.,
     # --- Shift the existing data in the arrays to open up a space for the
     # --- new element.
     if ie <= top.nhele:
-        for e in edict.itervalues():
+        for e in edict.values():
             if len(shape(e)) == 1:
                 e[ie+1:] = e[ie:-1] + 0
             else:
@@ -2235,7 +2235,7 @@ def addnewhele(zs,ze,ap=0.,ax=0.,ay=0.,ox=0.,oy=0.,rr=0.,rl=0.,gl=0.,gp=0.,
     # --- Insert the new element. Note that edict correlates the lattice array
     # --- with the input arguments and ldict correlate the arguements with
     # --- their values.
-    for (xx,e) in edict.iteritems():
+    for (xx,e) in edict.items():
         if len(shape(e)) == 1:
             e[ie] = ldict[xx]
         else:
@@ -2439,13 +2439,13 @@ def addnewemlt(zs,ze,ap=0.,ax=0.,ay=0.,ph=0.,sf=0.,sc=1.,id=None,
     # --- new element. The element id must be handled seperately.
     if ie <= top.nemlt:
         top.emltid[ie+1:] = top.emltid[ie:-1] + 0
-        for e in edict.itervalues():
+        for e in edict.values():
             e[ie+1:] = e[ie:-1] + 0
 
     # --- Insert the new element. Note that edict correlates the lattice array
     # --- with the input arguments and ldict correlate the arguements with
     # --- their values.
-    for (xx,e) in edict.iteritems():
+    for (xx,e) in edict.items():
         e[ie] = ldict[xx]
 
     # --- Now setup the multipole component dataset.
@@ -2644,13 +2644,13 @@ def addnewmmlt(zs,ze,ap=0.,ax=0.,ay=0.,ph=0.,sf=0.,sc=1.,id=None,
     # --- new element.
     if ie <= top.nmmlt:
         top.mmltid[ie+1:] = top.mmltid[ie:-1] + 0
-        for e in edict.itervalues():
+        for e in edict.values():
             e[ie+1:] = e[ie:-1] + 0
 
     # --- Insert the new element. Note that edict correlates the lattice array
     # --- with the input arguments and ldict correlate the arguements with
     # --- their values.
-    for (xx,e) in edict.iteritems():
+    for (xx,e) in edict.items():
         e[ie] = ldict[xx]
 
     # --- Now setup the multipole component dataset.
@@ -2731,7 +2731,7 @@ def addnewaccl(zs,ze,ez=0.,ap=0.,ax=0.,ay=0.,ox=0.,oy=0.,xw=0.,sw=0.,
     # --- Shift the existing data in the arrays to open up a space for the
     # --- new element.
     if ie <= top.naccl:
-        for e in edict.itervalues():
+        for e in edict.values():
             if len(shape(e)) == 1:
                 e[ie+1:] = e[ie:-1] + 0
             else:
@@ -2741,7 +2741,7 @@ def addnewaccl(zs,ze,ez=0.,ap=0.,ax=0.,ay=0.,ox=0.,oy=0.,xw=0.,sw=0.,
     # --- Insert the new element. Note that edict correlates the lattice array
     # --- with the input arguments and ldict correlate the arguements with
     # --- their values.
-    for (xx,e) in edict.iteritems():
+    for (xx,e) in edict.items():
         if len(shape(e)) == 1:
             e[ie] = ldict[xx]
         else:
@@ -2904,13 +2904,13 @@ def addnewegrd(zs,ze,id=None,xs=0.,ys=0.,ap=0.,ax=0.,ay=0.,ox=0.,oy=0.,
     # --- new element. The element id must be handled seperately.
     if ie <= top.negrd:
         top.egrdid[ie+1:] = top.egrdid[ie:-1] + 0
-        for e in edict.itervalues():
+        for e in edict.values():
             e[ie+1:] = e[ie:-1] + 0
 
     # --- Insert the new element. Note that edict correlates the lattice array
     # --- with the input arguments and ldict correlate the arguements with
     # --- their values.
-    for (xx,e) in edict.iteritems():
+    for (xx,e) in edict.items():
         e[ie] = ldict[xx]
 
     # --- Now setup the 3-D field grid dataset
@@ -3066,13 +3066,13 @@ def addnewbgrd(zs,ze,id=None,xs=0.,ys=0.,ap=0.,ax=0.,ay=0.,ox=0.,oy=0.,
     # --- new element. The element id must be handled seperately.
     if ie <= top.nbgrd:
         top.bgrdid[ie+1:] = top.bgrdid[ie:-1] + 0
-        for e in edict.itervalues():
+        for e in edict.values():
             e[ie+1:] = e[ie:-1] + 0
 
     # --- Insert the new element. Note that edict correlates the lattice array
     # --- with the input arguments and ldict correlate the arguements with
     # --- their values.
-    for (xx,e) in edict.iteritems():
+    for (xx,e) in edict.items():
         e[ie] = ldict[xx]
 
     # --- Now setup the 3-D field grid dataset
@@ -3166,13 +3166,13 @@ def addnewbsqgrad(zs,ze,id=None,xs=0.,ys=0.,ap=0.,ax=0.,ay=0.,ox=0.,oy=0.,
     # --- new element. The element id must be handled seperately.
     if ie <= top.nbsqgrad:
         top.bsqgradid[ie+1:] = top.bsqgradid[ie:-1] + 0
-        for e in edict.itervalues():
+        for e in edict.values():
             e[ie+1:] = e[ie:-1] + 0
 
     # --- Insert the new element. Note that edict correlates the lattice array
     # --- with the input arguments and ldict correlate the arguements with
     # --- their values.
-    for (xx,e) in edict.iteritems():
+    for (xx,e) in edict.items():
         e[ie] = ldict[xx]
 
     # --- Now setup the 3-D field grid dataset
@@ -3284,13 +3284,13 @@ def addnewpgrd(zs,ze,id=None,xs=0.,ys=0.,ap=0.,ax=0.,ay=0.,ox=0.,oy=0.,
     # --- new element. The element id must be handled seperately.
     if ie <= top.npgrd:
         top.pgrdid[ie+1:] = top.pgrdid[ie:-1] + 0
-        for e in edict.itervalues():
+        for e in edict.values():
             e[ie+1:] = e[ie:-1] + 0
 
     # --- Insert the new element. Note that edict correlates the lattice array
     # --- with the input arguments and ldict correlate the arguements with
     # --- their values.
-    for (xx,e) in edict.iteritems():
+    for (xx,e) in edict.items():
         e[ie] = ldict[xx]
 
     # --- Now setup the 3-D field grid dataset
@@ -3593,13 +3593,13 @@ def addnewpyelem(zs,ze,fn,ap=0.,ax=0.,ay=0.,ox=0.,oy=0.,
     # --- new element. The element id must be handled seperately.
     if ie <= top.npyelem:
         top.pyelemid[ie+1:] = top.pyelemid[ie:-1] + 0
-        for e in edict.itervalues():
+        for e in edict.values():
             e[ie+1:] = e[ie:-1] + 0
 
     # --- Insert the new element. Note that edict correlates the lattice array
     # --- with the input arguments and ldict correlate the arguements with
     # --- their values.
-    for (xx,e) in edict.iteritems():
+    for (xx,e) in edict.items():
         e[ie] = ldict[xx]
 
     if fn not in pyelemfunctionsdict:
@@ -4212,7 +4212,7 @@ def combineemlts(ielist=None):
     # --- The list defaults to all emlt elements
 #  if ielist is None:
     # --- ielist argument is ignored, and is set to include all of them.
-    ielist = range(top.nemlt+1)
+    ielist = list(range(top.nemlt+1))
 
     assert (top.emltox.min() == top.emltox.max() and
             top.emltoy.min() == top.emltoy.max() and
@@ -4303,7 +4303,7 @@ def combinemmlts(imlist=None):
     # --- The list defaults to all mmlt elements
 #  if imlist is None:
     # --- imlist argument is ignored, and is set to include all of them.
-    imlist = range(top.nmmlt+1)
+    imlist = list(range(top.nmmlt+1))
 
     assert (top.mmltox.min() == top.mmltox.max() and
             top.mmltoy.min() == top.mmltoy.max() and
@@ -4389,7 +4389,7 @@ def convertmmlttobgrd(imlist=None):
   This assumes RZ for now. Also, it assumes that there is no overlapping elements.
     """
     if imlist == None:
-        imlist = range(top.nmmlt + 1)
+        imlist = list(range(top.nmmlt + 1))
     elif not iterable(imlist):
         imlist = [imlist]
 

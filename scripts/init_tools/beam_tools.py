@@ -1,4 +1,4 @@
-from generic_tools import EM3D, any, openbc
+from .generic_tools import EM3D, any, openbc
 
 def initialize_beam_fields( em, dim, beam, w3d, top,
                             beam_pgroup=None, beam_jslist=None ) :

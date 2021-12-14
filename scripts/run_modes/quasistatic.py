@@ -18,7 +18,7 @@ except:
 try:
   import psyco
 except ImportError:
-  print 'Warning:  psyco not found'
+  print('Warning:  psyco not found')
 
 class Quasistatic(SubcycledPoissonSolver):
   # this class differs from the previous one that it does not use the 3-D solver for the ions, but the 2-D one.
@@ -63,7 +63,7 @@ class Quasistatic(SubcycledPoissonSolver):
         self.mympigroup=comm_world
       self.gme=me/self.ntgroups
       self.gnpes=npes/self.ntgroups
-      print 'gme = ',self.gme
+      print('gme = ',self.gme)
       mygroupinit = arange(npes)
       mygroup = mygroupinit[me%self.ntgroups::self.ntgroups]
     else:
@@ -83,8 +83,8 @@ class Quasistatic(SubcycledPoissonSolver):
       self.gnpes = self.mympigroup.size
     if ntgroups>1:
       mytgroup = mygroupinit[ntgroups*((me-mygroupinit[0])/ntgroups)]+arange(ntgroups)
-      print mygroupinit
-      print "me,mygroup,mytgroup = ",me,mygroup,mytgroup
+      print(mygroupinit)
+      print("me,mygroup,mytgroup = ",me,mygroup,mytgroup)
       try:
         self.mympitgroup=comm_world.comm_create(mytgroup)
       except:
@@ -446,7 +446,7 @@ class Quasistatic(SubcycledPoissonSolver):
      if self.lattice is not None:
        l_push_elec = self.lattice[self.ist].ecflag
        l_noelec = not l_push_elec
-       if self.l_verbose:print 'l_push_elec',l_push_elec
+       if self.l_verbose:print('l_push_elec',l_push_elec)
      else:
        l_push_elec = (not self.l_weakstrong) or ((top.it-(npes-me))%self.nelecperiod==0)
 
@@ -781,19 +781,19 @@ class Quasistatic(SubcycledPoissonSolver):
      if me>=(npes-(top.it+1)*self.ntgroups):top.time+=top.dt
      if self.lattice is not None:
        top.dt=self.lattice[self.ist].L/top.vbeam
-     if self.l_verbose: print me,top.it,self.iz,'me = ',me,';compute zmmnt'
+     if self.l_verbose: print(me,top.it,self.iz,'me = ',me,';compute zmmnt')
      if self.l_warpzmmnt and top.it%top.nhist==0:
        zmmnt()
        minidiag(top.it,top.time,top.lspecial)
      top.it+=1
 #     self.itbucket+=1
 
-     if self.l_verbose: print me,top.it,self.iz,'me = ',me,';call afterstep functions'
+     if self.l_verbose: print(me,top.it,self.iz,'me = ',me,';call afterstep functions')
      # --- call afterstep functions
      callafterstepfuncs.callfuncsinlist()
-     if self.l_verbose:print me,self.iz,'it = %i, time = %gs.'%(top.it,top.time)
+     if self.l_verbose:print(me,self.iz,'it = %i, time = %gs.'%(top.it,top.time))
 
-     if l_printsteps and me==0:print me,self.iz,'it = %i, time = %gs.'%(top.it,top.time)
+     if l_printsteps and me==0:print(me,self.iz,'it = %i, time = %gs.'%(top.it,top.time))
 
      self.time_loop = wtime()-ptimeloop
 #     print 'time loop = ',self.time_loop
@@ -801,21 +801,21 @@ class Quasistatic(SubcycledPoissonSolver):
 #     fma();pla(self.timehist[:]);refresh()
      
   def print_timers(self):
-    print 'loop               ',self.time_loop
-    print 'sort               ',self.time_sort#,' = ',self.time_sort/time_loop,'\%'
-    print 'getmmnts           ',self.time_getmmnts
-    print 'compute_sw         ',self.time_compute_sw
-    print 'sendrecv_storeions ',self.time_sendrecv_storeions
-    print 'set_gamma          ',self.time_set_gamma
-    print 'deposit_ions       ',self.time_deposit_ions
-    print 'solve              ',self.time_solve
-    print 'deposit_electrons  ',self.time_deposit_electrons
-    print 'add_ei_fields      ',self.time_add_ei_fields
-    print 'stack_rhophi       ',self.time_stack_rhophi
-    print 'push_electrons     ',self.time_push_electrons
-    print 'push_ions          ',self.time_push_ions
-    print 'reset_rho1         ',self.time_reset_rho1
-    print 'store_ionstoprev   ',self.time_store_ionstoprev
+    print('loop               ',self.time_loop)
+    print('sort               ',self.time_sort)#,' = ',self.time_sort/time_loop,'\%'
+    print('getmmnts           ',self.time_getmmnts)
+    print('compute_sw         ',self.time_compute_sw)
+    print('sendrecv_storeions ',self.time_sendrecv_storeions)
+    print('set_gamma          ',self.time_set_gamma)
+    print('deposit_ions       ',self.time_deposit_ions)
+    print('solve              ',self.time_solve)
+    print('deposit_electrons  ',self.time_deposit_electrons)
+    print('add_ei_fields      ',self.time_add_ei_fields)
+    print('stack_rhophi       ',self.time_stack_rhophi)
+    print('push_electrons     ',self.time_push_electrons)
+    print('push_ions          ',self.time_push_ions)
+    print('reset_rho1         ',self.time_reset_rho1)
+    print('store_ionstoprev   ',self.time_store_ionstoprev)
   
   def setuprhophi(self):
     try:self.rhoe
@@ -834,14 +834,14 @@ class Quasistatic(SubcycledPoissonSolver):
         self.phii.append(zeros([ge.nr+2*ge.nguardx+1,ge.nz+2*ge.nguardz+1,w3d.nzp+1],'d'))
   
   def reset_rho1(self):
-    if self.l_verbose:print me,top.it,self.iz,'enter reset_rho1'
+    if self.l_verbose:print(me,top.it,self.iz,'enter reset_rho1')
     # --- reset rho1 on proc 0
     if me == npes-1:
      for i in range(2):
       bg=frz.basegrid=self.gridions[i]
       mk_grids_ptr()
       reset_rzmgrid_rho()
-    if self.l_verbose:print me,top.it,self.iz,'exit reset_rho1'
+    if self.l_verbose:print(me,top.it,self.iz,'exit reset_rho1')
 
   def store_rhotonext(self):
     gi = self.gridionscp[0]
@@ -882,7 +882,7 @@ class Quasistatic(SubcycledPoissonSolver):
           g.rho[...] += recved[ig]
     
   def store_ionstoprev(self):
-    if self.l_verbose:print me,top.it,self.iz,'enter store_ionstoprev'
+    if self.l_verbose:print(me,top.it,self.iz,'enter store_ionstoprev')
     js = 0
     pg = self.pgions
     il = pg.ins[js]-1
@@ -914,10 +914,10 @@ class Quasistatic(SubcycledPoissonSolver):
     put(pg.gaminv,ii,0.)
     processlostpart(pg,js+1,top.clearlostpart,top.time+top.dt*pg.ndts[js],top.zbeam)
     self.set_sw(js)
-    if self.l_verbose:print me,top.it,self.iz,'exit store_ionstoprev'
+    if self.l_verbose:print(me,top.it,self.iz,'exit store_ionstoprev')
     
   def store_ionstonext(self,js):
-    if self.l_verbose:print me,top.it,js,'enter store_ionstonext'
+    if self.l_verbose:print(me,top.it,js,'enter store_ionstonext')
     pg = self.pgions
     il = pg.ins[js]-1
     iu = il+pg.nps[js]
@@ -948,10 +948,10 @@ class Quasistatic(SubcycledPoissonSolver):
     put(pg.gaminv,ii,0.)
     processlostpart(pg,js+1,top.clearlostpart,top.time+top.dt*pg.ndts[js],top.zbeam)
     self.set_sw(js)
-    if self.l_verbose:print me,top.it,self.iz,'exit store_ionstonext'
+    if self.l_verbose:print(me,top.it,self.iz,'exit store_ionstonext')
     
   def sendrecv_mgparams(self):
-    if self.l_verbose:print me,'enter sendrecv_mgparams'
+    if self.l_verbose:print(me,'enter sendrecv_mgparams')
     if not lparallel:return
     tosend = []
     if me==npes-1:
@@ -966,9 +966,9 @@ class Quasistatic(SubcycledPoissonSolver):
             tosend.append(g.mgparam)
 #      for ip in range(npes-1):
 #        comm_world.send(tosend,ip)
-      if self.l_verbose:print me,tosend
+      if self.l_verbose:print(me,tosend)
     recved = warp_parallel.broadcast(tosend,npes-1)
-    if self.l_verbose:print me,recved
+    if self.l_verbose:print(me,recved)
     if me<npes-1:
 #     recved,status = comm_world.recv(npes-1)
       i = 0
@@ -981,16 +981,16 @@ class Quasistatic(SubcycledPoissonSolver):
             g.npost = recved[i];i+=1
             g.npmin = recved[i];i+=1
             g.mgparam = recved[i];i+=1
-    if self.l_verbose:print me,'exit sendrecv_mgparams'
+    if self.l_verbose:print(me,'exit sendrecv_mgparams')
 
   def sendrecv_storedions_toprev(self):
     if not lparallel:return
-    if self.l_verbose:print me,top.it,self.iz,'enter sendrecv_storedions_toprev'
+    if self.l_verbose:print(me,top.it,self.iz,'enter sendrecv_storedions_toprev')
     # --- sends stored ions
     if me>self.ntgroups-1:
       mpisend(self.ionstoprev, dest = me-self.ntgroups)
       if self.ionstoprev[0]>0:
-        if self.l_parallelverbose:print me, 'sends ',self.ionstoprev[0],' ions to ',me-1
+        if self.l_parallelverbose:print(me, 'sends ',self.ionstoprev[0],' ions to ',me-1)
 #        print 'send itn',self.ionstoprev[0],self.ionstoprev[3]
     # --- receives stored ions
     if me<npes-self.ntgroups:
@@ -999,7 +999,7 @@ class Quasistatic(SubcycledPoissonSolver):
       recved = mpirecv(source = me+self.ntgroups)
       np = recved[0]
       if np>0:
-        if self.l_parallelverbose:print me, 'recvs ',np,' ions from ',me+1
+        if self.l_parallelverbose:print(me, 'recvs ',np,' ions from ',me+1)
 #        print 'recved itn',recved[0],recved[3]
         if pg.npid>0:
           pid=recved[-1]
@@ -1025,16 +1025,16 @@ class Quasistatic(SubcycledPoissonSolver):
                      lfields=1,
                      pgroup=self.pgions)
         self.set_sw(js)
-    if self.l_verbose:print me,top.it,self.iz,'exit sendrecv_storedions_toprev'
+    if self.l_verbose:print(me,top.it,self.iz,'exit sendrecv_storedions_toprev')
              
   def sendrecv_storedions_tonext(self):
     if not lparallel:return
-    if self.l_verbose:print me,top.it,self.iz,'enter sendrecv_storedions_tonext'
+    if self.l_verbose:print(me,top.it,self.iz,'enter sendrecv_storedions_tonext')
     # --- sends stored ions
     if me<npes-self.ntgroups:
       mpisend(self.ionstonext, dest = me+self.ntgroups)
       if self.ionstonext[0]>0:
-        if self.l_parallelverbose:print me, 'sends ',self.ionstonext[0],' ions to ',me+1
+        if self.l_parallelverbose:print(me, 'sends ',self.ionstonext[0],' ions to ',me+1)
 #        print 'send',self.ionstonext[0],self.ionstonext[3]
     # --- receives stored ions
     if me>self.ntgroups-1:
@@ -1043,7 +1043,7 @@ class Quasistatic(SubcycledPoissonSolver):
       recved = mpirecv(source = me-self.ntgroups)
       np = recved[0]
       if np>0:
-        if self.l_parallelverbose:print me, 'recvs ',np,' ions from ',me-1
+        if self.l_parallelverbose:print(me, 'recvs ',np,' ions from ',me-1)
 #        print 'recved',recved[0],recved[3]
         if pg.npid>0:
           pid=recved[-1]
@@ -1069,10 +1069,10 @@ class Quasistatic(SubcycledPoissonSolver):
                      lfields=1,
                      pgroup=self.pgions)
         self.set_sw(js)
-    if self.l_verbose:print me,top.it,self.iz,'exit sendrecv_storedions_tonext'
+    if self.l_verbose:print(me,top.it,self.iz,'exit sendrecv_storedions_tonext')
              
   def sendparticlestonextold(self,js,ii):
-    if self.l_verbose:print me,top.it,self.iz,'enter sendparticlestonext'
+    if self.l_verbose:print(me,top.it,self.iz,'enter sendparticlestonext')
     pg = self.pgions
     top.pgroup = pg
     tosend = []
@@ -1094,21 +1094,21 @@ class Quasistatic(SubcycledPoissonSolver):
       if top.npid>0:tosend.append(take(pg.pid,ii,0))
     mpisend(tosend, dest = me+1)
     if tosend[0]>0:
-      if self.l_parallelverbose:print me, 'sends ',tosend[0],' ions to ',me+1
+      if self.l_parallelverbose:print(me, 'sends ',tosend[0],' ions to ',me+1)
     if len(ii)>0:
       put(pg.gaminv,ii,0.)
     processlostpart(pg,js+1,top.clearlostpart,top.time+top.dt*pg.ndts[js],top.zbeam)
     self.set_sw(js)
-    if self.l_verbose:print me,top.it,self.iz,'exit sendparticlestonext'
+    if self.l_verbose:print(me,top.it,self.iz,'exit sendparticlestonext')
     
   def recvparticlesfrompreviousold(self):
-    if self.l_verbose:print me,top.it,self.iz,'enter recvparticlesfromprevious'
+    if self.l_verbose:print(me,top.it,self.iz,'enter recvparticlesfromprevious')
     pg = self.pgions
     top.pgroup = pg
     recved = mpirecv(source = me-1)
     np = recved[0]
     if np>0:
-      if self.l_parallelverbose:print me, 'recvs ',np,' ions from ',me-1
+      if self.l_parallelverbose:print(me, 'recvs ',np,' ions from ',me-1)
       if top.npid>0:
         pid=self.recved[-1]
       else:
@@ -1133,10 +1133,10 @@ class Quasistatic(SubcycledPoissonSolver):
                    lfields=1,
                    pgroup=self.pgions)
       self.set_sw(0)
-    if self.l_verbose:print me,top.it,self.iz,'exit recvparticlesfromprevious'
+    if self.l_verbose:print(me,top.it,self.iz,'exit recvparticlesfromprevious')
              
   def deposit_ions(self):
-    if self.l_verbose:print me,top.it,self.iz,'enter deposit_ions'
+    if self.l_verbose:print(me,top.it,self.iz,'enter deposit_ions')
     if self.iz==self.izmax-3:self.sendrecv_storedions_tonext()
     if self.iz==0:self.deposit_ions_last_step()
     if self.iz==0:self.store_rhotonext()
@@ -1188,11 +1188,11 @@ class Quasistatic(SubcycledPoissonSolver):
       # --- exchange data between procs
       if self.ntgroups>1:get_rho_from_rhop(frz.basegrid)
       distribute_rho_rz()
-    if self.l_verbose:print me,top.it,self.iz,'exit deposit_ions'
+    if self.l_verbose:print(me,top.it,self.iz,'exit deposit_ions')
                       
   def deposit_ions_last_step(self):
   # deposits ions on last cell at last step, using ions newly advanced, from last cell.
-    if self.l_verbose:print me,top.it,self.iz,'enter deposit_ions_last_step'
+    if self.l_verbose:print(me,top.it,self.iz,'enter deposit_ions_last_step')
     pg = self.pgions
     top.pgroup = pg
     iz = w3d.nzp-1
@@ -1242,11 +1242,11 @@ class Quasistatic(SubcycledPoissonSolver):
           rhoweightz_weight(yp,wz1,np,q,bg.nz,bg.dz,0.)
         else:
           rhoweightrz_weights(xp,yp,yp,wz1,np,q,bg.nr,bg.nz,bg.dr,bg.dz,bg.rmin,0.)
-    if self.l_verbose:print me,top.it,self.iz,'exit deposit_ions_last_step'
+    if self.l_verbose:print(me,top.it,self.iz,'exit deposit_ions_last_step')
 #    if lparallel:comm_world.barrier()
                       
   def sort_ions_along_z(self):
-    if self.l_verbose:print me,top.it,self.iz,'enter sort_ions_along_z'
+    if self.l_verbose:print(me,top.it,self.iz,'enter sort_ions_along_z')
     if not self.fullsortdone:
       self.full_sort_ions_along_z()
       return
@@ -1259,7 +1259,7 @@ class Quasistatic(SubcycledPoissonSolver):
       iz = floor((pg.zp[il:iu]-zmin)/w3d.dz) 
       if len(iz)>0:
         if min(iz)<-1 or max(iz)>1: 
-          print 'error in sort_ions_along_z:iz',js,min(iz),max(iz),pg.zp[il:iu]
+          print('error in sort_ions_along_z:iz',js,min(iz),max(iz),pg.zp[il:iu])
           raise Exception('error in sort_ions_along_z')
       izleft = il+compress(iz<0,arange(pg.nps[js]))
       izright = il+compress(iz>0,arange(pg.nps[js]))
@@ -1349,10 +1349,10 @@ class Quasistatic(SubcycledPoissonSolver):
                      lmomentum=1,
                      lallindomain=1,
                      lfields=1)
-    if self.l_verbose:print me,top.it,self.iz,'exit sort_ions_along_z'
+    if self.l_verbose:print(me,top.it,self.iz,'exit sort_ions_along_z')
 
   def full_sort_ions_along_z(self):
-    if self.l_verbose:print me,top.it,self.iz,'enter full_sort_ions_along_z'
+    if self.l_verbose:print(me,top.it,self.iz,'enter full_sort_ions_along_z')
     pg = self.pgions
     top.pgroup = self.pgions
     if sum(pg.nps)==0:return
@@ -1391,10 +1391,10 @@ class Quasistatic(SubcycledPoissonSolver):
                      lallindomain=1)
       self.set_gamma(iz)
     self.fullsortdone = 1
-    if self.l_verbose:print me,top.it,self.iz,'enter full_sort_ions_along_z'
+    if self.l_verbose:print(me,top.it,self.iz,'enter full_sort_ions_along_z')
 
   def compute_sw(self):
-    if self.l_verbose:print me,top.it,self.iz,'enter compute_sw'
+    if self.l_verbose:print(me,top.it,self.iz,'enter compute_sw')
     del self.wz0,self.wz1
     self.wz0=[]
     self.wz1=[]
@@ -1402,10 +1402,10 @@ class Quasistatic(SubcycledPoissonSolver):
       wz0,wz1 = self.get_sw(iz)
       self.wz0.append(wz0)
       self.wz1.append(wz1)
-    if self.l_verbose:print me,top.it,self.iz,'exit compute_sw'
+    if self.l_verbose:print(me,top.it,self.iz,'exit compute_sw')
 
   def get_sw(self,js):
-      if self.l_verbose:print me,top.it,self.iz,'enter get_sw'
+      if self.l_verbose:print(me,top.it,self.iz,'enter get_sw')
       pg = self.pgions
       il = pg.ins[js]-1
       iu = il+pg.nps[js]
@@ -1415,17 +1415,17 @@ class Quasistatic(SubcycledPoissonSolver):
         zmin=w3d.zmminp+js*w3d.dz
         wz1 = (pg.zp[il:iu]-zmin)/w3d.dz
         return 1.-wz1,wz1
-      if self.l_verbose:print me,top.it,self.iz,'exit get_sw'
+      if self.l_verbose:print(me,top.it,self.iz,'exit get_sw')
 
   def set_sw(self,js):
-      if self.l_verbose:print me,top.it,self.iz,'enter set_sw'
+      if self.l_verbose:print(me,top.it,self.iz,'enter set_sw')
       wz0,wz1 = self.get_sw(js)
       self.wz1[js] = wz1
       self.wz0[js] = wz0
-      if self.l_verbose:print me,top.it,self.iz,'exit set_sw'
+      if self.l_verbose:print(me,top.it,self.iz,'exit set_sw')
         
   def gather_ions_fields_old(self):
-    if self.l_verbose:print me,top.it,self.iz,'enter push_ions'
+    if self.l_verbose:print(me,top.it,self.iz,'enter push_ions')
     pg = self.pgions
     top.pgroup = pg
     if me>=(npes-(top.it+1)*self.ntgroups):
@@ -1517,10 +1517,10 @@ class Quasistatic(SubcycledPoissonSolver):
             pg.bx[il:iu]+=bx
             pg.by[il:iu]+=by
           self.add_other_fields(js)
-    if self.l_verbose:print me,top.it,self.iz,'exit push_ions'
+    if self.l_verbose:print(me,top.it,self.iz,'exit push_ions')
              
   def gather_ions_fields(self):
-    if self.l_verbose:print me,top.it,self.iz,'enter gather_ions_fields'
+    if self.l_verbose:print(me,top.it,self.iz,'enter gather_ions_fields')
     pg = self.pgions
     top.pgroup = pg
     if me>=(npes-(top.it+1)*self.ntgroups):
@@ -1559,7 +1559,7 @@ class Quasistatic(SubcycledPoissonSolver):
           if self.l_selfi:
             self.ions_fieldweight(js,self.gridions[1],self.wz0[js],l_add=1,l_bfield=1)
           self.add_other_fields(js)
-    if self.l_verbose:print me,top.it,self.iz,'exit gather_ions_fields'
+    if self.l_verbose:print(me,top.it,self.iz,'exit gather_ions_fields')
              
   def ions_fieldweight(self,js,g,w,l_bfield=0,l_add=0):
     pg = self.pgions
@@ -1636,7 +1636,7 @@ class Quasistatic(SubcycledPoissonSolver):
 
 
   def add_other_fields(self,js):
-    if self.l_verbose:print me,top.it,self.iz,'add_other_fields'
+    if self.l_verbose:print(me,top.it,self.iz,'add_other_fields')
     pg = self.pgions
     np = pg.nps[js]
     if np==0:return
@@ -1662,7 +1662,7 @@ class Quasistatic(SubcycledPoissonSolver):
 #     &                    -halfdt_s, halfdt_s, fulldt_s, sm(1), sq(1), time)
 
   def push_ions_velocity_full(self,js):
-    if self.l_verbose:print me,top.it,self.iz,'enter push_ions_velocity_first_half'
+    if self.l_verbose:print(me,top.it,self.iz,'enter push_ions_velocity_first_half')
     pg = self.pgions
     np = pg.nps[js]
     if np==0:return
@@ -1690,10 +1690,10 @@ class Quasistatic(SubcycledPoissonSolver):
                  pg.sq[js],pg.sm[js],0.5*top.dt)
       # --- update gamma
       self.set_gamma(js)
-    if self.l_verbose:print me,top.it,self.iz,'exit push_ions_velocity_first_half'
+    if self.l_verbose:print(me,top.it,self.iz,'exit push_ions_velocity_first_half')
     
   def push_ions_velocity_first_half(self,js):
-    if self.l_verbose:print me,top.it,self.iz,'enter push_ions_velocity_first_half'
+    if self.l_verbose:print(me,top.it,self.iz,'enter push_ions_velocity_first_half')
     pg = self.pgions
     np = pg.nps[js]
     if np==0:return
@@ -1716,10 +1716,10 @@ class Quasistatic(SubcycledPoissonSolver):
                   pg.bx[il:iu], pg.by[il:iu], pg.bz[il:iu], 
                   pg.sq[js],pg.sm[js],0.5*top.dt, top.ibpush)
 
-    if self.l_verbose:print me,top.it,self.iz,'exit push_ions_velocity_first_half'
+    if self.l_verbose:print(me,top.it,self.iz,'exit push_ions_velocity_first_half')
     
   def push_ions_velocity_second_half(self,js):
-    if self.l_verbose:print me,top.it,self.iz,'enter push_ions_velocity_second_half'
+    if self.l_verbose:print(me,top.it,self.iz,'enter push_ions_velocity_second_half')
     pg = self.pgions
     np = pg.nps[js]
     if np==0:return
@@ -1742,10 +1742,10 @@ class Quasistatic(SubcycledPoissonSolver):
       # --- update gamma
       self.set_gamma(js)
 
-    if self.l_verbose:print me,top.it,self.iz,'exit push_ions_velocity_second_half'
+    if self.l_verbose:print(me,top.it,self.iz,'exit push_ions_velocity_second_half')
     
   def set_gamma(self,js):
-    if self.l_verbose:print me,top.it,self.iz,'enter push_ions_velocity_second_half'
+    if self.l_verbose:print(me,top.it,self.iz,'enter push_ions_velocity_second_half')
     pg = self.pgions
     np = pg.nps[js]
     if np==0:return
@@ -1755,10 +1755,10 @@ class Quasistatic(SubcycledPoissonSolver):
     gammaadv(np,pg.gaminv[il:iu],pg.uxp[il:iu],pg.uyp[il:iu],pg.uzp[il:iu],
              top.gamadv,top.lrelativ)
 
-    if self.l_verbose:print me,top.it,self.iz,'exit push_ions_velocity_second_half'
+    if self.l_verbose:print(me,top.it,self.iz,'exit push_ions_velocity_second_half')
     
   def push_ions_positions(self,js):
-    if self.l_verbose:print me,top.it,self.iz,'enter push_ions_positions'
+    if self.l_verbose:print(me,top.it,self.iz,'enter push_ions_positions')
     if me>=(npes-(top.it+1)*self.ntgroups):
       pg = self.pgions
       np = pg.nps[js]
@@ -1771,19 +1771,19 @@ class Quasistatic(SubcycledPoissonSolver):
         if np>0:
           zp=pg.zp[il:iu].copy()
           self.lattice[self.ist].apply_transfer_map(pg,il,iu)
-        if self.iz==w3d.nzp-2 and self.l_verbose:print 'push beam in ',self.lattice[self.ist].name
+        if self.iz==w3d.nzp-2 and self.l_verbose:print('push beam in ',self.lattice[self.ist].name)
         self.ilcount[js]+=1
         istadd=1
         while self.lattice[(self.ist+istadd)%self.nst].L==0.:
           if np>0:
             self.lattice[(self.ist+istadd)%self.nst].apply_transfer_map(pg,il,iu)
-          if self.iz==w3d.nzp-2:print 'push beam in ',self.lattice[(self.ist+istadd)%self.nst].name
+          if self.iz==w3d.nzp-2:print('push beam in ',self.lattice[(self.ist+istadd)%self.nst].name)
           self.ilcount[js]+=1
           istadd+=1
         if js==0:self.ist=(self.ist+istadd-1)%self.nst
         if np>0:
           dz = max(abs(pg.zp[il:iu]-zp))
-          if dz>w3d.dz:print 'Error in push_ions_positions: dz>w3d.dz',dz/w3d.dz
+          if dz>w3d.dz:print('Error in push_ions_positions: dz>w3d.dz',dz/w3d.dz)
       else:
        if np==0:return
        if self.l_maps:
@@ -1837,18 +1837,18 @@ class Quasistatic(SubcycledPoissonSolver):
         
       self.mystation[js]+=1
 
-    if self.l_verbose:print me,top.it,self.iz,'exit push_ions_positions'
+    if self.l_verbose:print(me,top.it,self.iz,'exit push_ions_positions')
 
   def apply_ions_bndconditions(self,js):
-    if self.l_verbose:print me,top.it,self.iz,'enter apply_ions_bndconditions'
+    if self.l_verbose:print(me,top.it,self.iz,'enter apply_ions_bndconditions')
     # --- apply boundary conditions
     pg = self.pgions
     if self.tparallel==1 and pg.nps[js]==0:return
     self.apply_bnd_conditions(js)
-    if self.l_verbose:print me,top.it,self.iz,'exit apply_ions_bndconditions'
+    if self.l_verbose:print(me,top.it,self.iz,'exit apply_ions_bndconditions')
     
   def apply_bnd_conditions(self,js):
-    if self.l_verbose:print me,top.it,self.iz,'enter apply_bnd_conditions'
+    if self.l_verbose:print(me,top.it,self.iz,'enter apply_bnd_conditions')
     pg=top.pgroup=self.pgions
     il = pg.ins[js]-1
     iu = il+pg.nps[js]
@@ -1877,11 +1877,11 @@ class Quasistatic(SubcycledPoissonSolver):
       self.scraper.updategrid()
       self.scraper.scrape(js)
     processlostpart(pg,js+1,top.clearlostpart,top.time+top.dt*pg.ndts[js],top.zbeam)
-    if self.l_verbose:print me,top.it,self.iz,'enter apply_bnd_conditions'
+    if self.l_verbose:print(me,top.it,self.iz,'enter apply_bnd_conditions')
 
   def clear_electrons(self):
     # --- clear electrons on processor 0, shift them to the previous ones for me>0
-    if self.l_verbose:print me,top.it,self.iz,'enter clear_electrons'
+    if self.l_verbose:print(me,top.it,self.iz,'enter clear_electrons')
     pg = self.pgelec
     top.pgroup = self.pgelec
     js = 0
@@ -1955,7 +1955,7 @@ class Quasistatic(SubcycledPoissonSolver):
           if top.npid>0:tosend.append(pg.pid[il:iu,:])
         mpisend(tosend, dest = npes-1)
         pg.nps[0]=0      
-      if self.l_verbose:print me,top.it,self.iz,'exit clear_electrons'
+      if self.l_verbose:print(me,top.it,self.iz,'exit clear_electrons')
       # --- receive electrons from next processor
       if lparallel and me==npes-1:
         if self.l_posinst_track_electrons:
@@ -1984,7 +1984,7 @@ class Quasistatic(SubcycledPoissonSolver):
 #    if lparallel:comm_world.barrier()
     
   def plot_electrons(self):
-        if self.l_verbose:print me,top.it,self.iz,'enter plot_electrons'
+        if self.l_verbose:print(me,top.it,self.iz,'enter plot_electrons')
 #        ppgeneric(getvx(js=1),getx(js=1))
         window(0);fma();
 #        frz.basegrid=self.gridions[1]
@@ -2000,7 +2000,7 @@ class Quasistatic(SubcycledPoissonSolver):
 #        if iz==0:
 #        self.electrons.ppxy(msize=2);refresh()
         ppxy(pgroup=self.pgelec,msize=4)
-        print 'plot_elec',self.iz,'nb electrons = ',self.pgelec.nps[0],self.electrons.getn()
+        print('plot_elec',self.iz,'nb electrons = ',self.pgelec.nps[0],self.electrons.getn())
 #        self.electrons.ppxy(msize=5);refresh()#msize=1,color='density',ncolor=100,bcast=0,gather=0);refresh()
 #        else:
 #          self.slist[0].ppxex(msize=2);
@@ -2008,10 +2008,10 @@ class Quasistatic(SubcycledPoissonSolver):
 #        ppxex(js=1)
 #        pfxy(iz=iz);
 #        fma()
-        if self.l_verbose:print me,top.it,self.iz,'enter plot_electrons'
+        if self.l_verbose:print(me,top.it,self.iz,'enter plot_electrons')
 
   def create_electrons(self):
-     if self.l_verbose:print me,top.it,self.iz,'enter create_electrons'
+     if self.l_verbose:print(me,top.it,self.iz,'enter create_electrons')
      pg = self.pgelec
      top.pgroup = self.pgelec
      if self.l_posinst_track_electrons:
@@ -2121,10 +2121,10 @@ class Quasistatic(SubcycledPoissonSolver):
      if self.scraper is not None:
        self.scraper.scrapeall(local=1,clear=1)
 #     shrinkpart(pg)
-     if self.l_verbose:print me,top.it,self.iz,'exit create_electrons'
+     if self.l_verbose:print(me,top.it,self.iz,'exit create_electrons')
 
   def deposit_electrons(self,i=1):
-      if self.l_verbose:print me,top.it,self.iz,'enter deposit_electrons'
+      if self.l_verbose:print(me,top.it,self.iz,'enter deposit_electrons')
       pg = self.pgelec
       top.pgroup = self.pgelec
       bg = frz.basegrid = self.gridelecs[i]
@@ -2140,7 +2140,7 @@ class Quasistatic(SubcycledPoissonSolver):
           if np==0:continue
           il = pg.ins[js]-1
           iu = il+pg.nps[js]
-          if self.l_verbose:print me,top.it,self.iz,'me = ',me,';deposit rho' # MR OK
+          if self.l_verbose:print(me,top.it,self.iz,'me = ',me,';deposit rho') # MR OK
           # --- deposit rho
           if top.wpid==0:
             if self.l_planarYZ:
@@ -2162,10 +2162,10 @@ class Quasistatic(SubcycledPoissonSolver):
       if self.ntgroups>1:get_rho_from_rhop(frz.basegrid)
       # --- distribute rho among patches
       distribute_rho_rz()
-      if self.l_verbose:print me,top.it,self.iz,'exit deposit_electrons'
+      if self.l_verbose:print(me,top.it,self.iz,'exit deposit_electrons')
 
   def push_electrons(self):
-       if self.l_verbose:print me,top.it,self.iz,'enter push_electrons'
+       if self.l_verbose:print(me,top.it,self.iz,'enter push_electrons')
        self.nelechist.append(self.pgelec.nps[0])
        pg = self.pgelec
        top.pgroup = self.pgelec
@@ -2191,10 +2191,10 @@ class Quasistatic(SubcycledPoissonSolver):
             if np==0:continue
             # --- gather self-forces
             if self.l_bfield:
-              if self.l_verbose:print me,top.it,self.iz,'me = ',me,';bpush'
+              if self.l_verbose:print(me,top.it,self.iz,'me = ',me,';bpush')
               bpush3d (np,pg.uxp[il:iu],pg.uyp[il:iu],pg.uzp[il:iu],pg.gaminv[il:iu],
                           bx0[:np], by0[:np], bz0[:np], pg.sq[js],pg.sm[js],0.5*self.dt, top.ibpush)
-            if self.l_verbose:print me,top.it,self.iz,'me = ',me,';fieldweight' # MR OK
+            if self.l_verbose:print(me,top.it,self.iz,'me = ',me,';fieldweight') # MR OK
             if self.l_beam_1d:
 #              Lambda = self.pgions.sw[self.iz]*self.pgions.sq[self.iz]/w3d.dz
               Lambda = self.pgions.sw[self.iz]*self.pgions.sq[self.iz]*self.pgions.nps[self.iz]/w3d.dz
@@ -2215,12 +2215,12 @@ class Quasistatic(SubcycledPoissonSolver):
                 fieldweightz(pg.yp[il:iu],pg.ey[il:iu],np,0.)
               else:
                 fieldweightxz(pg.xp[il:iu],pg.yp[il:iu],pg.ex[il:iu],pg.ey[il:iu],np,0.,top.efetch[js])
-            if self.l_verbose:print me,top.it,self.iz,'me = ',me,';epush'
+            if self.l_verbose:print(me,top.it,self.iz,'me = ',me,';epush')
             epush3d(np,pg.uxp[il:iu],pg.uyp[il:iu],pg.uzp[il:iu],
                     pg.ex[il:iu],pg.ey[il:iu],pg.ez[il:iu],pg.sq[js],pg.sm[js],0.5*self.dt)
             gammaadv(np,pg.gaminv[il:iu],pg.uxp[il:iu],pg.uyp[il:iu],pg.uzp[il:iu],
                      top.gamadv,top.lrelativ)
-            if self.l_verbose:print me,top.it,self.iz,'me = ',me,';xpush'
+            if self.l_verbose:print(me,top.it,self.iz,'me = ',me,';xpush')
 #            xe=getx(bcast=0,gather=0,pgroup=self.pgelec);ye=gety(bcast=0,gather=0,pgroup=self.pgelec)
 #            print 'peb:iz,xe,ye',self.iz,ave(xe),std(xe),ave(ye),std(ye)
             if not self.l_posinst_track_electrons:
@@ -2255,7 +2255,7 @@ class Quasistatic(SubcycledPoissonSolver):
               yparticleboundaries(top.pgroup,js,js,w3d.ymmaxlocal,w3d.ymminlocal,True,w3d.l2symtry or w3d.l4symtry,False)
               processlostpart(top.pgroup,js+1,top.clearlostpart,top.time+self.dt*top.pgroup.ndts[js],top.zbeam)
             else:
-              if self.l_verbose:print me,top.it,self.iz,'me = ',me,';stckxy3d'
+              if self.l_verbose:print(me,top.it,self.iz,'me = ',me,';stckxy3d')
               if pg.nps[js]>0:
                 stckxy3d(top.pgroup,js,top.zbeam,true)
                 il = pg.ins[js]-1
@@ -2289,7 +2289,7 @@ class Quasistatic(SubcycledPoissonSolver):
             iu = min(il+self.nparpgrp,pg.ins[js]-1+pg.nps[js])
             np = iu-il
             if np==0:continue
-            if self.l_verbose:print me,top.it,self.iz,'me = ',me,';fieldweight' # MR OK
+            if self.l_verbose:print(me,top.it,self.iz,'me = ',me,';fieldweight') # MR OK
             if self.l_beam_1d:
 #              Lambda = self.pgions.sw[self.iz]*self.pgions.sq[self.iz]/w3d.dz
               Lambda = self.pgions.sw[self.iz]*self.pgions.sq[self.iz]*self.pgions.nps[self.iz]/w3d.dz
@@ -2311,13 +2311,13 @@ class Quasistatic(SubcycledPoissonSolver):
               else:
                 fieldweightxz(pg.xp[il:iu],pg.yp[il:iu],pg.ex[il:iu],pg.ey[il:iu],np,top.zgrid,top.efetch[js])
 #            fetche3d(pg,il+1,np,js+1)
-            if self.l_verbose:print me,top.it,self.iz,'me = ',me,';epush'
+            if self.l_verbose:print(me,top.it,self.iz,'me = ',me,';epush')
             epush3d(np,pg.uxp[il:iu],pg.uyp[il:iu],pg.uzp[il:iu],
                     pg.ex[il:iu],pg.ey[il:iu],pg.ez[il:iu],pg.sq[js],pg.sm[js],0.5*self.dt)
             gammaadv(np,pg.gaminv[il:iu],pg.uxp[il:iu],pg.uyp[il:iu],pg.uzp[il:iu],
                      top.gamadv,top.lrelativ)
             if self.l_bfield:
-              if self.l_verbose:print me,top.it,self.iz,'me = ',me,';bpush'
+              if self.l_verbose:print(me,top.it,self.iz,'me = ',me,';bpush')
               bpush3d (np,pg.uxp[il:iu],pg.uyp[il:iu],pg.uzp[il:iu],pg.gaminv[il:iu],
                           bx0[:np], by0[:np], bz0[:np], pg.sq[js],pg.sm[js],0.5*self.dt, top.ibpush)
 
@@ -2327,7 +2327,7 @@ class Quasistatic(SubcycledPoissonSolver):
             self.ioniz[self.iz].generate(dt=self.dt)
 #            print 'Ioniz',pgbf,self.pgelec.nps
 
-       if self.l_verbose:print me,top.it,self.iz,'exit push_electrons'
+       if self.l_verbose:print(me,top.it,self.iz,'exit push_electrons')
 #       js = 0
 #       il = pg.ins[js]-1
 #       iu = pg.ins[js]-1+pg.nps[js]
@@ -2391,7 +2391,7 @@ class Quasistatic(SubcycledPoissonSolver):
       g.rho[:,-nin:]+=mpirecv(source = top.procneighbors[1,1])
 
   def add_ei_fields(self,i=1):
-    if self.l_verbose:print me,top.it,self.iz,'enter add_ei_fields'
+    if self.l_verbose:print(me,top.it,self.iz,'enter add_ei_fields')
     if self.l_selfi:self.getselfb(i)
     
     if self.l_selfe:
@@ -2424,7 +2424,7 @@ class Quasistatic(SubcycledPoissonSolver):
           else:
             getallfieldsfromphip()
 
-    if self.l_verbose:print me,top.it,self.iz,'exit add_ei_fields'
+    if self.l_verbose:print(me,top.it,self.iz,'exit add_ei_fields')
 
   def getselfb(self,i=1):
     gi = self.gridions[i]
@@ -2445,7 +2445,7 @@ class Quasistatic(SubcycledPoissonSolver):
 #    fieldp[2,:,:,:,0] += Ez
 
   def zerommnts(self):
-        if self.l_verbose:print me,top.it,self.iz,'enter zerommnts'
+        if self.l_verbose:print(me,top.it,self.iz,'enter zerommnts')
         pg = self.pgions
         self.pnumztmp[:]=0.
         self.xbarztmp[:]=0.     
@@ -2471,7 +2471,7 @@ class Quasistatic(SubcycledPoissonSolver):
           self.dketmp[...]=0.
 
   def getmmnts(self,js):
-      if self.l_verbose:print me,top.it,self.iz,'enter getmmnts'
+      if self.l_verbose:print(me,top.it,self.iz,'enter getmmnts')
       pg = self.pgions
       if pg.nps[js]==0:return
       il = pg.ins[js]-1
@@ -2563,10 +2563,10 @@ class Quasistatic(SubcycledPoissonSolver):
       if self.l_zdediag:
         self.dketmp[js+1,:]+=self.dketmp1
         self.denstmp[js+1,:]+=self.denstmp1
-      if self.l_verbose:print me,top.it,self.iz,'exit getmmnts'
+      if self.l_verbose:print(me,top.it,self.iz,'exit getmmnts')
 
   def getmmnts_store(self):
-    if self.l_verbose:print me,top.it,self.iz,'enter getmmnts_store'
+    if self.l_verbose:print(me,top.it,self.iz,'enter getmmnts_store')
     pg = self.pgions
     self.pnum.append(sum(self.pnumztmp))
     self.xbar.append(sum(self.xbarztmp))
@@ -2615,7 +2615,7 @@ class Quasistatic(SubcycledPoissonSolver):
 #    else:
 #      self.timemmnts.append(top.time+(me-npes+1)*top.dt)
     self.zerommnts()
-    if self.l_verbose:print me,top.it,self.iz,'exit getmmnts_store'
+    if self.l_verbose:print(me,top.it,self.iz,'exit getmmnts_store')
       
   def parallelsum(self,a):
       if self.ntgroups>1:a = parallelsum(a,comm=self.mympitgroup)
@@ -3276,7 +3276,7 @@ class Quasistaticold:
      # --- update time
      top.time+=top.dt
      # --- compute moments
-     if self.l_verbose: print me,top.it,self.iz,'me = ',me,';compute zmmnt'
+     if self.l_verbose: print(me,top.it,self.iz,'me = ',me,';compute zmmnt')
      if top.it%top.nhist==0:
        zmmnt()
        minidiag(top.it,top.time,top.lspecial)
@@ -3289,11 +3289,11 @@ class Quasistaticold:
     if me>=(npes-(top.it+1)*self.ntgroups):
 #    if me==(npes-(top.it+1)*self.ntgroups):
      if self.l_maps:
-      if self.l_verbose: print me,top.it,self.iz,'me = ',me,';apply space_charge kick'
+      if self.l_verbose: print(me,top.it,self.iz,'me = ',me,';apply space_charge kick')
       self.maps.apply_space_charge_kick(self.beam)
-      if self.l_verbose: print me,top.it,self.iz,'me = ',me,';apply transfer map'
+      if self.l_verbose: print(me,top.it,self.iz,'me = ',me,';apply transfer map')
       self.maps.apply_transfer_map(self.beam)
-      if self.l_verbose: print me,top.it,self.iz,'me = ',me,';apply bnd conditions'
+      if self.l_verbose: print(me,top.it,self.iz,'me = ',me,';apply bnd conditions')
       self.maps.apply_bnd_conditions(self.beam)
 
   def save_ions(self,zmax):
@@ -3414,7 +3414,7 @@ class Quasistaticold:
 #     shrinkpart(pg)
 
   def solve2dfield(self,l_findmgparam=false):
-      if self.l_verbose:print me,top.it,self.iz,'me = ',me,'; enter fieldsolve'   # MR OK
+      if self.l_verbose:print(me,top.it,self.iz,'me = ',me,'; enter fieldsolve')   # MR OK
       # --- define shortcuts
       pg = top.pgroup
       bg = frz.basegrid
@@ -3431,7 +3431,7 @@ class Quasistaticold:
           if np==0:continue
           il = pg.ins[js]-1
           iu = il+pg.nps[js]
-          if self.l_verbose:print me,top.it,self.iz,'me = ',me,';deposit rho' # MR OK
+          if self.l_verbose:print(me,top.it,self.iz,'me = ',me,';deposit rho') # MR OK
           # --- deposit rho
           if self.l_rz:
             rhoweightr(pg.xp[il:iu],pg.yp[il:iu],np,pg.sq[js]*pg.sw[js],
@@ -3448,7 +3448,7 @@ class Quasistaticold:
 
       # --- call 2-D field solver
       solve_mgridrz(bg,frz.mgridrz_accuracy,true)
-      if self.l_verbose:print me,top.it,self.iz,'me = ',me,'; exit fieldsolve'   # MR OK
+      if self.l_verbose:print(me,top.it,self.iz,'me = ',me,'; exit fieldsolve')   # MR OK
 
   def solver_3d_to_2d(self):
     # --- switch to 2-D solver
@@ -3549,7 +3549,7 @@ class Quasistaticold:
             np = iu-il
             if np==0:continue
             # --- gather self-forces
-            if self.l_verbose:print me,top.it,self.iz,'me = ',me,';fieldweight' # MR OK
+            if self.l_verbose:print(me,top.it,self.iz,'me = ',me,';fieldweight') # MR OK
             pg.ex[il:iu]=0.
             pg.ey[il:iu]=0.
             pg.ez[il:iu]=0.
@@ -3558,19 +3558,19 @@ class Quasistaticold:
             else:
               fieldweightxz(pg.xp[il:iu],pg.yp[il:iu],pg.ex[il:iu],pg.ey[il:iu],np,0.,top.efetch[js])
 #            fetche3d(pg,il+1,np,js+1)
-            if self.l_verbose:print me,top.it,self.iz,'me = ',me,';epush'
+            if self.l_verbose:print(me,top.it,self.iz,'me = ',me,';epush')
             epush3d(np,pg.uxp[il:iu],pg.uyp[il:iu],pg.uzp[il:iu],
                     pg.ex[il:iu],pg.ey[il:iu],pg.ez[il:iu],pg.sq[js],pg.sm[js],0.5*self.dt)
             gammaadv(np,pg.gaminv[il:iu],pg.uxp[il:iu],pg.uyp[il:iu],pg.uzp[il:iu],
                      top.gamadv,top.lrelativ)
-            if self.l_verbose:print me,top.it,self.iz,'me = ',me,';xpush'
+            if self.l_verbose:print(me,top.it,self.iz,'me = ',me,';xpush')
             xpush3d(np,pg.xp[il:iu],pg.yp[il:iu],pg.zp[il:iu],
                     pg.uxp[il:iu],pg.uyp[il:iu],pg.uzp[il:iu],pg.gaminv[il:iu],self.dt)
             pg.zp[il:iu]-=w3d.dz
 #            pli(frz.basegrid.phi);refresh()
 #            ppzx(js=1,color=red,msize=2);refresh()
 #            window(3);ppzvx(js=1,msize=2);window(0)
-          if self.l_verbose:print me,top.it,self.iz,'me = ',me,';stckxy3d'
+          if self.l_verbose:print(me,top.it,self.iz,'me = ',me,';stckxy3d')
           stckxy3d(top.pgroup,js,top.zbeam,true)
           # --- This may need to call partbndwithdata since stckxy3d does not
           # --- check against the grid anymore!
@@ -3585,7 +3585,7 @@ class Quasistaticold:
             iu = min(il+self.nparpgrp,pg.ins[js]-1+pg.nps[js])
             np = iu-il
             if np==0:continue
-            if self.l_verbose:print me,top.it,self.iz,'me = ',me,';fieldweight' # MR OK
+            if self.l_verbose:print(me,top.it,self.iz,'me = ',me,';fieldweight') # MR OK
             pg.ex[il:iu]=0.
             pg.ey[il:iu]=0.
             pg.ez[il:iu]=0.
@@ -3594,7 +3594,7 @@ class Quasistaticold:
             else:
               fieldweightxz(pg.xp[il:iu],pg.yp[il:iu],pg.ex[il:iu],pg.ey[il:iu],np,top.zgrid,top.efetch[js])
 #            fetche3d(pg,il+1,np,js+1)
-            if self.l_verbose:print me,top.it,self.iz,'me = ',me,';epush'
+            if self.l_verbose:print(me,top.it,self.iz,'me = ',me,';epush')
             epush3d(np,pg.uxp[il:iu],pg.uyp[il:iu],pg.uzp[il:iu],
                     pg.ex[il:iu],pg.ey[il:iu],pg.ez[il:iu],pg.sq[js],pg.sm[js],0.5*self.dt)
             gammaadv(np,pg.gaminv[il:iu],pg.uxp[il:iu],pg.uyp[il:iu],pg.uzp[il:iu],
@@ -3646,6 +3646,6 @@ class Quasistaticold:
 try:
   psyco.bind(Quasistatic)
 except NameError:
-  print 'Warning:psyco binding of Quasistatic class failed.'
+  print('Warning:psyco binding of Quasistatic class failed.')
 
 

@@ -1,6 +1,6 @@
 """Generic class describing the interface needed for a field solver.
 """
-from __future__ import generators
+
 from ..warp import *
 import __main__
 import gc
@@ -138,7 +138,7 @@ def loadj(pgroup=None,ins_i=-1,nps_i=-1,is_i=-1,lzero=true,lfinalize_rho=true):
     currpkg = package()[0]
     if (currpkg == "wxy" and wxy.lvp3d is False):
         #loadrhoxy(ins_i,nps_i,is_i,lzero,lfinalize_rho)
-        print "loadj not support in wxy yet"
+        print("loadj not support in wxy yet")
     else:
         loadj3d(pgroup,ins_i,nps_i,is_i,lzero,lfinalize_rho)
 
@@ -259,7 +259,7 @@ def sezaxregistered():
 def initfieldsolver():
     if w3d.AMRlevels>0:
         if 'AMRtree' not in __main__.__dict__:
-            import AMR
+            from . import AMR
             AMRtree=AMR.AMRTree()
             __main__.__dict__['AMRtree'] = AMRtree
             gchange('AMR')
@@ -459,7 +459,7 @@ class FieldSolver(object):
             if name in kw: del kw[name]
 
     def processdefaultsfromdict(self,dict,kw):
-        for name,defvalue in dict.iteritems():
+        for name,defvalue in dict.items():
             if name not in self.__dict__:
                 #self.__dict__[name] = kw.pop(name,getattr(top,name)) # Python2.3
                 self.__dict__[name] = kw.get(name,defvalue)
@@ -1381,7 +1381,7 @@ class SubcycledPoissonSolver(FieldSolver):
                 else:                 js1 = 0
                 if w3d.js2fsapi >= 0: js2 = w3d.js2fsapi+1
                 else:                 js2 = top.ns
-                jslists = [range(js1,js2)]
+                jslists = [list(range(js1,js2))]
         else:
             # --- If so, use the input list
             jslists = [jslist]
@@ -1655,10 +1655,10 @@ class SubcycledPoissonSolver(FieldSolver):
                 self.getpotentialpforparticles(top.nrhopndtscopies-1,indts,iselfb)
 
     def getpdims(self):
-        raise NotImplementedError,"getpdims must be supplied - it should return a list of the dimensions of the arrays used by the particles"
+        raise NotImplementedError("getpdims must be supplied - it should return a list of the dimensions of the arrays used by the particles")
 
     def getdims(self):
-        raise NotImplementedError,"getdims must be supplied - it should return a list of the dimensions of the arrays used by the field solve"
+        raise NotImplementedError("getdims must be supplied - it should return a list of the dimensions of the arrays used by the field solve")
 
     def allocatedataarrays(self):
         # --- Setup arrays, including extra copies for subcycling
@@ -1772,10 +1772,10 @@ class SubcycledPoissonSolver(FieldSolver):
                 tsourcep[:,indts,0,...] = 0.
 
     def zerosourcepwithfullvsubcycling(self):
-        raise NotImplementedError,"fullv subcycling not yet implemented"
+        raise NotImplementedError("fullv subcycling not yet implemented")
 
     def zerosourcepwithhalfvsubcycling(self):
-        raise NotImplementedError,"halfv subcycling not yet implemented"
+        raise NotImplementedError("halfv subcycling not yet implemented")
 
     def averagesourcepwithsubcycling(self):
         if top.ndtsaveraging == 0:
@@ -2328,10 +2328,10 @@ def getselfe(comp=None,ix=None,iy=None,iz=None,bcast=1,local=0,fullplane=0,
     assert comp in ['x','y','z','E'],"comp must be one of 'x', 'y', 'z' or 'E'"
     if solver is None: solver = (getregisteredsolver() or w3d)
     if iy is None and solver.solvergeom in [w3d.RZgeom,w3d.XZgeom,w3d.Zgeom]: iy=0
-    if isinstance(comp,types.IntType): ic = comp
+    if isinstance(comp,int): ic = comp
     else:                              ic = ['x','y','z','E'].index(comp)
 
-    import em3dsolver
+    from . import em3dsolver
     if isinstance(solver,em3dsolver.EM3D):
         Ex = solver.getex()
         Ey = solver.getey()
@@ -2403,11 +2403,11 @@ def getj(comp=None,ix=None,iy=None,iz=None,bcast=1,local=0,fullplane=0,
                    replicated to fill the symmetric regions of the plane.
     """
     assert comp in ['x','y','z','J'],"comp must be one of 'x', 'y', 'z' or 'J'"
-    if isinstance(comp,types.IntType): ic = comp
+    if isinstance(comp,int): ic = comp
     else:                              ic = ['x','y','z','J'].index(comp)
     if solver is None: solver = (getregisteredsolver() or w3d)
 
-    import em3dsolver
+    from . import em3dsolver
     if isinstance(solver,em3dsolver.EM3D):
         Jx = solver.getjx()
         Jy = solver.getjy()
@@ -2469,7 +2469,7 @@ def setj(val,comp=None,ix=None,iy=None,iz=None,local=0,solver=None):
     - iz = None:
     """
     assert comp in ['x','y','z'],"comp must be one of 'x', 'y', or 'z'"
-    if isinstance(comp,types.IntType): ic = comp
+    if isinstance(comp,int): ic = comp
     else:                              ic = ['x','y','z'].index(comp)
     if solver is None: solver = (getregisteredsolver() or w3d)
     if solver == w3d:
@@ -2509,11 +2509,11 @@ def getb(comp=None,ix=None,iy=None,iz=None,bcast=1,local=0,fullplane=0,
                    replicated to fill the symmetric regions of the plane.
     """
     assert comp in ['x','y','z','B'],"comp must be one of 'x', 'y', 'z' or 'B'"
-    if isinstance(comp,types.IntType): ic = comp
+    if isinstance(comp,int): ic = comp
     else:                              ic = ['x','y','z','B'].index(comp)
     if solver is None: solver = (getregisteredsolver() or w3d)
 
-    import em3dsolver
+    from . import em3dsolver
     if isinstance(solver,em3dsolver.EM3D):
         Bx = solver.getbx()
         By = solver.getby()
@@ -2582,7 +2582,7 @@ def setb(val,comp=None,ix=None,iy=None,iz=None,local=0,solver=None):
     - iz = None:
     """
     assert comp in ['x','y','z'],"comp must be one of 'x', 'y', or 'z'"
-    if isinstance(comp,types.IntType): ic = comp
+    if isinstance(comp,int): ic = comp
     else:                              ic = ['x','y','z'].index(comp)
     if solver is None: solver = (getregisteredsolver() or w3d)
     if solver == w3d:
@@ -2622,7 +2622,7 @@ def geta(comp=None,ix=None,iy=None,iz=None,bcast=1,local=0,fullplane=0,
                    replicated to fill the symmetric regions of the plane.
     """
     assert comp in ['x','y','z','A'],"comp must be one of 'x', 'y', 'z' or 'A'"
-    if isinstance(comp,types.IntType): ic = comp
+    if isinstance(comp,int): ic = comp
     else:                              ic = ['x','y','z','A'].index(comp)
     if solver is None: solver = (getregisteredsolver() or w3d)
     if solver == w3d:
@@ -2684,7 +2684,7 @@ def seta(val,comp=None,ix=None,iy=None,iz=None,local=0,solver=None):
     - iz = None:
     """
     assert comp in ['x','y','z'],"comp must be one of 'x', 'y', or 'z'"
-    if isinstance(comp,types.IntType): ic = comp
+    if isinstance(comp,int): ic = comp
     else:                              ic = ['x','y','z'].index(comp)
     if solver is None: solver = (getregisteredsolver() or w3d)
     if solver == w3d:

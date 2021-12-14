@@ -1,7 +1,7 @@
 """This module contains a class Plarr3d with methods to plot a 3-D array of points connected or not by lines.  Also included is a method to make a color-separated stereoscopic plot. For more info, import Plarr3d and type doc(Plarr3d)."""
 def plarr3ddoc():
-    import plarr3d
-    print plarr3d.__doc__
+    from . import plarr3d
+    print(plarr3d.__doc__)
 from numpy import *
 from gist import *
 import collections
@@ -388,11 +388,11 @@ phi is rotation of local coord. about local y axis, relative
         self.xoffset = xoffset
         self.yoffset = yoffset
         if not self.calledmakeframe:
-            print "WARNING: no frame pre-calculated; setting autoframe = true"
+            print("WARNING: no frame pre-calculated; setting autoframe = true")
         if self.calledmakeframe and not autoframe :
-            print "WARNING: autoframe = false, working with last frame"
+            print("WARNING: autoframe = false, working with last frame")
         if  autoframe or not self.calledmakeframe:
-            print "about to make frame"
+            print("about to make frame")
             xmin=min(x)
             xmax=max(x)
             ymin=min(y)
@@ -473,7 +473,7 @@ def makepalette(lcolor,rcolor):
 # corresponding color variable is set to 0)
     haveleftrgb = 0
     redarr=[];greenarr=[];bluearr=[]
-    if isinstance(lcolor,basestring):
+    if isinstance(lcolor,str):
         lcoloruse=lcolor
     else:
         haveleftrgb=1
@@ -481,7 +481,7 @@ def makepalette(lcolor,rcolor):
         redarr.append(lcolor[0])
         greenarr.append(lcolor[1])
         bluearr.append(lcolor[2])
-    if isinstance(rcolor,basestring):
+    if isinstance(rcolor,str):
         rcoloruse=rcolor
     else:
         rcoloruse=haveleftrgb

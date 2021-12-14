@@ -41,21 +41,21 @@ from .laser.laser_antenna import LaserAntenna
 
 try:
     from mpi4py import MPI
-    print 'from mpi4py import MPI'
+    print('from mpi4py import MPI')
 except:
-    print 'Error cannot import mpi4py'
+    print('Error cannot import mpi4py')
 
 try:
     #import warp.field_solvers.GPSTD as gpstd
-    import GPSTDPXR as gpstd
-    print 'Import GPSTDPXR as gpstd'
+    from . import GPSTDPXR as gpstd
+    print('Import GPSTDPXR as gpstd')
 except:
     #import GPSTDPXR as gpstd
     import warp.field_solvers.GPSTD as gpstd
 
 try:
     from picsar_python import picsarpy as pxrpy
-    print 'Import picsarpy as pxrpy'
+    print('Import picsarpy as pxrpy')
     pxr = pxrpy.picsar
     l_pxr=True
 except:
@@ -64,22 +64,22 @@ except:
 try:
     import numpy as numpy
 except:
-    print 'Error cannot import numpy'
+    print('Error cannot import numpy')
 
 try:
     import os as os
-    print 'Import os as os'
+    print('Import os as os')
 except:
-    print 'Error cannot import os'
+    print('Error cannot import os')
 
 try:
     # Try to import fortran wrapper of FFTW
     # import pyfftw
     # fft = pyfftw.interfaces.numpy_fft
     import fastfftforpy as fftpy
-    print 'Import fastfftforpy as fftpy'
+    print('Import fastfftforpy as fftpy')
     import fastfftpy as fstpy
-    print 'Import fastfftpy as fstpy'
+    print('Import fastfftpy as fstpy')
     fst=fstpy.fastfft
     fft=fftpy
     l_fftw=True
@@ -211,18 +211,18 @@ def addparticlesPXR(self,x=0.,y=0.,z=0.,vx=0.,vy=0.,vz=0.,gi=1.,w=None,
     # --- Do some error checking
     if not lallindomain:
         if not lrz and ymmin == ymmax:
-            print "========================================================="
-            print " AddparticlesPXR: warning - no particles will be loaded. "
-            print " You should either set lallindomain=true or set ymmin and"
-            print " ymmax so they are different from each other.            "
-            print "========================================================="
+            print("=========================================================")
+            print(" AddparticlesPXR: warning - no particles will be loaded. ")
+            print(" You should either set lallindomain=true or set ymmin and")
+            print(" ymmax so they are different from each other.            ")
+            print("=========================================================")
 
         if zmmin == zmmax:
-            print "========================================================="
-            print " AddparticlesPXR: warning - no particles will be loaded. "
-            print " You should either set lallindomain=true or set zmmin and"
-            print " zmmax so they are different from each other.            "
-            print "========================================================="
+            print("=========================================================")
+            print(" AddparticlesPXR: warning - no particles will be loaded. ")
+            print(" You should either set lallindomain=true or set zmmin and")
+            print(" zmmax so they are different from each other.            ")
+            print("=========================================================")
 
 
     # --- if lalldomain==False, removes particles outside boundaries
@@ -1559,15 +1559,15 @@ class EM3DPXR(EM3DFFT):
             for iy in range(1,self.ntiley+1):
                 for ix in range(1,self.ntilex+1):
                     pxr.point_to_tile(ispecies, ix, iy, iz)
-                    print ix,iy,iz,pxr.partn[0], pxr.partnmax
+                    print(ix,iy,iz,pxr.partn[0], pxr.partnmax)
     def print_nptiles_sp0(self):
         s=self.listofallspecies[0]
         for iz in range(1,self.ntilez+1):
             for iy in range(1,self.ntiley+1):
                 for ix in range(1,self.ntilex+1):
                     pxr.point_to_tile(1, ix, iy, iz)
-                    print ix,iy,iz,pxr.partn, pxr.partnmax
-                    print ix,iy,iz,s.pgroups[iz-1][iy-1][ix-1].nps, s.pgroups[iz-1][iy-1][ix-1].npmax
+                    print(ix,iy,iz,pxr.partn, pxr.partnmax)
+                    print(ix,iy,iz,s.pgroups[iz-1][iy-1][ix-1].nps, s.pgroups[iz-1][iy-1][ix-1].npmax)
     def ppzx_ptiles(self,ispecies,ppg,colors=['black','blue','red','green'],msize=2):
         ncolor = len(colors)
         ic=0
@@ -1604,7 +1604,7 @@ class EM3DPXR(EM3DFFT):
             else:
                 doit=False
         if doit:
-            if self.l_verbose:print 'push_e',self,dt,top.it,self.icycle
+            if self.l_verbose:print('push_e',self,dt,top.it,self.icycle)
 
             if self.l_pxr:
                 f=self.fields
@@ -1705,7 +1705,7 @@ class EM3DPXR(EM3DFFT):
         else:
           doit=False
       if doit:
-        if self.l_verbose:print 'push_b part 1',self,dt,top.it,self.icycle,dir
+        if self.l_verbose:print('push_b part 1',self,dt,top.it,self.icycle,dir)
         if self.l_pxr:
           tdebcell=MPI.Wtime()
           f=self.fields
@@ -1825,7 +1825,7 @@ class EM3DPXR(EM3DFFT):
         self.novercycle = 1
         self.icycle = 0
       if self.icycle==0:
-        if self.l_verbose:print 'push_b part 2',self,dt,top.it,self.icycle
+        if self.l_verbose:print('push_b part 2',self,dt,top.it,self.icycle)
         if self.l_pxr:
           f=self.fields
           l_pushb=False
@@ -2135,7 +2135,7 @@ class EM3DPXR(EM3DFFT):
             else:
                 doit=False
         if doit:
-            if self.l_verbose:print 'exchange_b',self,top.it,self.icycle
+            if self.l_verbose:print('exchange_b',self,top.it,self.icycle)
             if (self.l_pxr and self.full_pxr):
                 pxr.bfield_bcs()
             else:
@@ -2288,7 +2288,7 @@ class EM3DPXR(EM3DFFT):
 
       for i in range(n):
           if(me==0):
-              if top.it%freq_print==0:print 'it = %g time = %g'%(top.it,top.time)
+              if top.it%freq_print==0:print('it = %g time = %g'%(top.it,top.time))
           if lallspecl:
               l_first=l_last=1
           else:
@@ -2306,7 +2306,7 @@ class EM3DPXR(EM3DFFT):
               tend=MPI.Wtime()
               mpi_time_per_stat=(tend-tdeb)
               tdeb=MPI.Wtime()
-              print("time/stdout_stat (s)",mpi_time_per_stat)
+              print(("time/stdout_stat (s)",mpi_time_per_stat))
 
       # Total time spend in the kernel
       tend = MPI.Wtime()
@@ -2584,7 +2584,7 @@ class EM3DPXR(EM3DFFT):
                   print("Optimal load balancing already achieved by current implementation")
             else:
               if(pxr.rank==0):
-                print("trying to load balance the simulation, imbalance=", imbalance)
+                print(("trying to load balance the simulation, imbalance=", imbalance))
                 ## --- Compute limits for all procs
                 ix1old=np.zeros(pxr.nproc,dtype="i8"); ix2old=np.zeros(pxr.nproc,dtype="i8")
                 iy1old=np.zeros(pxr.nproc,dtype="i8"); iy2old=np.zeros(pxr.nproc,dtype="i8")
@@ -2858,7 +2858,7 @@ class EM3DPXR(EM3DFFT):
                   print("Optimal load balancing already achieved by current implementation")
             else:
                 if(pxr.rank==0):
-                  print("trying to load balance the simulation, imbalance=", imbalance)
+                  print(("trying to load balance the simulation, imbalance=", imbalance))
 
                 ## --- Compute limits for all procs
                 ix1old=np.zeros(pxr.nproc,dtype="i8"); ix2old=np.zeros(pxr.nproc,dtype="i8")
@@ -3093,7 +3093,7 @@ class EM3DPXR(EM3DFFT):
 
 
     def fetcheb(self,js,pg=None):
-        if self.l_verbose:print me,'enter fetcheb'
+        if self.l_verbose:print(me,'enter fetcheb')
         if pg is None:
             pg = top.pgroup
         np = pg.nps[js]
@@ -3112,7 +3112,7 @@ class EM3DPXR(EM3DFFT):
         self.fetchb()
 
     def push_velocity_full(self,js,pg=None):
-        if self.l_verbose:print me,'enter push_ions_velocity_full'
+        if self.l_verbose:print(me,'enter push_ions_velocity_full')
         if pg is None:
             pg = top.pgroup
         np = pg.nps[js]
@@ -3142,10 +3142,10 @@ class EM3DPXR(EM3DFFT):
           # --- update gamma
           self.set_gamma(js,pg)
 
-        if self.l_verbose:print me,'exit push_ions_velocity_first_half'
+        if self.l_verbose:print(me,'exit push_ions_velocity_first_half')
 
     def push_velocity_first_half(self,js,pg=None):
-        if self.l_verbose:print me,'enter push_ions_velocity_first_half'
+        if self.l_verbose:print(me,'enter push_ions_velocity_first_half')
         if pg is None:
             pg = top.pgroup
         np = pg.nps[js]
@@ -3169,10 +3169,10 @@ class EM3DPXR(EM3DFFT):
                       pg.bx[il:iu], pg.by[il:iu], pg.bz[il:iu],
                       pg.sq[js],pg.sm[js],0.5*top.dt, top.ibpush)
 
-        if self.l_verbose:print me,'exit push_ions_velocity_first_half'
+        if self.l_verbose:print(me,'exit push_ions_velocity_first_half')
 
     def push_velocity_second_half(self,js,pg=None):
-        if self.l_verbose:print me,'enter push_ions_velocity_second_half'
+        if self.l_verbose:print(me,'enter push_ions_velocity_second_half')
         if pg is None:
             pg = top.pgroup
         np = pg.nps[js]
@@ -3196,10 +3196,10 @@ class EM3DPXR(EM3DFFT):
         # --- update gamma
         self.set_gamma(js,pg)
 
-        if self.l_verbose:print me,'exit push_ions_velocity_second_half'
+        if self.l_verbose:print(me,'exit push_ions_velocity_second_half')
 
     def set_gamma(self,js,pg=None):
-        if self.l_verbose:print me,'enter set_gamma'
+        if self.l_verbose:print(me,'enter set_gamma')
         if pg is None:
             pg = top.pgroup
         np = pg.nps[js]
@@ -3210,10 +3210,10 @@ class EM3DPXR(EM3DFFT):
         gammaadv(np,pg.gaminv[il:iu],pg.uxp[il:iu],pg.uyp[il:iu],pg.uzp[il:iu],
                  top.gamadv,top.lrelativ)
 
-        if self.l_verbose:print me,'exit push_ions_velocity_second_half'
+        if self.l_verbose:print(me,'exit push_ions_velocity_second_half')
 
     def push_positions(self,js,pg=None):
-        if self.l_verbose:print me,'enter push_ions_positions'
+        if self.l_verbose:print(me,'enter push_ions_positions')
         if pg is None:
             pg = top.pgroup
         np = pg.nps[js]
@@ -3224,7 +3224,7 @@ class EM3DPXR(EM3DFFT):
                        pg.uxp[il:iu],pg.uyp[il:iu],pg.uzp[il:iu],
                        pg.gaminv[il:iu],top.dt)
 
-        if self.l_verbose:print me,'exit push_ions_positions'
+        if self.l_verbose:print(me,'exit push_ions_positions')
 
     def loadsource(self,lzero=None,lfinalize_rho=None,pgroups=None,**kw):
         '''
@@ -3264,7 +3264,7 @@ class EM3DPXR(EM3DFFT):
                 else:                 js2 = pgroup.ns
 
                 jslist = kw.get('jslist',None)
-                if jslist is None: jslist = range(js1,js2)
+                if jslist is None: jslist = list(range(js1,js2))
 
                 for js in jslist:
                     n = pgroup.nps[js]
@@ -3367,7 +3367,7 @@ class EM3DPXR(EM3DFFT):
                 else:                 js2 = pgroup.ns
 
                 jslist = kw.get('jslist',None)
-                if jslist is None: jslist = range(js1,js2)
+                if jslist is None: jslist = list(range(js1,js2))
 
                 for js in jslist:
                     n = pgroup.nps[js]
@@ -3413,16 +3413,16 @@ class EM3DPXR(EM3DFFT):
 
 
     def apply_bndconditions(self,js,pg=None):
-        if self.l_verbose:print me,'enter apply_ions_bndconditions'
+        if self.l_verbose:print(me,'enter apply_ions_bndconditions')
         # --- apply boundary conditions
         if pg is None:
             pg = top.pgroup
         if pg.nps[js]==0:return
         self.apply_bnd_conditions(js,pg)
-        if self.l_verbose:print me,'exit apply_ions_bndconditions'
+        if self.l_verbose:print(me,'exit apply_ions_bndconditions')
 
     def apply_bnd_conditions(self,js,pg=None):
-        if self.l_verbose:print me,'enter apply_bnd_conditions'
+        if self.l_verbose:print(me,'enter apply_bnd_conditions')
         if pg is None:
             pg = top.pgroup
         if pg.nps[js]==0:return
@@ -3450,7 +3450,7 @@ class EM3DPXR(EM3DFFT):
           if js==w3d.nzp-1:top.pbound0=0
         if self.scraper is not None:self.scraper.scrape(js)
         processlostpart(pg,js+1,top.clearlostpart,top.time+top.dt*pg.ndts[js],top.zbeam)
-        if self.l_verbose:print me,'enter apply_bnd_conditions'
+        if self.l_verbose:print(me,'enter apply_bnd_conditions')
 
     def get_total_particle_number(self,**kw):
         """
@@ -3474,7 +3474,7 @@ class EM3DPXR(EM3DFFT):
         - sp: species number
         """
         total_kinetic_energy = zeros(1)
-        if self.l_verbose:print me,'compute kinetic energy on species',sp
+        if self.l_verbose:print(me,'compute kinetic energy on species',sp)
         pxr.get_kinetic_energy(sp,total_kinetic_energy)
         #print total_kinetic_energy,sp
         return total_kinetic_energy[0]
@@ -3558,26 +3558,26 @@ class EM3DPXR(EM3DFFT):
 
         if me==0:
 
-          print ' _______________________________________________________________________________'
-          print
-          print '  Time statisctics'
-          print ' _______________________________________________________________________________'
+          print(' _______________________________________________________________________________')
+          print()
+          print('  Time statisctics')
+          print(' _______________________________________________________________________________')
 
-          print ' Parts                              {:^8} {:^8} {:^8} {:^8}'.format('min', 'ave', 'max', '%')
-          print ' -------------------------------------------------------------------------------'
-          print ' Particle pusher + field gathering: {:8.3f} {:8.3f} {:8.3f} {:8.3}'.format(self.time_stat_min_array[0],self.time_stat_ave_array[0],self.time_stat_max_array[0],self.time_stat_max_array[0]/self.total_kernel_time*100)
-          print ' Particle boundary conditions:      {:8.3f} {:8.3f} {:8.3f} {:8.3}'.format(self.time_stat_min_array[1],self.time_stat_ave_array[1],self.time_stat_max_array[1],self.time_stat_max_array[1]/self.total_kernel_time*100)
-          print ' Current deposition:                {:8.3f} {:8.3f} {:8.3f} {:8.3}'.format(self.time_stat_min_array[2],self.time_stat_ave_array[2],self.time_stat_max_array[2],self.time_stat_max_array[2]/self.total_kernel_time*100)
-          print ' Current bound. cond.:              {:8.3f} {:8.3f} {:8.3f} {:8.3}'.format(self.time_stat_min_array[3],self.time_stat_ave_array[3],self.time_stat_max_array[3],self.time_stat_max_array[3]/self.total_kernel_time*100)
-          print ' Magnetic field solver:             {:8.3f} {:8.3f} {:8.3f} {:8.3}'.format(self.time_stat_min_array[5],self.time_stat_ave_array[5],self.time_stat_max_array[5],self.time_stat_max_array[5]/self.total_kernel_time*100)
-          print ' Magnetic field bound. cond.:       {:8.3f} {:8.3f} {:8.3f} {:8.3}'.format(self.time_stat_min_array[6],self.time_stat_ave_array[6],self.time_stat_max_array[6],self.time_stat_max_array[6]/self.total_kernel_time*100)
-          print ' Electric field solver:             {:8.3f} {:8.3f} {:8.3f} {:8.3}'.format(self.time_stat_min_array[7],self.time_stat_ave_array[7],self.time_stat_max_array[7],self.time_stat_max_array[7]/self.total_kernel_time*100)
-          print ' Electric field bound. cond.:       {:8.3f} {:8.3f} {:8.3f} {:8.3}'.format(self.time_stat_min_array[8],self.time_stat_ave_array[8],self.time_stat_max_array[8],self.time_stat_max_array[8]/self.total_kernel_time*100)
-          print ' Particle sorting:                  {:8.3f} {:8.3f} {:8.3f} {:8.3}'.format(self.time_stat_min_array[10],self.time_stat_ave_array[10],self.time_stat_max_array[10],self.time_stat_max_array[10]/self.total_kernel_time*100)
-          print ' Charge deposition:                 {:8.3f} {:8.3f} {:8.3f} {:8.3}'.format(self.time_stat_min_array[12],self.time_stat_ave_array[12],self.time_stat_max_array[12],self.time_stat_max_array[12]/self.total_kernel_time*100)
-          print ' Charge bound. cond.:               {:8.3f} {:8.3f} {:8.3f} {:8.3}'.format(self.time_stat_min_array[13],self.time_stat_ave_array[13],self.time_stat_max_array[13],self.time_stat_max_array[13]/self.total_kernel_time*100)
-          print ' Load balancing:                    {:8.3f} {:8.3f} {:8.3f} {:8.3}'.format(self.time_stat_min_array[15],self.time_stat_ave_array[15],self.time_stat_max_array[15],self.time_stat_max_array[15]/self.total_kernel_time*100)
-          print
+          print(' Parts                              {:^8} {:^8} {:^8} {:^8}'.format('min', 'ave', 'max', '%'))
+          print(' -------------------------------------------------------------------------------')
+          print(' Particle pusher + field gathering: {:8.3f} {:8.3f} {:8.3f} {:8.3}'.format(self.time_stat_min_array[0],self.time_stat_ave_array[0],self.time_stat_max_array[0],self.time_stat_max_array[0]/self.total_kernel_time*100))
+          print(' Particle boundary conditions:      {:8.3f} {:8.3f} {:8.3f} {:8.3}'.format(self.time_stat_min_array[1],self.time_stat_ave_array[1],self.time_stat_max_array[1],self.time_stat_max_array[1]/self.total_kernel_time*100))
+          print(' Current deposition:                {:8.3f} {:8.3f} {:8.3f} {:8.3}'.format(self.time_stat_min_array[2],self.time_stat_ave_array[2],self.time_stat_max_array[2],self.time_stat_max_array[2]/self.total_kernel_time*100))
+          print(' Current bound. cond.:              {:8.3f} {:8.3f} {:8.3f} {:8.3}'.format(self.time_stat_min_array[3],self.time_stat_ave_array[3],self.time_stat_max_array[3],self.time_stat_max_array[3]/self.total_kernel_time*100))
+          print(' Magnetic field solver:             {:8.3f} {:8.3f} {:8.3f} {:8.3}'.format(self.time_stat_min_array[5],self.time_stat_ave_array[5],self.time_stat_max_array[5],self.time_stat_max_array[5]/self.total_kernel_time*100))
+          print(' Magnetic field bound. cond.:       {:8.3f} {:8.3f} {:8.3f} {:8.3}'.format(self.time_stat_min_array[6],self.time_stat_ave_array[6],self.time_stat_max_array[6],self.time_stat_max_array[6]/self.total_kernel_time*100))
+          print(' Electric field solver:             {:8.3f} {:8.3f} {:8.3f} {:8.3}'.format(self.time_stat_min_array[7],self.time_stat_ave_array[7],self.time_stat_max_array[7],self.time_stat_max_array[7]/self.total_kernel_time*100))
+          print(' Electric field bound. cond.:       {:8.3f} {:8.3f} {:8.3f} {:8.3}'.format(self.time_stat_min_array[8],self.time_stat_ave_array[8],self.time_stat_max_array[8],self.time_stat_max_array[8]/self.total_kernel_time*100))
+          print(' Particle sorting:                  {:8.3f} {:8.3f} {:8.3f} {:8.3}'.format(self.time_stat_min_array[10],self.time_stat_ave_array[10],self.time_stat_max_array[10],self.time_stat_max_array[10]/self.total_kernel_time*100))
+          print(' Charge deposition:                 {:8.3f} {:8.3f} {:8.3f} {:8.3}'.format(self.time_stat_min_array[12],self.time_stat_ave_array[12],self.time_stat_max_array[12],self.time_stat_max_array[12]/self.total_kernel_time*100))
+          print(' Charge bound. cond.:               {:8.3f} {:8.3f} {:8.3f} {:8.3}'.format(self.time_stat_min_array[13],self.time_stat_ave_array[13],self.time_stat_max_array[13],self.time_stat_max_array[13]/self.total_kernel_time*100))
+          print(' Load balancing:                    {:8.3f} {:8.3f} {:8.3f} {:8.3}'.format(self.time_stat_min_array[15],self.time_stat_ave_array[15],self.time_stat_max_array[15],self.time_stat_max_array[15]/self.total_kernel_time*100))
+          print()
 
 
     def allocatefieldarraysFFT(self):

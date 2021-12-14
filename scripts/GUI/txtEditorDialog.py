@@ -7,7 +7,7 @@ def create(parent):
     return txtEditorDialog(parent)
 
 [wxID_TXTEDITORDIALOG, wxID_TXTEDITORDIALOGTXTEDITOR,
-] = map(lambda _init_ctrls: wx.NewId(), range(2))
+] = [wx.NewId() for _init_ctrls in range(2)]
 
 class txtEditorDialog(wx.Dialog):
     def _init_utils(self):

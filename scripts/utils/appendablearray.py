@@ -65,7 +65,7 @@ class AppendableArray:
                 self._typecode = initunit.dtype.char
                 self._unitshape = initunit.shape
             else:
-                if isinstance(initunit,types.IntType): self._typecode = 'i'
+                if isinstance(initunit,int): self._typecode = 'i'
                 else:                        self._typecode = 'd'
                 self._unitshape = None
         self._datalen = 0

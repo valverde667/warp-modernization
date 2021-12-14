@@ -66,8 +66,8 @@ from scipy import interpolate
 
 
 def envmatch_KVinvariantdoc():
-    import envmatch_KVinvariant
-    print  envmatch_KVinvariant.__doc__
+    from . import envmatch_KVinvariant
+    print(envmatch_KVinvariant.__doc__)
   
   
 ########################################################################
@@ -144,9 +144,9 @@ def Match(emitx='auto',emity='auto',sigmax='auto',sigmay='auto',
     """
     # --- Consistency Check
     if top.lrelativ != top.relativity:
-        print 'top.lrelativ =', top.lrelativ 
-        print 'but top.relativity =', top.relativity
-        print 'Must set both consistently to True or False.'
+        print('top.lrelativ =', top.lrelativ) 
+        print('but top.relativity =', top.relativity)
+        print('Must set both consistently to True or False.')
         raise Exception('top.lrelativ and top.relativity not consistent')
     # --- Lattice Parameters
     global lperiod,sigma0x,sigma0y,si
@@ -310,31 +310,31 @@ def Match(emitx='auto',emity='auto',sigmax='auto',sigmay='auto',
             iterations,tolachieved,Q,Qx,Qy,emitx,emity,sigmax,sigmay = \
               MatchGen(SolCase,True,Q,emitx,emity,sigmax,sigmay,tol)
             if   SolCase == '1':
-                print 'For consistency, set'
-                print 'Q = ', Q, '(already set)'
-                print 'emitx = ', emitx
-                print 'emity = ', emity
+                print('For consistency, set')
+                print('Q = ', Q, '(already set)')
+                print('emitx = ', emitx)
+                print('emity = ', emity)
             elif SolCase == '2':
-                print 'For consistency, set'
-                print 'Q = ', Q
-                print 'Consider resetting either beam current (top.ibeam)'
-                print '  or beam velocity (top.vbeam) to achieve this'
-                print 'emitx = ', emitx, '(already set)'
-                print 'emity = ', emity, '(already set)'
+                print('For consistency, set')
+                print('Q = ', Q)
+                print('Consider resetting either beam current (top.ibeam)')
+                print('  or beam velocity (top.vbeam) to achieve this')
+                print('emitx = ', emitx, '(already set)')
+                print('emity = ', emity, '(already set)')
             elif SolCase == '3a':
-                print 'For consistency, set'
-                print 'Q = ', Q
-                print 'Consider resetting either beam current (top.ibeam)'
-                print '  or beam velocity (top.vbeam) to achieve this'
-                print 'emitx = ', emitx, '(already set)'
-                print 'emity = ', emity
+                print('For consistency, set')
+                print('Q = ', Q)
+                print('Consider resetting either beam current (top.ibeam)')
+                print('  or beam velocity (top.vbeam) to achieve this')
+                print('emitx = ', emitx, '(already set)')
+                print('emity = ', emity)
             elif SolCase == '3b':
-                print 'For consistency, set'
-                print 'Q = ', Q
-                print 'Consider resetting either beam current (top.ibeam)'
-                print '  or beam velocity (top.vbeam) to achieve this'
-                print 'emitx = ', emitx
-                print 'emity = ', emity, '(already set)'
+                print('For consistency, set')
+                print('Q = ', Q)
+                print('Consider resetting either beam current (top.ibeam)')
+                print('  or beam velocity (top.vbeam) to achieve this')
+                print('emitx = ', emitx)
+                print('emity = ', emity, '(already set)')
         elif SolCase == '2a':
             # --- call the continuous limit function
             #     this will yield guess values of depressed phase advances
@@ -354,12 +354,12 @@ def Match(emitx='auto',emity='auto',sigmax='auto',sigmay='auto',
             itnum,tolachieved,Q,Qx,Qy,emitx,emity,sigmax,sigmay = \
               MatchGen('2',True,Q,emitx,emity,sigmax,sigmay,tol)
             iterations = sum(iternum)
-            print 'For consistency, set'
-            print 'Q = ', Q
-            print 'Consider resetting either beam current (top.ibeam)'
-            print '  or beam velocity (top.vbeam) to achieve this'
-            print 'emitx = ', emitx, '(already set)'
-            print 'emity = ', emity, '(already set)'
+            print('For consistency, set')
+            print('Q = ', Q)
+            print('Consider resetting either beam current (top.ibeam)')
+            print('  or beam velocity (top.vbeam) to achieve this')
+            print('emitx = ', emitx, '(already set)')
+            print('emity = ', emity, '(already set)')
         elif SolCase == '2b':
             # --- call the continuous limit function
             #     this will yield guess values of depressed phase advances
@@ -379,12 +379,12 @@ def Match(emitx='auto',emity='auto',sigmax='auto',sigmay='auto',
             itnum,tolachieved,Q,Qx,Qy,emitx,emity,sigmax,sigmay = \
               MatchGen('2',True,Q,emitx,emity,sigmax,sigmay,tol)
             iterations = sum(iternum)
-            print 'For consistency, set'
-            print 'Q = ', Q
-            print 'Consider resetting either beam current (top.ibeam)'
-            print '  or beam velocity (top.vbeam) to achieve this'
-            print 'emitx = ', emitx, '(already set)'
-            print 'emity = ', emity, '(already set)'
+            print('For consistency, set')
+            print('Q = ', Q)
+            print('Consider resetting either beam current (top.ibeam)')
+            print('  or beam velocity (top.vbeam) to achieve this')
+            print('emitx = ', emitx, '(already set)')
+            print('emity = ', emity, '(already set)')
         # --- recast the envelope radius and angle blocks into arrays
         #     first make sure to remove any doubled points, i.e. the first 
         #     point of each subarray other than the first
@@ -659,21 +659,21 @@ def sigma0_func(error_stop):
             sinsigma0x = sqrt(1-cossigma0x**2)
         else:
             if error_stop:
-                print 'Warning: Undepressed x-plane phase advance > 180 degrees.'
+                print('Warning: Undepressed x-plane phase advance > 180 degrees.')
                 assert s0x[-1][-1] >= 0., 'Matching script aborted.'
             else:
-                print 'Warning: Undepressed x-plane phase advance > 180 degrees.'
-                print 'Lattice may not be stable.'
-                print 'Continuing with matching script anyway.'
+                print('Warning: Undepressed x-plane phase advance > 180 degrees.')
+                print('Lattice may not be stable.')
+                print('Continuing with matching script anyway.')
                 sinsigma0x = -sqrt(1-cossigma0x**2)
     else:
         if error_stop:
-            print 'Warning: Undepressed x-plane phase advance is complex.'
+            print('Warning: Undepressed x-plane phase advance is complex.')
             assert abs(cossigma0x) <= 1, 'Matching script aborted.'
         else:
-            print 'Warning: Undepressed x-plane phase advance is complex.'
-            print 'Lattice may not be stable.'
-            print 'Continuing with matching script anyway.'
+            print('Warning: Undepressed x-plane phase advance is complex.')
+            print('Lattice may not be stable.')
+            print('Continuing with matching script anyway.')
             if s0x[-1][-1] >= 0.:
                 sinsigma0x =  sqrt(1-cossigma0x**2+0j)
             else:
@@ -684,21 +684,21 @@ def sigma0_func(error_stop):
             sinsigma0y = sqrt(1-cossigma0y**2)
         else:
             if error_stop:
-                print 'Warning: Undepressed y-plane phase advance > 180 degrees.'
+                print('Warning: Undepressed y-plane phase advance > 180 degrees.')
                 assert s0y[-1][-1] >= 0., 'Matching script aborted.'
             else:
-                print 'Warning: Undepressed y-plane phase advance > 180 degrees.'
-                print 'Lattice may not be stable.'
-                print 'Continuing with matching script anyway.'
+                print('Warning: Undepressed y-plane phase advance > 180 degrees.')
+                print('Lattice may not be stable.')
+                print('Continuing with matching script anyway.')
                 sinsigma0y = -sqrt(1-cossigma0y**2)
     else:
         if error_stop:
-            print 'Warning: Undepressed y-plane phase advance is complex.'
+            print('Warning: Undepressed y-plane phase advance is complex.')
             assert abs(cossigma0y) <= 1, 'Matching script aborted.'
         else:
-            print 'Warning: Undepressed y-plane phase advance is complex.'
-            print 'Lattice may not be stable.'
-            print 'Continuing with matching script anyway.'
+            print('Warning: Undepressed y-plane phase advance is complex.')
+            print('Lattice may not be stable.')
+            print('Continuing with matching script anyway.')
             if s0y[-1][-1] >=  0.:
                 sinsigma0y =  sqrt(1-cossigma0y**2+0j)
             else:

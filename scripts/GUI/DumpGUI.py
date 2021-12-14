@@ -11,7 +11,7 @@ def create(parent):
  wxID_WXDIALOG1DUMP, wxID_WXDIALOG1FILENAME, wxID_WXDIALOG1PYVARS,
  wxID_WXDIALOG1STATICTEXT1, wxID_WXDIALOG1STATICTEXT2, wxID_WXDIALOG1TEXT3,
  wxID_WXDIALOG1VARSUFFIX,
-] = map(lambda _init_ctrls: wx.NewId(), range(10))
+] = [wx.NewId() for _init_ctrls in range(10)]
 
 class wxDialog1(wx.Dialog):
     def _init_utils(self):

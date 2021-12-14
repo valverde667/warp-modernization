@@ -222,7 +222,7 @@ class EM3D(SubcycledPoissonSolver):
             pass
 
         # --- If there are any remaning keyword arguments, raise an error.
-        assert len(kw.keys()) == 0,"Bad keyword arguments %s"%kw.keys()
+        assert len(list(kw.keys())) == 0,"Bad keyword arguments %s"%list(kw.keys())
 
         # --- This needs to be called again since some mesh values may have changed
         # --- since it was previously called in FieldSolver.__init__.
@@ -306,7 +306,7 @@ class EM3D(SubcycledPoissonSolver):
             em3d.betaxz  = em3d.betayx = em3d.betayz = em3d.betazx = em3d.betazy  = em3d.betaxy
             em3d.gammay = em3d.gammaz = em3d.gammax
 
-        print 'alphax,alphaz,betazx,betaxz',em3d.alphax,em3d.alphaz,em3d.betazx,em3d.betaxz
+        print('alphax,alphaz,betazx,betaxz',em3d.alphax,em3d.alphaz,em3d.betazx,em3d.betaxz)
         # --- set time step as a fraction of Courant condition
         # --- also set self.ntsub if top.dt over Courant condition times dtcoef
         try:
@@ -380,14 +380,14 @@ class EM3D(SubcycledPoissonSolver):
                        if top.dt>(self.dtcourant):
 #              self.ntsub = (nint(top.dt/(self.dtcourant))+0)
                             self.ntsub = int(top.dt/(self.dtcourant)+1.)
-                            print '#1', self.ntsub,top.dt,self.dtcourant
+                            print('#1', self.ntsub,top.dt,self.dtcourant)
                        elif self.l_enableovercycle:
                             self.ntsub = 1./(nint((self.dtcourant)/top.dt)+0)
-                            print '#2', self.ntsub,top.dt,self.dtcourant
+                            print('#2', self.ntsub,top.dt,self.dtcourant)
         dtodz = clight*top.dt/self.dz
         if self.l_correct_num_Cherenkov and top.efetch[0]==4 and self.l_lower_order_in_v and dtodz>0.756 and dtodz<0.764:
-            print "*** Warning: Coefficients for Galerkin algorithm are ill behaved for 0.756<c*Dt/Dz<0.764 and should not be used."
-            print "*** Rescaling top.dt to 0.75*Dz/c"
+            print("*** Warning: Coefficients for Galerkin algorithm are ill behaved for 0.756<c*Dt/Dz<0.764 and should not be used.")
+            print("*** Rescaling top.dt to 0.75*Dz/c")
             top.dt = 0.75*self.dz/clight
 
         self.dtinit = top.dt
@@ -482,7 +482,7 @@ class EM3D(SubcycledPoissonSolver):
             if name in kw: del kw[name]
 
     def processdefaultsfromdict(self,dict,kw):
-        for name,defvalue in dict.iteritems():
+        for name,defvalue in dict.items():
             if name not in self.__dict__:
                 #self.__dict__[name] = kw.pop(name,getattr(top,name)) # Python2.3
                 self.__dict__[name] = kw.get(name,defvalue)
@@ -664,8 +664,8 @@ class EM3D(SubcycledPoissonSolver):
 
         # Current and charge deposition
         if top.ndts[0] != 1:
-            print "Error in depose_j_laser: top.ndts[0] must be 1 if injecting\
-                   a laser"
+            print("Error in depose_j_laser: top.ndts[0] must be 1 if injecting\
+                   a laser")
             raise
         f.Jx = self.fields.Jxarray[:,:,:,0]
         f.Jy = self.fields.Jyarray[:,:,:,0]
@@ -976,7 +976,7 @@ class EM3D(SubcycledPoissonSolver):
 #===============================================================================
     def setsourcep(self,js,pgroup,zgrid):
 #===============================================================================
-        if self.l_verbose:print 'setsourcep, species ',js
+        if self.l_verbose:print('setsourcep, species ',js)
         if (pgroup.ldodepos[js]==False): return
         n  = pgroup.nps[js]
         if n == 0: return
@@ -1206,7 +1206,7 @@ class EM3D(SubcycledPoissonSolver):
                                        l_particles_weight,w3d.l4symtry)
 
     def allocatedataarrays(self):
-        if self.l_verbose:print 'allocatedataarrays'
+        if self.l_verbose:print('allocatedataarrays')
         self.finalize()
         # --- reallocate Jarray if needed
         if self.fields.ntimes != top.nsndts:
@@ -1214,7 +1214,7 @@ class EM3D(SubcycledPoissonSolver):
             self.fields.gchange()
 
     def zerosourcep(self):
-        if self.l_verbose:print 'zerosourcep',self
+        if self.l_verbose:print('zerosourcep',self)
 
         # --- copy rho to rhoold if needed
         if self.l_getrho:
@@ -1244,7 +1244,7 @@ class EM3D(SubcycledPoissonSolver):
                     self.fields.Mp[...] = 0.
 
     def setsourcepforparticles(self,isourcepndtscopies,indts,iselfb):
-        if self.l_verbose:print 'setsourcepforparticles'
+        if self.l_verbose:print('setsourcepforparticles')
         # --- point J array to proper Jarray slice
         self.fields.Jx = self.fields.Jxarray[:,:,:,indts]
         self.fields.Jy = self.fields.Jyarray[:,:,:,indts]
@@ -1263,7 +1263,7 @@ class EM3D(SubcycledPoissonSolver):
     def finalizesourcep(self):
         if self.sourcepfinalized: return
         self.sourcepfinalized = True
-        if self.l_verbose:print 'finalizesourcep'
+        if self.l_verbose:print('finalizesourcep')
         # --- add slices
         self.add_source_ndts_slices()
         self.aftersetsourcep()
@@ -1277,7 +1277,7 @@ class EM3D(SubcycledPoissonSolver):
         self.applysourceboundaryconditions()
         # --- exchange guard cells data across domains
         self.exchange_bc(self.block)
-        if self.l_verbose:print 'finalizesourcep done'
+        if self.l_verbose:print('finalizesourcep done')
 
     def Jyee2node3d(self):
         Jyee2node3d(self.block.core.yf)
@@ -1521,7 +1521,7 @@ class EM3D(SubcycledPoissonSolver):
         theta=(1.+arange(nx))*pi/nx
         nsm = shape(self.npass_smooth)[1]
         f = ones(nx,'d')
-        print nx,shape(theta),shape(f)
+        print(nx,shape(theta),shape(f))
         for js in range(nsm):
             w = 0.5*(1./self.alpha_smooth[0,js]-1.)
             f *= ((1.+2.*w*cos(theta*self.stride_smooth[0,js]))/(1.+2.*w))**self.npass_smooth[0,js]
@@ -1572,11 +1572,11 @@ class EM3D(SubcycledPoissonSolver):
         return f
 
     def fetche(self,*args,**kw):
-        if self.l_verbose:print 'fetche',self
+        if self.l_verbose:print('fetche',self)
         self.fetchfield(*args,**kw)
 
     def loadrho(self,lzero=None,lfinalize_rho=None,pgroups=None,**kw):
-        if self.l_verbose:print 'loadrho',self
+        if self.l_verbose:print('loadrho',self)
         self.loadsource(lzero,lfinalize_rho,pgroups,**kw)
 
     def fetchphi(self):
@@ -1977,13 +1977,13 @@ class EM3D(SubcycledPoissonSolver):
         if self.mode==2:
             self.solve2ndhalfmode2()
             return
-        if self.l_verbose:print 'solve 2nd half',self
+        if self.l_verbose:print('solve 2nd half',self)
         if top.dt != self.dtinit:raise Exception('Time step has been changed since initialization of EM3D.')
         self.push_b_part_2()
         if self.l_pushf:self.exchange_f()
         self.exchange_b()
         self.move_window_fields()
-        if self.l_verbose:print 'solve 2nd half done'
+        if self.l_verbose:print('solve 2nd half done')
 
     def dosolve(self,iwhich=0,*args):
         self.getconductorobject()
@@ -2002,7 +2002,7 @@ class EM3D(SubcycledPoissonSolver):
         else:
             for sp in self.deposition_species:
                 if top.fselfb[sp.jslist[0]] != 0.: raise Exception('Error:EM solver does not work if fselfb != 0.')
-        if self.l_verbose:print 'solve 1st half'
+        if self.l_verbose:print('solve 1st half')
         if top.dt != self.dtinit:raise Exception('Time step has been changed since initialization of EM3D.')
         if self.fields.spectral:
             #self.move_window_fields()
@@ -2043,7 +2043,7 @@ class EM3D(SubcycledPoissonSolver):
         # --- for fields that are overcycled, they need to be pushed backward every ntsub
         self.push_e(dir=-1)
         self.exchange_e(dir=-1)
-        if self.l_verbose:print 'solve 1st half done'
+        if self.l_verbose:print('solve 1st half done')
 
     def push_e(self,dir=1.,l_half=False):
         dt = dir*top.dt/self.ntsub
@@ -2059,7 +2059,7 @@ class EM3D(SubcycledPoissonSolver):
             else:
                 doit=False
         if doit:
-            if self.l_verbose:print 'push_e',self,dt,top.it,self.icycle
+            if self.l_verbose:print('push_e',self,dt,top.it,self.icycle)
             push_em3d_eef(self.block,dt,0,self.l_pushf,self.l_pushpot,1)
         if self.refinement is not None:
             self.__class__.__bases__[1].push_e(self.field_coarse,dir)
@@ -2101,7 +2101,7 @@ class EM3D(SubcycledPoissonSolver):
             else:
                 doit=False
         if doit:
-            if self.l_verbose:print 'push_b part 1',self,dt,top.it,self.icycle,dir
+            if self.l_verbose:print('push_b part 1',self,dt,top.it,self.icycle,dir)
             push_em3d_bf(self.block,dt,1,self.l_pushf,self.l_pushpot,True)
         if self.refinement is not None:
             self.__class__.__bases__[1].push_b_part_1(self.field_coarse,dir)
@@ -2116,7 +2116,7 @@ class EM3D(SubcycledPoissonSolver):
             self.novercycle = 1
             self.icycle = 0
         if self.icycle==0:
-            if self.l_verbose:print 'push_b part 2',self,dt,top.it,self.icycle
+            if self.l_verbose:print('push_b part 2',self,dt,top.it,self.icycle)
             push_em3d_bf(self.block,dt,2,self.l_pushf,self.l_pushpot,True)
         if self.refinement is not None:
             self.__class__.__bases__[1].push_b_part_2(self.field_coarse)
@@ -2145,7 +2145,7 @@ class EM3D(SubcycledPoissonSolver):
             else:
                 doit=False
         if doit:
-            if self.l_verbose:print 'exchange_b',self,top.it,self.icycle
+            if self.l_verbose:print('exchange_b',self,top.it,self.icycle)
             em3d_exchange_b(self.block)
         if self.refinement is not None:
             self.__class__.__bases__[1].exchange_b(self.field_coarse,dir)
@@ -2168,7 +2168,7 @@ class EM3D(SubcycledPoissonSolver):
 
     def push_b_full(self):
         dt = top.dt/self.ntsub
-        if self.l_verbose:print 'push_b full',self,dt,top.it,self.icycle
+        if self.l_verbose:print('push_b full',self,dt,top.it,self.icycle)
         push_em3d_bf(self.block,dt,0,self.l_pushf,self.l_pushpot,True)
 
     def push_e_full(self,i):
@@ -2176,7 +2176,7 @@ class EM3D(SubcycledPoissonSolver):
         if self.l_getrho:
             w = float(i+2)/self.ntsub
             self.fields.Rho = (1.-w)*self.fields.Rhoold + w*self.fields.Rhoarray[...,0]
-        if self.l_verbose:print 'push_e full',self,dt,top.it,self.icycle
+        if self.l_verbose:print('push_e full',self,dt,top.it,self.icycle)
         push_em3d_eef(self.block,dt,0,self.l_pushf,self.l_pushpot,True)
 
     ##########################################################################
@@ -2433,7 +2433,7 @@ class EM3D(SubcycledPoissonSolver):
                         xtitle='X';ytitle='Y'
                 plsys(view)
                 ptitles(title,xtitle,ytitle,'t = %gs'%(top.time))
-            if isinstance(procs,types.IntType):procs=[procs]
+            if isinstance(procs,int):procs=[procs]
             if me>0 and me in procs:
                 mpisend(self.isactive, dest = 0, tag = 3)
                 if self.isactive:
@@ -2443,7 +2443,7 @@ class EM3D(SubcycledPoissonSolver):
                 if me in procs and data is not None:
                     if self.l_1dz:
                         plsys(view)
-                        if kw.has_key('view'):kw.pop('view')
+                        if 'view' in kw:kw.pop('view')
                         nz=shape(data)[0]
                         dz=(ymax-ymin)/nz
                         zmesh=ymin+arange(nz)*dz
@@ -2506,7 +2506,7 @@ class EM3D(SubcycledPoissonSolver):
                                                             opacities=opacities)
                         except:
                             doautocolormap=True
-                            print 'WARNING: Palette not found.'
+                            print('WARNING: Palette not found.')
                     else:
                         doautocolormap=True
                     if doautocolormap:
@@ -2746,7 +2746,7 @@ class EM3D(SubcycledPoissonSolver):
                     if direction==2: datag = zeros([self.nx+1+nxg*2,self.ny+1+nyg*2],'d')
             else:
                 datag=None
-            if isinstance(procs,types.IntType):procs=[procs]
+            if isinstance(procs,int):procs=[procs]
             # Find the processors that have to send data
             validdata = gatherlist( self.isactive and data is not None, bcast=1)
             validprocs = compress( validdata , arange(len(validdata)) )
@@ -2806,7 +2806,7 @@ class EM3D(SubcycledPoissonSolver):
             dy=self.block.dy
             dz=self.block.dz
             # Determine the list of procs that have to send data
-            if procs is None : procs=range(npes)
+            if procs is None : procs=list(range(npes))
             if type(procs) is int : procs=[procs]
             # Send the data
             if me>0 and me in procs:
@@ -2873,7 +2873,7 @@ class EM3D(SubcycledPoissonSolver):
 
     def step(self,n=1,freq_print=10,lallspecl=0,l_alawarpx=False):
         for i in range(n):
-            if top.it%freq_print==0:print 'it = %g time = %g'%(top.it,top.time)
+            if top.it%freq_print==0:print('it = %g time = %g'%(top.it,top.time))
             if lallspecl:
                 l_first=l_last=1
             else:
@@ -3047,7 +3047,7 @@ class EM3D(SubcycledPoissonSolver):
         callafterstepfuncs.callfuncsinlist()
 
     def fetcheb(self,js,pg=None):
-        if self.l_verbose:print me,'enter fetcheb'
+        if self.l_verbose:print(me,'enter fetcheb')
         if pg is None:
             pg = top.pgroup
         np = pg.nps[js]
@@ -3066,7 +3066,7 @@ class EM3D(SubcycledPoissonSolver):
         self.fetchb()
 
     def push_velocity_first_half(self,js,pg=None):
-        if self.l_verbose:print me,'enter push_ions_velocity_first_half'
+        if self.l_verbose:print(me,'enter push_ions_velocity_first_half')
         if pg is None:
             pg = top.pgroup
         np = pg.nps[js]
@@ -3090,10 +3090,10 @@ class EM3D(SubcycledPoissonSolver):
                       pg.bx[il:iu], pg.by[il:iu], pg.bz[il:iu],
                       pg.sq[js],pg.sm[js],0.5*top.dt, top.ibpush)
 
-        if self.l_verbose:print me,'exit push_ions_velocity_first_half'
+        if self.l_verbose:print(me,'exit push_ions_velocity_first_half')
 
     def push_velocity_full(self,js,pg=None):
-        if self.l_verbose:print me,'enter push_ions_velocity_first_half'
+        if self.l_verbose:print(me,'enter push_ions_velocity_first_half')
         if pg is None:
             pg = top.pgroup
         np = pg.nps[js]
@@ -3123,10 +3123,10 @@ class EM3D(SubcycledPoissonSolver):
           # --- update gamma
           self.set_gamma(js,pg)
 
-        if self.l_verbose:print me,'exit push_ions_velocity_first_half'
+        if self.l_verbose:print(me,'exit push_ions_velocity_first_half')
 
     def push_velocity_second_half(self,js,pg=None):
-        if self.l_verbose:print me,'enter push_ions_velocity_second_half'
+        if self.l_verbose:print(me,'enter push_ions_velocity_second_half')
         if pg is None:
             pg = top.pgroup
         np = pg.nps[js]
@@ -3150,10 +3150,10 @@ class EM3D(SubcycledPoissonSolver):
         # --- update gamma
         self.set_gamma(js,pg)
 
-        if self.l_verbose:print me,'exit push_velocity_second_half'
+        if self.l_verbose:print(me,'exit push_velocity_second_half')
 
     def set_gamma(self,js,pg=None):
-        if self.l_verbose:print me,'enter set_gamma'
+        if self.l_verbose:print(me,'enter set_gamma')
         if pg is None:
             pg = top.pgroup
         np = pg.nps[js]
@@ -3164,10 +3164,10 @@ class EM3D(SubcycledPoissonSolver):
         gammaadv(np,pg.gaminv[il:iu],pg.uxp[il:iu],pg.uyp[il:iu],pg.uzp[il:iu],
                  top.gamadv,top.lrelativ)
 
-        if self.l_verbose:print me,'exit set_gamma'
+        if self.l_verbose:print(me,'exit set_gamma')
 
     def push_positions(self,js,pg=None,dtmult=1.):
-        if self.l_verbose:print me,'enter push_positions'
+        if self.l_verbose:print(me,'enter push_positions')
         if pg is None:
             pg = top.pgroup
         np = pg.nps[js]
@@ -3179,10 +3179,10 @@ class EM3D(SubcycledPoissonSolver):
                        pg.uxp[il:iu],pg.uyp[il:iu],pg.uzp[il:iu],
                        pg.gaminv[il:iu],dt)
 
-        if self.l_verbose:print me,'exit push_positions'
+        if self.l_verbose:print(me,'exit push_positions')
 
     def record_old_positions(self,js,pg=None,dtmult=1.):
-        if self.l_verbose:print me,'enter record_old_positions'
+        if self.l_verbose:print(me,'enter record_old_positions')
         if pg is None:
             pg = top.pgroup
         np = pg.nps[js]
@@ -3198,19 +3198,19 @@ class EM3D(SubcycledPoissonSolver):
         if top.uyoldpid>0:pg.pid[il:iu,top.uyoldpid-1] = pg.uyp[il:iu].copy()
         if top.uzoldpid>0:pg.pid[il:iu,top.uzoldpid-1] = pg.uzp[il:iu].copy()
 
-        if self.l_verbose:print me,'exit record_old_positions'
+        if self.l_verbose:print(me,'exit record_old_positions')
 
     def apply_bndconditions(self,js,pg=None):
-        if self.l_verbose:print me,'enter apply_ions_bndconditions'
+        if self.l_verbose:print(me,'enter apply_ions_bndconditions')
         # --- apply boundary conditions
         if pg is None:
             pg = top.pgroup
         if pg.nps[js]==0:return
         self.apply_bnd_conditions(js,pg)
-        if self.l_verbose:print me,'exit apply_ions_bndconditions'
+        if self.l_verbose:print(me,'exit apply_ions_bndconditions')
 
     def apply_bnd_conditions(self,js,pg=None):
-        if self.l_verbose:print me,'enter apply_bnd_conditions'
+        if self.l_verbose:print(me,'enter apply_bnd_conditions')
         if pg is None:
             pg = top.pgroup
         if pg.nps[js]==0:return
@@ -3238,7 +3238,7 @@ class EM3D(SubcycledPoissonSolver):
           if js==w3d.nzp-1:top.pbound0=0
         if self.scraper is not None:self.scraper.scrape(js)
         processlostpart(pg,js+1,top.clearlostpart,top.time+top.dt*pg.ndts[js],top.zbeam)
-        if self.l_verbose:print me,'enter apply_bnd_conditions'
+        if self.l_verbose:print(me,'enter apply_bnd_conditions')
 
     #############################################################
     #                   Plotting methods                        #
@@ -4530,7 +4530,7 @@ class EM3D(SubcycledPoissonSolver):
                     %(m,self.fields.circ_m)
                 modes = [m]
             else : # All modes
-                modes = range( self.fields.circ_m+1 )
+                modes = list(range( self.fields.circ_m+1))
 
             # Sum all the selected modes, in the plane given by direction
             # (Dump the returned theta array, since it is not used here)
@@ -4646,7 +4646,7 @@ class EM3D(SubcycledPoissonSolver):
                   %(m,self.fields.circ_m)
                 modes = [m]
             else : # All modes
-                modes = range( self.fields.circ_m+1 )
+                modes = list(range( self.fields.circ_m+1))
 
 
             # Sum all the selected modes, in the plane given by direction
@@ -5897,7 +5897,7 @@ class EM3D(SubcycledPoissonSolver):
         # --- This is needed because of the order in which things
         # --- are imported in warp.py.
         # --- There, MagnetostaticMG is imported after em3dsolver.
-        from magnetostaticMG import MagnetostaticMG
+        from .magnetostaticMG import MagnetostaticMG
 
         # --- This is needed to create the arrays.
         # --- This should be done to make sure that the EM arrays are set up
@@ -6513,12 +6513,12 @@ class EM3D(SubcycledPoissonSolver):
         if me==0:
             window(win)
             for ff in flist:
-                print 'plotting '+ff
+                print('plotting '+ff)
                 ppgeneric(fields[ff],view=3)
                 ppgeneric(myfields[ff],view=4)
                 ppgeneric(fields[ff]-myfields[ff],view=5)
                 plsys(1);ptitles(ff)
-                raw_input('press return for next field...')
+                input('press return for next field...')
                 fma(0)
 
 def allocatesf(f,stencil):

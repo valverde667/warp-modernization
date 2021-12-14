@@ -19,8 +19,8 @@ from ..warp import *
 
 
 def PepperGriddoc():
-    import PepperGrid
-    print PepperGrid.__doc__
+    from . import PepperGrid
+    print(PepperGrid.__doc__)
 
 
 def apply_pp(h_size=0.0002, h_sep=0.002, peakx=None, peaky=None):

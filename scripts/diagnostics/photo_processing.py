@@ -21,13 +21,13 @@ from ..warp import *
 import Image
 import os
 import numpy
-import mphoto
+from . import mphoto
 import gifmaker
 
 
 def photo_processingdoc():
-    import photo_processing
-    print photo_processing.__doc__
+    from . import photo_processing
+    print(photo_processing.__doc__)
 
 def make_montage(runid=None, label = "z", Rows = None, Columns = None):
     """ make_montage(runid=None, label = "z", Rows = None, Columns = None)
@@ -55,7 +55,7 @@ same name but with "montage" appended.
                 T1.append(im.size[1])
                 del(im)
 
-    print "L =", L
+    print("L =", L)
     N_photo = len(L)
 
     if Rows is None:
@@ -73,15 +73,15 @@ same name but with "montage" appended.
     D0 = max(T0)
     D1 = max(T1)
 
-    print "D0 =", D0
-    print "D1 =", D1
-    print "Rows =", Rows
-    print "Columns =", Columns
+    print("D0 =", D0)
+    print("D1 =", D1)
+    print("Rows =", Rows)
+    print("Columns =", Columns)
 
     mphoto.save_tif(numpy.zeros([Columns*D1,Rows*D0],'l'),"background.tif")
     B = Image.open("background.tif")
 
-    print "Background size =", B.size
+    print("Background size =", B.size)
 
     L.sort()
     for H in L:
@@ -120,7 +120,7 @@ in a gif animation.  <Needs More Work (to change fps, etc)>
                             max_num = fname[1][1:]
             except IndexError: continue
 
-        print "maxnum: ", max_num
+        print("maxnum: ", max_num)
 
         # -- Making movie file name --
         m_num='00'
@@ -134,7 +134,7 @@ in a gif animation.  <Needs More Work (to change fps, etc)>
                             if (mfname[1][1:] > m_num):
                                 m_num = mfname[1][1:]
                 except IndexError: continue
-        m_num = `(int(m_num)+1)`
+        m_num = repr((int(m_num)+1))
 
 #       else:
 #               m_num = `num_movie`
@@ -144,7 +144,7 @@ in a gif animation.  <Needs More Work (to change fps, etc)>
         filename = runid+'.'+'z'+m_num+'.'+'m'+".gif"
 
     # -- Opening needed files in the directory and saving them in frames --
-        max_num = `(int(max_num)+1)`
+        max_num = repr((int(max_num)+1))
         sequence = []
 
         for file in os.listdir(os.curdir):
@@ -157,7 +157,7 @@ in a gif animation.  <Needs More Work (to change fps, etc)>
                                 im = Image.open(file)
                                 sequence.append(im)
                             except IOError:
-                                print "!!Wrong input output"
+                                print("!!Wrong input output")
 
             except IndexError: continue
 
@@ -179,7 +179,7 @@ in a gif animation.  <Needs More Work (to change fps, etc)>
                             max_num = fname[1][1:]
             except IndexError: continue
 
-        print "maxnum: ", max_num
+        print("maxnum: ", max_num)
 
         # -- Making movie file name --
         m_num='00'
@@ -193,7 +193,7 @@ in a gif animation.  <Needs More Work (to change fps, etc)>
                             if (mfname[1][1:] > m_num):
                                 m_num = mfname[1][1:]
                 except IndexError: continue
-        m_num = `(int(m_num)+1)`
+        m_num = repr((int(m_num)+1))
 
 #               else:
 #                       m_num = `num_movie`
@@ -203,7 +203,7 @@ in a gif animation.  <Needs More Work (to change fps, etc)>
         filename = runid+'.'+'y'+m_num+'.'+'m'+".gif"
 
     # -- Opening needed files in the directory and saving them in frames --
-        max_num = `(int(max_num)+1)`
+        max_num = repr((int(max_num)+1))
         sequence = []
 
         for file in os.listdir(os.curdir):
@@ -216,7 +216,7 @@ in a gif animation.  <Needs More Work (to change fps, etc)>
                                 im = Image.open(file)
                                 sequence.append(im)
                             except IOError:
-                                print "!!Wrong input output"
+                                print("!!Wrong input output")
 
             except IndexError: continue
 
@@ -238,7 +238,7 @@ in a gif animation.  <Needs More Work (to change fps, etc)>
                             max_num = fname[1][1:]
             except IndexError: continue
 
-        print "maxnum: ", max_num
+        print("maxnum: ", max_num)
 
         # -- Making movie file name --
         m_num='00'
@@ -252,7 +252,7 @@ in a gif animation.  <Needs More Work (to change fps, etc)>
                             if (mfname[1][1:] > m_num):
                                 m_num = mfname[1][1:]
                 except IndexError: continue
-        m_num = `(int(m_num)+1)`
+        m_num = repr((int(m_num)+1))
 
     #       else:
     #               m_num = `num_movie`
@@ -262,7 +262,7 @@ in a gif animation.  <Needs More Work (to change fps, etc)>
         filename = runid+'.'+'x'+m_num+'.'+'m'+".gif"
 
     # -- Opening needed files in the directory and saving them in frames --
-        max_num = `(int(max_num)+1)`
+        max_num = repr((int(max_num)+1))
         sequence = []
 
         for file in os.listdir(os.curdir):
@@ -275,7 +275,7 @@ in a gif animation.  <Needs More Work (to change fps, etc)>
                                 im = Image.open(file)
                                 sequence.append(im)
                             except IOError:
-                                print "!!Wrong input output"
+                                print("!!Wrong input output")
 
             except IndexError: continue
 

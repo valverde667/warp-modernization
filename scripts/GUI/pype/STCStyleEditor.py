@@ -91,7 +91,7 @@ styleCategoryDescriptions = {
  wxID_STCSTYLEEDITDLGTAITALICCB, wxID_STCSTYLEEDITDLGTAITALICDEFCB,
  wxID_STCSTYLEEDITDLGTASIZEDEFCB, wxID_STCSTYLEEDITDLGTAUNDERLINEDCB,
  wxID_STCSTYLEEDITDLGTAUNDERLINEDDEFCB,
-] = map(lambda _init_ctrls: wxNewId(), range(47))
+] = [wxNewId() for _init_ctrls in range(47)]
 
 class STCStyleEditDlg(wxDialog):
     """ Style editor for the wxStyledTextCtrl """
@@ -479,7 +479,7 @@ class STCStyleEditDlg(wxDialog):
         try:
             self.updateStyle()
             return True
-        except KeyError, errkey:
+        except KeyError as errkey:
             wxLogError('Name not found in Common definition, '\
                 'please enter valid reference. (%s)'%errkey)
             self.restoreStyles(oldstyle)
@@ -496,7 +496,7 @@ class STCStyleEditDlg(wxDialog):
         # called after a control edited self.names, self.values
         # Special case for saving common defs settings
         if self.styleNum == 'common':
-            strVal = self.style[2] = self.values.values()[0]
+            strVal = self.style[2] = list(self.values.values())[0]
             if self.style[1] == 'size': self.style[2] = int(strVal)
 
             self.commonDefs[self.style[0]] = self.style[2]
@@ -606,10 +606,10 @@ class STCStyleEditDlg(wxDialog):
                 self.bgColDefCb.Enable(True)
 
         # populate with default style
-        self.populateProp(self.defValues.items(), True,
+        self.populateProp(list(self.defValues.items()), True,
             self.styleNum != wxSTC_STYLE_DEFAULT)
         # override with current settings
-        self.populateProp(self.values.items(), False)
+        self.populateProp(list(self.values.items()), False)
 
     def getCommonDefPropType(self, commonDefName):
         val = self.commonDefs[commonDefName]
@@ -631,7 +631,7 @@ class STCStyleEditDlg(wxDialog):
             commonDefs = {'fore': [], 'face': [], 'size': []}
 
             if self.elementLb.GetSelection() < self.commonDefsStartIdx:
-                for common in self.commonDefs.keys():
+                for common in list(self.commonDefs.keys()):
                     prop = self.getCommonDefPropType(common)
                     commonDefs[prop].append('%%(%s)%s'%(common,
                                                        prop=='size' and 'd' or 's'))
@@ -667,7 +667,7 @@ class STCStyleEditDlg(wxDialog):
             self._blockUpdate = False
 
     def populateStyleSelector(self):
-        numStyles = self.styleIdNames.items()
+        numStyles = list(self.styleIdNames.items())
         numStyles.sort()
         self.styleNumLookup = {}
         stdStart = -1
@@ -695,7 +695,7 @@ class STCStyleEditDlg(wxDialog):
 
         # add settings
         self.elementLb.Append('----Settings----')
-        settings = settingsIdNames.items()
+        settings = list(settingsIdNames.items())
         settings.sort();settings.reverse()
         for num, name in settings:
             self.elementLb.Append(name)
@@ -704,7 +704,7 @@ class STCStyleEditDlg(wxDialog):
         # add definitions
         self.elementLb.Append('----Common----')
         self.commonDefsStartIdx = self.elementLb.Number()
-        for common in self.commonDefs.keys():
+        for common in list(self.commonDefs.keys()):
             tpe = type(self.commonDefs[common])
             self.elementLb.Append('%('+common+')'+(tpe is type('') and 's' or 'd'))
             self.styleNumLookup[common] = num
@@ -875,7 +875,7 @@ class STCStyleEditDlg(wxDialog):
         self.populateCombosWithCommonDefs()
 
     def OnDefaultCheckBox(self, event):
-        if self.chbIdMap.has_key(event.GetId()):
+        if event.GetId() in self.chbIdMap:
             ctrl, chb, prop, wid = self.chbIdMap[event.GetId()]
             restore = not event.IsChecked()
             if prop in ('fore', 'back'):
@@ -913,7 +913,7 @@ class STCStyleEditDlg(wxDialog):
         try:
             writeStylesToConfig(self.config, 'style.%s'%self.lang, self.styles)
             self.config.SetPath('')
-            self.config.Write(commonDefsFile, `self.commonDefs`)
+            self.config.Write(commonDefsFile, repr(self.commonDefs))
             self.config.Flush()
 
             for stc in self.STCsToUpdate:
@@ -938,7 +938,7 @@ class STCStyleEditDlg(wxDialog):
                 self.commonDefs = answer
                 try:
                     self.setStyles()
-                except KeyError, badkey:
+                except KeyError as badkey:
                     wxLogError(str(badkey)+' not defined but required, \n'\
                           'reverting to previous common definition')
                     self.commonDefs = oldDefs
@@ -969,7 +969,7 @@ class STCStyleEditDlg(wxDialog):
         try:
             if dlg.ShowModal() == wxID_OK:
                 prop, name = dlg.result
-                if not self.commonDefs.has_key(name):
+                if name not in self.commonDefs:
                     self.commonDefs[name] = commonPropDefs[prop]
                     self.elementLb.Append('%('+name+')'+\
                      (type(commonPropDefs[prop]) is type('') and 's' or 'd'))
@@ -989,7 +989,7 @@ class STCStyleEditDlg(wxDialog):
         srchDct.update(self.otherLangStyleGroups)
 
         matchList = []
-        for grpName, styles in srchDct.items():
+        for grpName, styles in list(srchDct.items()):
             if self.findInStyles(comDef, styles):
                 matchList.append(grpName)
 
@@ -1011,7 +1011,7 @@ class STCStyleEditDlg(wxDialog):
 #---STC events------------------------------------------------------------------
     def OnUpdateUI(self, event):
         styleBefore = self.stc.GetStyleAt(self.stc.GetCurrentPos())
-        if self.styleIdNames.has_key(styleBefore):
+        if styleBefore in self.styleIdNames:
             self.elementLb.SetStringSelection(self.styleIdNames[styleBefore],
                   True)
         else:
@@ -1021,13 +1021,13 @@ class STCStyleEditDlg(wxDialog):
         event.Skip()
 
     def checkBraces(self, style):
-        if style == wxSTC_STYLE_BRACELIGHT and self.braceInfo.has_key('good'):
+        if style == wxSTC_STYLE_BRACELIGHT and 'good' in self.braceInfo:
             line, col = self.braceInfo['good']
             pos = self.stc.PositionFromLine(line-1) + col
             braceOpposite = self.stc.BraceMatch(pos)
             if braceOpposite != -1:
                 self.stc.BraceHighlight(pos, braceOpposite)
-        elif style == wxSTC_STYLE_BRACEBAD and self.braceInfo.has_key('bad'):
+        elif style == wxSTC_STYLE_BRACEBAD and 'bad' in self.braceInfo:
             line, col = self.braceInfo['bad']
             pos = self.stc.PositionFromLine(line-1) + col
             self.stc.BraceBadLight(pos)
@@ -1048,7 +1048,7 @@ class STCStyleEditDlg(wxDialog):
 
 #---Common definition dialog----------------------------------------------------
 
-[wxID_COMMONDEFDLG, wxID_COMMONDEFDLGCANCELBTN, wxID_COMMONDEFDLGCOMDEFNAMETC, wxID_COMMONDEFDLGOKBTN, wxID_COMMONDEFDLGPROPTYPERBX, wxID_COMMONDEFDLGSTATICBOX1] = map(lambda _init_ctrls: wxNewId(), range(6))
+[wxID_COMMONDEFDLG, wxID_COMMONDEFDLGCANCELBTN, wxID_COMMONDEFDLGCOMDEFNAMETC, wxID_COMMONDEFDLGOKBTN, wxID_COMMONDEFDLGPROPTYPERBX, wxID_COMMONDEFDLGSTATICBOX1] = [wxNewId() for _init_ctrls in range(6)]
 
 class CommonDefDlg(wxDialog):
     def _init_ctrls(self, prnt):
@@ -1121,7 +1121,7 @@ def colToStr(col):
 
 def writeProp(num, style, lang):
     if num >= 0:
-        return 'style.%s.%s='%(lang, string.zfill(`num`, 3)) + style
+        return 'style.%s.%s='%(lang, string.zfill(repr(num), 3)) + style
     else:
         return 'setting.%s.%d='%(lang, num) + style
 
@@ -1161,19 +1161,19 @@ def setSTCStyles(stc, styles, styleIdNames, commonDefs, lang, lexer, keywords):
 
     # Add blank style entries for undefined styles
     newStyles = []
-    styleItems = styleIdNames.items() + settingsIdNames.items()
+    styleItems = list(styleIdNames.items()) + list(settingsIdNames.items())
     styleItems.sort()
     idx = 0
     for num, name in styleItems:
         styleNumIdxMap[num] = idx
-        if not styleDict.has_key(num):
+        if num not in styleDict:
             styleDict[num] = ''
         newStyles.append(writeProp(num, styleDict[num], lang))
         idx = idx + 1
 
     # Set background colour to reduce flashing effect on refresh or page switch
     bkCol = None
-    if styleDict.has_key(0): prop = styleDict[0]
+    if 0 in styleDict: prop = styleDict[0]
     else: prop = styleDict[wxSTC_STYLE_DEFAULT]
     names, vals = parseProp(prop)
     if 'back' in names:
@@ -1192,7 +1192,7 @@ def setSTCStyles(stc, styles, styleIdNames, commonDefs, lang, lexer, keywords):
           styleDict[wxSTC_STYLE_DEFAULT] % commonDefs)
     stc.StyleClearAll()
 
-    for num, style in styleDict.items():
+    for num, style in list(styleDict.items()):
         if num >= 0:
             stc.StyleSetSpec(num, style % commonDefs)
         elif num == -1:
@@ -1317,7 +1317,7 @@ if __name__ == '__main__':
     home = os.environ.get('HOME')
     if home: home = os.path.join(home, '.boa')
     config = os.path.abspath(os.path.join(home, 'stc-styles.rc.cfg'))
-    print config
+    print(config)
     if 0:
         f = wxFrame(None, -1, 'Test frame (double click for editor)')
         stc = wxStyledTextCtrl(f, -1)

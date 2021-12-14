@@ -1,5 +1,5 @@
 from ..warp import *
-from mplot import *
+from .mplot import *
 
 
 hpbasictext = """
@@ -83,10 +83,10 @@ hpzarraytext = (
 
 ###########################################################################
 def hpdoc():
-    print """
+    print("""
   What follows is a list of all possible arguments to any of the history
   plotting routines, along with their default values.
-    """ + hpbasictext
+    """ + hpbasictext)
 
 ###########################################################################
 def _extractvar(name,varsuffix=None,pkg='top',attr=None,ff=None):
@@ -96,7 +96,7 @@ def _extractvar(name,varsuffix=None,pkg='top',attr=None,ff=None):
   returned.
     """
     if me > 0: return 0
-    if isinstance(name,basestring):
+    if isinstance(name,str):
         # --- if varsuffix is specified, try to evaluate the name with the
         # --- suffix. If ok, return the result, otherwise, default to the
         # --- fortran variable in the specified package.
@@ -149,7 +149,7 @@ def hpbasic(oord,kwdict={},**kw):
     kwvalues.update(kw)
     kwvalues.update(kwdict)
     badargs = checkarguments(kwvalues,_hpbasic_kwdefaults)
-    if badargs: raise TypeError,"bad argument %s"%' '.join(badargs.keys())
+    if badargs: raise TypeError("bad argument %s"%' '.join(list(badargs.keys())))
     #for arg in kwvalues: exec(arg+" = kwvalues['"+arg+"']")
     absc = kwvalues['absc']
     js = kwvalues['js']
@@ -280,7 +280,7 @@ def hpbasiccont(oord,oordmesh,kwdict={},**kw):
     kwvalues.update(kw)
     kwvalues.update(kwdict)
     badargs = checkarguments(kwvalues,_hpbasiccont_kwdefaults)
-    if badargs: raise TypeError,"bad argument %s"%' '.join(badargs.keys())
+    if badargs: raise TypeError("bad argument %s"%' '.join(list(badargs.keys())))
     #for arg in _hpbasiccont_kwdefaults: exec(arg+" = kwvalues['"+arg+"']")
     absc = kwvalues['absc']
     js = kwvalues['js']
@@ -338,7 +338,7 @@ def hpbasiccont(oord,oordmesh,kwdict={},**kw):
         if len(kw) > 1: badkwlist = badkwlist[:-1] + 's:'
         for arg in kw:
             badkwlist = badkwlist + ' ' + arg
-        raise TypeError,badkwlist
+        raise TypeError(badkwlist)
 
     # --- Now complete the setup
     if not absc:
@@ -2663,255 +2663,255 @@ def histplotsdoc():
   hpvxvzbarz(): VxVz bar
   hpvyvzbarz(): VyVz bar
     """
-    print histplotsdoc.__doc__
+    print(histplotsdoc.__doc__)
 
 def histplotstest(**kw):
     """
   Test all histplots
     """
-    print 'hptotalke'
+    print('hptotalke')
     hptotalke(**kw); fma()
-    print 'hptotale'
+    print('hptotale')
     hptotale(**kw); fma()
-    print 'hpthermale'
+    print('hpthermale')
     hpthermale(**kw); fma()
-    print 'hpeps6d'
+    print('hpeps6d')
     hpeps6d(**kw); fma()
-    print 'hpepst'
+    print('hpepst')
     hpepst(**kw); fma()
-    print 'hpepsnt'
+    print('hpepsnt')
     hpepsnt(**kw); fma()
-    print 'hpxedge'
+    print('hpxedge')
     hpxedge(**kw); fma()
-    print 'hpxpedge'
+    print('hpxpedge')
     hpxpedge(**kw); fma()
-    print 'hpyedge'
+    print('hpyedge')
     hpyedge(**kw); fma()
-    print 'hpypedge'
+    print('hpypedge')
     hpypedge(**kw); fma()
-    print 'hpredge'
+    print('hpredge')
     hpredge(**kw); fma()
-    print 'hpxedges'
+    print('hpxedges')
     hpxedges(**kw); fma()
-    print 'hpyedges'
+    print('hpyedges')
     hpyedges(**kw); fma()
-    print 'hpredges'
+    print('hpredges')
     hpredges(**kw); fma()
-    print 'hpxxpslope'
+    print('hpxxpslope')
     hpxxpslope(**kw); fma()
-    print 'hpyypslope'
+    print('hpyypslope')
     hpyypslope(**kw); fma()
-    print 'hpenvx'
+    print('hpenvx')
     hpenvx(**kw); fma()
-    print 'hpenvy'
+    print('hpenvy')
     hpenvy(**kw); fma()
-    print 'hpzbeam'
+    print('hpzbeam')
     hpzbeam(**kw); fma()
-    print 'hpvbeam'
+    print('hpvbeam')
     hpvbeam(**kw); fma()
-    print 'hpbmlen'
+    print('hpbmlen')
     hpbmlen(**kw); fma()
-    print 'hpefld'
+    print('hpefld')
     hpefld(**kw); fma()
-    print 'hpekzmbe'
+    print('hpekzmbe')
     hpekzmbe(**kw); fma()
-    print 'hpekzbeam'
+    print('hpekzbeam')
     hpekzbeam(**kw); fma()
-    print 'hpekperp'
+    print('hpekperp')
     hpekperp(**kw); fma()
-    print 'hpekinz'
+    print('hpekinz')
     hpekinz(**kw); fma()
-    print 'hpekin'
+    print('hpekin')
     hpekin(**kw); fma()
-    print 'hpepsx'
+    print('hpepsx')
     hpepsx(**kw); fma()
-    print 'hpepsy'
+    print('hpepsy')
     hpepsy(**kw); fma()
-    print 'hpepsz'
+    print('hpepsz')
     hpepsz(**kw); fma()
-    print 'hpepsnx'
+    print('hpepsnx')
     hpepsnx(**kw); fma()
-    print 'hpepsny'
+    print('hpepsny')
     hpepsny(**kw); fma()
-    print 'hpepsnz'
+    print('hpepsnz')
     hpepsnz(**kw); fma()
-    print 'hpepsr'
+    print('hpepsr')
     hpepsr(**kw); fma()
-    print 'hpepsg'
+    print('hpepsg')
     hpepsg(**kw); fma()
-    print 'hpepsh'
+    print('hpepsh')
     hpepsh(**kw); fma()
-    print 'hpepsnr'
+    print('hpepsnr')
     hpepsnr(**kw); fma()
-    print 'hpepsng'
+    print('hpepsng')
     hpepsng(**kw); fma()
-    print 'hpepsnh'
+    print('hpepsnh')
     hpepsnh(**kw); fma()
-    print 'hpnpsim'
+    print('hpnpsim')
     hpnpsim(**kw); fma()
-    print 'hppnum'
+    print('hppnum')
     hppnum(**kw); fma()
-    print 'hprhomid'
+    print('hprhomid')
     hprhomid(**kw); fma()
-    print 'hprhomax'
+    print('hprhomax')
     hprhomax(**kw); fma()
-    print 'hpxbar'
+    print('hpxbar')
     hpxbar(**kw); fma()
-    print 'hpybar'
+    print('hpybar')
     hpybar(**kw); fma()
-    print 'hpxybar'
+    print('hpxybar')
     hpxybar(**kw); fma()
-    print 'hpxrms'
+    print('hpxrms')
     hpxrms(**kw); fma()
-    print 'hpyrms'
+    print('hpyrms')
     hpyrms(**kw); fma()
-    print 'hprrms'
+    print('hprrms')
     hprrms(**kw); fma()
-    print 'hpxprms'
+    print('hpxprms')
     hpxprms(**kw); fma()
-    print 'hpyprms'
+    print('hpyprms')
     hpyprms(**kw); fma()
-    print 'hpxsqbar'
+    print('hpxsqbar')
     hpxsqbar(**kw); fma()
-    print 'hpysqbar'
+    print('hpysqbar')
     hpysqbar(**kw); fma()
-    print 'hpvxbar'
+    print('hpvxbar')
     hpvxbar(**kw); fma()
-    print 'hpvybar'
+    print('hpvybar')
     hpvybar(**kw); fma()
-    print 'hpvzbar'
+    print('hpvzbar')
     hpvzbar(**kw); fma()
-    print 'hpxpbar'
+    print('hpxpbar')
     hpxpbar(**kw); fma()
-    print 'hpypbar'
+    print('hpypbar')
     hpypbar(**kw); fma()
-    print 'hpvxrms'
+    print('hpvxrms')
     hpvxrms(**kw); fma()
-    print 'hpvyrms'
+    print('hpvyrms')
     hpvyrms(**kw); fma()
-    print 'hpvzrms'
+    print('hpvzrms')
     hpvzrms(**kw); fma()
-    print 'hpxpsqbar'
+    print('hpxpsqbar')
     hpxpsqbar(**kw); fma()
-    print 'hpypsqbar'
+    print('hpypsqbar')
     hpypsqbar(**kw); fma()
-    print 'hpxxpbar'
+    print('hpxxpbar')
     hpxxpbar(**kw); fma()
-    print 'hpyypbar'
+    print('hpyypbar')
     hpyypbar(**kw); fma()
-    print 'hpxvxbar'
+    print('hpxvxbar')
     hpxvxbar(**kw); fma()
-    print 'hpyvybar'
+    print('hpyvybar')
     hpyvybar(**kw); fma()
-    print 'hpxypbar'
+    print('hpxypbar')
     hpxypbar(**kw); fma()
-    print 'hpyxpbar'
+    print('hpyxpbar')
     hpyxpbar(**kw); fma()
-    print 'hpxpypbar'
+    print('hpxpypbar')
     hpxpypbar(**kw); fma()
-    print 'hpxvybar'
+    print('hpxvybar')
     hpxvybar(**kw); fma()
-    print 'hpyvxbar'
+    print('hpyvxbar')
     hpyvxbar(**kw); fma()
-    print 'hpvxvybar'
+    print('hpvxvybar')
     hpvxvybar(**kw); fma()
-    print 'hpxvzbar'
+    print('hpxvzbar')
     hpxvzbar(**kw); fma()
-    print 'hpyvzbar'
+    print('hpyvzbar')
     hpyvzbar(**kw); fma()
-    print 'hpvxvzbar'
+    print('hpvxvzbar')
     hpvxvzbar(**kw); fma()
-    print 'hpvyvzbar'
+    print('hpvyvzbar')
     hpvyvzbar(**kw); fma()
-    print 'hplinechg'
+    print('hplinechg')
     hplinechg(**kw); fma()
-    print 'hpvzofz'
+    print('hpvzofz')
     hpvzofz(**kw); fma()
-    print 'hpepsxz'
+    print('hpepsxz')
     hpepsxz(**kw); fma()
-    print 'hpepsyz'
+    print('hpepsyz')
     hpepsyz(**kw); fma()
-    print 'hpepsnxz'
+    print('hpepsnxz')
     hpepsnxz(**kw); fma()
-    print 'hpepsnyz'
+    print('hpepsnyz')
     hpepsnyz(**kw); fma()
-    print 'hpepsrz'
+    print('hpepsrz')
     hpepsrz(**kw); fma()
-    print 'hpepsgz'
+    print('hpepsgz')
     hpepsgz(**kw); fma()
-    print 'hpepshz'
+    print('hpepshz')
     hpepshz(**kw); fma()
-    print 'hpepsnrz'
+    print('hpepsnrz')
     hpepsnrz(**kw); fma()
-    print 'hpepsngz'
+    print('hpepsngz')
     hpepsngz(**kw); fma()
-    print 'hpepsnhz'
+    print('hpepsnhz')
     hpepsnhz(**kw); fma()
-    print 'hpxbarz'
+    print('hpxbarz')
     hpxbarz(**kw); fma()
-    print 'hpybarz'
+    print('hpybarz')
     hpybarz(**kw); fma()
-    print 'hpxybarz'
+    print('hpxybarz')
     hpxybarz(**kw); fma()
-    print 'hpxrmsz'
+    print('hpxrmsz')
     hpxrmsz(**kw); fma()
-    print 'hpyrmsz'
+    print('hpyrmsz')
     hpyrmsz(**kw); fma()
-    print 'hprrmsz'
+    print('hprrmsz')
     hprrmsz(**kw); fma()
-    print 'hpxprmsz'
+    print('hpxprmsz')
     hpxprmsz(**kw); fma()
-    print 'hpyprmsz'
+    print('hpyprmsz')
     hpyprmsz(**kw); fma()
-    print 'hpxsqbarz'
+    print('hpxsqbarz')
     hpxsqbarz(**kw); fma()
-    print 'hpysqbarz'
+    print('hpysqbarz')
     hpysqbarz(**kw); fma()
-    print 'hpvxbarz'
+    print('hpvxbarz')
     hpvxbarz(**kw); fma()
-    print 'hpvybarz'
+    print('hpvybarz')
     hpvybarz(**kw); fma()
-    print 'hpvzbarz'
+    print('hpvzbarz')
     hpvzbarz(**kw); fma()
-    print 'hpxpbarz'
+    print('hpxpbarz')
     hpxpbarz(**kw); fma()
-    print 'hpypbarz'
+    print('hpypbarz')
     hpypbarz(**kw); fma()
-    print 'hpvxrmsz'
+    print('hpvxrmsz')
     hpvxrmsz(**kw); fma()
-    print 'hpvyrmsz'
+    print('hpvyrmsz')
     hpvyrmsz(**kw); fma()
-    print 'hpvzrmsz'
+    print('hpvzrmsz')
     hpvzrmsz(**kw); fma()
-    print 'hpxpsqbarz'
+    print('hpxpsqbarz')
     hpxpsqbarz(**kw); fma()
-    print 'hpypsqbarz'
+    print('hpypsqbarz')
     hpypsqbarz(**kw); fma()
-    print 'hpxxpbarz'
+    print('hpxxpbarz')
     hpxxpbarz(**kw); fma()
-    print 'hpyypbarz'
+    print('hpyypbarz')
     hpyypbarz(**kw); fma()
-    print 'hpxvxbarz'
+    print('hpxvxbarz')
     hpxvxbarz(**kw); fma()
-    print 'hpyvybarz'
+    print('hpyvybarz')
     hpyvybarz(**kw); fma()
-    print 'hpxypbarz'
+    print('hpxypbarz')
     hpxypbarz(**kw); fma()
-    print 'hpyxpbarz'
+    print('hpyxpbarz')
     hpyxpbarz(**kw); fma()
-    print 'hpxpypbarz'
+    print('hpxpypbarz')
     hpxpypbarz(**kw); fma()
-    print 'hpxvybarz'
+    print('hpxvybarz')
     hpxvybarz(**kw); fma()
-    print 'hpyvxbarz'
+    print('hpyvxbarz')
     hpyvxbarz(**kw); fma()
-    print 'hpvxvybarz'
+    print('hpvxvybarz')
     hpvxvybarz(**kw); fma()
-    print 'hpxvzbarz'
+    print('hpxvzbarz')
     hpxvzbarz(**kw); fma()
-    print 'hpyvzbarz'
+    print('hpyvzbarz')
     hpyvzbarz(**kw); fma()
-    print 'hpvxvzbarz'
+    print('hpvxvzbarz')
     hpvxvzbarz(**kw); fma()
-    print 'hpvyvzbarz'
+    print('hpvyvzbarz')
     hpvyvzbarz(**kw); fma()

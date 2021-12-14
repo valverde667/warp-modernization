@@ -8,7 +8,7 @@ The fields are returned in a data structure which is close to
 their final layout, in the openPMD file.
 """
 import numpy as np
-from data_dict import circ_dict_quantity, cart_dict_quantity, \
+from .data_dict import circ_dict_quantity, cart_dict_quantity, \
     x_offset_dict, y_offset_dict
 import sys
 def get_dataset( dim, em, quantity, lgather, sub_sampling=[1,1,1],
@@ -434,7 +434,7 @@ def get_global_indices(ifull,nfull,sub_samplingp):
     istart[0] = 0
     count     = ifull[0]+nfull[0]-istart[0]
     nsub[0]   = (count-count%(sub_samplingp))/sub_samplingp # Number of cells of current domain
-    for i in xrange(1,len(ifull)):
+    for i in range(1,len(ifull)):
         istart[i] = istart[i-1]+(nsub[i-1]+1)*sub_samplingp # grid node index
         count     = ifull[i]+nfull[i]-istart[i]
         nsub[i]      = (count-count%sub_samplingp)/sub_samplingp

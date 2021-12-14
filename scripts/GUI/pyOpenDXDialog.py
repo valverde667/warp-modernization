@@ -18,7 +18,7 @@ import __main__
  wxID_PANELXSCALE_VALUE, wxID_PANELYSCALE, wxID_PANELYSCALE_MAX, 
  wxID_PANELYSCALE_MIN, wxID_PANELYSCALE_VALUE, wxID_PANELZSCALE, 
  wxID_PANELZSCALE_MAX, wxID_PANELZSCALE_MIN, wxID_PANELZSCALE_VALUE, 
-] = map(lambda _init_ctrls: wx.NewId(), range(34))
+] = [wx.NewId() for _init_ctrls in range(34)]
 
 class panel(wx.Panel):
     def _init_utils(self):
@@ -204,14 +204,14 @@ class panel(wx.Panel):
             toremove=[]
             for i in range(1,self.Window.GetCount()):
                 win_name = self.Window.GetString(i)
-                if dxwindows.has_key(win_name):
+                if win_name in dxwindows:
                     dxwindows.pop(win_name)
                 else:
                     toremove+=[i]
             toremove.reverse()
             for i in toremove:
                 self.Window.Delete(i)
-            for k in dxwindows.iterkeys():
+            for k in dxwindows.keys():
                 self.Window.Append(k)       
             if __main__.l_dxupdate_all_windows:
                 self.Window.SetStringSelection('All')
@@ -234,7 +234,7 @@ class panel(wx.Panel):
 
     def OnRenderingChoice(self, event):
         if __main__.l_dxupdate_all_windows:
-            windows=__main__.DXWindows.values()
+            windows=list(__main__.DXWindows.values())
         else:
             windows=[__main__.dxwindow]
         rendering=str(self.Rendering.GetStringSelection())

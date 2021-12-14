@@ -6,7 +6,7 @@ The two simulations are linked together.
 __all__ = ['PlaneRestore']
 
 from warp import *
-import cPickle
+import pickle
 
 class PlaneRestore:
     """
@@ -68,7 +68,7 @@ Input:
             uninstalluserinjection(self.restoreparticles)
 
     def read(self):
-        return cPickle.load(self.f)
+        return pickle.load(self.f)
 
     def readinitdata(self):
         "Read in the initial data"
@@ -89,7 +89,7 @@ Input:
                 # --- Put a dummy value in None to flag that the restore for
                 # --- this step should be skipped.
                 self.data['it'] = None
-                if self.verbose: print "PlaneRestore: no more data, restore is ending"
+                if self.verbose: print("PlaneRestore: no more data, restore is ending")
                 return
             self.data[name] = val
             if name.startswith('phiplane'): break
@@ -97,7 +97,7 @@ Input:
         # --- name will be 'phiplane%09d'%it
         self.data['it'] = int(name[8:])
 
-        if self.verbose: print "PlaneRestore: read in data from step %d"%self.data['it']
+        if self.verbose: print("PlaneRestore: read in data from step %d"%self.data['it'])
 
     def initrestoreplane(self):
         self.initted = True
@@ -126,7 +126,7 @@ Input:
         if self.lrestoreparticles:
             # --- initializes list of species
             if self.js is None:
-                self.jslist = range(top.ns)
+                self.jslist = list(range(top.ns))
             else:
                 try:
                     list(self.js)
@@ -209,12 +209,12 @@ Input:
             self.restoreplane_bfs()
 
         if self.verbose:
-            print "PlaneRestore: initial data"
-            print "  File",self.filename
-            print "  Restoring phi",self.lsavephi
-            print "  Restoring particles",self.lsaveparticles
-            print "  Start time",self.tmin
-            print "  Time step",self.deltat
+            print("PlaneRestore: initial data")
+            print("  File",self.filename)
+            print("  Restoring phi",self.lsavephi)
+            print("  Restoring particles",self.lsaveparticles)
+            print("  Start time",self.tmin)
+            print("  Time step",self.deltat)
 
     ###########################################################################
     def disable_plane_restore(self):
@@ -282,7 +282,7 @@ Input:
 
             # --- Apparently, no data was written for this step, so do nothing
             if self.data['it'] > self.it_restore:
-                if self.verbose: print "PlaneRestore: no data for step",self.it_restore
+                if self.verbose: print("PlaneRestore: no data for step",self.it_restore)
                 continue
 
             # --- load particles for each species
@@ -297,7 +297,7 @@ Input:
 
         # --- Check if data was written for this step.
         if 'xp'+suffix not in self.data:
-            if self.verbose: print "PlaneRestore: no particle data for step",it
+            if self.verbose: print("PlaneRestore: no particle data for step",it)
             return
 
         xx = self.data['xp'+suffix]
@@ -339,14 +339,14 @@ Input:
 
         # --- Check if particles are being added out of bounds
         if zz.min() < top.zpmin+top.zbeam or zz.max() > top.zpmax+top.zbeam:
-            print "PlaneRestore: restored particles are out of bounds."
-            print "\nThe extent of the simulation is %f to %f"%(top.zpmin+top.zbeam,top.zpmax+top.zbeam)
-            print "The extent of the restored particles is %f to %f\n"%(zz.min(),zz.max())
+            print("PlaneRestore: restored particles are out of bounds.")
+            print("\nThe extent of the simulation is %f to %f"%(top.zpmin+top.zbeam,top.zpmax+top.zbeam))
+            print("The extent of the restored particles is %f to %f\n"%(zz.min(),zz.max()))
             raise Exception("PlaneRestore: restored particles are out of bounds.")
 
         # --- Note that all processors read in the data, but only particles
         # --- within the processors domain are added.
-        if self.verbose: print "PlaneRestore: Restoring %d particles on step %d"%(len(xx),it)
+        if self.verbose: print("PlaneRestore: Restoring %d particles on step %d"%(len(xx),it))
         addparticles(xx,yy,zz,ux,uy,uz,gi,pid,
                      js=js,
                      lallindomain=false,
@@ -389,7 +389,7 @@ Input:
         bz += bzap
 
         if self.lsavesynchronized:
-            if self.verbose: print "RestorePlane: synchornizing particles from time",oldtime,"to time",top.time
+            if self.verbose: print("RestorePlane: synchornizing particles from time",oldtime,"to time",top.time)
 
             # --- Do a split leap frog advance to get the particles to the
             # --- current time level, with positions and velocity synchronized.
@@ -403,7 +403,7 @@ Input:
             bpush3d(nn,ux,uy,uz,gi,bx,by,bz,q,m,deltime/2.,top.ibpush)
 
         else:
-            if self.verbose: print "RestorePlane: advancing particles from time",oldtime,"to time",top.time
+            if self.verbose: print("RestorePlane: advancing particles from time",oldtime,"to time",top.time)
 
             # --- This is messy and not really recommended. It would be much better
             # --- to save the data synchronized.
@@ -453,7 +453,7 @@ Input:
         # --- load saved phi into the phi array
         self.restore_phi(iz,self.it_restore)
 
-        if self.verbose: print "PlaneRestore: Restoring phi on step %d"%(self.it_restore)
+        if self.verbose: print("PlaneRestore: Restoring phi on step %d"%(self.it_restore))
 
     def restoreplane_afs(self):
         # --- this routine resets the potential at the plane iz=-1 after the

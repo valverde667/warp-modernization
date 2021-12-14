@@ -30,12 +30,12 @@ no = 0
 from ..warp import *
 import numpy
 import os
-from tifrw import *
+from .tifrw import *
 
 
 def mphotodoc():
-    import mphoto
-    print(mphoto.__doc__)
+    from . import mphoto
+    print((mphoto.__doc__))
 
 
 ################ Median Filtering #######################################
@@ -65,10 +65,10 @@ is replaced with the median value of all the pixels in the window.
 
     if D_y > M/2:
         D_y = M/2
-        print("D_y to large; decreased to D_y =", D_y)
+        print(("D_y to large; decreased to D_y =", D_y))
     if D_x > N/2:
         D_x = N/2
-        print("D_x to large; decreased to D_x =", D_x)
+        print(("D_x to large; decreased to D_x =", D_x))
 
     for i in range(0, M):
 
@@ -110,7 +110,7 @@ and 4 for 4-fold -> unfold over x and y)
         M, N = numpy.shape(matrix)
         F_1 = numpy.zeros([M, N-1], 'd')
         F_2 = numpy.zeros([M-1, 2*N-1], 'd')
-        n = range(N-1)
+        n = list(range(N-1))
         for i in n:
             F_1[:, i] = matrix[:, (N-1) - i]
         F_3 = numpy.concatenate((F_1, matrix), 1)
@@ -118,7 +118,7 @@ and 4 for 4-fold -> unfold over x and y)
         del(n)
 
         F_2 = numpy.zeros([M-1, 2*N-1], 'd')
-        m = range(M-1)
+        m = list(range(M-1))
         for i in m:
             F_2[i, :] = F_3[(M-1) - i, :]
         photo_array = numpy.concatenate((F_2, F_3), 0)

@@ -63,8 +63,8 @@ penergylw: Plots energy as a function of time
 from ..warp import *
 
 def lwplotsdoc():
-    import lwplots
-    print lwplots.__doc__
+    from . import lwplots
+    print(lwplots.__doc__)
 
 ###########################################################################
 def addlabwindow(zlw):
@@ -88,7 +88,7 @@ Helper function which, given a name, returns the appropriate data. Note that
 name could actually be the variable itself, in which case, it is just
 returned.
     """
-    if isinstance(name, basestring):
+    if isinstance(name, str):
         # --- if varsuffix is specified, try to evaluate the name with the
         # --- suffix. If ok, return the result, otherwise, default to the
         # --- fortran variable in the specified package.

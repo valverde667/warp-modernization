@@ -34,8 +34,8 @@ import sys
 
 
 def postrackdoc():
-    import postrack
-    print postrack.__doc__
+    from . import postrack
+    print(postrack.__doc__)
 
 # --- Restore data files if postprocessing
 
@@ -68,7 +68,7 @@ try:
     lambda_x = 2*pi/(k0x*tune_depx)
     lambda_y = 2*pi/(k0y*tune_depy)
 except:
-    print "Numbers not right, tunes may be wrong and hence trajects may be wrong"
+    print("Numbers not right, tunes may be wrong and hence trajects may be wrong")
     k0x = k0y = sqrt(15.775)
 
 # --- Allocate arrays for Lyapunov Exponents
@@ -104,7 +104,7 @@ def plot_moms(plots = ("env", "emit", "remit", "cent", "vz", "np"), jspec=None, 
         Plots over all species, except 0, by default, unless a range of species
         is provided via the parameter 'jspec'
     """
-    if jspec is None: jspec = range(1, top.ns)
+    if jspec is None: jspec = list(range(1, top.ns))
     if 'titlet' in kw: title = kw['titlet']
     else: title = ''
     for plot in plots:
@@ -132,18 +132,18 @@ def plot_delay(lfull=0, jspec=None):
 
     if lfull: sp_last = top.ns
     else: sp_last = 1
-    if jspec is None: jspec = range(0, sp_last)
+    if jspec is None: jspec = list(range(0, sp_last))
     for spec in jspec:
         plg(eval("hepsx"+runid,__main__.__dict__)[spec, oord_indx],
             eval("hepsx"+runid,__main__.__dict__)[spec, absc_indx], marker='x')
         plg(eval("hepsy"+runid,__main__.__dict__)[spec, oord_indy],
             eval("hepsy"+runid,__main__.__dict__)[spec, absc_indy], marker='y')
-        ptitles("Emittance Delay Plot"+`spec`+' '+colors[spec % ncolors]); fma()
+        ptitles("Emittance Delay Plot"+repr(spec)+' '+colors[spec % ncolors]); fma()
         plg(eval("hxrms"+runid,__main__.__dict__)[spec, oord_indx],
             eval("hxrms"+runid,__main__.__dict__)[spec, absc_indx], marker='x')
         plg(eval("hyrms"+runid,__main__.__dict__)[spec, oord_indy],
             eval("hyrms"+runid,__main__.__dict__)[spec, absc_indy], marker='y')
-        ptitles("Envelope Delay Plot for species "+`spec`+' '+colors[spec % ncolors]); fma()
+        ptitles("Envelope Delay Plot for species "+repr(spec)+' '+colors[spec % ncolors]); fma()
 
 
 # ----------------------
@@ -156,7 +156,7 @@ def calc_irrev():
     for mom in secmoms:
         __main__.__dict__["ir"+mom][:] = eval('h'+mom+runid, __main__.__dict__
                     )[:, top.it]/eval('h'+mom+runid, __main__.__dict__)[:, 0]
-        print mom, __main__.__dict__["ir"+mom]
+        print(mom, __main__.__dict__["ir"+mom])
 
 
 def save_irrev(simlen=0.0):
@@ -166,7 +166,7 @@ def save_irrev(simlen=0.0):
         Simlen is the length of simulation before reversal.
     """
     with open("rev."+runid[0:3]+".txt", "a") as out:
-        out.write("Simulation Length = "+`simlen`+" * lambda_p"'\n\n')
+        out.write("Simulation Length = "+repr(simlen)+" * lambda_p"'\n\n')
         for mom in secmoms:
             out.write(mom+" = %s\n" % eval("ir"+mom, __main__.__dict__))
         out.write('\n\n')
@@ -354,7 +354,7 @@ def plot_diverge(lfull=0, jspec=None):
         Plots over all species, except 0, by default, unless a range of species
         is provided via the parameter 'jspec'
     """
-    if jspec is None: jspec = range(1, top.ns)
+    if jspec is None: jspec = list(range(1, top.ns))
     absc = eval("zscale"+runid, __main__.__dict__)
     for sp in jspec:
         for part in range(1, num_part):
@@ -364,7 +364,7 @@ def plot_diverge(lfull=0, jspec=None):
             eps_yp[sp-1, :, part-1] = eval("yp_"+runid, __main__.__dict__)[sp,:,part]-eval("yp_"+runid, __main__.__dict__)[sp,:,0]
 
         if lfull:
-            title = runid+": species "+`sp`+' '+colors[sp % ncolors]
+            title = runid+": species "+repr(sp)+' '+colors[sp % ncolors]
             for plot in plots:
                 for part in range(0, num_part-1):
                     plg(eval("eps_"+plot)[sp-1,:,part], absc)
@@ -373,7 +373,7 @@ def plot_diverge(lfull=0, jspec=None):
     eps_t = sqrt(eps_x**2 + eps_y**2 + (eps_xp/k0x)**2 + (eps_yp/k0y)**2)
 
     for sp in jspec:
-        title = runid+": species "+`sp`+' '+colors[sp % ncolors]
+        title = runid+": species "+repr(sp)+' '+colors[sp % ncolors]
         for part in range(0, num_part-1):
             plg(eps_t[sp-1,:,part], absc)
         ptitles(title, "S (m)", "Total Separation"); fma()
@@ -385,9 +385,9 @@ def plot_traj(jspec=None, beg=0, end=n_steps):
     Plots over all species, by default, unless a range of species
     is provided via the parameter 'jspec'
     """
-    if jspec is None: jspec = range(0, top.ns)
+    if jspec is None: jspec = list(range(0, top.ns))
     for sp in jspec:
-        title = runid+": species "+`sp`+' '+colors[sp % ncolors]
+        title = runid+": species "+repr(sp)+' '+colors[sp % ncolors]
         #
         for part in range(0, num_part):
             plg(eval("y_"+runid, __main__.__dict__)[sp,beg:end,part],
@@ -420,10 +420,10 @@ def plot_spect(jspec=None, plist=[0], beg=0, end=n_steps, endp=None):
     """
     import FFT
     if endp is None: endp = nint(end/2)
-    if jspec is None: jspec = range(0, top.ns)
+    if jspec is None: jspec = list(range(0, top.ns))
     for sp in jspec:
         for part in plist:
-            title = runid+": species "+`sp`+' '+colors[sp % ncolors]+'; particle '+`part`
+            title = runid+": species "+repr(sp)+' '+colors[sp % ncolors]+'; particle '+repr(part)
             #absc =
             for plot in plots:
                 __main__.__dict__['spect_'+plot] = FFT.fft(

@@ -3,7 +3,7 @@ import numpy.linalg as linalg
 from ..particles import singleparticle
 
 def wxy_matchdoc():
-    print """
+    print("""
   Contains tools for matching beams using the WARPxy code.
   minit: re-generates the slice beam
   match: varies the beam parameters to finds a matched beam (first method)
@@ -12,7 +12,7 @@ def wxy_matchdoc():
   MatchXY: class to match a beam from a given set of beam parameters to a final
            set of beam parameters by changing the focusing strength on four
            quadrupoles. So far, only linear quadrupole elements can be used.
-    """
+    """)
 
 
 ##############################################################################
@@ -69,10 +69,10 @@ def match(imtch=1,s=128):
         top.bp0_s = top.bp0
         minit()
         step(s)
-        print ("a error = %18.13f a' error = %18.13f"%
-             (2.*top.xrms[0,-1]-top.a0,2.*top.vxrms[0,-1]/top.vzbar[0,-1]-top.ap0))
-        print ("b error = %18.13f b' error = %18.13f"%
-             (2.*top.yrms[0,-1]-top.b0,2.*top.vyrms[0,-1]/top.vzbar[0,-1]+top.bp0))
+        print(("a error = %18.13f a' error = %18.13f"%
+             (2.*top.xrms[0,-1]-top.a0,2.*top.vxrms[0,-1]/top.vzbar[0,-1]-top.ap0)))
+        print(("b error = %18.13f b' error = %18.13f"%
+             (2.*top.yrms[0,-1]-top.b0,2.*top.vyrms[0,-1]/top.vzbar[0,-1]+top.bp0)))
 
 def match1(imtch=1,s=128):
     """
@@ -94,10 +94,10 @@ def match1(imtch=1,s=128):
         top.bp0_s = top.bp0
         minit()
         step(s)
-        print ("a error = %18.13f a' error = %18.13f"%
-             (2.*top.xrms[0,-1]-top.a0,2.*top.vxrms[0,-1]/top.vzbar[0,-1]-top.ap0))
-        print ("b error = %18.13f b' error = %18.13f"%
-             (2.*top.yrms[0,-1]-top.b0,2.*top.vyrms[0,-1]/top.vzbar[0,-1]+top.bp0))
+        print(("a error = %18.13f a' error = %18.13f"%
+             (2.*top.xrms[0,-1]-top.a0,2.*top.vxrms[0,-1]/top.vzbar[0,-1]-top.ap0)))
+        print(("b error = %18.13f b' error = %18.13f"%
+             (2.*top.yrms[0,-1]-top.b0,2.*top.vyrms[0,-1]/top.vzbar[0,-1]+top.bp0)))
 
 
 
@@ -178,15 +178,15 @@ def matchx(xf=0.,xpf=0.,yf=0.,ypf=0.,zs=None,ze=None,s=None,
         top.yp0 = top.yp0 + sum(mati[3,:]*dsp)*yps
 
         # --- Check for convergence
-        print "error => x = %10.3e x' = %10.3e"%tuple(dsp[:2])
-        print "error => y = %10.3e y' = %10.3e"%tuple(dsp[2:])
+        print("error => x = %10.3e x' = %10.3e"%tuple(dsp[:2]))
+        print("error => y = %10.3e y' = %10.3e"%tuple(dsp[2:]))
         if max(abs(dsp)) < tol : notdone = 0
 
     if iter == maxiter:
-        print 'Warning: Maximum number of iterations reached'
+        print('Warning: Maximum number of iterations reached')
     else:
-        print "top.x0 = %20.15e;top.xp0 = %20.15e"%(top.x0,top.xp0)
-        print "top.y0 = %20.15e;top.yp0 = %20.15e"%(top.y0,top.yp0)
+        print("top.x0 = %20.15e;top.xp0 = %20.15e"%(top.x0,top.xp0))
+        print("top.y0 = %20.15e;top.yp0 = %20.15e"%(top.y0,top.yp0))
 
 
 
@@ -260,13 +260,13 @@ class MatchXY:
             error = s.firststep()
             s.herror.append(error)
             s.firststepcomplete = 1
-            print 'Initial error is %f'%(error)
+            print('Initial error is %f'%(error))
         # --- Do more iterations
         for i in range(n):
             error = s.nextstep()
             s.herror.append(error)
             s.niterations = s.niterations + 1
-            print 'After %d iterations, error = %f'%(s.niterations,error)
+            print('After %d iterations, error = %f'%(s.niterations,error))
 
     def reset(s,initialaperture,initialxmmax):
         # --- Re-initialize the slice package
@@ -300,11 +300,11 @@ class MatchXY:
 
     def firststep(s):
         # --- Calculate the initial error
-        print '### Calculating the initial error...'
+        print('### Calculating the initial error...')
         s.reset(s.initialaperture,s.initialxmmax)
         s.propagate()
         if top.nplive < top.npmax:
-            print "Particles lost, remaining number is", top.nplive
+            print("Particles lost, remaining number is", top.nplive)
         s.fvec = array([2*top.xrms[0,-1]-s.af,
                         2*top.yrms[0,-1]-s.bf,
                         2*top.xxpbar[0,-1]/top.xrms[0,-1]-s.apf,
@@ -320,7 +320,7 @@ class MatchXY:
         No arguments are needed.
         """
         # --- Vary each quad
-        print '### Calculating the jacobian matrix'
+        print('### Calculating the jacobian matrix')
         fjac = zeros ((4,4),'d')
         g = zeros ((4),'d')
         p = zeros ((4),'d')
@@ -339,7 +339,7 @@ class MatchXY:
             s.reset(s.initialaperture,s.initialxmmax)
             s.propagate()
             if top.nplive < top.npmax:
-                print "Particles lost, remaining number is", top.nplive
+                print("Particles lost, remaining number is", top.nplive)
             fnew = array([2*top.xrms[0,-1]-s.af,
                           2*top.yrms[0,-1]-s.bf,
                           2*top.xxpbar[0,-1]/top.xrms[0,-1]-s.apf,
@@ -376,11 +376,11 @@ class MatchXY:
                 s.scaling[i] = xold[i] + alam * p[i]
                 top.quadde[iq] = s.savedquadde[i] * s.scaling[i]
                 top.quaddb[iq] = s.savedquaddb[i] * s.scaling[i]
-            print '### Running with new quad settings'
+            print('### Running with new quad settings')
             s.reset(s.initialaperture,s.initialxmmax)
             s.propagate()
             if top.nplive < top.npmax:
-                print "Particles lost, remaining number is", top.nplive
+                print("Particles lost, remaining number is", top.nplive)
             s.fvec = array([2*top.xrms[0,-1]-s.af,
                             2*top.yrms[0,-1]-s.bf,
                             2*top.xxpbar[0,-1]/top.xrms[0,-1]-s.apf,

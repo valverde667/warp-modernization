@@ -20,7 +20,7 @@ from scipy import optimize
 # Load in lattice-related functions from matching program              #
 ########################################################################
 
-import envmatch_KVinvariant as matching
+from . import envmatch_KVinvariant as matching
 
 ########################################################################
 # Add script name version and script documentation function            #
@@ -28,8 +28,8 @@ import envmatch_KVinvariant as matching
 
 
 def lattice_rescaledoc():
-    import lattice_rescale
-    print  lattice_rescale.__doc__
+    from . import lattice_rescale
+    print(lattice_rescale.__doc__)
 
 ########################################################################
 # Overarching lattice rescaling function                               #
@@ -95,17 +95,17 @@ def rescalefunc(sigma0target,plane,da=0.1,rftol=1.e-16,
     if abs(sigma0diff)/sigma0target <= rftol:
         # --- x-plane case
         if plane == 'x':
-            print 'Lattice x-plane phase advance is within fractional tolerance'
-            print rftol,' of target phase advance', sigma0target
-            print 'Lattice strength variables (Voltages, fields, etc.)'
-            print 'have not been modified.'
+            print('Lattice x-plane phase advance is within fractional tolerance')
+            print(rftol,' of target phase advance', sigma0target)
+            print('Lattice strength variables (Voltages, fields, etc.)')
+            print('have not been modified.')
             return
         # --- y-plane case
         if plane == 'y':
-            print 'Lattice y-plane phase advance is within fractional tolerance'
-            print rftol,' of target phase advance', sigma0target
-            print 'Lattice strength variables (Voltages, fields, etc.)'
-            print 'have not been modified.'
+            print('Lattice y-plane phase advance is within fractional tolerance')
+            print(rftol,' of target phase advance', sigma0target)
+            print('Lattice strength variables (Voltages, fields, etc.)')
+            print('have not been modified.')
             return
     # --- Phase advance of lattice is not within tolerance rftol of target
     #     phase advance
@@ -145,11 +145,11 @@ def rescalefunc(sigma0target,plane,da=0.1,rftol=1.e-16,
         rescale(ac)
         matching.latfunc(steps,error_stop)
 
-        print 'Lattice focusing strength has been scaled by a factor ',ac
-        print 'to achieve a target ',plane,'-plane phase advance sigma0 ='
-        print sigma0target,' deg/period.'
-        print 'Lattice strength variables (Voltages, fields, etc.) have all been'
-        print 'rescaled consistently.'
+        print('Lattice focusing strength has been scaled by a factor ',ac)
+        print('to achieve a target ',plane,'-plane phase advance sigma0 =')
+        print(sigma0target,' deg/period.')
+        print('Lattice strength variables (Voltages, fields, etc.) have all been')
+        print('rescaled consistently.')
 
         return
 

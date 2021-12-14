@@ -11,9 +11,9 @@ import os
 import numpy as np
 import time
 from scipy.constants import c
-from field_diag import FieldDiagnostic
-from field_extraction import get_dataset
-from data_dict import z_offset_dict
+from .field_diag import FieldDiagnostic
+from .field_extraction import get_dataset
+from .data_dict import z_offset_dict
 from warp_parallel import gather, me, mpiallgather, comm_world
 try:
     from mpi4py import MPI
@@ -133,8 +133,8 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
         # Record the time it takes
         if self.rank == 0:
             measured_start = time.perf_counter()
-            print('\nInitializing the lab-frame diagnostics: %d files...' %(
-                Ntot_snapshots_lab) )
+            print(('\nInitializing the lab-frame diagnostics: %d files...' %(
+                Ntot_snapshots_lab) ))
         self.Ntot_snapshots_lab = Ntot_snapshots_lab
         # Loop through the lab snapshots and create the corresponding files
         for i in range( Ntot_snapshots_lab ):
@@ -154,8 +154,8 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
         # Print a message that records the time for initialization
         if self.rank == 0:
             measured_end = time.perf_counter()
-            print('Time taken for initialization of the files: %.5f s' %(
-                measured_end-measured_start) )
+            print(('Time taken for initialization of the files: %.5f s' %(
+                measured_end-measured_start) ))
 
         # Create a slice handler, which will do all the extraction, Lorentz
         # transformation, etc for each slice to be registered in a
@@ -513,7 +513,7 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
                 if self.rank == 0:
                     # Check whether any processor had some slices
                     no_slices = True
-                    for i_proc in xrange(dump_comm.Get_size()):
+                    for i_proc in range(dump_comm.Get_size()):
                         if field_array_list_comm[i_proc] is not None:
                             no_slices = False
                     # If there are no slices, set global quantities to None
@@ -577,7 +577,7 @@ class BoostedFieldDiagnostic(FieldDiagnostic):
         global_array = np.zeros( data_shape )
         # Loop through all the processors
         # Fit the field arrays one by one into the global_array
-        for i_proc in xrange(size_list):
+        for i_proc in range(size_list):
 
             i_proc_commworld = self.ranks_group_list[ i_proc ]
 
@@ -988,7 +988,7 @@ class SliceHandler:
         f2i = self.field_to_index
 
         # Loop through the fields, and extract the proper slice for each field
-        for quantity in self.field_to_index.keys():
+        for quantity in list(self.field_to_index.keys()):
             # Here typical values for `quantity` are e.g. 'Er', 'Bx', 'rho'
 
             # Choose the index and interpolating factor, depending

@@ -2,13 +2,13 @@ from warp import *
 
 
 def errorcheckdoc():
-    print """
+    print("""
   errorcheck: runs all checks described below
   checksymmetry: checks use of symmetry
   checkparticleload: checks particle loading
   checkibpush: Makes sure that if ibpush is zero, there are no B-field elements
   checkenv: Make some checks on the input for the envelope code
-    """
+    """)
 
 ############################################################################
 def errorcheck():

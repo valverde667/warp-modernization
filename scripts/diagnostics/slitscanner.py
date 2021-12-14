@@ -6,8 +6,8 @@ from ..warp import *
 
 
 def slitscannerdoc():
-    import slitscanner
-    print slitscanner.__doc__
+    from . import slitscanner
+    print(slitscanner.__doc__)
 
 #---------------------------------------------------------------------------
 class SlitData:
@@ -15,7 +15,7 @@ class SlitData:
   Container for data a single slit
     """
     def __init__(self,x,y,z,xp,yp,vz,gi,s,center,width):
-        if isinstance(s,basestring): s = eval(s,locals())
+        if isinstance(s,str): s = eval(s,locals())
         self.center = center
         self.width = width
         s1 = center - width/2.
@@ -53,7 +53,7 @@ class Slit1Data:
   Container for data from the first slit scan
     """
     def __init__(self,x,y,z,xp,yp,vz,gi,s,center,range,n,width):
-        if isinstance(s,basestring): s = eval(s,locals())
+        if isinstance(s,str): s = eval(s,locals())
         self.center = center
         self.range = range
         self.n = n
@@ -68,7 +68,7 @@ class Slit1Data:
     def propagate(self,zdist):
         for d in self.data: d.propagate(zdist)
     def setdensity(self,grid):
-        grid[:] = map(len,self.data)
+        grid[:] = list(map(len,self.data))
     def ppxy(self):
         for d in self.data: d.ppxy()
 

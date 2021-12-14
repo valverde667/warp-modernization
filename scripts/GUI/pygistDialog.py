@@ -16,7 +16,7 @@ from warp import *
  wxID_PANELSTATICTEXT3, wxID_PANELSTATICTEXT4, wxID_PANELSTATICTEXT5,
  wxID_PANELSTATICTEXT6, wxID_PANELSTATICTEXT7, wxID_PANELSTATICTEXT8,
  wxID_PANELSTATICTEXT9, wxID_PANELTYPE, wxID_PANELWIDTH_SLIDER,
-] = map(lambda _init_ctrls: wx.NewId(), range(35))
+] = [wx.NewId() for _init_ctrls in range(35)]
 
 class panel(wx.Panel):
     def _init_utils(self):

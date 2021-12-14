@@ -22,14 +22,14 @@ try:
     from txphysics import txigenelec, txstopping, txrand
     l_txphysics = 1
 except:
-    print 'WARNING: module txphysics is not accessible.'
+    print('WARNING: module txphysics is not accessible.')
     l_txphysics = 0
 
 try:
     import desorb
     l_desorb = 1
 except:
-    print 'WARNING: module desorb is not accessible.'
+    print('WARNING: module desorb is not accessible.')
     l_desorb = 0
 import time
 
@@ -38,7 +38,7 @@ def coldotprod(a, b):
 
 def secondariesdoc():
     from ..particles import Secondaries
-    print Secondaries.__doc__
+    print(Secondaries.__doc__)
 
 class Secondaries:
     """Class for generating secondaries
@@ -240,8 +240,8 @@ class Secondaries:
             try:
                 dict['set_params_user'] = self.set_params_user.__name__
             except AttrbiuteError:
-                print ("Warning: Secondaries set_params_user function '%s' is not "+
-                       "a proper function and will not be saved")%self.set_params_user
+                print(("Warning: Secondaries set_params_user function '%s' is not "+
+                       "a proper function and will not be saved")%self.set_params_user)
                 dict['set_params_user'] = None
 
         # --- These arrays are swig arrays and cannot be pickled.
@@ -441,8 +441,8 @@ class Secondaries:
             plt(textblock,0.14,0.88,justify="LT",height=9,font='courier')
             fma()
         else:
-            print title
-            print textblock
+            print(title)
+            print(textblock)
 
     def generatenew(self,local=0,l_accumulate_hist=1):
         # --- theta and phi are angles from normal to surface with regard to z and x axis respectively
@@ -451,7 +451,7 @@ class Secondaries:
 
         if self.lrecursivegenerate: return
 
-        if self.l_verbose>1:print 'start secondaries generation'
+        if self.l_verbose>1:print('start secondaries generation')
 
         if self.l_record_timing:t1 = time.perf_counter()
 
@@ -491,7 +491,7 @@ class Secondaries:
         for ints in self.inter:
             incident_species=self.inter[ints]['incident_species']
             for js in incident_species.jslist:
-                if self.l_verbose:print 'js',js
+                if self.l_verbose:print('js',js)
                 if top.npslost[js]==0:continue
                 # if top.npslost[js]==0 or top.it%top.pgroup.ndts[js] != 0:continue
                 stride=top.pgroup.ndts[js]
@@ -499,10 +499,10 @@ class Secondaries:
                 i2 = top.inslost[js] + top.npslost[js] - 1
                 for ics,cond in enumerate(self.inter[incident_species]['conductors']):
                     icond = cond.condid
-                    if self.l_verbose:print 'ics',ics
+                    if self.l_verbose:print('ics',ics)
                     iit = compress(top.pidlost[i1+top.it%stride:i2:stride,-1]==icond,arange(top.it%stride,top.npslost[js],stride))
                     n = len(iit)
-                    if self.l_verbose:print 'nlost=',n
+                    if self.l_verbose:print('nlost=',n)
                     if n==0:continue
                     xplost = take(top.xplost[i1:i2],iit)
                     yplost = take(top.yplost[i1:i2],iit)
@@ -524,7 +524,7 @@ class Secondaries:
                     else:
                         iit2=arange(n)
                     n = len(iit2)
-                    if self.l_verbose:print 'nlost=',n
+                    if self.l_verbose:print('nlost=',n)
                     if n==0:continue
                     self.totallost += n
                     xplost = take(xplost,iit2)
@@ -562,10 +562,10 @@ class Secondaries:
                                0.5*top.pgroup.sm[js]*(uxplost**2+uyplost**2+uzplost**2)/jperev,
                                (1./gaminvlost-1.)*top.pgroup.sm[js]*clight**2/jperev)
                     if self.l_verbose:
-                        print 'xplost',xplost
-                        print 'yplost',yplost
-                        print 'zplost',zplost
-                        print 'e0',e0,gaminvlost,uxplost,uyplost,uzplost
+                        print('xplost',xplost)
+                        print('yplost',yplost)
+                        print('zplost',zplost)
+                        print('e0',e0,gaminvlost,uxplost,uyplost,uzplost)
                     v = array([vxplost,vyplost,vzplost])
                     # u = array([uxplost,uyplost,uzplost])
                     theta = take(top.pidlost[i1:i2,-3],iit,0)
@@ -699,7 +699,7 @@ class Secondaries:
                             l_infinity=1
                             swarn = 'WARNING issued by Secondaries.generate: particle at infinity'
                         if l_warning and self.l_verbose:
-                            print swarn
+                            print(swarn)
                             # print 'phi, theta',phi[i],theta[i]
                             # print 'n',n_unit0[0][i],n_unit0[1][i],n_unit0[2][i]
                             # print 'u',u[0][i],u[1][i],u[2][i]
@@ -710,7 +710,7 @@ class Secondaries:
                             tstart=wtime()
                         if self.l_verbose:
                             for i in range(n):
-                                print 'e0, coseta',e0[i],coseta[i]
+                                print('e0, coseta',e0[i],coseta[i])
 
                         init_position_offset = self.inter[incident_species]['init_position_offset'][ics]
                         if forced_yield is not None:
@@ -875,7 +875,7 @@ class Secondaries:
                                         ut=uttx.data()
                                         uz=uztx.data()
                                         if self.l_verbose:
-                                            print 'nb secondaries = ',ns,' from conductor ',icond, e0[i], coseta[i],i1,i2,iit[i],top.npslost
+                                            print('nb secondaries = ',ns,' from conductor ',icond, e0[i], coseta[i],i1,i2,iit[i],top.npslost)
                                         x,y,z,ux,uy,uz =  self.getxv(i,costheta,sintheta,sinphi,cosphi,n_unit0,xplost,yplost,zplost,vxplost,vyplost,vzplost,un,ut,uz,init_position_offset)
                                         xnew.append(x)
                                         ynew.append(y)
@@ -913,10 +913,10 @@ class Secondaries:
                                                     (ynew<ymin) or (ynew>ymax) or \
                                                     (znew<zmin) or (znew>zmax)
                                     if condition:
-                                        print 'WARNING from secondaries: new particle outside boundaries, skip creation',
-                                        print '\nLost particle position: ',xplost[i],yplost[i],zplost[i],
-                                        print '\nNew particle position: ',xnew,ynew,znew
-                                        print 'XYZ min/max: ', xmin,xmax,ymin,ymax,zmin,zmax
+                                        print('WARNING from secondaries: new particle outside boundaries, skip creation', end=' ')
+                                        print('\nLost particle position: ',xplost[i],yplost[i],zplost[i], end=' ')
+                                        print('\nNew particle position: ',xnew,ynew,znew)
+                                        print('XYZ min/max: ', xmin,xmax,ymin,ymax,zmin,zmax)
                                         # self.outparts+=[[xnew,ynew,znew,xplost[i],yplost[i],zplost[i], \
                                         # xplostold[i],yplostold[i],zplostold[i],n_unit0[0][i],n_unit0[1][i],n_unit0[2][i],icond]]
                                         self.outparts+=[[xnew,ynew,znew,xplost[i],yplost[i],zplost[i], \
@@ -1056,9 +1056,9 @@ class Secondaries:
                                     znew = zplostold[i]
                                     condition = False
                                 if condition:
-                                    print 'WARNING from secondaries: new neutral particle outside boundaries, skip creation',
-                                    print '\nLost particle position: ',xplost[i],yplost[i],zplost[i],
-                                    print '\nNew particle position: ',xnew,ynew,znew
+                                    print('WARNING from secondaries: new neutral particle outside boundaries, skip creation', end=' ')
+                                    print('\nLost particle position: ',xplost[i],yplost[i],zplost[i], end=' ')
+                                    print('\nNew particle position: ',xnew,ynew,znew)
                                     if self.vmode==1:
                                         self.outparts+=[[xnew,ynew,znew,xplost[i],yplost[i],zplost[i], \
                                       vxplost[i],vyplost[i],vzplost[i],n_unit0[0][i],n_unit0[1][i],n_unit0[2][i],icond]]
@@ -1153,7 +1153,7 @@ class Secondaries:
         if self.l_record_timing:t4 = time.perf_counter()
         if self.l_record_timing:self.timings.append([t4-t1,t2-t1,t3-t2,t4-t3,tinit,tgen,tprepadd,tadd])
         # print 'time Secondaries = ',time.perf_counter()-t1,'s',t2-t1,t3-t2,t4-t3
-        if self.l_verbose>1:print 'secondaries generation finished'
+        if self.l_verbose>1:print('secondaries generation finished')
 
     def call_set_params_user(self,maxsec,mat_num=None):
         
@@ -1165,7 +1165,7 @@ class Secondaries:
         if not self.l_set_params_user_only:self.set_params(maxsec,mat_num)
         # --- Now call the user's routine if there is one.
         if self.set_params_user is not None:
-            if isinstance(self.set_params_user,basestring):
+            if isinstance(self.set_params_user,str):
                     # --- This is needed primarily since a user defined function cannot be
                     # --- directly picklable and so only the name is saved.
                 import __main__
@@ -1173,12 +1173,12 @@ class Secondaries:
                     self.set_params_user = __main__.__dict__[self.set_params_user]
                 except KeyError:
                     # --- Maybe this should raise an error?
-                    print "Warning: Secondaries set_params_user function '%s' is not defined."%self.set_params_user
+                    print("Warning: Secondaries set_params_user function '%s' is not defined."%self.set_params_user)
             if callable(self.set_params_user):
                 self.set_params_user(maxsec,mat_num)
             else:
                 # --- Maybe this should raise an error?
-                print "Warning: Secondaries set_params_user function '%s' is not callable."%self.set_params_user
+                print("Warning: Secondaries set_params_user function '%s' is not callable."%self.set_params_user)
 
     def getxv(self,i,costheta,sintheta,sinphi,cosphi,n_unit0,xplost,yplost,zplost,vxplost,vyplost,vzplost,un,ut,uz,init_position_offset):
         if costheta[i]<1.-1.e-10:
@@ -1916,11 +1916,11 @@ class PhotoElectrons:
 
                 n=int(rhel)
                 if ranf()<rhel-n:n+=1  # randomly add one electrons based on rhel fractional part
-                if self.l_verbose:print ' *** i,rhel,nemit= ',i,rhel,n
+                if self.l_verbose:print(' *** i,rhel,nemit= ',i,rhel,n)
                 if n==0:continue
                 posC.nphel[0]=n   # tells Posinst to emit n photoelectrons
                 gen_photoelectrons(1) # number of beam slice in POSINST =1. Use only 1.
-                if self.l_verbose:print 'nlast',posC.nlast,"nphel=",posC.nphel[0]
+                if self.l_verbose:print('nlast',posC.nlast,"nphel=",posC.nphel[0])
 
                 if self.l_xmirror:
                     # put photons on both sides of the vacuum chamber
@@ -1929,8 +1929,8 @@ class PhotoElectrons:
                     posC.x[:posC.nlast] = posC.x[:posC.nlast]*xran
                     posC.vgx[:posC.nlast] = posC.vgx[:posC.nlast]*xran
 
-                if self.l_verbose:print "min and max of photoelectrons=",min((posC.z[:posC.nlast]/posC.slength)*self.dz+i*self.dz),\
-                                                                         max((posC.z[:posC.nlast]/posC.slength)*self.dz+i*self.dz)
+                if self.l_verbose:print("min and max of photoelectrons=",min((posC.z[:posC.nlast]/posC.slength)*self.dz+i*self.dz),\
+                                                                         max((posC.z[:posC.nlast]/posC.slength)*self.dz+i*self.dz))
                 ns = posC.nlast
                 js_new=emitted_species.jslist[0]
                 x = posC.x[:posC.nlast]

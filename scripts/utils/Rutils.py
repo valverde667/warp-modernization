@@ -14,8 +14,8 @@ import os
 
 
 def Rutilsdoc():
-    import Rutils
-    print Rutils.__doc__
+    from . import Rutils
+    print(Rutils.__doc__)
 
 
 def mailme(runid, user=None, addr=None, serv=None, host=None, text=None):

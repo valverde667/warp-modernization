@@ -7,12 +7,12 @@ The following functions are available:
 """
 __all__ = ['solenoiddoc','addsolenoid','addnewsolenoid','addgriddedsolenoid']
 from ..warp import *
-from lattice import addnewmmlt,addnewbgrd
+from .lattice import addnewmmlt,addnewbgrd
 
 
 def solenoiddoc():
-    import solenoid
-    print solenoid.__doc__
+    from . import solenoid
+    print(solenoid.__doc__)
 
 # --- Functions for the multipole representation
 def B0(z,zcent,bzmax,R,l,normalizek=1):
@@ -488,7 +488,7 @@ def addgriddedsolenoid(zcenter=None,length=None,rinner=None,router=None,
             Bsolver.source[...] = abs(bzmax/bzmax_actual)*Bsolver.source
             Bsolver.field[...] = abs(bzmax/bzmax_actual)*Bsolver.field
         else:
-            print "\n\n\n\nWarning: addgriddedsolenoid: calculated Bz is zero\n\n\n"
+            print("\n\n\n\nWarning: addgriddedsolenoid: calculated Bz is zero\n\n\n")
 
     # --- If ap is not passed in, then use the inner radius of the
     # --- solenoid windinds (which isn't necessarily a good value).

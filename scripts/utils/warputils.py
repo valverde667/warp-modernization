@@ -1,10 +1,10 @@
 """
 Utility and convenience routines used in Warp
 """
-from __future__ import generators # needed for yield statement for P2.2
+ # needed for yield statement for P2.2
 from ..warp import *
 import struct # needed for makefortranordered
-import appendablearray
+from . import appendablearray
 import re
 from functools import wraps
 
@@ -23,19 +23,18 @@ def deprecated(func):
 
 
 def warputilsdoc():
-    import warputils
-    print warputils.__doc__
+    from . import warputils
+    print(warputils.__doc__)
 
-if sys.hexversion >= 0x03000000:
-    # --- Hacky replacement of execfile which is not included in python3.
-    # --- I'll probably regret having this.
-    def execfile(filename, globals=None, locals=None):
-        if globals is None:
-            globals = sys._getframe(1).f_globals
-        if locals is None:
-            locals = sys._getframe(1).f_locals
-        with open(filename, "r") as fh:
-            exec(fh.read()+"\n", globals, locals)
+# --- Hacky replacement of execfile which is not included in python3.
+# --- I'll probably regret having this.
+def execfile(filename, globals=None, locals=None):
+    if globals is None:
+        globals = sys._getframe(1).f_globals
+    if locals is None:
+        locals = sys._getframe(1).f_locals
+    with open(filename, "r") as fh:
+        exec(fh.read()+"\n", globals, locals)
 
 # --- Make a wrapper around the Forthon doc function, which cleans up
 # --- reStructuredText markup.
@@ -45,7 +44,7 @@ def doc(name,printit=1):
     # --- This changes function references into doc(funcname).
     result = re.sub(r':py:func:`(([~\w]*\.)*)([\w]+)(( \<[\w]+\>)*)`',r'\3',result)
     #result = re.sub(r'\A\|',r'',result)
-    if printit: print result
+    if printit: print(result)
     else: return result
 
 # --- Convenience function modeled after the iota of basis
@@ -69,7 +68,7 @@ def remark(s):
     """
   Same as print
     """
-    print s
+    print(s)
 
 numpysign = sign
 def sign(x,y=None):
@@ -317,7 +316,7 @@ def warpprofilesample(frame,event,arg):
     try:    warpprofile.level
     except: warpprofile.level = 0
     if event == 'return': warpprofile.level = warpprofile.level - 1
-    print "%s %s %s"%(warpprofile.level*'  ',event,frame.f_code.co_name)
+    print("%s %s %s"%(warpprofile.level*'  ',event,frame.f_code.co_name))
     if event == 'call': warpprofile.level = warpprofile.level + 1
 
 
@@ -446,7 +445,7 @@ def getdatafromtextfile(filename,nskip=0,dims=None,dtype='d',fortranordering=Tru
         if readuntilerror and len(words) != dims[0]:
             break
         try:
-            dataline = map(converter,words)
+            dataline = list(map(converter,words))
         except ValueError:
             if readuntilerror:
                 break
@@ -480,7 +479,7 @@ def getdatafromtextfile(filename,nskip=0,dims=None,dtype='d',fortranordering=Tru
     if fortranordering:
         data = transpose(data)
     else:
-        data = transpose(data,[len(dims)-1]+range(len(dims)-1))
+        data = transpose(data,[len(dims)-1]+list(range(len(dims)-1)))
 
     if get_header:
         return data,header
@@ -630,7 +629,7 @@ def getallobjectsizes(minsize=1.e20,withpackages=1,withwarpglobals=0):
     import warp
     import types
     dd = {}
-    for k,v in __main__.__dict__.iteritems():
+    for k,v in __main__.__dict__.items():
         if not withwarpglobals and k in warp.initial_global_dict_keys: continue
         if isinstance(v,types.ModuleType): continue
         if k == 'controllerfunctioncontainer': continue
@@ -642,10 +641,10 @@ def getallobjectsizes(minsize=1.e20,withpackages=1,withwarpglobals=0):
         s = getobjectsize(v)*8
         totals += s
         if s > minsize:
-            print k,s,'bytes'
-    for k,v in dd.iteritems():
+            print(k,s,'bytes')
+    for k,v in dd.items():
         s = getobjectsize(v)*8
         totals += s
         if s > minsize:
-            print k,s,'bytes'
+            print(k,s,'bytes')
     return totals

@@ -5,8 +5,8 @@ from ..warp import *
 
 
 def drawlatticedoc():
-    import drawlattice
-    print drawlattice.__doc__
+    from . import drawlattice
+    print(drawlattice.__doc__)
 
 #############################################################################
 def _getelem(elem,zlatmin,zlatmax):

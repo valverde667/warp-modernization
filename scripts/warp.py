@@ -62,11 +62,10 @@ except ImportError:
         warnings.warn("there was an error importing gist; if this is a problem, restart python and type 'import gist' for details, otherwise Warp will run OK but with no graphics")
     from .diagnostics.gistdummy import *
 
-if sys.hexversion >= 0x03000000:
-    # --- With Python3, the so files of each Fortran package are imported
-    # --- separately. The dlopen flag needs to be set so that cross references
-    # --- among the packages can be satisfied.
-    sys.setdlopenflags(os.RTLD_LAZY | os.RTLD_GLOBAL)
+# --- With Python3, the so files of each Fortran package are imported
+# --- separately. The dlopen flag needs to be set so that cross references
+# --- among the packages can be satisfied.
+sys.setdlopenflags(os.RTLD_LAZY | os.RTLD_GLOBAL)
 
 # --- Test for a mixed installed of Warp, if the old pre-reorganized version is still installed.
 try:
@@ -76,13 +75,13 @@ except ImportError:
     pass
 else:
     # --- If not, that means that there is the file warp/colortext.py which should not be there.
-    import warp
+    from . import warp
     import os
-    print '\n\n'
-    print colortext.coloredtext('Error: A mixed installation of Warp has been found.', colortext.textBRed)
-    print colortext.coloredtext('Please remove the directory %s,'%os.path.dirname(warp.__file__), colortext.textBRed)
-    print colortext.coloredtext('and do "make cleanall" and re-install Warp.', colortext.textBRed)
-    print '\n\n'
+    print('\n\n')
+    print(colortext.coloredtext('Error: A mixed installation of Warp has been found.', colortext.textBRed))
+    print(colortext.coloredtext('Please remove the directory %s,'%os.path.dirname(warp.__file__), colortext.textBRed))
+    print(colortext.coloredtext('and do "make cleanall" and re-install Warp.', colortext.textBRed))
+    print('\n\n')
     raise Exception('Mixed installation of Warp found')
 
 # Import the warpC shared object which contains all of Warp
@@ -104,49 +103,34 @@ from .data_dumping import PRpickle as PR
 
 # --- The Warp modules must be imported in the order below because of
 # --- linking dependencies.
-if sys.hexversion >= 0x03000000:
-    if lparallel:
-        from .topparallelpy import *
-        from .envparallelpy import *
-        from .w3dparallelpy import *
-        from .f3dparallelpy import *
-        from .fxyparallelpy import *
-        from .wxyparallelpy import *
-        from .frzparallelpy import *
-        from .wrzparallelpy import *
-        from .cirparallelpy import *
-        from .herparallelpy import *
-        from .choparallelpy import *
-        #from .em2dparallelpy import *
-        from .em3dparallelpy import *
-    else:
-        from .toppy import *
-        from .envpy import *
-        from .w3dpy import *
-        from .f3dpy import *
-        from .fxypy import *
-        from .wxypy import *
-        from .frzpy import *
-        from .wrzpy import *
-        from .cirpy import *
-        from .herpy import *
-        from .chopy import *
-        #from .em2dpy import *
-        from .em3dpy import *
+if lparallel:
+    from .topparallelpy import *
+    from .envparallelpy import *
+    from .w3dparallelpy import *
+    from .f3dparallelpy import *
+    from .fxyparallelpy import *
+    from .wxyparallelpy import *
+    from .frzparallelpy import *
+    from .wrzparallelpy import *
+    from .cirparallelpy import *
+    from .herparallelpy import *
+    from .choparallelpy import *
+    #from .em2dparallelpy import *
+    from .em3dparallelpy import *
 else:
-    from toppy import *
-    from envpy import *
-    from w3dpy import *
-    from f3dpy import *
-    from fxypy import *
-    from wxypy import *
-    from frzpy import *
-    from wrzpy import *
-    from cirpy import *
-    from herpy import *
-    from chopy import *
-    #from em2dpy import *
-    from em3dpy import *
+    from .toppy import *
+    from .envpy import *
+    from .w3dpy import *
+    from .f3dpy import *
+    from .fxypy import *
+    from .wxypy import *
+    from .frzpy import *
+    from .wrzpy import *
+    from .cirpy import *
+    from .herpy import *
+    from .chopy import *
+    #from .em2dpy import *
+    from .em3dpy import *
 
 from .utils.warputils import *
 from . import controllers
@@ -260,7 +244,7 @@ top.starttimedump = top.starttime
 # --- only ~1.e15. 1./numpy.finfo('d').eps is the largest floating point
 # --- number such that the number minus 0.5 is correct (the 0.5 is needed
 # --- since it is used in nint).
-top.ssn = int(min(sys.maxint,1./numpy.finfo('d').eps)/npes*me + 1)
+top.ssn = int(min(sys.maxsize,1./numpy.finfo('d').eps)/npes*me + 1)
 
 # --- Simple function to calculate Child-Langmuir current density
 def childlangmuir(v,d,q=None,m=None):
@@ -299,7 +283,7 @@ def printversion(v):
 
 def versionstext():
     "Returns a string which has the version information of packages loaded."
-    import __version__
+    from . import __version__
     r = '# Warp\n'
     r += '# Origin date: %s\n'%__version__.__origindate__
     r += '# Local date: %s\n'%__version__.__localdate__
@@ -317,7 +301,7 @@ def versionstext():
 #=============================================================================
 # --- Declare the documentation for the warp module.
 def warpdoc():
-    print """
+    print("""
   Imports the basic modules needed to run Warp, including
   numpy, gist, warpplots
 
@@ -367,7 +351,7 @@ def warpdoc():
                            be added.
   gethzarrays: Fixes the ordering of hlinechg and hvzofz data from a paralle run
   printtimers: Print timers in a nice annotated format
-    """
+    """)
 
 #=============================================================================
 # --- Call derivqty to calculate eps0 and jperev
@@ -881,7 +865,7 @@ def fixrestorewithscalarefetch(ff):
     "If the dump file has efetch as a scalar, broadcast it to the efetch array"
     import types
     efetch = ff.read('efetch@top')
-    if isinstance(efetch,types.IntType):
+    if isinstance(efetch,int):
         gchange("InPart")
         top.efetch = efetch
 
@@ -898,7 +882,7 @@ def fixrestorewithbasegridwithoutl_parallel(ff):
             if i == 0:
                 g = frz.basegrid
             else:
-                try:    g = g.next
+                try:    g = g.__next__
                 except: g = g.down
             g.l_parallel = lparallel
 
@@ -995,12 +979,12 @@ def dump(filename=None,prefix='',suffix='',attr='dump',serial=0,pyvars=1,
         if lparallel:
             # --- Append the processor number to the user inputted filename
             filename = filename + '_%05d_%05d%s.dump'%(me,npes,suffix)
-    print filename
+    print(filename)
     # --- Make list of all of the new python variables.
     interpreter_variables_list = []
     if pyvars:
         # --- Add to the list all variables which are not in the initial list
-        for l,v in __main__.__dict__.iteritems():
+        for l,v in __main__.__dict__.items():
             if isinstance(v,types.ModuleType): continue
             if l in skip: continue
             if l not in initial_global_dict_keys:
@@ -1170,7 +1154,7 @@ def printtimers(file=None,lminmax=0,mintime=0.,icontrollers=2):
     if file is None:
         ff = sys.stdout
         closeit = 0
-    elif isinstance(file,basestring):
+    elif isinstance(file,str):
         ff = open(file,"w")
         closeit = 1
     else:
@@ -1308,7 +1292,7 @@ def printtimersordered(file=None,depth=3):
     if file is None:
         ff = sys.stdout
         closeit = 0
-    elif isinstance(file,basestring):
+    elif isinstance(file,str):
         ff = open(file,"w")
         closeit = 1
     else:
@@ -1428,10 +1412,7 @@ from .diagnostics.printparametersrz import *
 # --- warp imports itself as a matter of convenience, so that the
 # --- name is defined. Note that this warp refers to this script
 # --- and not the overall module.
-if sys.hexversion >= 0x03000000:
-    from . import warp
-else:
-    import warp
+from . import warp
 
 # --- Try to import the GUI
 #try:
@@ -1449,7 +1430,7 @@ else:
 # --- declared first as a empty list so that it itself appears in the list
 # --- of global keys.
 initial_global_dict_keys = []
-initial_global_dict_keys = globals().keys()
+initial_global_dict_keys = list(globals().keys())
 
 # --- Save the versions string here so that it will be dumped into any
 # --- dump file.
@@ -1458,6 +1439,6 @@ warpversions = versionstext()
 warpendtime = time.perf_counter()
 
 if not warpoptions.quietImport:
-    print warpversions[:-1] # --- the last line feed is skipped
-    print '# import warp time',warpendtime - warpstarttime,'seconds'
-    print '# For more help, type warphelp()'
+    print(warpversions[:-1]) # --- the last line feed is skipped
+    print('# import warp time',warpendtime - warpstarttime,'seconds')
+    print('# For more help, type warphelp()')

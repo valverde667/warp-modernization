@@ -153,7 +153,7 @@ class StaticDiagnostic(object):
         field.attrs['gridUnitSI'] = 1.0
         field.attrs['unitSI'] = 1.0
 
-        for k, v in attrs.items():
+        for k, v in list(attrs.items()):
             self.file[prefix].attrs[k] = v
 
 

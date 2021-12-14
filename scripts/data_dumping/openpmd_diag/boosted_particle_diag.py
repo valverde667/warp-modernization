@@ -11,7 +11,7 @@ import os
 import numpy as np
 import time
 from scipy.constants import c
-from particle_diag import ParticleDiagnostic
+from .particle_diag import ParticleDiagnostic
 from warp_parallel import me, mpiallgather, comm_world
 try:
     from mpi4py import MPI
@@ -103,8 +103,8 @@ class BoostedParticleDiagnostic(ParticleDiagnostic):
         # Record the time it takes
         if self.rank == 0:
             measured_start = time.perf_counter()
-            print('\nInitializing the lab-frame diagnostics: %d files...' %(
-                Ntot_snapshots_lab) )
+            print(('\nInitializing the lab-frame diagnostics: %d files...' %(
+                Ntot_snapshots_lab) ))
 
         # Loop through the lab snapshots and create the corresponding files
         self.particle_catcher = ParticleCatcher(
@@ -124,8 +124,8 @@ class BoostedParticleDiagnostic(ParticleDiagnostic):
         # Print a message that records the time for initialization
         if self.rank == 0:
             measured_end = time.perf_counter()
-            print('Time taken for initialization of the files: %.5f s' %(
-                measured_end - measured_start) )
+            print(('Time taken for initialization of the files: %.5f s' %(
+                measured_end - measured_start) ))
 
 
     def write( self ):
@@ -168,7 +168,7 @@ class BoostedParticleDiagnostic(ParticleDiagnostic):
 
                 # Loop through the particle species and register the
                 # particle arrays in the snapshot objects (buffering)
-                for species_name, species in self.species_dict.iteritems():
+                for species_name, species in self.species_dict.items():
 
                     slice_array = self.particle_catcher.extract_slice(
                         species, self.select, snapshot.prev_z_boost,
@@ -1011,9 +1011,9 @@ class ParticleCatcher:
 
             # Interpolate the particle quantities in time, to t_output
             self.interpolate_to_time( t_output )
-        slice_array = np.empty((np.shape(p2i.keys())[0], num_part,))
+        slice_array = np.empty((np.shape(list(p2i.keys()))[0], num_part,))
 
-        for quantity in self.particle_to_index.keys():
+        for quantity in list(self.particle_to_index.keys()):
             # Here typical values for 'quantity' are e.g. 'z', 'ux', 'gamma'
             # you should just gather array locally
             slice_array[ p2i[quantity], ... ] = self.gather_array(quantity)
@@ -1030,7 +1030,7 @@ class ParticleCatcher:
             # Temp_slice_array is a 1D numpy array, we reshape it so that it
             # has the same size as slice_array
             slice_array = np.reshape(
-                temp_slice_array,(np.shape(p2i.keys())[0],-1))
+                temp_slice_array,(np.shape(list(p2i.keys()))[0],-1))
 
         # Multiplying momenta by the species mass to make them unitless
         for quantity in ["ux", "uy", "uz"]:
@@ -1173,7 +1173,7 @@ class ParticleCatcher:
 
         # Apply the rules successively
         # Go through the quantities on which a rule applies
-        for quantity in select.keys():
+        for quantity in list(select.keys()):
             # Lower bound
             if select[quantity][0] is not None:
                 select_array = np.logical_and(

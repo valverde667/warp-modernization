@@ -22,7 +22,7 @@ fmt_mode = {"\r\n":wxSTC_EOL_CRLF,
               "\n":wxSTC_EOL_LF,
               "\r":wxSTC_EOL_CR}
 fmt_Rmode = {}
-for i,j in fmt_mode.items():
+for i,j in list(fmt_mode.items()):
     fmt_Rmode[j] = i
 
 eol = os.linesep

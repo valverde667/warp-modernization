@@ -5,8 +5,8 @@ from warp import *
 
 
 def subcycledoc():
-    import subcycle
-    print(subcycle.__doc__)
+    from . import subcycle
+    print((subcycle.__doc__))
 
 
 class Subcycle:

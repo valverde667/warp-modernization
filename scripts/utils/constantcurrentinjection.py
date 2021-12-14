@@ -2,12 +2,12 @@
 procedure, but using the full simulation instead of 1-D approximation.
 """
 from warp import *
-from timedependentvoltage import TimeVoltage
+from .timedependentvoltage import TimeVoltage
 
 
 def constantcurrentinjectiondoc():
-    import constantcurrentinjection
-    print constantcurrentinjection.__doc__
+    from . import constantcurrentinjection
+    print(constantcurrentinjection.__doc__)
 
 ###########################################################################################
 ###########################################################################################
@@ -95,7 +95,7 @@ class ConstantCurrentRiseTime:
         # --- Initialize parameters
         self.hphiref = []
         self.setphiref(currentdensity)
-        print 'phiref = ',self.phiref
+        print('phiref = ',self.phiref)
         if w3d.l_inj_rz or w3d.l_inj_rz_grid:
             self.ww = 2.*pi*iota(0,w3d.inj_nx)*w3d.inj_dx**2*w3d.inj_area[:,0,0]
             self.ww[0] = 0.25*pi*w3d.inj_dx**2

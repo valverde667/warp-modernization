@@ -2,7 +2,7 @@
 """
 __all__ = ['GridCrossingDiags','GridCrossingDiagsOld']
 from ..warp import *
-import cPickle
+import pickle
 
 
 class GridCrossingDiags(object):
@@ -599,75 +599,75 @@ data will be preserved.
         if not os.path.exists(self.dumptofile+'_gridcrossing.pkl'):
             ff = open(self.dumptofile+'_gridcrossing.pkl','wb')
             # --- Save the input parameters to the file.
-            cPickle.dump(('jslist',self.jslist),ff,-1)
-            cPickle.dump(('zmmin',self.zmmin),ff,-1)
-            cPickle.dump(('zmmax',self.zmmax),ff,-1)
-            cPickle.dump(('dz',self.dz),ff,-1)
-            cPickle.dump(('nz',self.nz),ff,-1)
-            cPickle.dump(('nzscale',self.nzscale),ff,-1)
-            cPickle.dump(('nhist',self.nhist),ff,-1)
-            cPickle.dump(('dthist',self.dthist),ff,-1)
-            cPickle.dump(('nt',self.nt),ff,-1)
-            cPickle.dump(('nr',self.nr),ff,-1)
-            cPickle.dump(('rmmax',self.rmmax),ff,-1)
-            cPickle.dump(('ztarget',self.ztarget),ff,-1)
-            cPickle.dump(('dumptofile',self.dumptofile),ff,-1)
-            cPickle.dump(('starttime',self.starttime),ff,-1)
-            cPickle.dump(('endtime',self.endtime),ff,-1)
-            cPickle.dump(('ldoradialdiag',self.ldoradialdiag),ff,-1)
-            cPickle.dump(('ldoscintillator',self.ldoscintillator),ff,-1)
-            cPickle.dump(('laccumulatedata',self.laccumulatedata),ff,-1)
-            cPickle.dump(('lmoving_frame',self.lmoving_frame),ff,-1)
+            pickle.dump(('jslist',self.jslist),ff,-1)
+            pickle.dump(('zmmin',self.zmmin),ff,-1)
+            pickle.dump(('zmmax',self.zmmax),ff,-1)
+            pickle.dump(('dz',self.dz),ff,-1)
+            pickle.dump(('nz',self.nz),ff,-1)
+            pickle.dump(('nzscale',self.nzscale),ff,-1)
+            pickle.dump(('nhist',self.nhist),ff,-1)
+            pickle.dump(('dthist',self.dthist),ff,-1)
+            pickle.dump(('nt',self.nt),ff,-1)
+            pickle.dump(('nr',self.nr),ff,-1)
+            pickle.dump(('rmmax',self.rmmax),ff,-1)
+            pickle.dump(('ztarget',self.ztarget),ff,-1)
+            pickle.dump(('dumptofile',self.dumptofile),ff,-1)
+            pickle.dump(('starttime',self.starttime),ff,-1)
+            pickle.dump(('endtime',self.endtime),ff,-1)
+            pickle.dump(('ldoradialdiag',self.ldoradialdiag),ff,-1)
+            pickle.dump(('ldoscintillator',self.ldoscintillator),ff,-1)
+            pickle.dump(('laccumulatedata',self.laccumulatedata),ff,-1)
+            pickle.dump(('lmoving_frame',self.lmoving_frame),ff,-1)
             if self.ldoscintillator:
-                cPickle.dump(('scintxmin',self.scintxmin),ff,-1)
-                cPickle.dump(('scintxmax',self.scintxmax),ff,-1)
-                cPickle.dump(('scintymin',self.scintymin),ff,-1)
-                cPickle.dump(('scintymax',self.scintymax),ff,-1)
-                cPickle.dump(('scintzmin',self.scintzmin),ff,-1)
-                cPickle.dump(('scintzmax',self.scintzmax),ff,-1)
-                cPickle.dump(('scintnx',self.scintnx),ff,-1)
-                cPickle.dump(('scintny',self.scintny),ff,-1)
-                cPickle.dump(('scintnz',self.scintnz),ff,-1)
-                cPickle.dump(('scintdx',self.scintdx),ff,-1)
-                cPickle.dump(('scintdy',self.scintdy),ff,-1)
+                pickle.dump(('scintxmin',self.scintxmin),ff,-1)
+                pickle.dump(('scintxmax',self.scintxmax),ff,-1)
+                pickle.dump(('scintymin',self.scintymin),ff,-1)
+                pickle.dump(('scintymax',self.scintymax),ff,-1)
+                pickle.dump(('scintzmin',self.scintzmin),ff,-1)
+                pickle.dump(('scintzmax',self.scintzmax),ff,-1)
+                pickle.dump(('scintnx',self.scintnx),ff,-1)
+                pickle.dump(('scintny',self.scintny),ff,-1)
+                pickle.dump(('scintnz',self.scintnz),ff,-1)
+                pickle.dump(('scintdx',self.scintdx),ff,-1)
+                pickle.dump(('scintdy',self.scintdy),ff,-1)
         else:
             ff = open(self.dumptofile+'_gridcrossing.pkl','ab')
         suffix = "_%08d"%(top.it)
-        cPickle.dump(('time'+suffix,self._time[0]),ff,-1)
-        cPickle.dump(('zbeam'+suffix,self._zbeam[0]),ff,-1)
-        cPickle.dump(('count'+suffix,self._count[0]),ff,-1)
-        cPickle.dump(('current'+suffix,self._current[0]),ff,-1)
-        cPickle.dump(('xbar'+suffix,self._xbar[0]),ff,-1)
-        cPickle.dump(('ybar'+suffix,self._ybar[0]),ff,-1)
-        cPickle.dump(('xsqbar'+suffix,self._xsqbar[0]),ff,-1)
-        cPickle.dump(('ysqbar'+suffix,self._ysqbar[0]),ff,-1)
-        cPickle.dump(('vxbar'+suffix,self._vxbar[0]),ff,-1)
-        cPickle.dump(('vybar'+suffix,self._vybar[0]),ff,-1)
-        cPickle.dump(('vzbar'+suffix,self._vzbar[0]),ff,-1)
-        cPickle.dump(('vxsqbar'+suffix,self._vxsqbar[0]),ff,-1)
-        cPickle.dump(('vysqbar'+suffix,self._vysqbar[0]),ff,-1)
-        cPickle.dump(('vzsqbar'+suffix,self._vzsqbar[0]),ff,-1)
-        cPickle.dump(('xvxbar'+suffix,self._xvxbar[0]),ff,-1)
-        cPickle.dump(('yvybar'+suffix,self._yvybar[0]),ff,-1)
-        cPickle.dump(('xrms'+suffix,self._xrms[0]),ff,-1)
-        cPickle.dump(('yrms'+suffix,self._yrms[0]),ff,-1)
-        cPickle.dump(('vxrms'+suffix,self._vxrms[0]),ff,-1)
-        cPickle.dump(('vyrms'+suffix,self._vyrms[0]),ff,-1)
-        cPickle.dump(('vzrms'+suffix,self._vzrms[0]),ff,-1)
-        cPickle.dump(('epsnx'+suffix,self._epsnx[0]),ff,-1)
-        cPickle.dump(('epsny'+suffix,self._epsny[0]),ff,-1)
-        cPickle.dump(('rrms'+suffix,self._rrms[0]),ff,-1)
-        cPickle.dump(('rprms'+suffix,self._rprms[0]),ff,-1)
-        cPickle.dump(('xmax'+suffix,self._xmax[0]),ff,-1)
-        cPickle.dump(('ymax'+suffix,self._ymax[0]),ff,-1)
-        cPickle.dump(('rmax'+suffix,self._rmax[0]),ff,-1)
+        pickle.dump(('time'+suffix,self._time[0]),ff,-1)
+        pickle.dump(('zbeam'+suffix,self._zbeam[0]),ff,-1)
+        pickle.dump(('count'+suffix,self._count[0]),ff,-1)
+        pickle.dump(('current'+suffix,self._current[0]),ff,-1)
+        pickle.dump(('xbar'+suffix,self._xbar[0]),ff,-1)
+        pickle.dump(('ybar'+suffix,self._ybar[0]),ff,-1)
+        pickle.dump(('xsqbar'+suffix,self._xsqbar[0]),ff,-1)
+        pickle.dump(('ysqbar'+suffix,self._ysqbar[0]),ff,-1)
+        pickle.dump(('vxbar'+suffix,self._vxbar[0]),ff,-1)
+        pickle.dump(('vybar'+suffix,self._vybar[0]),ff,-1)
+        pickle.dump(('vzbar'+suffix,self._vzbar[0]),ff,-1)
+        pickle.dump(('vxsqbar'+suffix,self._vxsqbar[0]),ff,-1)
+        pickle.dump(('vysqbar'+suffix,self._vysqbar[0]),ff,-1)
+        pickle.dump(('vzsqbar'+suffix,self._vzsqbar[0]),ff,-1)
+        pickle.dump(('xvxbar'+suffix,self._xvxbar[0]),ff,-1)
+        pickle.dump(('yvybar'+suffix,self._yvybar[0]),ff,-1)
+        pickle.dump(('xrms'+suffix,self._xrms[0]),ff,-1)
+        pickle.dump(('yrms'+suffix,self._yrms[0]),ff,-1)
+        pickle.dump(('vxrms'+suffix,self._vxrms[0]),ff,-1)
+        pickle.dump(('vyrms'+suffix,self._vyrms[0]),ff,-1)
+        pickle.dump(('vzrms'+suffix,self._vzrms[0]),ff,-1)
+        pickle.dump(('epsnx'+suffix,self._epsnx[0]),ff,-1)
+        pickle.dump(('epsny'+suffix,self._epsny[0]),ff,-1)
+        pickle.dump(('rrms'+suffix,self._rrms[0]),ff,-1)
+        pickle.dump(('rprms'+suffix,self._rprms[0]),ff,-1)
+        pickle.dump(('xmax'+suffix,self._xmax[0]),ff,-1)
+        pickle.dump(('ymax'+suffix,self._ymax[0]),ff,-1)
+        pickle.dump(('rmax'+suffix,self._rmax[0]),ff,-1)
         if self.ldoradialdiag:
-            cPickle.dump(('rprofile'+suffix,self._rprofile[0]),ff,-1)
+            pickle.dump(('rprofile'+suffix,self._rprofile[0]),ff,-1)
         if self.ldoscintillator:
             if maxnd(self._scintillator[0]) > 0.:
                 # --- Note that the data is only saved if it is nonzero
-                cPickle.dump(('scinttime'+suffix,top.time),ff,-1)
-                cPickle.dump(('scintillator'+suffix,self._scintillator[0]),ff,-1)
+                pickle.dump(('scinttime'+suffix,top.time),ff,-1)
+                pickle.dump(('scintillator'+suffix,self._scintillator[0]),ff,-1)
         ff.close()
 
     def restorefromfile(self,files=[],readscintillator=1):
@@ -692,10 +692,10 @@ after simulation when the dumptofile flag was on.
         # --- the time data is found, which starts the data section of the
         # --- file.
         with open(files[0],'rb') as ff:
-            data = cPickle.load(ff)
+            data = pickle.load(ff)
             while data[0][0:4] != 'time':
                 setattr(self,data[0],data[1])
-                data = cPickle.load(ff)
+                data = pickle.load(ff)
 
         # --- Read all of the data in. Only keep the data if the time is
         # --- between start and endtime.
@@ -706,7 +706,7 @@ after simulation when the dumptofile flag was on.
                 while 1:
                     try:
                         tell = ff.tell()
-                        data = cPickle.load(ff)
+                        data = pickle.load(ff)
                     except:
                         break
                     if data[0][:4] == 'time':
@@ -721,7 +721,7 @@ after simulation when the dumptofile flag was on.
                         datadict[data[0]] = data[1]
 
         # --- Fix old bad naming
-        varlist = datadict.keys()
+        varlist = list(datadict.keys())
         for var in varlist:
             name,it = var.split('_')
             if len(it) < 8:
@@ -763,7 +763,7 @@ after simulation when the dumptofile flag was on.
         self._rprofile = []
         self._scintillator = []
 
-        varlist = datadict.keys()
+        varlist = list(datadict.keys())
         varlist.sort()
         for var in varlist:
             if var[0:4] == 'time':
@@ -853,7 +853,7 @@ after simulation when the dumptofile flag was on.
 
         with open(file,'rb') as ff:
             ff.seek(self._scintillator[i])
-            data = cPickle.load(ff)
+            data = pickle.load(ff)
         return data[1]
 
     # ----------------------------------------------------------------------
@@ -2173,57 +2173,57 @@ be unreliable.
         if not os.path.exists(self.dumptofile+'_gridcrossing.pkl'):
             ff = open(self.dumptofile+'_gridcrossing.pkl','wb')
             # --- Save the input parameters to the file.
-            cPickle.dump(('js',self.js),ff,-1)
-            cPickle.dump(('zmmin',self.zmmin),ff,-1)
-            cPickle.dump(('zmmax',self.zmmax),ff,-1)
-            cPickle.dump(('dz',self.dz),ff,-1)
-            cPickle.dump(('nz',self.nz),ff,-1)
-            cPickle.dump(('nzscale',self.nzscale),ff,-1)
-            cPickle.dump(('nhist',self.nhist),ff,-1)
-            cPickle.dump(('nt',self.nt),ff,-1)
-            cPickle.dump(('nr',self.nr),ff,-1)
-            cPickle.dump(('rmax',self.rmax),ff,-1)
-            cPickle.dump(('ztarget',self.ztarget),ff,-1)
-            cPickle.dump(('dumptofile',self.dumptofile),ff,-1)
-            cPickle.dump(('starttime',self.starttime),ff,-1)
-            cPickle.dump(('endtime',self.endtime),ff,-1)
-            cPickle.dump(('ldoradialdiag',self.ldoradialdiag),ff,-1)
-            cPickle.dump(('ldoscintillator',self.ldoscintillator),ff,-1)
+            pickle.dump(('js',self.js),ff,-1)
+            pickle.dump(('zmmin',self.zmmin),ff,-1)
+            pickle.dump(('zmmax',self.zmmax),ff,-1)
+            pickle.dump(('dz',self.dz),ff,-1)
+            pickle.dump(('nz',self.nz),ff,-1)
+            pickle.dump(('nzscale',self.nzscale),ff,-1)
+            pickle.dump(('nhist',self.nhist),ff,-1)
+            pickle.dump(('nt',self.nt),ff,-1)
+            pickle.dump(('nr',self.nr),ff,-1)
+            pickle.dump(('rmax',self.rmax),ff,-1)
+            pickle.dump(('ztarget',self.ztarget),ff,-1)
+            pickle.dump(('dumptofile',self.dumptofile),ff,-1)
+            pickle.dump(('starttime',self.starttime),ff,-1)
+            pickle.dump(('endtime',self.endtime),ff,-1)
+            pickle.dump(('ldoradialdiag',self.ldoradialdiag),ff,-1)
+            pickle.dump(('ldoscintillator',self.ldoscintillator),ff,-1)
             if self.ldoscintillator:
-                cPickle.dump(('scintxmin',self.scintxmin),ff,-1)
-                cPickle.dump(('scintxmax',self.scintxmax),ff,-1)
-                cPickle.dump(('scintymin',self.scintymin),ff,-1)
-                cPickle.dump(('scintymax',self.scintymax),ff,-1)
-                cPickle.dump(('scintzmin',self.scintzmin),ff,-1)
-                cPickle.dump(('scintzmax',self.scintzmax),ff,-1)
-                cPickle.dump(('scintnx',self.scintnx),ff,-1)
-                cPickle.dump(('scintny',self.scintny),ff,-1)
-                cPickle.dump(('scintnz',self.scintnz),ff,-1)
-                cPickle.dump(('scintdx',self.scintdx),ff,-1)
-                cPickle.dump(('scintdy',self.scintdy),ff,-1)
+                pickle.dump(('scintxmin',self.scintxmin),ff,-1)
+                pickle.dump(('scintxmax',self.scintxmax),ff,-1)
+                pickle.dump(('scintymin',self.scintymin),ff,-1)
+                pickle.dump(('scintymax',self.scintymax),ff,-1)
+                pickle.dump(('scintzmin',self.scintzmin),ff,-1)
+                pickle.dump(('scintzmax',self.scintzmax),ff,-1)
+                pickle.dump(('scintnx',self.scintnx),ff,-1)
+                pickle.dump(('scintny',self.scintny),ff,-1)
+                pickle.dump(('scintnz',self.scintnz),ff,-1)
+                pickle.dump(('scintdx',self.scintdx),ff,-1)
+                pickle.dump(('scintdy',self.scintdy),ff,-1)
         else:
             ff = open(self.dumptofile+'_gridcrossing.pkl','ab')
         suffix = "_%08d"%(top.it)
-        cPickle.dump(('time'+suffix,self._time[0]),ff,-1)
-        cPickle.dump(('zbeam'+suffix,self._zbeam[0]),ff,-1)
-        cPickle.dump(('count'+suffix,self._count[0]),ff,-1)
-        cPickle.dump(('current'+suffix,self._current[0]),ff,-1)
-        cPickle.dump(('vzbar'+suffix,self._vzbar[0]),ff,-1)
-        cPickle.dump(('xbar'+suffix,self._xbar[0]),ff,-1)
-        cPickle.dump(('ybar'+suffix,self._ybar[0]),ff,-1)
-        cPickle.dump(('xsqbar'+suffix,self._xsqbar[0]),ff,-1)
-        cPickle.dump(('ysqbar'+suffix,self._ysqbar[0]),ff,-1)
-        cPickle.dump(('xrms'+suffix,self._xrms[0]),ff,-1)
-        cPickle.dump(('yrms'+suffix,self._yrms[0]),ff,-1)
-        cPickle.dump(('rrms'+suffix,self._rrms[0]),ff,-1)
-        cPickle.dump(('rprms'+suffix,self._rprms[0]),ff,-1)
+        pickle.dump(('time'+suffix,self._time[0]),ff,-1)
+        pickle.dump(('zbeam'+suffix,self._zbeam[0]),ff,-1)
+        pickle.dump(('count'+suffix,self._count[0]),ff,-1)
+        pickle.dump(('current'+suffix,self._current[0]),ff,-1)
+        pickle.dump(('vzbar'+suffix,self._vzbar[0]),ff,-1)
+        pickle.dump(('xbar'+suffix,self._xbar[0]),ff,-1)
+        pickle.dump(('ybar'+suffix,self._ybar[0]),ff,-1)
+        pickle.dump(('xsqbar'+suffix,self._xsqbar[0]),ff,-1)
+        pickle.dump(('ysqbar'+suffix,self._ysqbar[0]),ff,-1)
+        pickle.dump(('xrms'+suffix,self._xrms[0]),ff,-1)
+        pickle.dump(('yrms'+suffix,self._yrms[0]),ff,-1)
+        pickle.dump(('rrms'+suffix,self._rrms[0]),ff,-1)
+        pickle.dump(('rprms'+suffix,self._rprms[0]),ff,-1)
         if self.ldoradialdiag:
-            cPickle.dump(('rprofile'+suffix,self._rprofile[0]),ff,-1)
+            pickle.dump(('rprofile'+suffix,self._rprofile[0]),ff,-1)
         if self.ldoscintillator:
             if maxnd(self._scintillator[0]) > 0.:
                 # --- Note that the data is only saved if it is nonzero
-                cPickle.dump(('scinttime'+suffix,top.time),ff,-1)
-                cPickle.dump(('scintillator'+suffix,self._scintillator[0]),ff,-1)
+                pickle.dump(('scinttime'+suffix,top.time),ff,-1)
+                pickle.dump(('scintillator'+suffix,self._scintillator[0]),ff,-1)
         ff.close()
 
     def restorefromfile(self,files=[],readscintillator=1):
@@ -2307,10 +2307,10 @@ be unreliable.
         # --- the time data is found, which starts the data section of the
         # --- file.
         with open(files[0],'rb') as ff:
-            data = cPickle.load(ff)
+            data = pickle.load(ff)
             while data[0][0:4] != 'time':
                 setattr(self,data[0],data[1])
-                data = cPickle.load(ff)
+                data = pickle.load(ff)
 
         # --- Read all of the data in. Only keep the data if the time is
         # --- between start and endtime.
@@ -2321,7 +2321,7 @@ be unreliable.
                 while 1:
                     try:
                         tell = ff.tell()
-                        data = cPickle.load(ff)
+                        data = pickle.load(ff)
                     except:
                         break
                     if data[0][:4] == 'time':
@@ -2339,7 +2339,7 @@ be unreliable.
                         datadict[data[0]] = data[1]
 
         # --- Fix old bad naming
-        varlist = datadict.keys()
+        varlist = list(datadict.keys())
         for var in varlist:
             name,it = var.split('_')
             if len(it) < 8:
@@ -2366,7 +2366,7 @@ be unreliable.
         self._rprofile = []
         self._scintillator = []
 
-        varlist = datadict.keys()
+        varlist = list(datadict.keys())
         varlist.sort()
         for var in varlist:
             if var[0:4] == 'time':
@@ -2409,7 +2409,7 @@ be unreliable.
 
         with open(file,'rb') as ff:
             ff.seek(self._scintillator[i])
-            data = cPickle.load(ff)
+            data = pickle.load(ff)
         return data[1]
 
     # ----------------------------------------------------------------------

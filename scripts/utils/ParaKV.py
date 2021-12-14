@@ -43,8 +43,8 @@ from warp import *
 
 
 def ParaKVdoc():
-    import ParaKV
-    print ParaKV.__doc__
+    from . import ParaKV
+    print(ParaKV.__doc__)
 
 def rad(xxx, yyy):
     """ rad(xxx,yyy) -> radius r = sqrt(x^2+y^2) """
@@ -130,7 +130,7 @@ def loadvels(func=dualgauss, vm=0.02, vs=0.006, cut=0.038, npts=1000):
     """
     dv = cut/npts
     v = arange(0, cut+dv, dv)
-    f = array(map(func, v, vm*ones(v.shape), vs*ones(v.shape)))
+    f = array(list(map(func, v, vm*ones(v.shape), vs*ones(v.shape))))
     F = cumsum(2*pi*v*f)        # Calculate the c.d.f.
     F = F/F[-1];  f = f/F[-1]   # Normalize
     # -- Generate random arrays for creating velocities

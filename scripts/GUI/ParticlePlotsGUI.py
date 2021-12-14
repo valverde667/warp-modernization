@@ -26,7 +26,7 @@ except:
  wxID_PARTICLEPLOTSGUISTATICLINE2, wxID_PARTICLEPLOTSGUISTATICLINE3, 
  wxID_PARTICLEPLOTSGUISTATICLINE5, wxID_PARTICLEPLOTSGUISTATICLINE7, 
  wxID_PARTICLEPLOTSGUISURFACE, 
-] = map(lambda _init_ctrls: wx.NewId(), range(27))
+] = [wx.NewId() for _init_ctrls in range(27)]
 
 class ParticlePlotsGUI(wx.Panel):
     def _init_utils(self):
@@ -336,7 +336,7 @@ class ParticlePlotsGUI(wx.Panel):
 
     def MakeParticlePlot(self,refresh,dofma):
         if not refresh: return
-        if dofma and not self.plottypekw.has_key('surface'): fma()
+        if dofma and 'surface' not in self.plottypekw: fma()
         kw = {self.plotchoicekw:self.plotchoiceslidervalue}
         kw.update(self.plottypekw)
         self.currentplot(**kw)

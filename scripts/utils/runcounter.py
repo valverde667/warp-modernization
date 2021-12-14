@@ -36,30 +36,30 @@ def runcounter(init=0,delta=1,ensembles=[],prefix=None,suffix="_runcounter",
     if not prefix: prefix = arraytostr(top.runid)
 
     # --- Handle ensembles
-    assert type(ensembles) in [types.IntType,types.ListType,types.TupleType,ndarray],\
+    assert type(ensembles) in [int,list,tuple,ndarray],\
            'ensembles must either be an integer or one of a list, tuple, or array'
     # --- Make sure it is a list and make sure that it is a copy since it is
     # --- appended to.
-    if isinstance(ensembles,types.IntType): ensembles = [ensembles]
+    if isinstance(ensembles,int): ensembles = [ensembles]
     ensembles = copy.copy(list(ensembles))
     # --- Add the maximum value of integers to the last value. This simplifies
     # --- the code below.
-    ensembles.append(sys.maxint)
+    ensembles.append(sys.maxsize)
 
     # --- Handle init values
-    assert type(init) in [types.IntType,types.ListType,types.TupleType,ndarray],\
+    assert type(init) in [int,list,tuple,ndarray],\
            'init must either be an integer or one of a list, tuple, or array'
     # --- Make sure it is a list
-    if isinstance(init,types.IntType): init = [init]
+    if isinstance(init,int): init = [init]
     init = list(init)
     # --- Make sure that init is the same length as ensembles by appending zeroes
     while len(init) < len(ensembles): init.append(0)
 
     # --- Handle delta values
-    assert type(delta) in [types.IntType,types.ListType,types.TupleType,ndarray],\
+    assert type(delta) in [int,list,tuple,ndarray],\
            'delta must either be an integer or one of a list, tuple, or array'
     # --- Make sure it is a list
-    if isinstance(delta,types.IntType): delta = [delta]
+    if isinstance(delta,int): delta = [delta]
     delta = list(delta)
     # --- Make sure that delta is the same length as ensembles by appending ones
     while len(delta) < len(ensembles): delta.append(1)
@@ -68,7 +68,7 @@ def runcounter(init=0,delta=1,ensembles=[],prefix=None,suffix="_runcounter",
         # --- Try to open the runcounter file
         with open(prefix+suffix,"r") as runcounterfile:
             # --- Read in the state, converting each number into an integer
-            counter = map(int,runcounterfile.readline().split())
+            counter = list(map(int,runcounterfile.readline().split()))
     except IOError:
         # --- If no such file, then flag counter
         counter = None
@@ -150,11 +150,11 @@ def accumulatedata(filename,datadict,scalardict={},pe0only=1,
         varlist = []
 
     # --- Remove names in scalardict from varlist.
-    for name,data in scalardict.iteritems():
+    for name,data in scalardict.items():
         if name in varlist: varlist.remove(name)
 
     # --- Loop over the items in the dictionary.
-    for name,data in datadict.iteritems():
+    for name,data in datadict.items():
         if name in varlist: varlist.remove(name)
 
         # --- Read in data if file exists.
@@ -207,11 +207,11 @@ def accumulatedata(filename,datadict,scalardict={},pe0only=1,
         s = accumulateddata[sortname]
         i = argsort(s)
         sorteddata = {}
-        for name,data in ulateddata.iteritems():
+        for name,data in ulateddata.items():
             if len(transpose(data)) == len(s):
                 sorteddata[name] = transpose(take(transpose(data),i))
             else:
-                print "Could not sort %s since its length is different than %s"%(name,sortname)
+                print("Could not sort %s since its length is different than %s"%(name,sortname))
                 sorteddata[name] = data
         accumulateddata = sorteddata
 
@@ -221,9 +221,9 @@ def accumulatedata(filename,datadict,scalardict={},pe0only=1,
     # --- is an error, the file being written to will be corrupted and all
     # --- of the data lost.
     f_out = PWpickle.PW(filename)
-    for name,data in accumulateddata.iteritems():
+    for name,data in accumulateddata.items():
         f_out.write(name,data)
-    for name,data in scalardict.iteritems():
+    for name,data in scalardict.items():
         f_out.write(name,data)
         if name in varlist: varlist.remove(name)
     for name in varlist:

@@ -2,7 +2,7 @@
 # ToDo:
 #  - modify setj to check if particles are within grid
 from ..warp import *
-from find_mgparam import find_mgparam
+from .find_mgparam import find_mgparam
 
 try:
     import psyco
@@ -59,7 +59,7 @@ class MagnetostaticMG(MultiGrid3D):
         f3d.gridmode = 1
 
         # --- If there are any remaning keyword arguments, raise an error.
-        assert len(kw.keys()) == 0, "Bad keyword arguemnts %s"%kw.keys()
+        assert len(list(kw.keys())) == 0, "Bad keyword arguemnts %s"%list(kw.keys())
 
         self.initializeconductors()
 

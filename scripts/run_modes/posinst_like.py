@@ -135,7 +135,7 @@ class Posinst_Like:
         if conductors is None:
             if l_switchyz:
                 if pos.ichsh==1: # elliptical
-                    print w3d.nz,w3d.nzlocal
+                    print(w3d.nz,w3d.nzlocal)
                     self.pipe = YCylinderEllipticOut(ellipticity = pos.bch/pos.ach,
                                                              radius      = pos.ach,
                                                              length      = (w3d.ymmax-w3d.ymmin)*10.,
@@ -256,7 +256,7 @@ class Posinst_Like:
             self.push_bucket()
 
     def push_bucket(self):
-        print '    *** bucket %g out of %g'%(self.ibk+1,self.nbuckets)
+        print('    *** bucket %g out of %g'%(self.ibk+1,self.nbuckets))
         if self.l_3d:
             self.ldz = pos.beamvel*pos.dt[0]
             self.lnz = int((w3d.zmmax-w3d.zmmin)/self.ldz)+1
@@ -731,12 +731,12 @@ class IonizElectrons:
                 # rhel is the number of electrons created at each timestep
                 n=int(rhel)
                 if ranf()<rhel-n:n+=1  # randomly add one electrons based on rhel fractional part
-                print '###',rhel,n
-                if self.l_verbose:print ' *** i,rhel,nemit= ',i,rhel,n
+                print('###',rhel,n)
+                if self.l_verbose:print(' *** i,rhel,nemit= ',i,rhel,n)
                 if n==0:continue
                 pos.nionel[0]=n   # tells Posinst to emit n photoelectrons
                 gen_ionizelectrons(1) # number of beam slice in POSINST =1. Use only 1.
-                if self.l_verbose:print 'nlast',pos.nlast,"nphel=",pos.nionel[0]
+                if self.l_verbose:print('nlast',pos.nlast,"nphel=",pos.nionel[0])
 
                 if self.l_xmirror:
                     # put photons on both sides of the vacuum chamber
@@ -745,8 +745,8 @@ class IonizElectrons:
                     pos.x[:pos.nlast] = pos.x[:pos.nlast]*xran
                     pos.vgx[:pos.nlast] = pos.vgx[:pos.nlast]*xran
 
-                if self.l_verbose:print "min and max of photoelectrons=",min((pos.z[:pos.nlast]/pos.slength-0.5)*dz+i*dz),\
-                                                                         max((pos.z[:pos.nlast]/pos.slength-0.5)*dz+i*dz)
+                if self.l_verbose:print("min and max of photoelectrons=",min((pos.z[:pos.nlast]/pos.slength-0.5)*dz+i*dz),\
+                                                                         max((pos.z[:pos.nlast]/pos.slength-0.5)*dz+i*dz))
                 ns = pos.nlast
                 js_new=emitted_species.jslist[0]
                 usq = (pos.vgx[:pos.nlast]**2 + pos.vgy[:pos.nlast]**2 + pos.vgz[:pos.nlast]**2)/clight**2

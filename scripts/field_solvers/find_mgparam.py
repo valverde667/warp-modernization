@@ -40,7 +40,7 @@ def find_mgparam(lsavephi=false,resetpasses=0,solver=None,pkg3d=None):
             return
     if solver is None:
         if(w3d.solvergeom == w3d.XYZgeom and top.fstype not in [7,13]):
-            print "The fstype must be set to 7 or 13"
+            print("The fstype must be set to 7 or 13")
             return
         if(w3d.solvergeom == w3d.Zgeom): return
         if(w3d.solvergeom == w3d.RZgeom or w3d.solvergeom == w3d.XZgeom):
@@ -76,19 +76,19 @@ def find_mgparam(lsavephi=false,resetpasses=0,solver=None,pkg3d=None):
             nexttime = field_solve(phisave,solver,pkg3d)
             prevtime = 2*nexttime
         except:
-            print """Notice: the maximum number of iterations has been reached, so
+            print("""Notice: the maximum number of iterations has been reached, so
       the values above are unlikely to be optimal. Try increasing the
       tolerance, increasing the maximum number of iterations, or making a
-      better initial guess of mgparam."""
+      better initial guess of mgparam.""")
     # --- Loop, increasing the number of passes until the time is minimized.
     while nexttime < prevtime:
         prevparam = solver.mgparam
         prevtime = nexttime
         nexttime = _find_mgparam(phisave,solver,pkg3d)
-        print "Field solve time = ",nexttime
-        print "f3d.mgparam = ",solver.mgparam
-        print "f3d.downpasses = ",solver.downpasses
-        print "f3d.uppasses = ",solver.uppasses
+        print("Field solve time = ",nexttime)
+        print("f3d.mgparam = ",solver.mgparam)
+        print("f3d.downpasses = ",solver.downpasses)
+        print("f3d.uppasses = ",solver.uppasses)
         if nexttime < prevtime:
             solver.downpasses = solver.downpasses + 1
             solver.uppasses = solver.uppasses + 1
@@ -102,17 +102,17 @@ def find_mgparam(lsavephi=false,resetpasses=0,solver=None,pkg3d=None):
             if solver.uppasses == 0: solver.uppasses = 1
     # --- Print error message if maximum iterations is reached.
     if solver.mgiters == solver.mgmaxiters:
-        print """Notice: the maximum number of iterations has been reached, so
+        print("""Notice: the maximum number of iterations has been reached, so
     the values above are unlikely to be optimal. Try increasing the
     tolerance, increasing the maximum number of iterations, or making a
-    better initial guess of mgparam."""
+    better initial guess of mgparam.""")
     else:
-        print "-----------------------------------------"
-        print "The optimized values:"
-        print "Field solve time = ",prevtime
-        print "f3d.mgparam = ",solver.mgparam
-        print "f3d.downpasses = ",solver.downpasses
-        print "f3d.uppasses = ",solver.uppasses
+        print("-----------------------------------------")
+        print("The optimized values:")
+        print("Field solve time = ",prevtime)
+        print("f3d.mgparam = ",solver.mgparam)
+        print("f3d.downpasses = ",solver.downpasses)
+        print("f3d.uppasses = ",solver.uppasses)
     # --- Restore the value of mgtol
     solver.mgtol = savemgtol
 
@@ -192,7 +192,7 @@ def _find_mgparam(phisave,solver,pkg3d):
     while (mgiters_prev != solver.mgiters and icount < 20):
 
 #   --- print out current value of mgparam
-        print "Best parameter so far = %f" % solver.mgparam
+        print("Best parameter so far = %f" % solver.mgparam)
 
 #   --- do field solve (which prints out number of field solve iterations)
         up_old = solver.uppasses
@@ -231,9 +231,9 @@ def _find_mgparam(phisave,solver,pkg3d):
 
 # --- print message if an optimal value wasn't found
     if (icount == 20):
-        print "Warning: maximum number of iterations reached."
-        print "         The value of mgparam may not be optimal."
-        print "         Try increasing mgmaxit."
+        print("Warning: maximum number of iterations reached.")
+        print("         The value of mgparam may not be optimal.")
+        print("         Try increasing mgmaxit.")
 
 
     return fstime

@@ -117,7 +117,7 @@ class FieldSolver3dBase(object):
                 #self.__dict__[name] = kw.pop(name,getattr(top,name)) # Python2.3
                 self.__dict__[name] = kw.get(name,getattr(top,name))
                 if name in kw: del kw[name]
-        for name,defvalue in self.__class__.__flaginputs__.iteritems():
+        for name,defvalue in self.__class__.__flaginputs__.items():
             if name not in self.__dict__:
                 #self.__dict__[name] = kw.pop(name,getattr(top,name)) # Python2.3
                 self.__dict__[name] = kw.get(name,defvalue)
@@ -171,7 +171,7 @@ class FieldSolver3dBase(object):
                     if self.pboundxy == periodic: self.pbounds[3] = reflect
 
         # --- If there are any remaning keyword arguments, raise an error.
-        assert len(kw.keys()) == 0,"Bad keyword arguemnts %s"%kw.keys()
+        assert len(list(kw.keys())) == 0,"Bad keyword arguemnts %s"%list(kw.keys())
 
         # --- Set set parallel related parameters and calculate mesh sizes
         if self.nzprocs <= 1:

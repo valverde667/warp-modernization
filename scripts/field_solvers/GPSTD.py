@@ -15,7 +15,7 @@ except:
     fft = np.fft
     l_fftw_fort=False
 
-print('l_fftw_fort',l_fftw_fort)
+print(('l_fftw_fort',l_fftw_fort))
 
 def iszero(f):
     """
@@ -77,7 +77,7 @@ def multmat(matrix1,matrix2,matcompress=None):
         # Matrix multiplication
     if len(matrix1[0]) != len(matrix2):
     # Check matrix dimensions
-        print 'Matrices must be m*n and n*p to multiply!'
+        print('Matrices must be m*n and n*p to multiply!')
     else:
         # Multiply if correct dimensions
         new_matrix = copy.deepcopy(matrix2)
@@ -544,7 +544,7 @@ class Fourier_Space():
             return np.fft.rfftfreq(a)
 
     def processdefaultsfromdict(self,dict,kw):
-        for name,defvalue in dict.iteritems():
+        for name,defvalue in dict.items():
             if name not in self.__dict__:
                 self.__dict__[name] = kw.get(name,defvalue)
             if name in kw: del kw[name]
@@ -589,7 +589,7 @@ class GPSTD_Matrix():
 
     def __init__(self,fields={}):
         self.fields=fields
-        n = len(self.fields.keys())
+        n = len(list(self.fields.keys()))
 
         self.mat = np.zeros([n,n]).tolist()
         for i in range(n):
@@ -602,10 +602,10 @@ class GPSTD_Matrix():
             self.fields_order[fname]=i
 
     def add_op(self,fname,ops):
-        assert fname in self.fields.keys(), "Error on GPSTD/add_op: field not found in dictionary."
+        assert fname in list(self.fields.keys()), "Error on GPSTD/add_op: field not found in dictionary."
         ifield = self.fields_order[fname]
-        for op in ops.keys():
-            assert op in self.fields.keys(), "Error on GPSTD/add_op: field not found in dictionary."
+        for op in list(ops.keys()):
+            assert op in list(self.fields.keys()), "Error on GPSTD/add_op: field not found in dictionary."
             iop = self.fields_order[op]
             self.mat[ifield][iop] = ops[op]
 
@@ -633,7 +633,7 @@ class GPSTD(Fourier_Space):
     def add_fields(self,f,l_source=False):
         self.fields.update(f)
 
-        for k in f.keys():
+        for k in list(f.keys()):
             self.LSource[k] = l_source
 
         self.fields_name = {}
@@ -652,19 +652,19 @@ class GPSTD(Fourier_Space):
         ixl,ixu,iyl,iyu,izl,izu = self.get_ius()
         if self.Ffields=={}:
             self.fields_shape = [ixu-ixl,iyu-iyl,izu-izl]
-            for k in self.fields.keys():
+            for k in list(self.fields.keys()):
                 self.plan_rfftn[k] = self.create_plan_rfftn(np.asarray(self.fields_shape))
                 self.Ffields[k]    =self.rfftn(np.squeeze(self.fields[k][ixl:ixu,iyl:iyu,izl:izu]),plan=self.plan_rfftn[k])
         else:
-            for k in self.fields.keys():
+            for k in list(self.fields.keys()):
                 self.Ffields[k]=self.rfftn(np.squeeze(self.fields[k][ixl:ixu,iyl:iyu,izl:izu]),field_out=self.Ffields[k],plan=self.plan_rfftn[k])
 
     def get_fields(self):
         ixl,ixu,iyl,iyu,izl,izu = self.get_ius()
         if (self.plan_irfftn=={}):
-            for k in self.fields.keys():
+            for k in list(self.fields.keys()):
                     self.plan_irfftn[k] = self.create_plan_irfftn(np.asarray(self.fields_shape))
-        for k in self.fields.keys():
+        for k in list(self.fields.keys()):
             if not self.LSource[k]:
                 shapek = np.asarray(np.shape(np.squeeze(self.fields[k][ixl:ixu,iyl:iyu,izl:izu])))
                 f = self.irfftn(self.Ffields[k], shapek, field_out=np.squeeze(self.fields[k][ixl:ixu,iyl:iyu,izl:izu]), plan=self.plan_irfftn[k])
@@ -676,7 +676,7 @@ class GPSTD(Fourier_Space):
         self.get_Ffields()
 
         # --- filter sources before push
-        for k in self.Sfilters.keys():
+        for k in list(self.Sfilters.keys()):
             self.Ffields[k]*=self.Sfilters[k]
 
         mymat = self.mymat
@@ -684,12 +684,12 @@ class GPSTD(Fourier_Space):
 
         # --- set dictionary of field values before time step
         oldfields = {}
-        for k in self.Ffields.keys():
+        for k in list(self.Ffields.keys()):
             oldfields[k] = self.Ffields[k].copy()
 
         # --- set dictionary of field flags for update
         updated_fields = {}
-        for k in self.Ffields.keys():
+        for k in list(self.Ffields.keys()):
             updated_fields[k] = False
 
         # --- fields update
@@ -722,7 +722,7 @@ class GPSTD(Fourier_Space):
         del oldfields
 
         # --- filter fields after push
-        for k in self.Ffilters.keys():
+        for k in list(self.Ffilters.keys()):
             self.Ffields[k]*=self.Ffilters[k]
 
         self.get_fields()
@@ -742,19 +742,19 @@ class GPSTD(Fourier_Space):
             ngz = 0
 
         if self.bc_periodic[0]:
-            for k in self.fields.keys():
+            for k in list(self.fields.keys()):
                 if updated_fields[k]:
                     f = self.fields[k]
                     f[-ngx-1:,...]=f[ngx:2*ngx+1,...]
                     f[:ngx,...]=f[-2*ngx-1:-ngx-1,...]
         if self.bc_periodic[1]:
-            for k in self.fields.keys():
+            for k in list(self.fields.keys()):
                 if updated_fields[k]:
                     f = self.fields[k]
                     f[:,-ngy-1:,:]=f[:,ngy:2*ngy+1,:]
                     f[:,:ngy,:]=f[:,-2*ngy-1:-ngy-1,:]
         if self.bc_periodic[2]:
-            for k in self.fields.keys():
+            for k in list(self.fields.keys()):
                 if updated_fields[k]:
                     f = self.fields[k]
                     f[...,-ngz-1:]=f[...,ngz:2*ngz+1]
@@ -984,7 +984,7 @@ class GPSTD_Maxwell_PML(GPSTD):
 
         self.push_fields()
 
-        for f in self.fields.values():
+        for f in list(self.fields.values()):
             if self.nx>1:
                 f[:self.nxguard/2,...]=0.
                 f[-self.nxguard/2:,...]=0.
@@ -1177,7 +1177,7 @@ class PSATD_Maxwell_PML(GPSTD):
 
         self.push_fields()
 
-        for f in self.fields.values():
+        for f in list(self.fields.values()):
             if self.nx>1:
                 f[:self.nxguard,...]=0.
                 f[-self.nxguard/2:,...]=0.
@@ -1786,7 +1786,7 @@ class PSATD_Maxwell(GPSTD):
             mymat.add_op('ez',{'ez':CT,'bx':-aym*c,'by': axm*c,'jz':EJmult,'rhonew':kzpn*ERhomult,'rhoold':kzpn*ERhooldmult})
 
         if self.l_pushf:
-            print 'l_pushf not yet implemented in PSATD Galilean'
+            print('l_pushf not yet implemented in PSATD Galilean')
             raise
             mymat.add_op('f',{'f':CT,'ex':axm,'ey':aym,'ez':azm, \
                                     'jx': kxmn*FJmult,'jy': kymn*FJmult,'jz': kzmn*FJmult, \
@@ -1794,7 +1794,7 @@ class PSATD_Maxwell(GPSTD):
                                     'rhoold':-FRhomult - Soverk/self.eps0})
 
         if self.l_pushg:
-            print 'l_pushg not yet implemented in PSATD Galilean'
+            print('l_pushg not yet implemented in PSATD Galilean')
             raise
             mymat.add_op('g',{'g':CT,'bx':axp*c,'by':ayp*c,'bz':azp*c})
 
@@ -1932,7 +1932,7 @@ class PSATD_Maxwell(GPSTD):
             mymat.add_op('ez',{'ez':C,'bx':-aym*c,'by': axm*c,'jz':EJmult,'rhonew':kzpn*ERhomult,'rhoold':kzpn*ERhooldmult})
 
         if self.l_pushf:
-            print 'l_pushf not yet implemented in PSATD PseudoGalilean'
+            print('l_pushf not yet implemented in PSATD PseudoGalilean')
             raise
             mymat.add_op('f',{'f':C,'ex':axm,'ey':aym,'ez':azm, \
                                     'jx': kxmn*FJmult,'jy': kymn*FJmult,'jz': kzmn*FJmult, \

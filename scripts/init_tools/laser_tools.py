@@ -363,6 +363,6 @@ def retropropagation(em, w3d, negative_propagation=False):
             syf.ezy[...] = 0.;           syf.bzy[...] = 0.
             syf.ezz[...] = 0.;           syf.bzz[...] = 0.
 
-    print "================================================"
-    print " Retropropagation completed."
-    print "================================================"
+    print("================================================")
+    print(" Retropropagation completed.")
+    print("================================================")

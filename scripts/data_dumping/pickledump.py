@@ -15,7 +15,7 @@ except:
 #except:
 if 1:
     tables = None
-    import cPickle
+    import pickle
 
 
 def pickledump(filename=None,attr=['dump'],vars=[],serial=0,ff=None,
@@ -55,7 +55,7 @@ def pickledump(filename=None,attr=['dump'],vars=[],serial=0,ff=None,
     if tables is not None:
         pickler = hdf5pickle.Pickler(file=ff)
     else:
-        pickler = cPickle.Pickler(ff,cPickle.HIGHEST_PROTOCOL)
+        pickler = pickle.Pickler(ff,pickle.HIGHEST_PROTOCOL)
 
     # --- It turns out however, the writing multiple pickles to the same file
     # --- is broken when using arrays. So now everything is put into a single
@@ -85,7 +85,7 @@ def pickledump(filename=None,attr=['dump'],vars=[],serial=0,ff=None,
         # --- Get variables in this package which have attribute attr.
         vlist = []
         for a in attr:
-            if isinstance(a,basestring): vlist = vlist + pkg.varlist(a)
+            if isinstance(a,str): vlist = vlist + pkg.varlist(a)
 
         # --- Create an empty dictionary to put everything into.
         pkgdict = {}
@@ -104,7 +104,7 @@ def pickledump(filename=None,attr=['dump'],vars=[],serial=0,ff=None,
                 a = pkg.getvarattr(vname)
                 if re.search('parallel',a):
                     if verbose:
-                        print 'variable '+vname+' skipped since it is a parallel variable'
+                        print('variable '+vname+' skipped since it is a parallel variable')
                     continue
 
             # --- Add the variable to the dictionary.
@@ -152,7 +152,7 @@ def pickledump(filename=None,attr=['dump'],vars=[],serial=0,ff=None,
                     pass
 
             if source is not None:
-                if verbose: print 'writing python function '+vname
+                if verbose: print('writing python function '+vname)
                 # --- Clean up any indentation in case the function was defined in
                 # --- an indented block of code
                 while source[0] == ' ': source = source[1:]
@@ -162,7 +162,7 @@ def pickledump(filename=None,attr=['dump'],vars=[],serial=0,ff=None,
                 # --- retreival easier the next time.
                 setattr(vval,'_source',source)
             else:
-                if verbose: print 'could not write python function '+vname
+                if verbose: print('could not write python function '+vname)
             continue
 
         # --- Zero length arrays cannot by written out so they are skipped.
@@ -174,13 +174,13 @@ def pickledump(filename=None,attr=['dump'],vars=[],serial=0,ff=None,
         # --- since the class may not defined in the restored session.
         try:
             if vval.__class__.__module__ == '__main__':
-                if verbose: print vname+' is being skipped since it is an instance of a class defined in main and therefore could not be unpickled'
+                if verbose: print(vname+' is being skipped since it is an instance of a class defined in main and therefore could not be unpickled')
                 continue
         except:
             pass
         try:
             if vval.__module__ == '__main__':
-                if verbose: print vname+' is being skipped since it is a class defined in main and therefore could not be unpickled'
+                if verbose: print(vname+' is being skipped since it is a class defined in main and therefore could not be unpickled')
                 continue
         except:
             pass
@@ -189,9 +189,9 @@ def pickledump(filename=None,attr=['dump'],vars=[],serial=0,ff=None,
         # --- doing this except by trying to pickle the object. This could be
         # --- very inefficient.
         try:
-            testpickle = cPickle.dumps(vval)
+            testpickle = pickle.dumps(vval)
         except:
-            if verbose: print 'python variable '+vname+' could no be pickled'
+            if verbose: print('python variable '+vname+' could no be pickled')
             continue
 
          # --- The unpickling test is not done now since some objects have a special
@@ -202,7 +202,7 @@ def pickledump(filename=None,attr=['dump'],vars=[],serial=0,ff=None,
          #  print 'python variable '+vname+' could no be unpickled'
          #  continue
 
-        if verbose: print 'writing python variable '+vname
+        if verbose: print('writing python variable '+vname)
         pkgdict[vname] = vval
 
     # --- Now the dictionary can be written out
@@ -229,7 +229,7 @@ def picklerestore(filename,verbose=0,skip=[],
     """
     ff = open(filename, 'rb')
 
-    picklelist = cPickle.load(ff)
+    picklelist = pickle.load(ff)
 
 # while 1:
 #   try:
@@ -241,7 +241,7 @@ def picklerestore(filename,verbose=0,skip=[],
 
         # --- Check if it is varsuffix. If varsuffix was input, the varsuffix
         # --- from the file is ignored.
-        if isinstance(object,basestring):
+        if isinstance(object,str):
             if varsuffix is None: varsuffix = object
             continue
 
@@ -249,15 +249,15 @@ def picklerestore(filename,verbose=0,skip=[],
         pname,dict = object
 
         # --- Add the varsuffix to all names, if given.
-        if isinstance(varsuffix,basestring):
+        if isinstance(varsuffix,str):
             newdict = {}
-            for key,value in dict.iteritems():
+            for key,value in dict.items():
                 newdict[varsuffix+key] = value
             dict = newdict
 
         # --- Check for the __main__ dictionary. Also, if a varsuffix is
         # --- given, then put everything into main.
-        if pname == '__main__' or isinstance(varsuffix,basestring):
+        if pname == '__main__' or isinstance(varsuffix,str):
             __main__.__dict__.update(dict)
             continue
 
@@ -290,12 +290,12 @@ def picklerestore(filename,verbose=0,skip=[],
         del __main__._functions
     except:
         functiondict = {}
-    for vname,source in functiondict.iteritems():
+    for vname,source in functiondict.items():
         # --- Skip functions which have already been defined in case the user
         # --- has made source updates since the dump was made.
         if vname in __main__.__dict__:
             if verbose:
-                print "skipping python function %s since it already is defined"%vname
+                print("skipping python function %s since it already is defined"%vname)
         else:
             try:
                 exec(source,__main__.__dict__)
@@ -305,6 +305,6 @@ def picklerestore(filename,verbose=0,skip=[],
                 # --- inspect.getsource cannot get the source.
                 setattr(__main__.__dict__[vname],'_source',source)
             except:
-                if verbose: print "error with function "+vname
+                if verbose: print("error with function "+vname)
 
     ff.close()

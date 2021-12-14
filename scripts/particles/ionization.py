@@ -13,7 +13,7 @@ except ImportError:
 
 def ionizationdoc():
     from ..particles import ionization
-    print ionization.__doc__
+    print(ionization.__doc__)
 
 
 class Ionization:
@@ -101,7 +101,7 @@ class Ionization:
             self.invvol = 1./(self.dx*self.dy*self.dz)
         self.ndensc = fzeros((self.nx+1,self.ny+1,self.nz+1), 'd')
 
-        for dd in self.target_dens.values():
+        for dd in list(self.target_dens.values()):
             if dd['ndens'] == 'uninitialized':
                 dd['ndens'] = fzeros((self.nx+1,self.ny+1,self.nz+1), 'd')
             if dd['target_fluidvel'] == 'uninitialized':
@@ -485,19 +485,19 @@ class Ionization:
             plt(textblock, 0.13, 0.88, justify="LT", height=9, font='courier')
             fma()
         else:
-            print title
-            print textblock
+            print(title)
+            print(textblock)
 
     def cleanuppgroups(self):
         """Resets all of the pgroups to top.pgroup"""
-        for inter in self.inter.values():
+        for inter in list(self.inter.values()):
             inter['incident_pgroup'] = top.pgroup
             inter['target_pgroup'] = top.pgroup
             inter['emitted_pgroup'] = top.pgroup
 
         def _cleanit(x):
             # --- This assumes that there is only one key
-            kk = x.keys()
+            kk = list(x.keys())
             for pg in kk:
                 x[top.pgroup] = x[pg]
                 del x[pg]
@@ -643,7 +643,7 @@ class Ionization:
                     # --- get local target density
                     if ndens is None:
                         ndens = self.target_dens[target_species]['ndens']
-                    if isinstance(ndens, (types.IntType, float)):
+                    if isinstance(ndens, (int, float)):
                         dp = ones(ni, 'd')*ndens
                         if target_fluidvel is None:
                             xmin = self.xmin
@@ -831,7 +831,7 @@ class Ionization:
                                                           top.boost_gamma)
 
                             if self.l_verbose:
-                                print 'add ', nnew, emitted_species.name, ' from by impact ionization:', incident_species.name, ' + ', ((target_species is None and 'background gas') or target_species.name)
+                                print('add ', nnew, emitted_species.name, ' from by impact ionization:', incident_species.name, ' + ', ((target_species is None and 'background gas') or target_species.name))
                             if self.inter[incident_species]['remove_incident'][it] and (emitted_species.type is incident_species.type):
                                 self.addpart(nnew, xnewp, ynewp, znewp, uxnew, uynew, uznew, ginew, epg, emitted_species.jslist[0],
                                              self.inter[incident_species]['emitted_tag'][it], injdatapid, w)
@@ -852,7 +852,7 @@ class Ionization:
                 processlostpart(top.pgroup, js+1, top.clearlostpart, top.time, top.zbeam)
 
         if self.l_timing:
-            print 'time ionization = ', time.perf_counter() - t1, 's'
+            print('time ionization = ', time.perf_counter() - t1, 's')
 
 
 class GridNotInitialized(Exception):

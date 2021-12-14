@@ -1,6 +1,6 @@
 """Class for 2D & 3D FFT-based electromagnetic solver """
-from GPSTD import *
-from em3dsolver import *
+from .GPSTD import *
+from .em3dsolver import *
 
 class EM3DFFT(EM3D):
 
@@ -460,7 +460,7 @@ class EM3DFFT(EM3D):
     def finalizesourcep(self):
         if self.sourcepfinalized: return
         self.sourcepfinalized = 1
-        if self.l_verbose:print 'finalizesourcep'
+        if self.l_verbose:print('finalizesourcep')
         # --- add slices
         self.add_source_ndts_slices()
         self.aftersetsourcep()
@@ -478,7 +478,7 @@ class EM3DFFT(EM3D):
         self.applysourceboundaryconditions()
         # --- exchange guard cells data across domains
         self.exchange_bc(self.block)
-        if self.l_verbose:print 'finalizesourcep done'
+        if self.l_verbose:print('finalizesourcep done')
 
     def boris_correction(self):
 # --- apply Boris correction
@@ -699,7 +699,7 @@ class EM3DFFT(EM3D):
             JxF = 1j*JxF/where(emK.kx==0.,1j,emK.kx)
             JzF = 1j*JzF/where(emK.kz==0.,1j,emK.kz)
 
-        if any(self.V_pseudogalilean<>0.):
+        if any(self.V_pseudogalilean!=0.):
             JxF*=emK.CDcoef
 #            JyF*=emK.CDcoef
             JzF*=emK.CDcoef

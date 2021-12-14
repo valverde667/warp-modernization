@@ -3,7 +3,7 @@ Class for doing multigrid field solve on 2-D
 --------------------------------------------
 """
 from ..warp import *
-from find_mgparam import find_mgparam
+from .find_mgparam import find_mgparam
 import numpy as np
 
 try:
@@ -45,7 +45,7 @@ class MultiGrid2D(MultiGrid3D):
         self.lapplyphiclamp = kw.pop('lapplyphiclamp', false)
 
         # --- If there are any remaning keyword arguments, raise an error.
-        assert len(kw.keys()) == 0,"Bad keyword arguemnts %s"%kw.keys()
+        assert len(list(kw.keys())) == 0,"Bad keyword arguemnts %s"%list(kw.keys())
 
         # --- Check for consistency
         if self.solvergeom == w3d.RZgeom:
@@ -283,8 +283,8 @@ class MultiGrid2D(MultiGrid3D):
         self.potential[:,0,0] = self.potential[:,0,-3]
         t3 = wtime()
 
-        print "Solve time = ",t2 - t1
-        print "Total time = ",t3 - t0
+        print("Solve time = ",t2 - t1)
+        print("Total time = ",t3 - t0)
         self.fstime = t2 - t1
         self.tottime = t3 - t0
 
@@ -761,7 +761,7 @@ class MultiGridImplicit2D(MultiGrid3D):
         self.processdefaultsfrompackage(MultiGrid2D.__f3dinputs__,f3d,kw)
 
         # --- If there are any remaning keyword arguments, raise an error.
-        assert len(kw.keys()) == 0,"Bad keyword arguemnts %s"%kw.keys()
+        assert len(list(kw.keys())) == 0,"Bad keyword arguemnts %s"%list(kw.keys())
 
         # --- Create conductor objects
         self.initializeconductors()
@@ -1113,8 +1113,8 @@ class MultiGridImplicit2D(MultiGrid3D):
         self.potential[:,0] = self.potential[:,-3]
         t3 = wtime()
 
-        print "Solve time = ",t2 - t1
-        print "Total time = ",t3 - t0
+        print("Solve time = ",t2 - t1)
+        print("Total time = ",t3 - t0)
         self.fstime = t2 - t1
         self.tottime = t3 - t0
 
@@ -1157,7 +1157,7 @@ class MultiGridRZunsupported(MultiGrid3D):
         self.processdefaultsfrompackage(MultiGrid2D.__f3dinputs__,f3d,kw)
 
         # --- If there are any remaning keyword arguments, raise an error.
-        assert len(kw.keys()) == 0,"Bad keyword arguemnts %s"%kw.keys()
+        assert len(list(kw.keys())) == 0,"Bad keyword arguemnts %s"%list(kw.keys())
 
         # --- Create conductor objects
         self.initializeconductors()

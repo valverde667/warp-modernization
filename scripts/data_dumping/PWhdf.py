@@ -53,8 +53,8 @@ class PW:
         h = self.inquire_nodelist ()
         if not (h is None):
             if self.inquire_verbosity():
-                print "Closing HDF file being written:", \
-                      self.inquire_filename()
+                print("Closing HDF file being written:", \
+                      self.inquire_filename())
             h.write(self.inquire_filename(),self.inquire_compression())
         self.__dict__['_nodelist'] = None
 
@@ -152,10 +152,10 @@ class PW:
         self.check_open()
         if self.inquire_verbosity () > 1:
             if record == 0:
-                print "PW::write writing", name
+                print("PW::write writing", name)
             else:
-                print "PW::write writing record", record, \
-                      "of", name
+                print("PW::write writing record", record, \
+                      "of", name)
         if isinstance(quantity,ndarray):
             anode = _pyhl.node(_pyhl.DATASET_ID,self._pwd+'/'+name)
             anode.setArrayValue(-1,shape(quantity),quantity,
@@ -174,7 +174,7 @@ class PW:
         """Define entry for quantity in file as 'name'"""
         self.check_open()
         if self.inquire_verbosity () > 1:
-            print "PW::defining entry for", name
+            print("PW::defining entry for", name)
         raise Exception("defent not supported")
 
 
@@ -204,7 +204,7 @@ if __name__ == "__main__":
     from PRhdf import PR
     f = PR('foo.pdb')
     for x in f.inquire_names ():
-        print x, "is", eval(x), ", in file it is", eval('f.'+x)
+        print(x, "is", eval(x), ", in file it is", eval('f.'+x))
     f.close ()
 # record-writing
     g = PW ('goo.pdb')
@@ -216,5 +216,5 @@ if __name__ == "__main__":
         xh [i] = x
     g.close ()
     g = PR ('goo.pdb')
-    print "xh is", xh, ", file it is ", g.xh
+    print("xh is", xh, ", file it is ", g.xh)
     g.close ()

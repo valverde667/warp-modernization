@@ -337,7 +337,7 @@ class ParticleDiagnostic(OpenPMDDiagnostic) :
         # Apply the rules successively
         if self.select is not None :
             # Go through the quantities on which a rule applies
-            for quantity in self.select.keys() :
+            for quantity in list(self.select.keys()) :
                 quantity_array = self.get_quantity( species, quantity )
                 # Lower bound
                 if self.select[quantity][0] is not None :
@@ -613,7 +613,7 @@ class ParticleDiagnostic(OpenPMDDiagnostic) :
             (np.rint( species.getssn(gather=False) )).astype('uint64')
 
         string_to_exec=quantity
-        for keys in dict_keys_val.keys():
+        for keys in list(dict_keys_val.keys()):
             string_to_exec=string_to_exec.replace(keys,"dict_keys_val[\'"+keys+"\']")
         string_to_exec='quantity_array = '+string_to_exec
         local_dict = {'dict_keys_val':dict_keys_val, 'quantity_array':None}

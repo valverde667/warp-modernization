@@ -7,8 +7,8 @@ import time
 
 
 def loadbalancedoc():
-    import loadbalance
-    print loadbalance.__doc__
+    from . import loadbalance
+    print(loadbalance.__doc__)
 
 #########################################################################
 #########################################################################
@@ -132,14 +132,14 @@ recalculated on a finer mesh to give better balancing.
 
         if not lparallel:
             if self.verbose:
-                print "Skipping loadbalance since running in serial"
+                print("Skipping loadbalance since running in serial")
             endtime = time.perf_counter()
             self.runtime += (endtime - starttime)
             return
 
         # --- Find frequency of load balancing
         ii = max(self.when.values())
-        for key,value in self.when.iteritems():
+        for key,value in self.when.items():
             if top.it < key: ii = min(ii,value)
 
         ppdecomp = top.ppdecomp
@@ -153,7 +153,7 @@ recalculated on a finer mesh to give better balancing.
             ppdecomp.iz[0] == 0 and ppdecomp.iz[-1]+ppdecomp.nz[-1] == ppdecomp.nzglobal):
             if not lforce and (top.it%ii) != 0:
                 if self.verbose:
-                    print "Skipping loadbalance since it is not time for it"
+                    print("Skipping loadbalance since it is not time for it")
                 endtime = time.perf_counter()
                 self.runtime += (endtime - starttime)
                 return
@@ -178,7 +178,7 @@ recalculated on a finer mesh to give better balancing.
         # --- Check if there are any particles anywhere, and return if not.
         if nplive == 0:
             if self.verbose:
-                print "Skipping loadbalance since there are no particles"
+                print("Skipping loadbalance since there are no particles")
             endtime = time.perf_counter()
             self.runtime += (endtime - starttime)
             return
@@ -299,9 +299,9 @@ recalculated on a finer mesh to give better balancing.
             if xmaxp > ppdecomp.xmax[-1]-2*w3d.dx:
                 lforce = True
                 if self.verbose:
-                    print "Load balancing since particles near upper end ",
-                    print "of mesh in x ",ppdecomp.xmax[-1],w3d.xmmax,xmaxp,
-                    print ppdecomp.xmax[-1]-2*w3d.dx
+                    print("Load balancing since particles near upper end ", end=' ')
+                    print("of mesh in x ",ppdecomp.xmax[-1],w3d.xmmax,xmaxp, end=' ')
+                    print(ppdecomp.xmax[-1]-2*w3d.dx)
 
         # --- Check if lowermost particle is close to edge of last processor
         # --- If so, then force a reloadbalance.
@@ -309,9 +309,9 @@ recalculated on a finer mesh to give better balancing.
             if xminp < ppdecomp.xmin[0]+2*w3d.dx:
                 lforce = True
                 if self.verbose:
-                    print "Load balancing since particles near lower end ",
-                    print "of mesh in x ",ppdecomp.xmin[0],w3d.xmmin,xminp,
-                    print ppdecomp.xmin[0]+2*w3d.dx
+                    print("Load balancing since particles near lower end ", end=' ')
+                    print("of mesh in x ",ppdecomp.xmin[0],w3d.xmmin,xminp, end=' ')
+                    print(ppdecomp.xmin[0]+2*w3d.dx)
 
         # --- Check if uppermost particle is close to edge of last processor
         # --- If so, then force a reloadbalance.
@@ -319,9 +319,9 @@ recalculated on a finer mesh to give better balancing.
             if ymaxp > ppdecomp.ymax[-1]-2*w3d.dy:
                 lforce = True
                 if self.verbose:
-                    print "Load balancing since particles near upper end ",
-                    print "of mesh in y ",ppdecomp.ymax[-1],w3d.ymmax,ymaxp,
-                    print ppdecomp.ymax[-1]-2*w3d.dy
+                    print("Load balancing since particles near upper end ", end=' ')
+                    print("of mesh in y ",ppdecomp.ymax[-1],w3d.ymmax,ymaxp, end=' ')
+                    print(ppdecomp.ymax[-1]-2*w3d.dy)
 
         # --- Check if lowermost particle is close to edge of last processor
         # --- If so, then force a reloadbalance.
@@ -329,9 +329,9 @@ recalculated on a finer mesh to give better balancing.
             if yminp < ppdecomp.ymin[0]+2*w3d.dy:
                 lforce = True
                 if self.verbose:
-                    print "Load balancing since particles near lower end ",
-                    print "of mesh in y ",ppdecomp.ymin[0],w3d.ymmin,yminp,
-                    print ppdecomp.ymin[0]+2*w3d.dy
+                    print("Load balancing since particles near lower end ", end=' ')
+                    print("of mesh in y ",ppdecomp.ymin[0],w3d.ymmin,yminp, end=' ')
+                    print(ppdecomp.ymin[0]+2*w3d.dy)
 
         # --- Check if uppermost particle is close to edge of last processor
         # --- If so, then force a reloadbalance.
@@ -339,9 +339,9 @@ recalculated on a finer mesh to give better balancing.
             if zmaxp > ppdecomp.zmax[-1]-2*w3d.dz + top.zbeam:
                 lforce = True
                 if self.verbose:
-                    print "Load balancing since particles near upper end ",
-                    print "of mesh in z ",ppdecomp.zmax[-1],w3d.zmmax,zmaxp,
-                    print ppdecomp.zmax[-1]-2*w3d.dz,top.zbeam
+                    print("Load balancing since particles near upper end ", end=' ')
+                    print("of mesh in z ",ppdecomp.zmax[-1],w3d.zmmax,zmaxp, end=' ')
+                    print(ppdecomp.zmax[-1]-2*w3d.dz,top.zbeam)
 
         # --- Check if lowermost particle is close to edge of last processor
         # --- If so, then force a reloadbalance.
@@ -349,9 +349,9 @@ recalculated on a finer mesh to give better balancing.
             if zminp < ppdecomp.zmin[0]+2*w3d.dz + top.zbeam:
                 lforce = True
                 if self.verbose:
-                    print "Load balancing since particles near lower end ",
-                    print "of mesh in z ",ppdecomp.zmin[0],w3d.zmmin,zminp,
-                    print ppdecomp.zmin[0]+2*w3d.dz,top.zbeam
+                    print("Load balancing since particles near lower end ", end=' ')
+                    print("of mesh in z ",ppdecomp.zmin[0],w3d.zmmin,zminp, end=' ')
+                    print(ppdecomp.zmin[0]+2*w3d.dz,top.zbeam)
 
         # --- Shift into the grid frame
         xminp = xminp - w3d.xmmin
@@ -394,13 +394,13 @@ recalculated on a finer mesh to give better balancing.
         # --- Just return if load balancing not done now.
         if not lforce and (top.it%ii) != 0:
             if self.verbose:
-                print "Skipping loadbalance since it is not time for it"
+                print("Skipping loadbalance since it is not time for it")
             endtime = time.perf_counter()
             self.runtime += (endtime - starttime)
             return
 
         if (top.it%ii) == 0 and self.verbose:
-            print "Load balancing based on frequency"
+            print("Load balancing based on frequency")
 
         # --- If including the field solver, setup the spread to include it.
         if self.loadbalancefieldsolver:
@@ -489,14 +489,14 @@ recalculated on a finer mesh to give better balancing.
             try:
                 solver.resetparticledomains()
             except AttributeError:
-                print "Field solver does not have a setparticledomains method"
+                print("Field solver does not have a setparticledomains method")
             # --- Zero out the source that is used for the fieldsolver. This is
             # --- done in case some region of source is no longer covered by
             # --- sourcep.
             try:
                 solver.zerosource()
             except AttributeError:
-                print "Field solver does not have a zerosource method"
+                print("Field solver does not have a zerosource method")
         else:
             if(w3d.solvergeom == w3d.XYZgeom):
                 # --- Allocate space with updated nxp, nyp and nzp
@@ -580,9 +580,9 @@ recalculated on a finer mesh to give better balancing.
             idomain[0] = nint(idomain[0])
 
             if self.verbose:
-                print "nprocs: ",nprocs
-                print "domain",domain
-                print "1:idomain",idomain
+                print("nprocs: ",nprocs)
+                print("domain",domain)
+                print("1:idomain",idomain)
             
             for i in range(1,nprocs+1):
                 idomain[i] = nint(idomain[i])
@@ -597,16 +597,16 @@ recalculated on a finer mesh to give better balancing.
             domain = dd*idomain
             
             if self.verbose:
-                print "2:idomain",idomain
+                print("2:idomain",idomain)
 
         # --- Set domain of each processor.
         ppdecompmin[:] = mmin + domain[:-1]
         ppdecompmax[:] = mmin + domain[1:]
 
         if self.verbose:
-            print "Mins: ",ppdecompmin
-            print "Maxs: ",ppdecompmax
-            print "dels: ",(ppdecompmax-ppdecompmin)
+            print("Mins: ",ppdecompmin)
+            print("Maxs: ",ppdecompmax)
+            print("dels: ",(ppdecompmax-ppdecompmin))
 
         domaindecomposeparticles(nnglobal,nprocs,npextra,mmin,dd,
                                  zeros(nprocs,'d'),true,
@@ -629,7 +629,7 @@ recalculated on a finer mesh to give better balancing.
             if vmaxp > 0.: padupper = vmaxp*top.dt*ii*2
             else:          padupper = ii*dd
         if self.verbose:
-            print "Load balancing padupper%s = "%(['x','y','z'][axis]),padupper
+            print("Load balancing padupper%s = "%(['x','y','z'][axis]),padupper)
         return padupper
 
     def calcpadlower(self,axis,ii,padlower,uu,dd,usemoments):
@@ -649,7 +649,7 @@ recalculated on a finer mesh to give better balancing.
             if vminp < 0.: padlower = -vminp*top.dt*ii*2
             else:          padlower = ii*dd
         if self.verbose:
-            print "Load balancing padlower%s = "%(['x','y','z'][axis]),padlower
+            print("Load balancing padlower%s = "%(['x','y','z'][axis]),padlower)
         return padlower
 
     def decompose(self,weight,npes,lfullcoverage=0):

@@ -10,7 +10,7 @@ import warp
 
 [wxID_PANEL, wxID_PANELBACK, wxID_PANELFORWARD, wxID_PANELHOME,
  wxID_PANELHTMLWINDOW1,
-] = map(lambda _init_ctrls: wx.NewId(), range(5))
+] = [wx.NewId() for _init_ctrls in range(5)]
 
 class panel(wx.Panel):
     def _init_utils(self):
@@ -75,7 +75,7 @@ class panel(wx.Panel):
                 warp_path = string.upper(warp_path[cpos+9])+':'+warp_path[cpos+10:]
             else:
                 warp_path = warp_path[1]+':'+warp_path[3:]
-        if warp_path <> '':warp_path+='/'
+        if warp_path != '':warp_path+='/'
         self.html.LoadPage(warp_path+'doc/html/'+self.which+'.html')
 
     def OnBackButton(self, event):

@@ -125,7 +125,7 @@ def brent(ax,bx,cx,f,tol=1.e-10):
             elif(fu<=fv or v==x or v==w):
                 v = u
                 fv = fu
-    print 'brent exceed maximum iterations.'
+    print('brent exceed maximum iterations.')
 
 ########################################################################
 def linmin(p,xi,tol=1.e-10):
@@ -173,8 +173,8 @@ def powell(p,xi,localfunc,ftol=1.e-10,itmax=100):
                 ibig=i
         if(2.*abs(fp-fret)<=ftol*(abs(fp)+abs(fret)) or iter >= itmax):
             return (p,xi,fret,iter)
-        print iter,fret
-        if(iter==itmax): print 'powell exceeding maximum iterations.'
+        print(iter,fret)
+        if(iter==itmax): print('powell exceeding maximum iterations.')
         ptt = 2.*p-pt
         xit = p-pt
         pt = p + 0.

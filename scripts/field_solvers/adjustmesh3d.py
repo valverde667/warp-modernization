@@ -8,8 +8,8 @@ from warp import *
 
 
 def adjustmesh3ddoc():
-    import adjustmesh3d
-    print adjustmesh3d.__doc__
+    from . import adjustmesh3d
+    print(adjustmesh3d.__doc__)
 
 def resizeZ_arrays(zzmin=None,zzmax=None,nzzarr=None):
     if zzmin is not None: top.zzmin = zzmin

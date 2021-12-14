@@ -123,10 +123,10 @@ def fast_parser(source, line_ending, flat, wxYield):
         stk[-1][-1].append(a)
     out.extend(stk)
     if flat == 0:
-        return out, docstring.keys()
+        return out, list(docstring.keys())
     elif flat==1:
         return docstring
     elif flat==2:
-        return out, docstring.keys(), docstring
+        return out, list(docstring.keys()), docstring
     else:
-        return out, docstring.keys(), docstring, todo
+        return out, list(docstring.keys()), docstring, todo

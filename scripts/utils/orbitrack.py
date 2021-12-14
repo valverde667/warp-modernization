@@ -21,13 +21,13 @@ save_moms()     ... Save Moments calculated using spmom to file
 """
 
 import __main__
-from rami_scripts import *
+from .rami_scripts import *
 from ..diagnostics import getzmom
 
 
 def orbitrackdoc():
-    import orbitrack
-    print orbitrack.__doc__
+    from . import orbitrack
+    print(orbitrack.__doc__)
 
 # --- Define Constants
 
@@ -55,7 +55,7 @@ for mom in moms:
 def init_traj(jslist=None):
     """ initialize arrays for storing particle trajectories """
     if jslist is None:  # Default is all species
-        jslist = range(0,top.ns)
+        jslist = list(range(0,top.ns))
     for var in tvars:
         __main__.__dict__[var+runid] = zeros((len(jslist),(nrun/top.nhist)+1,num_part), 'd')
 
@@ -65,11 +65,11 @@ def init_traj(jslist=None):
 def find_trajects(jslist=None):
     """ Extract particle trajectories """
     if jslist is None:  # Default is all species
-        jslist = range(0,top.ns)
+        jslist = list(range(0,top.ns))
     for var in tvars:
         for spec in range(0,len(jslist)):
             __main__.__dict__[var+runid][spec][top.it/top.nhist] = eval(
-                    "get"+var[:-1]+"(js="+`jslist[spec]`+",iw=-1)[0:num_part]")
+                    "get"+var[:-1]+"(js="+repr(jslist[spec])+",iw=-1)[0:num_part]")
 
 
 def save_trajects(crun="0"):

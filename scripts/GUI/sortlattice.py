@@ -17,7 +17,7 @@ class ElemObj:
         topvar[self.id] = v
     def __getattr__(self,name):
         if name == 'enabled': return self.getpyobj('s')
-        if name in self.__dict__.keys(): return self.__dict__[name]
+        if name in list(self.__dict__.keys()): return self.__dict__[name]
         try:
             v = self.getpyobj(name)
             return v[self.id]
@@ -40,27 +40,27 @@ def sortlattice():
     # --- First, get list of all of the existing elements in one nice place.
     elems = []
     if top.bends:
-        for ii in xrange(top.nbend+1): elems.append(ElemObj("Bend",ii))
+        for ii in range(top.nbend+1): elems.append(ElemObj("Bend",ii))
     if top.dipos:
-        for ii in xrange(top.ndipo+1): elems.append(ElemObj("Dipo",ii))
+        for ii in range(top.ndipo+1): elems.append(ElemObj("Dipo",ii))
     if top.quads:
-        for ii in xrange(top.nquad+1): elems.append(ElemObj("Quad",ii))
+        for ii in range(top.nquad+1): elems.append(ElemObj("Quad",ii))
     if top.sexts:
-        for ii in xrange(top.nsext+1): elems.append(ElemObj("Sext",ii))
+        for ii in range(top.nsext+1): elems.append(ElemObj("Sext",ii))
     if top.heles:
-        for ii in xrange(top.nhele+1): elems.append(ElemObj("Hele",ii))
+        for ii in range(top.nhele+1): elems.append(ElemObj("Hele",ii))
     if top.accls:
-        for ii in xrange(top.naccl+1): elems.append(ElemObj("Accl",ii))
+        for ii in range(top.naccl+1): elems.append(ElemObj("Accl",ii))
     if top.emlts:
-        for ii in xrange(top.nemlt+1): elems.append(ElemObj("Emlt",ii))
+        for ii in range(top.nemlt+1): elems.append(ElemObj("Emlt",ii))
     if top.mmlts:
-        for ii in xrange(top.nmmlt+1): elems.append(ElemObj("Mmlt",ii))
+        for ii in range(top.nmmlt+1): elems.append(ElemObj("Mmlt",ii))
     if top.bgrds:
-        for ii in xrange(top.nbgrd+1): elems.append(ElemObj("Bgrd",ii))
+        for ii in range(top.nbgrd+1): elems.append(ElemObj("Bgrd",ii))
     if top.pgrds:
-        for ii in xrange(top.npgrd+1): elems.append(ElemObj("Pgrd",ii))
+        for ii in range(top.npgrd+1): elems.append(ElemObj("Pgrd",ii))
     if top.drfts:
-        for ii in xrange(top.ndrft+1): elems.append(ElemObj("Drft",ii))
+        for ii in range(top.ndrft+1): elems.append(ElemObj("Drft",ii))
 
     elemszs = []
     for e in elems: elemszs.append(e.zs)

@@ -2,7 +2,7 @@ from ..warp import *
 
 
 def printarraysizesdoc():
-    print "printarraysizes: prints sizes of all allocated arrays"
+    print("printarraysizes: prints sizes of all allocated arrays")
 
 
 def printarraysizes(filename=None, threshold=0):
@@ -26,7 +26,7 @@ def printarraysizes(filename=None, threshold=0):
                     if printtofile:
                         ff.write("%s.%s %d\n" % (pkg, vname, s))
                     else:
-                        print "%s.%s %d" % (pkg, vname, s)
+                        print("%s.%s %d" % (pkg, vname, s))
             except:
                 pass
     if printtofile:

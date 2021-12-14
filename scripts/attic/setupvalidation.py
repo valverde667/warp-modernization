@@ -2,13 +2,13 @@ from ..warp import *
 
 
 def setupvalidationdoc():
-    print """
+    print("""
   This module provides a convenient way of setting up a validation deck which
   compares data from a previous run to a current run. It checks the sums of each
   of the particles coordinates and the sums of the charge density and potential
   arrays. To use, run the command "setupvalidator()" and follow its
   instructions.
-    """
+    """)
 
 ##########################################################################
 def getvalidationdata():
@@ -76,7 +76,7 @@ def setupvalidator():
   )
   """
     originaldata = getvalidationdata()
-    print output%originaldata
+    print(output%originaldata)
 
 ##########################################################################
 def comparetooriginal(odata):
@@ -89,18 +89,18 @@ def comparetooriginal(odata):
              "rho","phi"]
     vdata = array(getvalidationdata())
     odata = array(odata)
-    print "         %10s %-22s %-22s"%(" ","sum()","sum(abs())")
+    print("         %10s %-22s %-22s"%(" ","sum()","sum(abs())"))
     for i in range(7):
-        print "         %10s %22.15e %22.15e"%(otext[i],vdata[i],vdata[i+7])
-        print "original %10s %22.15e %22.15e"%(otext[i],odata[i],odata[i+7])
-        print
+        print("         %10s %22.15e %22.15e"%(otext[i],vdata[i],vdata[i+7]))
+        print("original %10s %22.15e %22.15e"%(otext[i],odata[i],odata[i+7]))
+        print()
 
-    print "         %10s %-22s"%(" ","sum()")
-    print "         %10s %22.15e"%(otext[14],vdata[14])
-    print "original %10s %22.15e"%(otext[14],odata[14])
-    print
-    print "         %10s %22.15e"%(otext[15],vdata[15])
-    print "original %10s %22.15e"%(otext[15],odata[15])
+    print("         %10s %-22s"%(" ","sum()"))
+    print("         %10s %22.15e"%(otext[14],vdata[14]))
+    print("original %10s %22.15e"%(otext[14],odata[14]))
+    print()
+    print("         %10s %22.15e"%(otext[15],vdata[15]))
+    print("original %10s %22.15e"%(otext[15],odata[15]))
 
 # diffs = abs(odata - vdata)
 # if max(diffs) > 0.:

@@ -120,8 +120,8 @@ except ImportError:
     VisualizableClass = object
 
 def generateconductors_doc():
-    import generateconductors
-    print generateconductors.__doc__
+    from . import generateconductors
+    print(generateconductors.__doc__)
 
 _lwithnewconductorgeneration = True
 def usenewconductorgeneration():
@@ -295,10 +295,10 @@ class Assembly(VisualizableClass):
             del kw['kw']
             kw.update(kwtemp)
 
-        for name,default in Assembly.__inputs__.iteritems():
+        for name,default in Assembly.__inputs__.items():
             self.__dict__[name] = kw.get(name,default)
             if name in kw: del kw[name]
-        assert len(kw) == 0,"Invalid keyword arguments "+str(kw.keys())
+        assert len(kw) == 0,"Invalid keyword arguments "+str(list(kw.keys()))
 
         self.lostparticles_data  = AppendableArray(typecode='d',unitshape=[4])
         self.emitparticles_data  = AppendableArray(typecode='d',unitshape=[5])
@@ -370,7 +370,7 @@ class Assembly(VisualizableClass):
         # assumed to draw either zx or zr
         nowarn = kw.get('nowarn',0)
         if not nowarn:
-            print 'draw method not implemented for '+self.__class__.__name__
+            print('draw method not implemented for '+self.__class__.__name__)
 
     def drawzx(self,**kw):
         self.draw(**kw)
@@ -382,12 +382,12 @@ class Assembly(VisualizableClass):
     def drawxy(self,**kw):
         nowarn = kw.get('nowarn',0)
         if not nowarn:
-            print 'drawxy method not implemented for '+self.__class__.__name__
+            print('drawxy method not implemented for '+self.__class__.__name__)
 
     def drawzy(self,**kw):
         nowarn = kw.get('nowarn',0)
         if not nowarn:
-            print 'drawzy method not implemented for '+self.__class__.__name__
+            print('drawzy method not implemented for '+self.__class__.__name__)
 
     def plotdata(self,r,z,color='fg',filled=None,fullplane=1,
                  xcent=None,zcent=None,xshift=0.,zshift=0.,**kw):
@@ -481,7 +481,7 @@ class Assembly(VisualizableClass):
         """
         histo,energies = self.get_energy_histogram(js=js,n=n)
         if histo is None:
-            print "Nothing to plot"
+            print("Nothing to plot")
         else:
             pla(histo,energies,color=color,width=width)
 
@@ -830,7 +830,7 @@ class Assembly(VisualizableClass):
         qc = parallelsum(qc)
 
         self.imageparticles_data.append(array([top.time,q*eps0+qc]))
-        if l_verbose:print self.name,q*eps0,qc
+        if l_verbose:print(self.name,q*eps0,qc)
         if doplot:
             window(0)
             pldj([zmin,zmin,zmin,zmax],[xmin,xmin,xmax,xmin],
@@ -1614,7 +1614,7 @@ class Delta:
             # --- be enough to fix the problems with convergence.
             delsmin = minimum.reduce(self.dels)
             delsmax = maximum.reduce(self.dels)
-            ii = compress((delsmin < 0.)&(delsmax > 0.),range(self.dels.shape[1]))
+            ii = compress((delsmin < 0.)&(delsmax > 0.),list(range(self.dels.shape[1])))
             for i in ii:
                 self.dels[:,i] = where(self.dels[:,i] > 0.,-2.,self.dels[:,i])
             # --- This deals with special case points. It can sometimes happen that
@@ -1918,7 +1918,7 @@ class GridIntercepts(object):
         # --- be enough to fix the problems with convergence.
         delsmin = minimum.reduce(dels)
         delsmax = maximum.reduce(dels)
-        ii = compress((delsmin < 0.)&(delsmax > 0.), range(dels.shape[1]))
+        ii = compress((delsmin < 0.)&(delsmax > 0.), list(range(dels.shape[1])))
         for i in ii:
             dels[:,i] = where(dels[:,i] > 0., -2., dels[:,i])
         # --- This deals with special case points. It can sometimes happen that
@@ -2846,7 +2846,7 @@ class Grid:
         endtime = wtime()
         self.generatetime = endtime - starttime
         if timeit: tt2[9] = endtime - starttime
-        if timeit: print tt2
+        if timeit: print(tt2)
 
     def getdatanew(self,a,dfill=2.,fuzzsign=-1):
         """
@@ -2912,7 +2912,7 @@ class Grid:
         endtime = wtime()
         self.generatetime = endtime - starttime
         if timeit: tt2[4] = endtime - starttime
-        if timeit: print tt2
+        if timeit: print(tt2)
 
     def installdata(self,installrz=1,gridmode=1,solvergeom=None,
                     conductors=f3d.conductors,gridrz=None):
@@ -3016,8 +3016,8 @@ class Grid:
         if nooverlap:
             self.isinside = where(self.isinside==a.condid,0,self.isinside)
         else:
-            print "removeisinside only works when the assembly does not overlap any others"
-            print 'Set the nooverlap flag to true is this is the case.'
+            print("removeisinside only works when the assembly does not overlap any others")
+            print('Set the nooverlap flag to true is this is the case.')
             raise Exception('removeisinside only works when the assembly does not overlap any others')
 
     def getisinside(self,a,mglevel=0,aura=0.):
@@ -5076,10 +5076,10 @@ class ZSrfrvOut(Srfrv,Assembly):
             if zmin is None: zmin = self.zdata[0]
             if zmax is None: zmax = self.zdata[-1]
         else:
-            assert isinstance(self.rofzfunc,(types.FunctionType,types.MethodType,basestring)),\
+            assert isinstance(self.rofzfunc,(types.FunctionType,types.MethodType,str)),\
                    'The rofzfunc is not properly specified'
             self.lrofzfunc = true
-            if isinstance(self.rofzfunc,basestring):
+            if isinstance(self.rofzfunc,str):
                 # --- Check if the rofzfunc is in main. Complain if it is not.
                 import __main__
                 self.rofzfunc = __main__.__dict__[self.rofzfunc]
@@ -5123,7 +5123,7 @@ class ZSrfrvOut(Srfrv,Assembly):
                 self.lrofznoticeprinted
             except AttributeError:
                 self.lrofznoticeprinted = True
-                print 'Notice: ZSrfrvOut: the rofzfunc function is being tabulated to generate the conductors. The number of points per dz can be set by the conductor attribute tabulatednperdz. Please check the results and adjust tabulatednperdz as needed'
+                print('Notice: ZSrfrvOut: the rofzfunc function is being tabulated to generate the conductors. The number of points per dz can be set by the conductor attribute tabulatednperdz. Please check the results and adjust tabulatednperdz as needed')
             rofzfunc.rofzfunc = self.rofzfunc
             rofzdata,zdata,raddata,rcdata,zcdata = self.generatetabulateddata()
         else:
@@ -5247,10 +5247,10 @@ class ZSrfrvIn(Srfrv,Assembly):
             if zmin is None: zmin = self.zdata[0]
             if zmax is None: zmax = self.zdata[-1]
         else:
-            assert isinstance(self.rofzfunc,(types.FunctionType,types.MethodType,basestring)),\
+            assert isinstance(self.rofzfunc,(types.FunctionType,types.MethodType,str)),\
                    'The rofzfunc is not properly specified'
             self.lrofzfunc = true
-            if isinstance(self.rofzfunc,basestring):
+            if isinstance(self.rofzfunc,str):
                 # --- Check if the rofzfunc is in main. Complain if it is not.
                 import __main__
                 self.rofzfunc = __main__.__dict__[self.rofzfunc]
@@ -5301,7 +5301,7 @@ class ZSrfrvIn(Srfrv,Assembly):
                 self.lrofznoticeprinted
             except AttributeError:
                 self.lrofznoticeprinted = True
-                print 'Notice: ZSrfrvIn: the rofzfunc function is being tabulated to generate the conductors. The number of points per dz can be set by the conductor attribute tabulatednperdz. Please check the results and adjust tabulatednperdz as needed'
+                print('Notice: ZSrfrvIn: the rofzfunc function is being tabulated to generate the conductors. The number of points per dz can be set by the conductor attribute tabulatednperdz. Please check the results and adjust tabulatednperdz as needed')
             rofzfunc.rofzfunc = self.rofzfunc
             rofzdata,zdata,raddata,rcdata,zcdata = self.generatetabulateddata()
         else:
@@ -5425,12 +5425,12 @@ class ZSrfrvInOut(Srfrv,Assembly):
             zminmin = self.zmindata[0]
             zmaxmin = self.zmindata[-1]
         else:
-            assert isinstance(self.rminofz,(types.FunctionType,types.MethodType,basestring)),\
+            assert isinstance(self.rminofz,(types.FunctionType,types.MethodType,str)),\
                    'The rminofz is not properly specified'
             self.lrminofz = true
             zminmin = zmin
             zmaxmin = zmax
-            if isinstance(self.rminofz,basestring):
+            if isinstance(self.rminofz,str):
                 # --- Check if the rofzfunc is in main. Complain if it is not.
                 import __main__
                 self.rminofz = __main__.__dict__[self.rminofz]
@@ -5453,12 +5453,12 @@ class ZSrfrvInOut(Srfrv,Assembly):
             zminmax = self.zmaxdata[0]
             zmaxmax = self.zmaxdata[-1]
         else:
-            assert isinstance(self.rmaxofz,(types.FunctionType,types.MethodType,basestring)),\
+            assert isinstance(self.rmaxofz,(types.FunctionType,types.MethodType,str)),\
                    'The rmaxofz is not properly specified'
             self.lrmaxofz = true
             zminmax = zmin
             zmaxmax = zmax
-            if isinstance(self.rmaxofz,basestring):
+            if isinstance(self.rmaxofz,str):
                 # --- Check if the rofzfunc is in main. Complain if it is not.
                 import __main__
                 self.rmaxofz = __main__.__dict__[self.rmaxofz]
@@ -5529,7 +5529,7 @@ class ZSrfrvInOut(Srfrv,Assembly):
                 self.lrminofznoticeprinted
             except AttributeError:
                 self.lrminofznoticeprinted = True
-                print 'Notice: ZSrfrvInOut: the rminofz function is being tabulated to generate the conductors. The number of points per dz can be set by the conductor attribute tabulatednperdz. Please check the results and adjust tabulatednperdz as needed'
+                print('Notice: ZSrfrvInOut: the rminofz function is being tabulated to generate the conductors. The number of points per dz can be set by the conductor attribute tabulatednperdz. Please check the results and adjust tabulatednperdz as needed')
             rminofz.rminofz = self.rminofz
             rminofzdata,zmindata,radmindata,rcmindata,zcmindata = self.generatetabulateddata(rminofz)
         else:
@@ -5539,7 +5539,7 @@ class ZSrfrvInOut(Srfrv,Assembly):
                 self.lrmaxofznoticeprinted
             except AttributeError:
                 self.lrmaxofznoticeprinted = True
-                print 'Notice: ZSrfrvInOut: the rmaxofz function is being tabulated to generate the conductors. The number of points per dz can be set by the conductor attribute tabulatednperdz. Please check the results and adjust tabulatednperdz as needed'
+                print('Notice: ZSrfrvInOut: the rmaxofz function is being tabulated to generate the conductors. The number of points per dz can be set by the conductor attribute tabulatednperdz. Please check the results and adjust tabulatednperdz as needed')
             rmaxofz.rmaxofz = self.rmaxofz
             rmaxofzdata,zmaxdata,radmaxdata,rcmaxdata,zcmaxdata = self.generatetabulateddata(rmaxofz)
         else:
@@ -6957,10 +6957,10 @@ class SRFRVLAcond:
         """
       Install SRFRVLA conductors.
         """
-        if l_verbose:print 'installing',self.name,'( ID=',self.condid,')...'
+        if l_verbose:print('installing',self.name,'( ID=',self.condid,')...')
         if w3d.solvergeom==w3d.RZgeom or w3d.solvergeom==w3d.XZgeom:
             if grid is None:grid=frz.basegrid
-            print grid.gid
+            print(grid.gid)
             for part in self.parts:
                 installconductor(part.installed,xmin=part.rmin,xmax=part.rmax,
                              zmin=part.zmin,zmax=part.zmax,
@@ -6971,7 +6971,7 @@ class SRFRVLAcond:
                             gridrz=grid)
             if(l_recursive):
                 try:
-                    self.install(grid.next,l_verbose=0)
+                    self.install(grid.__next__,l_verbose=0)
                 except:
                     try:
                         self.install(grid.down,l_verbose=0)

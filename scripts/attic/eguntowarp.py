@@ -5,8 +5,8 @@ from ..diagnostics import getzmom
 
 
 def eguntowarpdoc():
-    import eguntowarp
-    print eguntowarp.__doc__
+    from . import eguntowarp
+    print(eguntowarp.__doc__)
 
 class EgunToWarp:
     """
@@ -105,7 +105,7 @@ class EgunToWarp:
     def getparticles(s):
         # --- Make sure there is enough space
         chckpart(top.pgroup,1,int(s.totalninject+1),0)
-        print top.pgroup.ins,top.pgroup.npmax,int(s.totalninject+1)
+        print(top.pgroup.ins,top.pgroup.npmax,int(s.totalninject+1))
         # --- Loop over the egun trajectories, load a ring of particles for each.
         injectedsofar = 0
         tempins = top.pgroup.ins[0] - 1
@@ -131,9 +131,9 @@ class EgunToWarp:
             vx = vr*cos(theta) + vtheta*sin(theta)
             vy = vr*sin(theta) - vtheta*cos(theta)
             # --- Load the data into the WARP arrays
-            print tempins,ip
-            print shape(top.pgroup.xp[tempins-ip:tempins]),shape(xx)
-            print xx,zz
+            print(tempins,ip)
+            print(shape(top.pgroup.xp[tempins-ip:tempins]),shape(xx))
+            print(xx,zz)
             top.pgroup.xp[tempins-ip:tempins] = xx
             top.pgroup.yp[tempins-ip:tempins] = yy
             top.pgroup.zp[tempins-ip:tempins] = zz
@@ -149,4 +149,4 @@ class EgunToWarp:
         # --- Adjust WARP's particle indices to include new particles
         top.pgroup.ins[0] = top.pgroup.ins[0] - s.totalninject
         top.pgroup.nps[0] = top.pgroup.nps[0] + s.totalninject
-        print "makeparticleslive",top.pgroup.ins,top.pgroup.nps
+        print("makeparticleslive",top.pgroup.ins,top.pgroup.nps)

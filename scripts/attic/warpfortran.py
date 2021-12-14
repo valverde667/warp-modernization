@@ -1,12 +1,12 @@
 def warpfortrandoc():
-    print """
+    print("""
 Definges warpfortran() which prints description of most useful fortran
 routines accesible from python
-"""
+""")
 
 
 def warpfortran():
-    print """
+    print("""
 derivqty() Calculates global derived qtys.
 resetlat() Resizes lattice arrays to their true lengths
 setlatt() Sets lattice pointers for the current beam location
@@ -39,4 +39,4 @@ wtimeon()  Turns timer on
 wtimeoff() Returns time since last call to wtimeon or wtimeoff
 divxy() Calculates RMS vx and vy versus x and y
 multpole() Calculate the multipole moments of the potential
-"""
+""")

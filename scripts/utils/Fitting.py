@@ -13,8 +13,8 @@ import numpy
 
 
 def Fittingdoc():
-    import Fitting
-    print Fitting.__doc__
+    from . import Fitting
+    print(Fitting.__doc__)
 
 
 def lsqfit(x, y):

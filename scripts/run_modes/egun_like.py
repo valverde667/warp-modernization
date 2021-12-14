@@ -58,8 +58,8 @@ _ipsave = 0
 
 
 def egungetdata():
-    print("_ipstep = ", _ipstep)
-    print("_ipsave = ", _ipsave)
+    print(("_ipstep = ", _ipstep))
+    print(("_ipsave = ", _ipsave))
 
 # --- Sets whether the particles save on each time step are the same particles.
 _save_same_part = false
@@ -354,7 +354,7 @@ def gun(iter=1, ipsave=None, save_same_part=None, maxtime=None, min_particles=0,
                             rhoprevious = [g.rho.copy()]
                         else:
                             try:
-                                g = g.next
+                                g = g.__next__
                             except:
                                 g = g.down
                             rhoprevious = rhoprevious+[g.rho.copy()]
@@ -395,7 +395,7 @@ def gun(iter=1, ipsave=None, save_same_part=None, maxtime=None, min_particles=0,
         top.lfinalize_rho = true
 #    top.it = _it
         tmp_gun_steps = 1
-        print "Number of particles injected for each species = ",parallelsum(top.pgroup.nps)
+        print("Number of particles injected for each species = ",parallelsum(top.pgroup.nps))
 
         # --- check if any particles were injected
         npssum = globalsum(top.pgroup.nps)
@@ -530,7 +530,7 @@ def gun(iter=1, ipsave=None, save_same_part=None, maxtime=None, min_particles=0,
         # --- Print a blank line so that the previous status line is
         # --- not written over.
         if lstatusline:
-            print ''
+            print('')
 
         # --- Apply the rho boundary conditions and handle any
         # --- parallel communication.:This is done here before the
@@ -558,7 +558,7 @@ def gun(iter=1, ipsave=None, save_same_part=None, maxtime=None, min_particles=0,
                             g = frz.basegrid
                         else:
                             try:
-                                g = g.next
+                                g = g.__next__
                             except:
                                 g = g.down
                         g.rho[...] = (1. - rhoparam)*g.rho + rhoparam*rhoprevious[ig]
@@ -631,11 +631,11 @@ def gun(iter=1, ipsave=None, save_same_part=None, maxtime=None, min_particles=0,
             print("Warning: maxtime exceeded - this may be corrected in the next")
             print("iteration. If it is not, increase the value of maxtime argument,")
             print("or look for other problems.")
-            print("maxtime = ", maxtime)
+            print(("maxtime = ", maxtime))
 
         if npssum > 0:
-            print("Warning: there were %d particles remaining at the end of the iteration"%npssum)
-            print("min_particles = ", min_particles)
+            print(("Warning: there were %d particles remaining at the end of the iteration"%npssum))
+            print(("min_particles = ", min_particles))
 
         gun_steps = tmp_gun_steps
         gun_iter = gun_iter + 1
@@ -701,7 +701,7 @@ def gun(iter=1, ipsave=None, save_same_part=None, maxtime=None, min_particles=0,
             refresh()
             window(0)
 
-        print("Number of iterations completed = %d" % gun_iter)
+        print(("Number of iterations completed = %d" % gun_iter))
 
     # --- end of multiple iterations
 
@@ -887,7 +887,7 @@ def gunmg(iter=1, itersub=None, ipsave=None, save_same_part=None,
                 iter = iterlast
             else:
                 iter = itersub
-            print('gunmg: level %g on %g' % (i+1, nmg+1))
+            print(('gunmg: level %g on %g' % (i+1, nmg+1)))
             # reset a few variables so that the weights of particles is
             # computed according to the current grid resolution
             top.dt = gundt[i]
@@ -897,9 +897,9 @@ def gunmg(iter=1, itersub=None, ipsave=None, save_same_part=None,
             top.rnpinje_s[:] = 0
             top.npinject = gunnpinject[i]
             # resize the mesh and associated arrays
-            if i>0:print ' *** Multigrid level %g [nx, ny, nz] = [%g,%g,%g] done.\n'%(i,w3d.nx,w3d.ny,w3d.nz)
+            if i>0:print(' *** Multigrid level %g [nx, ny, nz] = [%g,%g,%g] done.\n'%(i,w3d.nx,w3d.ny,w3d.nz))
             adjustmesh3d.resizemesh(gunnx[i], gunny[i], gunnz[i], 0, 0, 1, 1, 1, 1, conductors)
-            print ' *** Multigrid level %g [nx, ny, nz] = [%g,%g,%g] starts:'%(i+1,w3d.nx,w3d.ny,w3d.nz)
+            print(' *** Multigrid level %g [nx, ny, nz] = [%g,%g,%g] starts:'%(i+1,w3d.nx,w3d.ny,w3d.nz))
             # copied from rhonext where it was stored from at last
             # iteration at the previous level.
             if i > 0:
@@ -1050,7 +1050,7 @@ def gunamr(iter=1, itersub=None, ipsave=None, save_same_part=None,
         if conductors is not None:
             __main__.AMRtree.conductors += conductors
         __main__.AMRtree.generate()
-        print('Generated ', __main__.AMRtree.nblocks, ' blocks.')
+        print(('Generated ', __main__.AMRtree.nblocks, ' blocks.'))
         w3d.AMRgenerate_periodicity = 1000000
         fieldsol(-1, lbeforefs=1, lafterfs=1)
         # --- Check if rhoparam is to be set automatically

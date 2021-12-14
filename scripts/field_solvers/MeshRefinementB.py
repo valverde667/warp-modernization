@@ -1,8 +1,8 @@
 """Implements adaptive mesh refinement in 3d for the B field solver
 """
 from warp import *
-from MeshRefinement import *
-from magnetostaticMG import MagnetostaticMG
+from .MeshRefinement import *
+from .magnetostaticMG import MagnetostaticMG
 
 try:
     import psyco

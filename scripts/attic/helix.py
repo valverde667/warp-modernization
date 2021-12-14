@@ -129,7 +129,7 @@ class LinearHelix:
             vvdata = [[self.V0,length/vz]]
         elif ezoft is not None and ezduration is not None:
             voft = array(ezoft)*self.vz*array(ezduration)
-            vvdata = zip(voft,ezduration)
+            vvdata = list(zip(voft,ezduration))
 
         self.vvdata = vvdata
         self.vvdatatype = vvdatatype

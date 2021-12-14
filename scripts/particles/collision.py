@@ -5,7 +5,7 @@ import time
 
 def collisiondoc():
     from ..particles import collision
-    print collision.__doc__
+    print(collision.__doc__)
 
 class LangevinCollisions(object):
     """
@@ -252,7 +252,7 @@ class LangevinCollisions(object):
         # --- Loop over the field species, colliding all of the test species
         # --- against it. This way, the averages are only calculated once for
         # --- each field species.
-        for field,testspecies in self.fielddict.iteritems():
+        for field,testspecies in self.fielddict.items():
 
         # --- Get the particle data of the field species. Note that the
         # --- collisions can always be done locally.

@@ -8,7 +8,7 @@ import copy
 
 def particleinjection_doc():
     from ..particles import particleinjection
-    print particleinjection.__doc__
+    print(particleinjection.__doc__)
 
 class InjectionGaussLaw(object):
     """Sets up injection using Gauss's law to determine the amount of charge to

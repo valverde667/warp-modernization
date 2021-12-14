@@ -4,105 +4,105 @@ def aher(input=None,var=None):
     if not var: var = her.var
     if input:
         try: var[0,:] = input
-        except: print 'input array not aligned for copy into var'
+        except: print('input array not aligned for copy into var')
     else: return var[0,:]
 
 def apher(input=None,var=None):
     if not var: var = her.var
     if input:
         try: var[1,:] = input
-        except: print 'input array not aligned for copy into var'
+        except: print('input array not aligned for copy into var')
     else: return var[1,:]
 
 def bher(input=None,var=None):
     if not var: var = her.var
     if input:
         try: var[2,:] = input
-        except: print 'input array not aligned for copy into var'
+        except: print('input array not aligned for copy into var')
     else: return var[2,:]
 
 def bpher(input=None,var=None):
     if not var: var = her.var
     if input:
         try: var[3,:] = input
-        except: print 'input array not aligned for copy into var'
+        except: print('input array not aligned for copy into var')
     else: return var[3,:]
 
 def xher(input=None,var=None):
     if not var: var = her.var
     if input:
         try: var[4,:] = input
-        except: print 'input array not aligned for copy into var'
+        except: print('input array not aligned for copy into var')
     else: return var[4,:]
 
 def xpher(input=None,var=None):
     if not var: var = her.var
     if input:
         try: var[5,:] = input
-        except: print 'input array not aligned for copy into var'
+        except: print('input array not aligned for copy into var')
     else: return var[5,:]
 
 def yher(input=None,var=None):
     if not var: var = her.var
     if input:
         try: var[6,:] = input
-        except: print 'input array not aligned for copy into var'
+        except: print('input array not aligned for copy into var')
     else: return var[6,:]
 
 def ypher(input=None,var=None):
     if not var: var = her.var
     if input:
         try: var[7,:] = input
-        except: print 'input array not aligned for copy into var'
+        except: print('input array not aligned for copy into var')
     else: return var[7,:]
 
 def sher(input=None,var=None):
     if not var: var = her.var
     if input:
         try: var[8,:] = input
-        except: print 'input array not aligned for copy into var'
+        except: print('input array not aligned for copy into var')
     else: return var[8,:]
 
 def vzher(input=None,var=None):
     if not var: var = her.var
     if input:
         try: var[9,:] = input
-        except: print 'input array not aligned for copy into var'
+        except: print('input array not aligned for copy into var')
     else: return var[9,:]
 
 def enxher(input=None,var=None):
     if not var: var = her.var
     if input:
         try: var[10,:] = input
-        except: print 'input array not aligned for copy into var'
+        except: print('input array not aligned for copy into var')
     else: return var[10,:]
 
 def enyher(input=None,var=None):
     if not var: var = her.var
     if input:
         try: var[11,:] = input
-        except: print 'input array not aligned for copy into var'
+        except: print('input array not aligned for copy into var')
     else: return var[11,:]
 
 def cur(input=None,var=None):
     if not var: var = her.var
     if input:
         try: var[12,:] = input
-        except: print 'input array not aligned for copy into var'
+        except: print('input array not aligned for copy into var')
     else: return var[12,:]
 
 def dq(input=None,var=None):
     if not var: var = her.var
     if input:
         try: var[13,:] = input
-        except: print 'input array not aligned for copy into var'
+        except: print('input array not aligned for copy into var')
     else: return var[13,:]
 
 def den(input=None,var=None):
     if not var: var = her.var
     if input:
         try: var[14,:] = input
-        except: print 'input array not aligned for copy into var'
+        except: print('input array not aligned for copy into var')
     else: return var[14,:]
 
 def sethermesbeam(lsamecharge = false):
@@ -118,11 +118,11 @@ def sethermesbeam(lsamecharge = false):
   The sethermesbeam routine calls sethermesprofile, sethermesenvelope,
   and hermeserrorcheck consecutively.
     """
-    print "Running sethermesbeam ..."
+    print("Running sethermesbeam ...")
     sethermesprofile(lsamecharge)
     sethermesenvelope()
     hermeserrorcheck()
-    print "done."
+    print("done.")
 
 def sethermesprofile(lsamecharge):
     """Sets up the slice boundary positions and slice charges.
@@ -184,11 +184,11 @@ def sethermesprofile(lsamecharge):
     lfail = false
     setrhohr(her.niz,her.var,her.rpipe,her.icharge,lfail)
     if lfail:
-        print "Error in setrhohr: Slice positions are not in increasing order"
+        print("Error in setrhohr: Slice positions are not in increasing order")
         return
     getcurrent(her.var,her.niz,her.rpipe,her.icharge,her.lcurgrid,lfail)
     if lfail:
-        print "Error in getcurrent: Slice positions are not in increasing order"
+        print("Error in getcurrent: Slice positions are not in increasing order")
         return
     if top.emitn:
         her.var[10:12,:] = top.emitn * her.var[12,:] / top.ibeam
@@ -254,7 +254,7 @@ def sethermesenvelope (niter = 1000, errorlimit = 1.e-9):
             if error < errorlimit:
                 break
         if (error > errorlimit):
-            print "Slice", i, ": After", niter, "steps"
+            print("Slice", i, ": After", niter, "steps")
             raise Exception("No convergence in sethermesenvelope")
         # --- Calculate the envelope value at the position of this slice
         zu = env.zu
@@ -287,9 +287,9 @@ def hermeserrorcheck():
     if her.icharge != 7 and her.lcurgrid:
         raise Exception('In hermeserrorcheck. Error: Use her.lcurgrid=true only if her.icharge=7')
     if her.icharge != 7 and her.lezcenter:
-        print 'In hermeserrorcheck. Warning: her.lezcenter is ignored if her.icharge is not 7'
+        print('In hermeserrorcheck. Warning: her.lezcenter is ignored if her.icharge is not 7')
     if her.lviscous and (not her.lezbeam):
-        print 'In hermeserrorcheck. Warning: her.lviscous is ignored if her.lezbeam is false'
+        print('In hermeserrorcheck. Warning: her.lviscous is ignored if her.lezbeam is false')
 
 def doubleniz(oldvars):
     """This function doubles the number of slices used by Hermes, using interpolation to set up the new slices."""

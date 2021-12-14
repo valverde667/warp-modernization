@@ -3,12 +3,12 @@
 import wx
 #from wx import *
 from warp import *
-from StringIO import *
+from io import *
 
 [wxID_PANEL, wxID_PANELCOLOR, wxID_PANELLINETYPE, wxID_PANELMARKER, 
  wxID_PANELMARKERSIZE, wxID_PANELMARKS, wxID_PANELSIZE, wxID_PANELSTATICTEXT1, 
  wxID_PANELSTATICTEXT2, wxID_PANELSTATICTEXT3, 
-] = map(lambda _init_ctrls: wx.NewId(), range(10))
+] = [wx.NewId() for _init_ctrls in range(10)]
 
 class panel(wx.Panel):
     def _init_utils(self):
@@ -95,7 +95,7 @@ class panel(wx.Panel):
                 name = string.strip(line[:ipos])
                 help = string.strip(line[ipos+1:])
                 if(help==''):
-                    if(il<>0):
+                    if(il!=0):
                         iymin = iymin + il*iysize + 4
                         il = 0
                     i = 0

@@ -10,7 +10,7 @@ from .init_tools.beam_tools import initialize_beam_fields
 from .field_solvers.em3dsolverFFT import *
 from .field_solvers.multigrid import *
 from .data_dumping import openpmd_diag
-import warp
+from . import warp
 
 codename = 'warp'
 picmistandard.register_codename(codename)
@@ -36,7 +36,7 @@ species_type_dict = {'electron':warp.Electron,
                      'positron':warp.Positron,
                      'proton':warp.Proton}
 # --- Add all of the elements to the dictionary
-for name,d in warp.periodic_table.items():
+for name,d in list(warp.periodic_table.items()):
     symbol = d['Symbol']
     m = re.search('[0-9]', symbol)
     if m is not None:
@@ -518,7 +518,7 @@ class ElectromagneticSolver(picmistandard.PICMI_ElectromagneticSolver):
         self.conductors = []
         self.conductor_dfill = None
 
-        for warp_arg, val in kw.copy().items():
+        for warp_arg, val in list(kw.copy().items()):
             arg = warp_arg[len(codename)+1:] # strip off ‘warp_’
 
             if arg in self.__forbidden_kw__:
@@ -641,7 +641,7 @@ class ElectrostaticSolver(picmistandard.PICMI_ElectrostaticSolver):
         self.conductors = []
         self.conductor_dfill = None
 
-        for warp_arg, val in kw.copy().items():
+        for warp_arg, val in list(kw.copy().items()):
             arg = warp_arg[len(codename)+1:] # strip off ‘warp_’
 
             if arg in self.__forbidden_kw__:
@@ -688,7 +688,7 @@ class MagnetostaticSolver(picmistandard.PICMI_MagnetostaticSolver):
         self.conductors = []
         self.conductor_dfill = None
 
-        for warp_arg, val in kw.copy().items():
+        for warp_arg, val in list(kw.copy().items()):
             arg = warp_arg[len(codename)+1:] # strip off ‘warp_’
 
             if arg in self.__forbidden_kw__:

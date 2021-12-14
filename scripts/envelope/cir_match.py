@@ -1,26 +1,26 @@
 """Functions to find matched beam parameters for a periodic lattice using Circe."""
 from ..warp import *
 
-print " "
-print "This scripts finds matched beam parameters for a periodic lattice."
-print "To use, first set the desired value of sigma."
-print "  sig_desr = ???"
-print "Then type the command 'match(n)' where n is the number of iterations"
-print "which should be of the order 10 to 20."
-print "Check to make sure the numbers printed out are what you want."
-print "If not, then run more iterations.  If that doesn't work, the more"
-print "sophisticated matching algorithm built into the code should be used."
-print "Good luck."
-print " "
+print(" ")
+print("This scripts finds matched beam parameters for a periodic lattice.")
+print("To use, first set the desired value of sigma.")
+print("  sig_desr = ???")
+print("Then type the command 'match(n)' where n is the number of iterations")
+print("which should be of the order 10 to 20.")
+print("Check to make sure the numbers printed out are what you want.")
+print("If not, then run more iterations.  If that doesn't work, the more")
+print("sophisticated matching algorithm built into the code should be used.")
+print("Good luck.")
+print(" ")
 
-print "CIRCE matching routines"
-print "match(n) matches the beam giving the desired value of sigma"
-print "sig_desr by varying the emittance."
-print "matchn(n) matches the beam giving the desired value of sigma"
-print "sig_desr by varying the normalized emittance."
-print "match1(n) matches the beam by varying a0, b0, ap0, and bp0"
-print "matchenv(quads,af,bf,apf,bpf) modifies the four quads specified"
-print "by quads so that the envelope ends with the specified values"
+print("CIRCE matching routines")
+print("match(n) matches the beam giving the desired value of sigma")
+print("sig_desr by varying the emittance.")
+print("matchn(n) matches the beam giving the desired value of sigma")
+print("sig_desr by varying the normalized emittance.")
+print("match1(n) matches the beam by varying a0, b0, ap0, and bp0")
+print("matchenv(quads,af,bf,apf,bpf) modifies the four quads specified")
+print("by quads so that the envelope ends with the specified values")
 
 # This is a very simple algorithm to match a beam over a lattice period.
 # The function sets a0 equal to average of 'a' at the beginning and end of
@@ -55,10 +55,10 @@ def match1(n=1,varsave=None,zl=None,zu=None,savehist=false,errorlimit=1.e-6):
         error = 0.
         for j in range (4): error = error + max(abs(varsave[j,:]-varwork[j,:]))
         if error < errorlimit:
-            print i,'steps in match1'
+            print(i,'steps in match1')
             return
-    print 'No convergence in match1 after', n, 'steps.'
-    print 'Final error =', error
+    print('No convergence in match1 after', n, 'steps.')
+    print('Final error =', error)
 
 # --- This is similar to the above routine but forces the beam to beam
 # --- to be round (a=b, and a'=-b').
@@ -89,10 +89,10 @@ def match2(n=1,varsave=None,zl=None,zu=None,savehist=false,errorlimit=1.e-6):
         varsave[3,:] = -varsave[1,:]
         error = max(abs(varsave[0,:]-varwork[0,:])) + max(abs(varsave[1,:]-varwork[1,:]))
         if error < errorlimit:
-            print i,'steps in match2'
+            print(i,'steps in match2')
             return
-    print 'No convergence in match2 after', i, 'steps.'
-    print 'Final error =', error
+    print('No convergence in match2 after', i, 'steps.')
+    print('Final error =', error)
 
 # This routine does a regula-falsi iteration to find the emittance which
 # gives the desired sigma.
@@ -133,4 +133,4 @@ def match(n=1,_sig_desr=20.,savehist=false):
         sig0cir = sig0cir*180./top.pi ; sigcir = sigcir*180./top.pi
         for k in range(cir.nit):
             fff[ixxx[k],:] = sigcir - sig_desr
-        print "Error = ",max(max(fff))
+        print("Error = ",max(max(fff)))

@@ -285,7 +285,7 @@ class ImplicitStep(PackageBase):
         maxx = maxnd(top.pgroup.xp)
         minz = minnd(top.pgroup.zp)
         maxz = maxnd(top.pgroup.zp)
-        print leadstring,minx,maxx,minz,maxz
+        print(leadstring,minx,maxx,minz,maxz)
 
     #============================================================================
     def step(self):

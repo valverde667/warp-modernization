@@ -1,6 +1,6 @@
 from ..warp import *
 from ..lattice.lattice import *
-import cPickle
+import pickle
 
 
 ######################################################################
@@ -160,15 +160,15 @@ class LatticeGenerator:
     # --- Write data out to a pickle file
     def saveself(s,filename):
         with open(filename,'wb') as ff:
-            cPickle.dump(s,ff,1)
+            pickle.dump(s,ff,1)
 
     #---------------------------------------------------------------------------
     # --- Print out a line of info
     def oneliner(s):
-        print "hlp %d %6.4f beta %6.4f V %6.1f tau %6.4f tilt %4.2f"%(
+        print("hlp %d %6.4f beta %6.4f V %6.1f tau %6.4f tilt %4.2f"%(
                s.ihlp,s.hlp,s.vzmid/clight,
                s.ekinmid/1.e6,s.beam_duration*1.e6,
-               (s.vzbeam[-1]-s.vzbeam[0])/s.vzbeam[s.nno2])
+               (s.vzbeam[-1]-s.vzbeam[0])/s.vzbeam[s.nno2]))
 
     #---------------------------------------------------------------------------
     # --- Convenienct functions
@@ -192,7 +192,7 @@ class LatticeGenerator:
         if gapez is not None:
             accldt = (s.beamtime[-1] - s.beamtime[0])/s.ngappoints
             acclts = s.beamtime[0] - s.nendpoints*accldt
-            ia = ((s.beamtime - acclts)/accldt).astype(long)
+            ia = ((s.beamtime - acclts)/accldt).astype(int)
             wi =  (s.beamtime - acclts)/accldt - ia
             vv = take(gapez,ia)*(1. - wi) + take(gapez,ia+1)*wi
             s.ekin = s.ekin + vv*s.gap_len
@@ -496,7 +496,7 @@ class LatticeGenerator:
         accldt = (s.beamtime[-1] - s.beamtime[0])/s.ngappoints
         acclts = s.beamtime[0] - s.nendpoints*accldt
         actime = acclts + iota(0,s.ntaccl)*accldt
-        ii = ((actime - s.firetime)/s.gapdt).astype(long)
+        ii = ((actime - s.firetime)/s.gapdt).astype(int)
         ww = ((actime - s.firetime)/s.gapdt)- ii
         ww = where(less(ii,0),0.,ww)
         ii = where(less(ii,0),0,ii)
@@ -690,7 +690,7 @@ class LatticeGenerator:
         # --- Interpolate ezbeam into eears. This can be done easily since
         # --- the beamtime used here is linearly varying.
         tears = accl_ts + iota(0,s.ntaccl)*accl_dt
-        itears = ((tears - s.beamtime[0])/beamdt).astype(long)
+        itears = ((tears - s.beamtime[0])/beamdt).astype(int)
         wtears = ((tears - s.beamtime[0])/beamdt) - itears
         wtears[:] = where(less(itears,0),0.,wtears)
         wtears[:] = where(less(s.nn-1,itears),1.,wtears)

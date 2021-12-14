@@ -4,7 +4,7 @@ import wx
 #from wx import *
 from warp import *
 
-[wxID_PANEL] = map(lambda _init_ctrls: wx.NewId(), range(1))
+[wxID_PANEL] = [wx.NewId() for _init_ctrls in range(1)]
 
 class panel(wx.Panel):
     def _init_utils(self):

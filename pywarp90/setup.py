@@ -56,31 +56,6 @@ warppkgs = ['top', 'env', 'w3d', 'f3d', 'wxy', 'fxy', 'wrz', 'frz', 'her', 'cir'
 def makeobjects(pkg):
     return [pkg + '.o', pkg + '_p.o', pkg + 'pymodule.o']
 
-warpobjects = []
-if sys.hexversion < 0x03000000:
-    # --- With Python2, everything is put into the one warpC.so file.
-    for pkg in warppkgs:
-        warpobjects = warpobjects + makeobjects(pkg)
-
-    warpobjects = warpobjects + ['top_lattice.o', 'top_fsl.o', 'dtop.o',
-                                 'dw3d.o', 'w3d_injection.o', 'w3d_interp.o',
-                                 'w3d_collisions.o', 'w3d_utilities.o', 'w3d_load.o',
-                                 'f3d_mgrid.o', 'f3d_ImplicitES.o', 'f3d_mgrid_be.o',
-                                 'f3d_conductors.o', 'f3d_bfield.o',
-                                 'fft.o', 'util.o',
-                                 'fxy_mgrid.o',
-                                 'dwrz.o',
-                                 'frz_mgrid.o', 'frz_mgrid_be.o', 'frz_ImplicitES.o',
-                                 #'em2d_apml.o', 'em2d_apml_cummer.o', 'em2d_maxwell.o',
-                                 'em3d_maxwell.o']
-    if parallel:
-        warpobjects = warpobjects + ['f3dparallel.o', 'frzparallel.o', 'topparallel.o',
-                                     'w3dparallel.o']
-
-    warpobjects = map(lambda p:os.path.join(builddir, p), warpobjects)
-
-    # --- With Python3, each packages has it's own .so file and warpC.so is mostly a dummy package.
-
 library_dirs = fcompiler.libdirs
 libraries = fcompiler.libs
 extra_link_args = ['-g'] + fcompiler.extra_link_args
@@ -109,12 +84,12 @@ if parallel:
 else:
     name = 'warpC'
 
-# --- The behavior of distutils changed from 2.2 to 2.3. In 2.3, the object
-# --- files are always put in a build/temp directory relative to where the
+# --- With distutils, the object files are always put in a build/temp
+# --- directory relative to where the
 # --- source file is, rather than relative to the main build directory.
 # --- This tells distutils to put the objects in the same directory
 # --- as the source files.
-if sys.hexversion >= 0x020300f0 and dummydist.commands[-1] == 'build':
+if dummydist.commands[-1] == 'build':
     sys.argv += ['--build-temp', '']
 
 if machine == 'darwin':
@@ -146,10 +121,7 @@ if machine == 'darwin':
 # --- that everything defined up to this point is available, and anything
 # --- can be redefined.
 if os.access('setup.local.py', os.F_OK):
-    if sys.hexversion < 0x03000000:
-        execfile('setup.local.py')
-    else:
-        exec(compile(open('setup.local.py').read(), 'setup.local.py', 'exec'))
+    exec(compile(open('setup.local.py').read(), 'setup.local.py', 'exec'))
 
 elif parallel:
     if fcompexec is None or fcompexec == 'mpifort' or fcompexec == 'mpif90':
@@ -165,7 +137,7 @@ elif parallel:
             pass
 
 setup (name = 'warp',
-       version = '4.5',
+       version = '4.6',
        author = 'David P. Grote, Jean-Luc Vay, et. al.',
        author_email = 'dpgrote@lbl.gov',
        description = 'Warp PIC accelerator code',
@@ -182,7 +154,6 @@ machines that are space-charge dominated.""",
                                 library_dirs=library_dirs,
                                 libraries=libraries,
                                 define_macros=define_macros,
-                                extra_objects=warpobjects,
                                 extra_link_args=extra_link_args,
                                 extra_compile_args=fcompiler.extra_compile_args
                                )]

@@ -338,14 +338,14 @@ def pprint(obj):
     except:
         ss = ''
     if not lparallel:
-        print ss
+        print(ss)
     elif lmpi4pyactive:
         for result in gather(ss):
-            print result
+            print(result)
     elif lpyMPIactive:
         mpi.synchronizedWrite(ss+'\n')
         if mpi.rank == 0:
-            print
+            print()
 
 # ---------------------------------------------------------------------------
 # --- Print array (or list) from all processors
@@ -410,7 +410,7 @@ def gatherlist(obj, dest=0, procs=None, bcast=0, comm=None):
     if comm is None:
         comm = comm_world
     if procs is None:
-        procs = range(number_of_PE(comm=comm))
+        procs = list(range(number_of_PE(comm=comm)))
     else:
         procs = list(procs)
     if lmpi4pyactive:
@@ -451,7 +451,7 @@ def gatherlog(obj, dest=0, procs=None, bcast=0, comm=None):
     if not lparallel:
         return [obj]
     if procs is None:
-        procs = range(number_of_PE(comm=comm))
+        procs = list(range(number_of_PE(comm=comm)))
     else:
         procs = list(procs)
     n = int(ceil(log2(len(procs))))
@@ -528,7 +528,7 @@ def gatherarray(a, root=0, othersempty=0, bcast=0, comm=None):
     isinputok = globalmin(isinputok, comm=comm)
     # --- If any returned an error, then all exit (to avoid a deadlock)
     if not isinputok:
-        print "Object could not be converted to an array"
+        print("Object could not be converted to an array")
         return None
     # --- Now, actually gather the array.
     # --- The check of whether the result is ok may not be needed.
@@ -540,7 +540,7 @@ def gatherarray(a, root=0, othersempty=0, bcast=0, comm=None):
     # --- Make sure again that the input is ok on all of the processors
     isinputok = globalmin(isinputok, comm=comm)
     if not isinputok:
-        print "Error in gather object"
+        print("Error in gather object")
         try:
             "Object has shape ", shape(a)
         except NameError:

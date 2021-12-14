@@ -1,12 +1,12 @@
-from __future__ import generators
+
 from warp import *
-import AMR
-import cPickle
+from . import AMR
+import pickle
 
 
 ##############################################################################
 def realboundariesdoc():
-    print """
+    print("""
   Automatically generates the appropriate boundary conditions for the
   slice code using the information supplied in the lattice description. To
   use, execute the following command (before the generate is best)
@@ -61,7 +61,7 @@ def realboundariesdoc():
   example, if the boundary conditions of two elements are the same, only
   one capacity matrix will be generated which will be shared by the two
   elements. Also, matrices are only calculated when needed.
-    """
+    """)
 ##############################################################################
 
 ##############################################################################
@@ -1130,7 +1130,7 @@ class RealBoundary:
             if solver is w3d:
                 installconductors(self.newconductors,dfill=self.dfill,gridmode=1)
             else:
-                print "installing conductor"
+                print("installing conductor")
                 solver.installconductor(self.newconductors,dfill=self.dfill)
             if self.scrapemethod == 2 and self.lscrapeparticles:
                 try:
@@ -1219,7 +1219,7 @@ def saveRealBoundary(object,filename):
     # --- This is only do by the first processor on a parallel machine.
     if me == 0:
         with open(filename,'wb') as ff:
-            cPickle.dump(object,ff,1)
+            pickle.dump(object,ff,1)
 #-----------------------------------------------------------------------------
 def restoreRealBoundary(filename):
     """
@@ -1233,7 +1233,7 @@ def restoreRealBoundary(filename):
     # --- the package generally has not been set yet.
     #if currpkg != 'wxy' or (currpkg == 'wxy' and w3d.solvergeom==w3d.XYgeom):return
     with open(filename,'rb') as ff:
-        result = cPickle.load(ff)
+        result = pickle.load(ff)
     result.enable()
     return result
 

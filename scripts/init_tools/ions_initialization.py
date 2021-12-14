@@ -52,7 +52,7 @@ def initialize_ion_dict( ion_states, weight, group_elec_by_element=False ):
     if tunnel_ionization is None:
 
         # Loop over the elements (here, element is a string)
-        for element in ion_states.keys():
+        for element in list(ion_states.keys()):
 
             ion_weight = ion_states[ element ][ 'relative_density' ] * weight
             q = ion_states[ element ][ 'q_start' ]
@@ -71,7 +71,7 @@ def initialize_ion_dict( ion_states, weight, group_elec_by_element=False ):
         tunnel_ionizer = tunnel_ionization.TunnelIonization(stride=1)
 
         # Loop over the elements (here, element is a string)
-        for element in ion_states.keys():
+        for element in list(ion_states.keys()):
 
             # Create the ion and electron list
             ion_list = []

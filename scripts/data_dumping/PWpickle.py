@@ -11,7 +11,7 @@ dictionary into the file.
 
 """
 __all__ = ['PW']
-import cPickle
+import pickle
 import warnings
 
 _version = '0.4'
@@ -43,7 +43,7 @@ Note that only things which can be pickled and unpickled are written out.
         if mode == 'a':
             # --- If append, read in all data from the file.
             with open(filename,mode='rb') as ff:
-                self.__dict__['_pickledict'] = cPickle.load(ff)
+                self.__dict__['_pickledict'] = pickle.load(ff)
         else:
             self.__dict__['_pickledict'] = {}
 
@@ -59,7 +59,7 @@ Note that only things which can be pickled and unpickled are written out.
 
             # --- Write out the dictionary of things to be pickled,
             # --- pickling it all at once.
-            cPickle.dump(self._pickledict,self._file,self._protocol)
+            pickle.dump(self._pickledict,self._file,self._protocol)
 
             self._file.close()
 
@@ -109,7 +109,7 @@ Note that only things which can be pickled and unpickled are written out.
             # --- for large objects since they will be pickled twice, but this
             # --- is the only safe way.
             try:
-                q = cPickle.dumps(quantity,self._protocol)
+                q = pickle.dumps(quantity,self._protocol)
                 del q
             except:
                 warnings.warn('%s is being skipped since it could not be pickled'%name)
@@ -121,7 +121,7 @@ Note that only things which can be pickled and unpickled are written out.
         except:
             pass
 
-        raise PWError,"Could not write the variable %s"%name
+        raise PWError("Could not write the variable %s"%name)
 
 if __name__ == "__main__":
     f=PW("foo.pickle")
@@ -146,8 +146,8 @@ if __name__ == "__main__":
     f.k = k
     f.close()
 # read-back test
-    from PRpickle import PR
+    from .PRpickle import PR
     f = PR('foo.pickle')
     for x in f.inquire_names():
-        print x, "is", eval(x), ", in file it is", eval('f.'+x)
+        print(x, "is", eval(x), ", in file it is", eval('f.'+x))
     f.close()

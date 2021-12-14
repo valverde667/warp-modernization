@@ -302,7 +302,7 @@ class TunnelIonization(Ionization):
                                                           uzboost,
                                                           top.boost_gamma)
 
-                            if self.l_verbose:print 'add ',nnew, emitted_species.name,' from by impact ionization:',incident_species.name,'+',((target_species is None and 'background gas') or target_species.name)
+                            if self.l_verbose:print('add ',nnew, emitted_species.name,' from by impact ionization:',incident_species.name,'+',((target_species is None and 'background gas') or target_species.name))
                             if self.inter[incident_species]['remove_incident'][it] and (emitted_species.type is incident_species.type):
                                 self.addpart(nnew,xnewp,ynewp,znewp,uxnewp,uynewp,uznewp,ginewp,epg,emitted_species.jslist[0],
                                              self.inter[incident_species]['emitted_tag'][it],injdatapid,w)
@@ -319,4 +319,4 @@ class TunnelIonization(Ionization):
                 self.flushpart(pg,js)
                 processlostpart(pg,js+1,top.clearlostpart,top.time,top.zbeam)
 
-        if self.l_timing:print 'time ionization = ',time.perf_counter()-t1,'s'
+        if self.l_timing:print('time ionization = ',time.perf_counter()-t1,'s')

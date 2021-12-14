@@ -23,7 +23,7 @@ from warp import *
 #=================================================================
 def setbsqgrad(nx=0,ny=0,nz=0,xmin=0,xmax=0,ymin=0,ymax=0,zmin=0,
             zmax=0,griddedBOnly=false,symmetry=2,zonly=false,returnb=0):
-    print "Setting grad b**2 array"
+    print("Setting grad b**2 array")
     # check to see if there is gridded B data.  Use top.bsqgradbx as test
     #  If so, use its array to define dx, dy, dz.
     global npuse,x,y,z,uzd,gaminv,bx,by,bz,bendres,bendradi,gaminv,dtl,dtr, \
@@ -35,10 +35,10 @@ def setbsqgrad(nx=0,ny=0,nz=0,xmin=0,xmax=0,ymin=0,ymax=0,zmin=0,
 #        zmin=top.bsqgradzs[1];xmin=top.bsqgradxs[1];ymin=top.bsqgradys[1]
 #    except:
     if 1:
-        print "no allocated gridded B data; defining a grid now"
+        print("no allocated gridded B data; defining a grid now")
         # Note in this case, griddedBOnly shouldn't have been set true
         if griddedBOnly == true:
-            print "resetting griddedBOnly to false"
+            print("resetting griddedBOnly to false")
             griddedBOnly == false
         # calculate dx,dy,dz
         if nx == 0 or ny == 0 or nz == 0:
@@ -72,7 +72,7 @@ def setbsqgrad(nx=0,ny=0,nz=0,xmin=0,xmax=0,ymin=0,ymax=0,zmin=0,
     else:
 #       print xmin,dx,nx,ymin,dy,ny,zmin,dz,nz
         x,y,z=getmesh3d(xmin,dx,nx,ymin,dy,ny,zmin,dz,nz)
-        print "finished getmesh3d"
+        print("finished getmesh3d")
         dt=top.dt;dtr=.5*dt;dtl=-dtr
         nx1=nx+1;ny1=ny+1;nz1=nz+1
         npuse=nx1*ny1*nz1
@@ -90,20 +90,20 @@ def setbsqgrad(nx=0,ny=0,nz=0,xmin=0,xmax=0,ymin=0,ymax=0,zmin=0,
         bendres=zeros((nx1*ny1*nz1),"d")
         bendradi=zeros((nx1*ny1*nz1),"d")
         # now fetch the B array
-        print "about to call exteb3d"
-        print "shapes", shape(x),shape(uzd),shape(gaminv)
-        print shape(bx),shape(ex)
+        print("about to call exteb3d")
+        print("shapes", shape(x),shape(uzd),shape(gaminv))
+        print(shape(bx),shape(ex))
         w3d.exteb3d(npuse,x,y,z,uzd,gaminv,dtl,dtr,
                     bx,by,bz,ex,ey,ez,top.pgroup.sm[0],
                     top.pgroup.sq[0],bendres,bendradi,dt)
-        print "called exteb3d"
+        print("called exteb3d")
     bx.shape=(nx1,ny1,nz1)
     by.shape=(nx1,ny1,nz1)
     bz.shape=(nx1,ny1,nz1)
     fillbsqgrad(bx,by,bz,dx,dy,dz,symmetry,zonly)
     resetlat()
     setlatt()
-    print "Done setting grad B^2 array"
+    print("Done setting grad B^2 array")
     if returnb:return bx,by,bz
 
 def fillbsqgrad(bx,by,bz,dx,dy,dz,symmetry=0,zonly=false):
@@ -119,23 +119,23 @@ def fillbsqgrad(bx,by,bz,dx,dy,dz,symmetry=0,zonly=false):
     needsgchange=0
     if zonly == false:
         if top.bsqgradnc < 3:
-            print "top.bsqgradnc too small; fixing"
+            print("top.bsqgradnc too small; fixing")
             needsgchange=1
             top.bsqgradnc=3
     else:
         if top.bsqgradnc != 1:
-            print "top.brdnc is not 1; fixing"
+            print("top.brdnc is not 1; fixing")
             top.bsqgradnc=1
     if top.bsqgradnx != nx:
-        print "top.bsqgradnx < nx; fixing"
+        print("top.bsqgradnx < nx; fixing")
         needsgchange=1
         top.bsqgradnx=nx
     if top.bsqgradny != ny:
-        print "top.bsqgradny < ny; fixing"
+        print("top.bsqgradny < ny; fixing")
         needsgchange=1
         top.bsqgradny=ny
     if top.bsqgradnz != nz:
-        print "top.bsqgradnz < nz; fixing"
+        print("top.bsqgradnz < nz; fixing")
         needsgchange=1
         top.bsqgradnz=nz
     if needsgchange == 1:

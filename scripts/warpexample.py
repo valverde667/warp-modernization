@@ -1,4 +1,4 @@
-from warp import *
+from .warp import *
 from find_mgparam import *
 from extpart import *
 
@@ -247,7 +247,7 @@ top.vinject = v_max
 ###########################################################################
 ###########################################################################
 # --- setup source conductor using srfrvinout
-print "Setting up source"
+print("Setting up source")
 xxxz1 = 0.00645245
 xxxr1 = 0.0508
 xxxz2 = 0.031496
@@ -283,7 +283,7 @@ installconductors(pierce)
 ###########################################################################
 
 # --- setup extraction conductor
-print "Setting up extraction ring"
+print("Setting up extraction ring")
 rmin = [1.65227e-01,1.65227e-01,12.4993e-2,0.102286,0.091678526943706151,
         0.083591399873139335,
         0.0812038,0.0812038,0.0624865,0.0624865,0.0812038,0.0812038,0.0835914,0.09164809912811743,
@@ -306,7 +306,7 @@ extractor = ZSrfrvInOut(zmin=w3d.zmmin,zmax=w3d.zmmin+0.0693166,voltage=extracti
 ###########################################################################
 
 # --- setup extraction conductor PLUG
-print "Setting up extraction ring PLUG"
+print("Setting up extraction ring PLUG")
 
 rmin = [0.0599948,0.054991,0.054991,0.0599948,0.0674878]
 zmin = w3d.zmmin + array([0.0459994,0.0510032,0.0534924,0.0584962,0.0584962])

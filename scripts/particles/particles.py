@@ -23,7 +23,7 @@ from ..warp import *
 
 # -------------------------------------------------------------------------
 def particlesdoc():
-    print __doc__
+    print(__doc__)
 
 # -------------------------------------------------------------------------
 def setpid(pidname, pkg=None, force=False):
@@ -349,13 +349,13 @@ def selectparticles(iw=0, kwdict={}, **kw):
     # --- 'allowbadargs' allows this routine to be called with bad arguments.
     # --- These are intentionally undocumented features.
     badargs = {}
-    for k, v in kwvalues.iteritems():
+    for k, v in kwvalues.items():
         if k not in _selectparticles_kwdefaults:
             badargs[k] = v
     if checkargs:
         return badargs
     if badargs and not allowbadargs:
-        raise TypeError, "bad argument " + ' '.join(badargs.keys())
+        raise TypeError("bad argument " + ' '.join(list(badargs.keys())))
 
     suffix, object, pgroup = _getobjectpgroup(kwvalues)
 
@@ -378,7 +378,7 @@ def selectparticles(iw=0, kwdict={}, **kw):
     del kwvalues['jslist']
     if jslist is not None and ii is None:
         if jslist == -1:
-            jslist = range(0, ns)
+            jslist = list(range(0, ns))
         if len(jslist) == 1:
             # --- If jslist has only one species listed, then it is faster
             # --- to act as if js had been set and continue through the rest of
@@ -389,7 +389,7 @@ def selectparticles(iw=0, kwdict={}, **kw):
             # --- particles in the species in jslist.
             ii = []
             for js in jslist:
-                ii += range(ins[js] - 1, ins[js] + nps[js] - 1)
+                ii += list(range(ins[js] - 1, ins[js] + nps[js] - 1))
             ii = array(ii, 'l')
 
     # --- If the w3dobject was not passed in, use w3d, or if the object was
@@ -428,7 +428,7 @@ def selectparticles(iw=0, kwdict={}, **kw):
         if xu is None:
             xu = +largepos
         if xl > xu:
-            print "Warning: xl > xu"
+            print("Warning: xl > xu")
         x, ii = _setindices(x, ii, i1, i2)
         ii = compress(logical_and(less(xl, x), less(x, xu)), ii)
     if yl is not None or yu is not None:
@@ -439,7 +439,7 @@ def selectparticles(iw=0, kwdict={}, **kw):
         if yu is None:
             yu = +largepos
         if yl > yu:
-            print "Warning: yl > yu"
+            print("Warning: yl > yu")
         y, ii = _setindices(y, ii, i1, i2)
         ii = compress(logical_and(less(yl, y), less(y, yu)), ii)
     if zl is not None or zu is not None:
@@ -450,7 +450,7 @@ def selectparticles(iw=0, kwdict={}, **kw):
         if zu is None:
             zu = +largepos
         if zl > zu:
-            print "Warning: zl > zu"
+            print("Warning: zl > zu")
         z, ii = _setindices(z, ii, i1, i2)
         ii = compress(logical_and(less(zl, z), less(z, zu)), ii)
 
@@ -518,7 +518,7 @@ def selectparticles(iw=0, kwdict={}, **kw):
             try:
                 subset = psubset[-iw-1]
             except KeyError:
-                raise IndexError, "Bad window number"
+                raise IndexError("Bad window number")
             if ii is None:
                 nn = nps[js]
             else:
@@ -2007,11 +2007,11 @@ def add_particles(x=0., y=0., z=0., vx=0., vy=0., vz=0., gi=1.,
 
     # --- Do some error checking
     if not lallindomain and zmmin == zmmax:
-        print "=================================================================="
-        print "Add_particles: warning - no particles will be loaded - you should"
-        print "either set lallindomain=true or set zmmin and zmmax so they are"
-        print "different from each other."
-        print "=================================================================="
+        print("==================================================================")
+        print("Add_particles: warning - no particles will be loaded - you should")
+        print("either set lallindomain=true or set zmmin and zmmax so they are")
+        print("different from each other.")
+        print("==================================================================")
 
     # --- Get the number of particles before adding the new ones.
     if lreturndata:

@@ -76,8 +76,8 @@ from ..diagnostics.histplots import *
 
 
 def rami_scriptsdoc():
-    import rami_scripts
-    print rami_scripts.__doc__
+    from . import rami_scripts
+    print(rami_scripts.__doc__)
 
 # -- Default Variables to be saved
 def_vars1 = ["hpnum", "hvzbar", "hvzrms",
@@ -211,12 +211,12 @@ def init_cmom(l3d=yes, lhist=yes, lcalc_mom=yes):
         if l3d:
             top.lhvzofz = true
             for mom in def_vars1[1:]:
-                exec "top.l"+mom+"z = true"
+                exec("top.l"+mom+"z = true")
             if lcalc_mom:
                 for mom in req_mom[0:]:
-                    exec "top.lh"+mom+"z = true"
+                    exec("top.lh"+mom+"z = true")
                 for mom in add_vars:
-                    exec "top.l"+mom+"z = true"
+                    exec("top.l"+mom+"z = true")
 #         elif lcalc_mom:
 #             for mom in req_mom[0:]:
 #                 exec "top.lh"+mom+" = true"
@@ -252,7 +252,7 @@ def calc_mom(l3d=no, lhist=no):
 
     # --- Dispersion moments
     hdisp    = m["vzbar"]*(m["xvzbar"]-(m["xbar"]*m["vzbar"]))/(m["vzrms"])**2
-    print "ave Dispersion", ave(hdisp[0,:])
+    print("ave Dispersion", ave(hdisp[0,:]))
 
     # --- hepsnd
 
@@ -261,7 +261,7 @@ def calc_mom(l3d=no, lhist=no):
     if "hxvxbar" in dir(top):   m["xvxbar"] = top.hxvxbar   #!! NEEDS FIXING
     elif "hxvxbar" in dir(__main__): m["xvxbar"] = __main__.hxvxbar
     else:
-        print "\n\n!! You are making an inaccurate assumption about 'xvxbar' !!\n\n"
+        print("\n\n!! You are making an inaccurate assumption about 'xvxbar' !!\n\n")
         m["xvxbar"] = m["xxpbar"]*m["vzbar"]
 
     hDd   = (m["xvzbar"] - (m["xbar"]*m["vzbar"]))/(m["vzrms"])
@@ -296,7 +296,7 @@ def seek_name(var, l3d=no, lhist=no):
     if var == "zscale":
         if l3d: return "top.zmntmesh"
         else:   return "top.hzbeam"
-    print var, "not saved!"
+    print(var, "not saved!")
     return ""
 
 # ==================
@@ -377,7 +377,7 @@ def gen_plot(vars=(), xaxis="", runid=None, kwdict={},  **kw):
              'xscale': 1.0, 'xoffset': 0.0, 'yscale': 1.0, 'yoffset': 0.0,
              'titleb': "S (m)", 'titlel': "", 'titlet': "", 'titler': "", 'titles': 1}
     pldef.update(kwdict);  pldef.update(kw)    # Override defaults & import new params
-    for key in pldef:    exec key+"=pldef['"+key+"']"
+    for key in pldef:    exec(key+"=pldef['"+key+"']")
     #
     if runid is None:
         runid = arraytostr(top.runid)
@@ -637,7 +637,7 @@ def plot_comp(runs={}, plots=("env", "emit", "cent"), kwdict={}, **kw):
         for run in runs:
             temp = pldef.copy()
             temp.update(runs[run])
-            exec "plot_"+plot+"('"+run[:-1]+"', kwdict=temp)"
+            exec("plot_"+plot+"('"+run[:-1]+"', kwdict=temp)")
         fma()
 
 #===========

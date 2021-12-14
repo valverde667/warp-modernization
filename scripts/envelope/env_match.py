@@ -2,17 +2,17 @@ from ..warp import *
 from ..utils.optimizer import ParticleSwarm
 import numpy.linalg as linalg
 
-print 'Envelope matching routines'
-print 'match() matches the beam giving the desired value of sigma, varying'
-print '        unnormalized emittance'
-print 'matchn() matches the beam giving the desired value of sigma, varying'
-print '         normalized emittance'
-print 'match1() matches the beam by varying a0, b0, ap0, and bp0'
-print 'match2() matches the beam by varying a0, b0, ap0, and bp0, forcing'
-print '         b0=a0 and bp0=-ap0'
-print 'matchenv() modifies the four quads specified to match final values'
-print "matchxenv() finds initial x,x',y,y' to match specified final values"
-print 'Type "doc(match)" for info on arguments'
+print('Envelope matching routines')
+print('match() matches the beam giving the desired value of sigma, varying')
+print('        unnormalized emittance')
+print('matchn() matches the beam giving the desired value of sigma, varying')
+print('         normalized emittance')
+print('match1() matches the beam by varying a0, b0, ap0, and bp0')
+print('match2() matches the beam by varying a0, b0, ap0, and bp0, forcing')
+print('         b0=a0 and bp0=-ap0')
+print('matchenv() modifies the four quads specified to match final values')
+print("matchxenv() finds initial x,x',y,y' to match specified final values")
+print('Type "doc(match)" for info on arguments')
 
 # This is a very simple algorithm to match a beam over a lattice period.
 # The function sets a0 equal to average of 'a' at the beginning and end of
@@ -72,7 +72,7 @@ def match(n=1,sig_desr=20.,zl=None,zu=None):
         if fff[1] > fff[0]: ixxx = 1
         xxx[ixxx] = nxxx
         top.emit=xxx[ixxx];derivqty();match1(20);fff[ixxx]=top.sigmax - sig_desr
-        print "Error = %f" % fff[ixxx]
+        print("Error = %f" % fff[ixxx])
         env.lenvout = true
         step(1)
     env.zl = zlsave
@@ -112,7 +112,7 @@ def matchn(n=1,sig_desr=20.,zl=None,zu=None):
         if fff[1] > fff[0]: ixxx = 1
         xxx[ixxx] = nxxx
         top.emitn=xxx[ixxx];derivqty();match1(20);fff[ixxx]=top.sigmax - sig_desr
-        print "Error = %f" % fff[ixxx]
+        print("Error = %f" % fff[ixxx])
         env.lenvout = true
         step(1)
     env.zl = zlsave
@@ -247,14 +247,14 @@ def matchenv(quads,af,bf,apf,bpf,zz=None,maxiter=100,tol=1.e-10,
 
         # --- Check for convergence
         denv[:] = [af - asave,bf - bsave,apf - apsave, bpf - bpsave]
-        print "error => a = %10.3e b = %10.3e a' = %10.3e b' = %10.3e "%tuple(denv)
+        print("error => a = %10.3e b = %10.3e a' = %10.3e b' = %10.3e "%tuple(denv))
         if max(abs(denv)) < tol: notdone = 0
         if max(abs(denv)) > maxtol:
-            print "\nDid not converge\n"
+            print("\nDid not converge\n")
             notdone = 0
 
     if iter == maxiter:
-        print 'Warning: Maximum number of iterations reached'
+        print('Warning: Maximum number of iterations reached')
 
 ########################################################################
 def matchxenv(xf=0.,xpf=0.,yf=0.,ypf=0.,zz=None,maxiter=100,tol=1.e-10):
@@ -365,15 +365,15 @@ def matchxenv(xf=0.,xpf=0.,yf=0.,ypf=0.,zz=None,maxiter=100,tol=1.e-10):
         # --- Check for convergence
         denvx[:] = [xf - xsave,xpf - xpsave]
         denvy[:] = [yf - ysave,ypf - ypsave]
-        print "error => x = %10.3e x' = %10.3e"%tuple(denvx)
-        print "error => y = %10.3e y' = %10.3e"%tuple(denvy)
+        print("error => x = %10.3e x' = %10.3e"%tuple(denvx))
+        print("error => y = %10.3e y' = %10.3e"%tuple(denvy))
         if max(abs(denvx)) < tol and max(abs(denvy)) < tol: notdone = 0
 
     if iter == maxiter:
-        print 'Warning: Maximum number of iterations reached'
+        print('Warning: Maximum number of iterations reached')
     else:
-        print "top.x0 = %20.15e;top.xp0 = %20.15e"%(top.x0,top.xp0)
-        print "top.y0 = %20.15e;top.yp0 = %20.15e"%(top.y0,top.yp0)
+        print("top.x0 = %20.15e;top.xp0 = %20.15e"%(top.x0,top.xp0))
+        print("top.y0 = %20.15e;top.yp0 = %20.15e"%(top.y0,top.yp0))
 
 #----------------------------------------------------------------------------
 def envmatchswarm(quads,af,bf,apf,bpf,zz=None,maxiter=100,tol=1.e-10):

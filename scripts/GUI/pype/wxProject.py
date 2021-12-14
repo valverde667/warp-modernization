@@ -101,7 +101,7 @@ class main_window(wxFrame):
     # ----------------------------------------------------------------------------------------
 
     def OnTreeBeginDrag(self, evt):
-        print "got event",
+        print("got event", end=' ')
         item = evt.GetItem()
         try:
             data = self.tree.GetItemText(item).encode('ascii')[:]
@@ -112,7 +112,7 @@ class main_window(wxFrame):
         #evt.Allow()
         d = wxFileDataObject()
         d.AddFile(data)
-        print d.GetFilenames()
+        print(d.GetFilenames())
         a = wxDropSource()
         a.SetData(d)
         a.DoDragDrop(wxDrag_AllowMove|wxDrag_CopyOnly)
@@ -301,8 +301,8 @@ import wx
 VS = wx.VERSION_STRING
 del wx
 if VS[-1] == 'u':
-    print "For some reason, I don't allow filenames to be dragged without"
-    print "corruption on unicode-enabled builds of wxPython."
+    print("For some reason, I don't allow filenames to be dragged without")
+    print("corruption on unicode-enabled builds of wxPython.")
 else:
     app = App(0)
     app.MainLoop()

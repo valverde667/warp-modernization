@@ -9,30 +9,30 @@ from wx.lib.anchors import LayoutAnchors
 #from wxPython.wx import *
 #from wxPython.stc import *
 #from wxPython.lib.anchors import LayoutAnchors
-import WarpGUIInfo
-import ParticlePlotsGUI
-import EnvelopeGUI
-import LatticeGUI
-import DocGUI
-import MatchingGUI
-import ConsoleClass
-import PzplotsGUI
-import ManualDialog
-import txtEditorDialog
-import newstdout
-import wxDialog_proto
-import pygistDialog
+from . import WarpGUIInfo
+from . import ParticlePlotsGUI
+from . import EnvelopeGUI
+from . import LatticeGUI
+from . import DocGUI
+from . import MatchingGUI
+from . import ConsoleClass
+from . import PzplotsGUI
+from . import ManualDialog
+from . import txtEditorDialog
+from . import newstdout
+from . import wxDialog_proto
+from . import pygistDialog
 try:
     import Egun_like_gui
     l_egun=1
 except:
     l_egun=0
 try:
-    import pyOpenDXDialog
+    from . import pyOpenDXDialog
     l_opendx=1
 except:
     l_opendx=0
-import WarpPanel
+from . import WarpPanel
 import gist
 import string
 import sys
@@ -42,7 +42,7 @@ import __main__
 from warp import *
 from warp.utils.errorcheck import *
 warp_path = os.path.dirname(warp.__file__)
-if warp_path<>'':warp_path+='/'
+if warp_path!='':warp_path+='/'
 sys.path=sys.path+[warp_path+'GUI/pype']
 
 # for debugging purpose, output is not redirected in GUI if true
@@ -50,7 +50,7 @@ l_standard_out = 1
 l_PyCrust = 1
 l_pype = 0
 
-if l_pype:import pype
+if l_pype:from . import pype
 
 def create(parent):
     return WarpRun(parent)
@@ -62,38 +62,38 @@ def create(parent):
  wxID_WARPRUNREDRAW, wxID_WARPRUNSEPARATE, wxID_WARPRUNSPLITTERWINDOW1,
  wxID_WARPRUNSTART, wxID_WARPRUNSTATUSBAR1, wxID_WARPRUNSTEP,
  wxID_WARPRUNTXTEDITOR, wxID_WARPRUNWINON,
-] = map(lambda _init_ctrls: wx.NewId(), range(22))
+] = [wx.NewId() for _init_ctrls in range(22)]
 
 [wxID_WARPRUNTOOLBAR2TOOLS0, wxID_WARPRUNTOOLBAR2TOOLS1, wxID_WARPRUNTOOLBAR2TOOLS2,
- wxID_WARPRUNTOOLBAR2TOOLS3] = map(lambda _init_coll_toolBar2_Tools: wx.NewId(), range(4))
+ wxID_WARPRUNTOOLBAR2TOOLS3] = [wx.NewId() for _init_coll_toolBar2_Tools in range(4)]
 
 [wxID_WARPRUNTOOLBAR1TOOLS0, wxID_WARPRUNTOOLBAR1TOOLS1,
  wxID_WARPRUNTOOLBAR1TOOLS2, wxID_WARPRUNTOOLBAR1TOOLS3,
  wxID_WARPRUNTOOLBAR1TOOLS4, wxID_WARPRUNTOOLBAR1TOOLS5,
  wxID_WARPRUNTOOLBAR1TOOLS6,
-] = map(lambda _init_coll_toolBar1_Tools: wx.NewId(), range(7))
+] = [wx.NewId() for _init_coll_toolBar1_Tools in range(7)]
 
 [wxID_WARPRUNMNUERRORCHECKCHECKALL, wxID_WARPRUNMNUERRORCHECKENVELOPE,
  wxID_WARPRUNMNUERRORCHECKIBPUSH, wxID_WARPRUNMNUERRORCHECKPARTICLELOAD,
  wxID_WARPRUNMNUERRORCHECKSYMMETRY,
-] = map(lambda _init_coll_mnuErrorCheck_Items: wx.NewId(), range(5))
+] = [wx.NewId() for _init_coll_mnuErrorCheck_Items in range(5)]
 
 [wxID_WARPRUNMNUPACKAGE3D, wxID_WARPRUNMNUPACKAGEENV,
  wxID_WARPRUNMNUPACKAGEXY,
-] = map(lambda _init_coll_mnuPackage_Items: wx.NewId(), range(3))
+] = [wx.NewId() for _init_coll_mnuPackage_Items in range(3)]
 
 [wxID_WARPRUNMNUFILEEXEC, wxID_WARPRUNMNUFILEEXIT, wxID_WARPRUNMNUFILEOPEN,
  wxID_WARPRUNMNUFILEOPENEXEC, wxID_WARPRUNMNUFILESAVE,
  wxID_WARPRUNMNUFILESAVEAS,
-] = map(lambda _init_coll_mnuFile_Items: wx.NewId(), range(6))
+] = [wx.NewId() for _init_coll_mnuFile_Items in range(6)]
 
 [wxID_WARPRUNMNUDUMPDUMP, wxID_WARPRUNMNUDUMPDUMPAS,
  wxID_WARPRUNMNUDUMPRESTART, wxID_WARPRUNMNUDUMPRESTORE,
-] = map(lambda _init_coll_mnuDump_Items: wx.NewId(), range(4))
+] = [wx.NewId() for _init_coll_mnuDump_Items in range(4)]
 
 [wxID_WARPRUNMNUHELPMANUAL,wxID_WARPRUNMNUHELPSCRIPTS,wxID_WARPRUNMNUHELPSOURCE,
 wxID_WARPRUNMNUHELPTUTORIAL,wxID_WARPRUNMNUHELPABOUT,
-] = map(lambda _init_coll_mnuHelp_Items: wx.NewId(), range(5))
+] = [wx.NewId() for _init_coll_mnuHelp_Items in range(5)]
 
 class WarpRun(wx.Frame):
     def _init_coll_menuBar1_Menus(self, parent):
@@ -417,7 +417,7 @@ class WarpRun(wx.Frame):
         self.EdPos = 0
         self.startrun = 1
         self.panels = {}
-        print 'hello'
+        print('hello')
         # substitute default editor by pype
         if l_pype:
             self.notebook1.DeletePage(0)
@@ -426,7 +426,7 @@ class WarpRun(wx.Frame):
         # start console
         if 0:
             def shortcuts():
-                print """
+                print("""
     * Key bindings:
     Home              Go to the beginning of the command or line.
     Shift+Home        Select to the beginning of the command or line.
@@ -449,7 +449,7 @@ class WarpRun(wx.Frame):
     Ctrl+]            Increase font size.
     Ctrl+[            Decrease font size.
     Ctrl+=            Default font size.
-    """
+    """)
 
             __main__.shortcuts = shortcuts
             self.Crust = wx.py.crust.Crust(self,-1,intro='For help on:\n - WARP      - type "warphelp()",\n - shortcuts - type "shorcuts()".\n\n')
@@ -467,7 +467,7 @@ class WarpRun(wx.Frame):
 #          self.shell.Reparent(self.splitterWindow1)
             self.Crust.Destroy()
 #          self.MessageWindow.Destroy()
-            if sys.platform <> 'cygwin':
+            if sys.platform != 'cygwin':
                 self.panels['Session']  = self.show_GUI(self.crustnotebook,  'notebook','Session','frame',True)
             self.Console = self.shell
             self.inter = self.shell.interp
@@ -607,7 +607,7 @@ class WarpRun(wx.Frame):
         sys.stdout.flush()
         self.SetPosition((0,0))
         pype.frame.SetPosition(self.GetPosition()+(10,10))
-        if sys.platform <> 'cygwin':
+        if sys.platform != 'cygwin':
             pype.frame.Show(0)
    #         panel = WarpPanel.panel(self.notebook1)
    #         self.notebook1.AddPage(imageId=-1, page=panel, select=True, text='Editor')
@@ -703,7 +703,7 @@ class WarpRun(wx.Frame):
         win.EnsureCaretVisible()
 
     def add_panel(self,panel,name,out='notebook'):
-        if(self.panels.has_key(name)):return
+        if(name in self.panels):return
         self.panels[name] = self.show_GUI(panel,out,name)
         self.OutToMessageWindow()
 
@@ -857,7 +857,7 @@ class WarpRun(wx.Frame):
         self.statusBar1.SetStatusText("Executing file %s"%self.FileName,0)
         if(not l_standard_out): sys.stdout = newstdout.newstdout(self.Console)
         if(not l_standard_out): sys.stderr = newstdout.newstdout(self.Console)
-        execfile(self.FileName)
+        exec(compile(open(self.FileName, "rb").read(), self.FileName, 'exec'))
         self.statusBar1.SetStatusText("Finished executing file %s"%self.FileName,0)
 
     def OnMnufileexecfileMenu2(self, event):
@@ -887,7 +887,7 @@ class WarpRun(wx.Frame):
                 self.LineNo = 0
                 self.lastline = self.win.LineFromPosition(self.win.GetLength())
             if self.LineNo>self.lastline:
-                print '<End of file>'
+                print('<End of file>')
                 return ''
             newLineNo = self.win.MarkerNext(self.LineNo + 1, self.BOOKMARKMASK)
             if newLineNo==-1:
@@ -965,7 +965,7 @@ class WarpRun(wx.Frame):
         endsection = false
         while redo:
             self.ReadNextLine()
-            if(string.lstrip(self.line) <> ''):
+            if(string.lstrip(self.line) != ''):
                 firstword = string.split(self.line)[0]
                 if(len(firstword)>=5):
                     if(firstword[0:5]=='raise'):
@@ -977,9 +977,9 @@ class WarpRun(wx.Frame):
                         if(firstword[0]=='#'):
                             docomment=true
                     if not docomment and self.prefix == '... ':
-                        if(self.line[0]<>' '):
+                        if(self.line[0]!=' '):
                             if(len(self.line)>=4):
-                                if(self.line[:4]<>'else' and self.line[:4]<>'elif'):
+                                if(self.line[:4]!='else' and self.line[:4]!='elif'):
                                     self.inter.push(os.linesep)
                                     endsection = true
                                     redo = false
@@ -1047,12 +1047,12 @@ class WarpRun(wx.Frame):
         dump()
 
     def OnMnudumpDumpAs(self,event):
-        import DumpGUI
+        from . import DumpGUI
         self.DumpGUI = DumpGUI.wxDialog1(self)
         self.DumpGUI.Show(1)
 
     def OnMnudumpRestore(self,event):
-        import RestoreGUI
+        from . import RestoreGUI
         self.RestoreGUI = RestoreGUI.wxDialog1(self)
         self.RestoreGUI.Show(1)
 
@@ -1114,7 +1114,7 @@ class WarpRun(wx.Frame):
     def OnWinonButton(self, event=None):
         if not self.isgistwindowon:
             winon()
-            if sys.platform <> 'cygwin':
+            if sys.platform != 'cygwin':
                 self.HandleGistEvents()
                 self.isgistwindowon = 1
 
@@ -1192,14 +1192,14 @@ class WarpRun(wx.Frame):
         if sys.platform == 'cygwin':event.Skip()
 
     def OnGistButton(self, event):
-        import pygistDialog
+        from . import pygistDialog
         self.pygistDialog = pygistDialog.wxDialog1(self)
         self.pygistDialog.Show(1)
-        if sys.platform <> 'cygwin':event.Skip()
+        if sys.platform != 'cygwin':event.Skip()
 
     def OnSeparateButton(self, event):
         current = self.notebook1.GetPage(self.notebook1.GetSelection())
-        for i in self.panels.keys():
+        for i in list(self.panels.keys()):
             if self.panels[i]['panel'] == current:
                 if self.panels[i]['type'] == 'frame':
                     dialog = wxDialog_proto.wxFrame1(self,None,self.panels[i]['title'])
@@ -1256,16 +1256,16 @@ class WarpRun(wx.Frame):
     def CallTip(self):
         self.shell.autoCallTip=1-self.shell.autoCallTip
         if self.shell.autoCallTip:
-            print 'Auto call-tip turned on.'
+            print('Auto call-tip turned on.')
         else:
-            print 'Auto call-tip turned off.'
+            print('Auto call-tip turned off.')
 
     def AutoComp(self):
         self.shell.autoComplete=1-self.shell.autoComplete
         if self.shell.autoComplete:
-            print 'Auto completion turned on.'
+            print('Auto completion turned on.')
         else:
-            print 'Auto completion turned off.'
+            print('Auto completion turned off.')
 
     def OnFrameClose(self,event):
         self.Hide()

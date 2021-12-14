@@ -13,7 +13,7 @@ self-describing data sets written out with PWpickle.PW.
 __all__ = ['PR']
 _version = '0.4'
 
-import cPickle
+import pickle
 
 
 class PRError(Exception):
@@ -38,7 +38,7 @@ which is useful for names that are not usable as python attributes.
         'PR(filename) opens file and reads in the pickled dictionary'
         self._filename = filename
         with open(filename, 'rb') as ff:
-            self._pickledict = cPickle.load(ff, **loadkw)
+            self._pickledict = pickle.load(ff, **loadkw)
 
     def __getattr__(self, name):
         return self._pickledict[name]

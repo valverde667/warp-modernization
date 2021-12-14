@@ -123,9 +123,9 @@ else:
         if me == 0 and sys.platform != 'mac':
             import gist
         else:
-            import gistdummy as gist
+            from . import gistdummy as gist
     except ImportError:
-        import gistdummy as gist
+        from . import gistdummy as gist
     try:
         maxplotwindows = gist.GH_NDEVS
     except AttributeError:
@@ -138,8 +138,8 @@ import sys
 
 
 def warpplotsdoc():
-    import warpplots
-    print warpplots.__doc__
+    from . import warpplots
+    print(warpplots.__doc__)
 
 ##########################################################################
 top.lpsplots = true
@@ -204,7 +204,7 @@ if with_matplotlib:
 
     def closematplotwindows():
         """This will be used to close the matplotlib windows when python exits"""
-        for w in _matplotwindows.values():
+        for w in list(_matplotwindows.values()):
             w.close()
     import atexit
     atexit.register(closematplotwindows)
@@ -296,7 +296,7 @@ def setup(makepsfile=0,prefix=None,cgmlog=1,runcomments='',
         # --- Setup the data file name where plot data is written
         setplotdatafilename(pname)
 
-    print "Plot file name",pname
+    print("Plot file name",pname)
 
     if cgmlog:
         # --- Create plot log file and write heading to it.
@@ -407,7 +407,7 @@ def winon(winnum=None,dpi=100,prefix=None,suffix=None,xon=1,style='work.gs'):
         winon.winnum = winnum
         # --- Check input errors
         try: setup.pname
-        except AttributeError: raise RuntimeError,'setup has not yet been called'
+        except AttributeError: raise RuntimeError('setup has not yet been called')
         assert winnum != 0,'winnum must not be 0'
         # --- Check file name and type from window 0
         pname = '.'.join(setup.pname.split('.')[:-2])
@@ -633,7 +633,7 @@ class PlotsFromDataFile(object):
             locs = self.frames[framenum]
         except KeyError:
             # --- The framenum was not found
-            raise RuntimeError,"Frame number %d was not found"%framenum
+            raise RuntimeError("Frame number %d was not found"%framenum)
         # --- Set the location in the file to the start of the frame.
         # --- Only this is needed since the plot commands will be contiguous
         # --- in the file.
@@ -702,7 +702,7 @@ class PlotsFromDataFile(object):
                     self.currentframe += int(stepstring or 1)
                     if self.currentframe >= numframes:
                         self.currentframe = numframes
-                        print "At last frame",CR,
+                        print("At last frame",CR, end=' ')
                     gist.fma()
                     oldlimits = limits()
                     self.plotframe()
@@ -712,7 +712,7 @@ class PlotsFromDataFile(object):
                     self.currentframe -= int(stepstring or 1)
                     if self.currentframe <= 1:
                         self.currentframe = 1
-                        print "At first frame",CR,
+                        print("At first frame",CR, end=' ')
                     gist.fma()
                     oldlimits = limits()
                     self.plotframe()
@@ -1420,7 +1420,7 @@ def plotc(zz,xx=None,yy=None,ireg=None,color='fg',levs=None,contours=7,
     """
     s = shape(zz)
     if len(s) != 2:
-        print 'First argument must be a 2-Dimensional array'
+        print('First argument must be a 2-Dimensional array')
         return
     if xx is None:
         xx = arange(s[0])[:,newaxis]*ones(s[1],'d')
@@ -1438,7 +1438,7 @@ def plotc(zz,xx=None,yy=None,ireg=None,color='fg',levs=None,contours=7,
     if levs is not None: contours = levs
     if isinstance(contours,list): contours = array(contours)
     if isinstance(contours,tuple): contours = array(contours)
-    if isinstance(contours,types.IntType):
+    if isinstance(contours,int):
         # --- cmin and cmax are multiplied by 1. to force them to be standard
         # --- python floats, instead of zero length numpy arrays.
         if cmin is None: cmin = minnd(zz)*1.
@@ -1615,7 +1615,7 @@ def checkarguments(input,arglist):
     #  if i in arglist: del inputcopy[i]
     #return inputcopy
     result = {}
-    for k,v in input.iteritems():
+    for k,v in input.items():
         if k not in arglist:
             result[k] = v
     return result
@@ -1661,7 +1661,7 @@ def pptitleright(iw=0,kwdict={},**kw):
     badargs = checkarguments(kwvalues,_pptitleright_kwdefaults)
     if checkargs: return badargs
     if badargs and not allowbadargs:
-        raise TypeError,"bad argument%s"%' '.join(badargs.keys())
+        raise TypeError("bad argument%s"%' '.join(list(badargs.keys())))
 
     # --- Return appropriate right title
     if zl is not None or zu is not None:
@@ -1929,7 +1929,7 @@ def ppgeneric(y=None,x=None,kwdict={},**kw):
     badargs = checkarguments(kwvalues,_ppgeneric_kwdefaults)
     if checkargs: return badargs
     assert (not badargs or allowbadargs), \
-           "bad argument: %s"%' '.join(badargs.keys())
+           "bad argument: %s"%' '.join(list(badargs.keys()))
 
     # --- If gridt is given, take the transpose and put it in grid. Note that
     # --- this will overwrite a grid argument. This is done here to reduce
@@ -1958,7 +1958,7 @@ def ppgeneric(y=None,x=None,kwdict={},**kw):
            "both x and y must be of the same length"
     assert (zz is None) or (isinstance(zz,ndarray) and zz.size == x.size),\
            "zz must be the same length as x"
-    assert (not isinstance(slope,basestring)),"slope must be a number"
+    assert (not isinstance(slope,str)),"slope must be a number"
     assert (zz is None) or (grid is None),\
            "only one of zz and grid can be specified"
     assert (centering == 'node' or centering == 'cell' or centering == 'old'),\
@@ -2570,7 +2570,7 @@ def arrowplot(vx,vy,scale=1.,xmin=None,xmax=None,ymin=None,ymax=None,
         z = (zeros((nxp1,nyp1)) + fcolor).astype(ubyte)
         x = zeros((nxp1,nyp1,4))
         y = zeros((nxp1,nyp1,4))
-        n = zeros((nxp1,nyp1),dtype=long) + 4
+        n = zeros((nxp1,nyp1),dtype=int) + 4
         x[:,:,0] = vlx1
         x[:,:,1] = vtipx0
         x[:,:,2] = vrx1
@@ -2684,7 +2684,7 @@ def colorbar(zmin,zmax,uselog=None,ncolor=100,view=None,levs=None,
         # --- matches the uniform spacing of the contours. If levs is specified,
         # --- each equal sized block represents one contour level, independent of
         # --- the range of the level relative to other levels.
-        if (isinstance(zmin,types.IntType) and isinstance(zmax,types.IntType) and
+        if (isinstance(zmin,int) and isinstance(zmax,int) and
             zmin >= 0 and zmax <=199):
             plotval = arange(zmin,zmax+1,dtype=ubyte)[:,newaxis]*ones(2)
         else:
@@ -2760,7 +2760,7 @@ def changepalette(returnpalette=0,filename='newpalette',help=0,view=None):
                              when requested
     - help=0: when true, prints this message
     """
-    print """
+    print("""
   Mouse actions:
     Button 1: shifts a point, compressing and stretching the rest of the colors
     Button 2: reset palette to original
@@ -2770,9 +2770,9 @@ def changepalette(returnpalette=0,filename='newpalette',help=0,view=None):
     Shift Button 1: reverse the palette
     Shift Button 2: writes the palette to the file, defaults to newpalette.gp
     Shift Button 3: quits
-    """
+    """)
     # --- Print out help if wanted
-    if help: print changepalette.__doc__
+    if help: print(changepalette.__doc__)
     # --- min's and max's are the same as in the colorbar routine
     if view is None: view = plsys()
     xmin,xmax,ymin,ymax = colorbar_placement[view-1]
@@ -2840,7 +2840,7 @@ def changepalette(returnpalette=0,filename='newpalette',help=0,view=None):
 
         if mm[9] == 2 and mm[10] == 1:
             # --- Button 2, shift
-            print 'Writing palette to '+filename+'.gp'
+            print('Writing palette to '+filename+'.gp')
             writepalette(filename,newrr,newgg,newbb)
 
         if mm[9] == 1 and mm[10] == 4:
@@ -2940,7 +2940,7 @@ def viewsurface(scale=4.,gnomon=1):
         ymax3max = max(ymax3max,ymax3)
         limits(xmin3min,xmax3max,ymin3min,ymax3max)
     pl3d.gnomon(gnomon)
-    print xa,ya,za
+    print(xa,ya,za)
 
 def _viewsurfacetest(scale=4.,gnomon=1):
     """
@@ -2962,7 +2962,7 @@ def _viewsurfacetest(scale=4.,gnomon=1):
         if mm == None: break
         dphi   = (mm[3] - mm[1])*scale
         dtheta = (mm[2] - mm[0])*scale
-        print theta,phi
+        print(theta,phi)
         newxa = xa + dtheta*sin(phi)*cos(theta) + dphi*cos(phi)*cos(theta)
         newya = ya + dtheta*sin(phi)*sin(theta) + dphi*cos(phi)*sin(theta)
         newza = za + dtheta*cos(phi)*cos(theta) + dphi*sin(phi)*sin(theta)
@@ -3004,9 +3004,9 @@ def ppmultispecies(pp,args,kw):
         if js != -1 and not isinstance(js,list):
             return false
         else:
-            if js == -1: js = range(top.ns)
+            if js == -1: js = list(range(top.ns))
             ncolor = kw.get('ncolor',240)
-            color = kw.get('color',range(0,ncolor,ncolor//len(js)))
+            color = kw.get('color',list(range(0,ncolor,ncolor//len(js))))
             for i in range(len(js)):
                 kw['js'] = js[i]
                 kw['color'] = color[i]
@@ -3032,7 +3032,7 @@ def checkparticleplotarguments(kw):
     badargs = ppgeneric(checkargs=1,kwdict=badargs)
     badargs = getxxpslope(checkargs=1,kwdict=badargs)
     kw['allowbadargs'] = 1
-    if badargs: raise TypeError,"bad arguments%s"%' '.join(badargs.keys())
+    if badargs: raise TypeError("bad arguments%s"%' '.join(list(badargs.keys())))
 ########################################################################
 def ppzxy(iw=0,**kw):
     "Plots Z-X and Z-Y in single page. For particle selection options, see :py:func:`~particles.selectparticles`. For plotting options, see :py:func:`ppgeneric`."
@@ -3286,7 +3286,7 @@ def ppzke(iw=0,**kw):
     "Plots Z-KE"
     checkparticleplotarguments(kw)
     if ppmultispecies(ppzke,(iw,),kw): return
-    if kw.has_key('pplimits'):
+    if 'pplimits' in kw:
         kw['lframe'] = 1
     else:
         kw['pplimits'] = (top.zplmin+top.zbeam,top.zplmax+top.zbeam,
@@ -3623,7 +3623,7 @@ def ppxxp(iw=0,**kw):
     "Plots X-X'. If slope='auto', it is calculated from the moments. For particle selection options, see :py:func:`~particles.selectparticles`. For plotting options, see :py:func:`ppgeneric`."
     checkparticleplotarguments(kw)
     if ppmultispecies(ppxxp,(iw,),kw): return
-    if isinstance(kw.get('slope',0.),basestring):
+    if isinstance(kw.get('slope',0.),str):
         (slope,xoffset,xpoffset,vz) = getxxpslope(iw=iw,iz=kw.get('iz'),kwdict=kw)
         kw['slope'] = slope
         kw['yoffset'] = xpoffset
@@ -3644,7 +3644,7 @@ def ppyyp(iw=0,**kw):
     "Plots Y-Y'. If slope='auto', it is calculated from the moments. For particle selection options, see :py:func:`~particles.selectparticles`. For plotting options, see :py:func:`ppgeneric`."
     checkparticleplotarguments(kw)
     if ppmultispecies(ppyyp,(iw,),kw): return
-    if isinstance(kw.get('slope',0.),basestring):
+    if isinstance(kw.get('slope',0.),str):
         (slope,yoffset,ypoffset,vz) = getyypslope(iw=iw,iz=kw.get('iz'),kwdict=kw)
         kw['slope'] = slope
         kw['yoffset'] = ypoffset
@@ -3666,7 +3666,7 @@ def ppxpyp(iw=0,**kw):
     checkparticleplotarguments(kw)
     if ppmultispecies(ppxpyp,(iw,),kw): return
     slope = kw.get('slope',0.)
-    if isinstance(slope,basestring):
+    if isinstance(slope,str):
         (xslope,xoffset,xpoffset,vz) = getxxpslope(iw=iw,iz=kw.get('iz'),kwdict=kw)
         (yslope,yoffset,ypoffset,vz) = getyypslope(iw=iw,iz=kw.get('iz'),kwdict=kw)
         kw['slope'] = 0.
@@ -3694,7 +3694,7 @@ def ppxux(iw=0,**kw):
     "Plots X-Ux. If slope='auto', it is calculated from the moments. For particle selection options, see :py:func:`~particles.selectparticles`. For plotting options, see :py:func:`ppgeneric`."
     checkparticleplotarguments(kw)
     if ppmultispecies(ppxux,(iw,),kw): return
-    if isinstance(kw.get('slope',0.),basestring):
+    if isinstance(kw.get('slope',0.),str):
         (slope,xoffset,xpoffset,vz) = getxxpslope(iw=iw,iz=kw.get('iz'),kwdict=kw)
         kw['slope'] = slope*vz
         kw['yoffset'] = xpoffset*vz
@@ -3716,7 +3716,7 @@ def ppxvx(iw=0,**kw):
     "Plots X-Vx. If slope='auto', it is calculated from the moments. For particle selection options, see :py:func:`~particles.selectparticles`. For plotting options, see :py:func:`ppgeneric`."
     checkparticleplotarguments(kw)
     if ppmultispecies(ppxvx,(iw,),kw): return
-    if isinstance(kw.get('slope',0.),basestring):
+    if isinstance(kw.get('slope',0.),str):
         (slope,xoffset,xpoffset,vz) = getxxpslope(iw=iw,iz=kw.get('iz'),kwdict=kw)
         kw['slope'] = slope*vz
         kw['yoffset'] = xpoffset*vz
@@ -3738,7 +3738,7 @@ def ppyuy(iw=0,**kw):
     "Plots Y-Uy. If slope='auto', it is calculated from the moments. For particle selection options, see :py:func:`~particles.selectparticles`. For plotting options, see :py:func:`ppgeneric`."
     checkparticleplotarguments(kw)
     if ppmultispecies(ppyuy,(iw,),kw): return
-    if isinstance(kw.get('slope',0.),basestring):
+    if isinstance(kw.get('slope',0.),str):
         (slope,yoffset,ypoffset,vz) = getyypslope(iw=iw,iz=kw.get('iz'),kwdict=kw)
         kw['slope'] = slope*vz
         kw['yoffset'] = ypoffset*vz
@@ -3760,7 +3760,7 @@ def ppyvy(iw=0,**kw):
     "Plots Y-Vy. If slope='auto', it is calculated from the moments. For particle selection options, see :py:func:`~particles.selectparticles`. For plotting options, see :py:func:`ppgeneric`."
     checkparticleplotarguments(kw)
     if ppmultispecies(ppyvy,(iw,),kw): return
-    if isinstance(kw.get('slope',0.),basestring):
+    if isinstance(kw.get('slope',0.),str):
         (slope,yoffset,ypoffset,vz) = getyypslope(iw=iw,iz=kw.get('iz'),kwdict=kw)
         kw['slope'] = slope*vz
         kw['yoffset'] = ypoffset*vz
@@ -3818,7 +3818,7 @@ def ppvxvy(iw=0,**kw):
     if ppmultispecies(ppvxvy,(iw,),kw): return
     slope = kw.get('slope',0.)
     kw['slope'] = 0.
-    if isinstance(slope,basestring):
+    if isinstance(slope,str):
         (xslope,xoffset,xpoffset,vz) = getxxpslope(iw=iw,iz=kw.get('iz'),kwdict=kw)
         (yslope,yoffset,ypoffset,vz) = getyypslope(iw=iw,iz=kw.get('iz'),kwdict=kw)
         vxslope = xslope*vz
@@ -3853,7 +3853,7 @@ def ppvxvz(iw=0,**kw):
     (vzmin,vzmax) = getvzrange(kwdict=kw)
     slope = kw.get('slope',0.)
     kw['slope'] = 0.
-    if isinstance(slope,basestring):
+    if isinstance(slope,str):
         (xslope,xoffset,xpoffset,vz) = getxxpslope(iw=iw,iz=kw.get('iz'),kwdict=kw)
         vxslope = xslope*vz
         vxoffset = xpoffset*vz
@@ -3881,7 +3881,7 @@ def ppvyvz(iw=0,**kw):
     (vzmin,vzmax) = getvzrange(kwdict=kw)
     slope = kw.get('slope',0.)
     kw['slope'] = 0.
-    if isinstance(slope,basestring):
+    if isinstance(slope,str):
         (yslope,yoffset,ypoffset,vz) = getyypslope(iw=iw,iz=kw.get('iz'),kwdict=kw)
         vyslope = yslope*vz
         vyoffset = ypoffset*vz
@@ -3951,7 +3951,7 @@ def pprrp(iw=0,scale=0,slopejs=-1,**kw):
     tt = arctan2(yy,xx)
     rp = xp*cos(tt) + yp*sin(tt)
     slope = kw.get('slope',0.)
-    if isinstance(slope,basestring):
+    if isinstance(slope,str):
         aversq = globalave(rr**2)
         averrp = globalave(rr*rp)
         if aversq > 0.:
@@ -3998,7 +3998,7 @@ def pprtp(iw=0,scale=0,slopejs=-1,**kw):
     tt = arctan2(yy,xx)
     tp = -xp*sin(tt) + yp*cos(tt)
     slope = kw.get('slope',0.)
-    if isinstance(slope,basestring):
+    if isinstance(slope,str):
         aversq = globalave(rr**2)
         avertp = globalave(rr*tp)
         if aversq > 0.:
@@ -4045,7 +4045,7 @@ def pprvr(iw=0,scale=0,slopejs=-1,**kw):
     tt = arctan2(yy,xx)
     vr = vx*cos(tt) + vy*sin(tt)
     slope = kw.get('slope',0.)
-    if isinstance(slope,basestring):
+    if isinstance(slope,str):
         aversq = globalave(rr**2)
         avervr = globalave(rr*vr)
         if aversq > 0.:
@@ -4100,7 +4100,7 @@ def pptrace(iw=0,normalize=0,**kw):
     yp = getyp(gather=0,**kw)
     if(top.wpid!=0): kw['weights'] = getpid(id=top.wpid-1,gather=0,**kw)
     slope = kw.get('slope',0.)
-    if isinstance(slope,basestring):
+    if isinstance(slope,str):
         del kw['slope']
         iz = kw.get('iz',None)
         (xxpslope,xoffset,xpoffset,vz) = getxxpslope(iw=iw,iz=iz,kwdict=kw)
@@ -5779,7 +5779,7 @@ def set_label(height=None,font=None,bold=0,italic=0,axis='all',system=None,color
         gstyle()
 
     if font is not None:
-        if isinstance(font,basestring):
+        if isinstance(font,str):
             if font == 'Courier':     font = 0
             if font == 'Times':       font = 1
             if font == 'Helvetica':   font = 2
@@ -5797,7 +5797,7 @@ def set_label(height=None,font=None,bold=0,italic=0,axis='all',system=None,color
         systems = [view-1]
     else:
         if(system=='all'):
-            systems = range(0,len(gist_style['systems']))
+            systems = list(range(0,len(gist_style['systems'])))
         else:
             systems = [system-1]
     for i in systems:
@@ -5836,9 +5836,9 @@ def scale_labels(scale):
         ptitle_placement[i][3][1] -= (0.403 - 0.3927)*scale
 
     # --- Change the default value of the height argument.
-    d = list(ptitles.func_defaults)
+    d = list(ptitles.__defaults__)
     d[-1] = 20.*scale
-    ptitles.func_defaults = tuple(d)
+    ptitles.__defaults__ = tuple(d)
 
 ##########################################################################
 def setlinewidth(width=1.):
@@ -5847,7 +5847,7 @@ def setlinewidth(width=1.):
    - width=1.: desired line width
     """
     if with_matplotlib:
-        print "Not yet implemented for matplotlib"
+        print("Not yet implemented for matplotlib")
     else:
         gist.pldefault(width=width)
         style = gist.get_style()
@@ -5875,7 +5875,7 @@ will only take affect on the next plot.)
                             being displayed.
     """
     if view is None: view = plsys()
-    print plsys()
+    print(plsys())
     try:
         gist_style
     except:

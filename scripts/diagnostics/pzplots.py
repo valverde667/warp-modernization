@@ -89,8 +89,8 @@ import __main__
 
 
 def pzplotsdoc():
-    import pzplots
-    print pzplots.__doc__
+    from . import pzplots
+    print(pzplots.__doc__)
 
 def setzdiagsflag(flag):
     "Turns on or off the various z diagnostics"
@@ -109,7 +109,7 @@ def _extractvar(name,varsuffix=None,pkg='top',ff=None):
   name could actually be the variable itself, in which case, it is just
   returned.
     """
-    if isinstance(name,basestring):
+    if isinstance(name,str):
         # --- if varsuffix is specified, try to evaluate the name with the
         # --- suffix. If ok, return the result, otherwise, default to the
         # --- fortran variable in the specified package.

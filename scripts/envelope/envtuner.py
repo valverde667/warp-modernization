@@ -122,7 +122,7 @@ Right mouse button exits.
 
         # --- Change element quantity appropriately and print out the new value.
         elemqu[ielems+iq] *= (1. + delta*scale)
-        print elem+suffix+' = '+repr(elemqu[ielems:ieleme+1])
+        print(elem+suffix+' = '+repr(elemqu[ielems:ieleme+1]))
 
         # --- Recalculate envelope and redo the plot.
         step()

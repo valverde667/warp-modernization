@@ -8,7 +8,7 @@ import sys
 def create(parent):
     return DocGUI(parent)
 
-[wxID_DOCGUI, wxID_DOCGUIDOCLABEL, wxID_DOCGUIDOCNAME, wxID_DOCGUIDOCTEXT, wxID_DOCGUIGETNAME] = map(lambda _init_ctrls: wx.NewId(), range(5))
+[wxID_DOCGUI, wxID_DOCGUIDOCLABEL, wxID_DOCGUIDOCNAME, wxID_DOCGUIDOCTEXT, wxID_DOCGUIGETNAME] = [wx.NewId() for _init_ctrls in range(5)]
 
 class DocGUI(wx.MiniFrame):
     def _init_utils(self):

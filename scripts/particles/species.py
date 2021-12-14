@@ -859,7 +859,7 @@ class Species(object):
 
         # --- Allow added pid names to be passed in through the keyword list.
         pidpairs = kw.setdefault('pidpairs', [])
-        for k, v in kw.items():
+        for k, v in list(kw.items()):
             if k in self._addedpids:
                 pidpairs.append([getattr(self, k + 'pid'), v])
                 kw.pop(k)
@@ -963,9 +963,9 @@ class Species(object):
 
             if np == 0:
                 if top.debug:
-                    print("add_uniform_box: Warning: no particles loaded for random " +
+                    print(("add_uniform_box: Warning: no particles loaded for random " +
                           "spacing since all are outside of the z range of the domain " +
-                          "of processor %d"%me)
+                          "of processor %d"%me))
                 return
 
             x = random.random(np)
@@ -1036,9 +1036,9 @@ class Species(object):
 
             if np == 0:
                 if top.debug:
-                    print("add_uniform_box: Warning: no particles loaded for uniform " +
+                    print(("add_uniform_box: Warning: no particles loaded for uniform " +
                           "spacing since all are outside of the z range of the domain " +
-                          "of processor %d"%me)
+                          "of processor %d"%me))
                 return
 
             x, y, z = getmesh3d((ixminp + 0.5)/nx, 1./nx, nxp - 1,
@@ -1176,18 +1176,18 @@ class Species(object):
         # --- If outside the domain, just return.
         if min(xx) > xdmax or max(xx) < xdmin:
             if top.debug:
-                print("add_uniform_cylinder: Warning: no particles loaded since all " +
-                      "are outside of the x range of the domain of processor %d"%me)
+                print(("add_uniform_cylinder: Warning: no particles loaded since all " +
+                      "are outside of the x range of the domain of processor %d"%me))
             return
         if min(yy) > ydmax or max(yy) < ydmin:
             if top.debug:
-                print("add_uniform_cylinder: Warning: no particles loaded since all " +
-                      "are outside of the y range of the domain of processor %d"%me)
+                print(("add_uniform_cylinder: Warning: no particles loaded since all " +
+                      "are outside of the y range of the domain of processor %d"%me))
             return
         if min(zz) > zdmax or max(zz) < zdmin:
             if top.debug:
-                print("add_uniform_cylinder: Warning: no particles loaded since all " +
-                      "are outside of the z range of the domain of processor %d"%me)
+                print(("add_uniform_cylinder: Warning: no particles loaded since all " +
+                      "are outside of the z range of the domain of processor %d"%me))
             return
 
         if theta == 0. and phi == 0.:
@@ -1212,9 +1212,9 @@ class Species(object):
                 # --- If the region is zero length, zmin == zmax, then don't change np.
             if np == 0:
                 if top.debug:
-                    print("add_uniform_cylinder: Warning: no particles loaded for " +
+                    print(("add_uniform_cylinder: Warning: no particles loaded for " +
                           "random spacing since all are outside of the z range of the " +
-                          "domain of processor %d"%me)
+                          "domain of processor %d"%me))
                 return
             r = random.random(np)
             if zmax != zmin:
@@ -1240,9 +1240,9 @@ class Species(object):
                 np = nr*nzp
                 if np == 0:
                     if top.debug:
-                        print("add_uniform_cylinder: Warning: no particles loaded for" +
+                        print(("add_uniform_cylinder: Warning: no particles loaded for" +
                               "uniform spacing since all are outside of the z range of " +
-                              "the domain of processor %d"%me)
+                              "the domain of processor %d"%me))
                     return
 
                 r, z = getmesh2d(0.5/nr, 1./nr, nr-1,
@@ -1316,9 +1316,9 @@ class Species(object):
             np = len(z)
             if np == 0:
                 if top.debug:
-                    print("add_uniform_cylinder: Warning: no particles loaded since " +
+                    print(("add_uniform_cylinder: Warning: no particles loaded since " +
                           "all are outside of the transverse range of the domain of " +
-                          "processor %d"%me)
+                          "processor %d"%me))
                 return
 
         if theta != 0. or phi != 0.:
@@ -1333,9 +1333,9 @@ class Species(object):
             np = len(z)
             if np == 0:
                 if top.debug:
-                    print("add_uniform_cylinder: Warning: no particles loaded after " +
+                    print(("add_uniform_cylinder: Warning: no particles loaded after " +
                           "rotation since all are outside of the z range of the " +
-                          "domain of processor %d"%me)
+                          "domain of processor %d"%me))
                 return
 
         # --- The weights can be set now if needed (after clipping the positions).
@@ -1590,7 +1590,7 @@ class Species(object):
         installafterstep(self.gather_zmmnts)
 
     def gather_zmmnts(self):
-        print 'gather_zmmnts'
+        print('gather_zmmnts')
         self.zmmnts_pnum.append(self.getn(gather=0))
         xbar = 0.
         ybar = 0.
@@ -1676,7 +1676,7 @@ class Species(object):
         self.zmmnts_xxpn.append(xxpnbar)
         self.zmmnts_yypn.append(yypnbar)
         self.zmmnts_gathered = false
-        print 'gather_zmmnts_done'
+        print('gather_zmmnts_done')
 
     def gatherall_zmmnts(self):
         self.zmmnts_pnum.data()[...] = parallelsum(self.zmmnts_pnum.data())

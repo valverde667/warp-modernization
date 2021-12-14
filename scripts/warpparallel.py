@@ -1,14 +1,14 @@
 """Functions used in parallel version.
 Most important ones are the paralleldump and parallelrestore functions.
 """
-from warp import *
+from .warp import *
 import __main__
 import copy
 
 
 def warpparalleldoc():
-    import warpparallel
-    print warpparallel.__doc__
+    from . import warpparallel
+    print(warpparallel.__doc__)
 
 try:
     #pyMPI version

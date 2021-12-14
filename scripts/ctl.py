@@ -1,6 +1,6 @@
 # Control module
-from warp import *
-import controllers
+from .warp import *
+from . import controllers
 import signal
 
 #############################################################################

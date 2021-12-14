@@ -7,7 +7,7 @@ import wx
 def create(parent):
     return WarpGUIInfo(parent)
 
-[wxID_WXDIALOG1, wxID_WXDIALOG1BUTTON1, wxID_WXDIALOG1STATICTEXT1] = map(lambda _init_ctrls: wx.NewId(), range(3))
+[wxID_WXDIALOG1, wxID_WXDIALOG1BUTTON1, wxID_WXDIALOG1STATICTEXT1] = [wx.NewId() for _init_ctrls in range(3)]
 
 class WarpGUIInfo(wx.Dialog):
     def _init_utils(self):

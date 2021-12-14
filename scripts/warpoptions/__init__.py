@@ -24,8 +24,8 @@ args = None
 
 def warpoptionsdoc():
     import warpoptions
-    print warpoptions.__doc__
-    print warpoptions.warpoptionsstr()
+    print(warpoptions.__doc__)
+    print(warpoptions.warpoptionsstr())
 
 def warpoptionsstr():
     return parser.format_help()

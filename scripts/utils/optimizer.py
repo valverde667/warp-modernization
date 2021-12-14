@@ -125,7 +125,7 @@ Methods:
         return params
     def gradloss(self):
     # --- Calculated the approximated gradient of the loss function.
-        deltak = (2*random.random(self.nparams)).astype(long) - .5
+        deltak = (2*random.random(self.nparams)).astype(int) - .5
         nextparams = self.constrainparams(self.params + self.ck()*deltak)
         nextparams = self.unscaledparams(nextparams)
         self.func(nextparams)
@@ -136,10 +136,10 @@ Methods:
         lminus = self.loss()
         return (lplus - lminus)/(2.*self.ck()*deltak)
     def printerror(self,err):
-        print "iterations = %d  error = %e %e" %(self.k,self.loss(),self.loss()/err)
+        print("iterations = %d  error = %e %e" %(self.k,self.loss(),self.loss()/err))
     def printparams(self):
         pp = self.unscaledparams(self.params)
-        for i in range(self.nparams): print '%15.12e'%pp[i]
+        for i in range(self.nparams): print('%15.12e'%pp[i])
     def getparamsmin(self,params):
         """Returns the min limit of parameters."""
         if callable(self.paramsmin):
@@ -175,12 +175,12 @@ Function to do iterations.
             #self.params = self.params - self.ak()*self.gradloss()
             dp = self.gradloss()
             if verbose:
-                print "ak = %f" % self.ak()
-                print "gradloss = " + repr(dp)
-                print "params = " + repr(self.unscaledparams(self.params))
+                print("ak = %f" % self.ak())
+                print("gradloss = " + repr(dp))
+                print("params = " + repr(self.unscaledparams(self.params)))
             oldparams = self.params + 0.
             self.params = self.constrainparams(self.params - self.ak()*dp)
-            if verbose: print "new params = " + repr(self.unscaledparams(self.params))
+            if verbose: print("new params = " + repr(self.unscaledparams(self.params)))
             # --- Calculate function with new params
             if self.saveparamhist:
                 self.hparam.append(self.unscaledparams(self.params))
@@ -188,7 +188,7 @@ Function to do iterations.
             # --- Check if loss it too great.
             if self.loss() > self.errmax:
                 self.params = oldparams
-                if verbose: print "Skipping"
+                if verbose: print("Skipping")
                 continue
             # --- Save the latest value of the loss function.
             latestloss = self.loss()
@@ -259,9 +259,9 @@ Differential Evolution
         self.f = f
         self.evaluate = evaluate
         if (crossover < 0. or crossover > 1.):
-            print "Warning: crossover outside of the range [0,1)"
+            print("Warning: crossover outside of the range [0,1)")
         if (f < 0. or f > 1.2):
-            print "Warning: differential factor f outside of the range (0,1.2]"
+            print("Warning: differential factor f outside of the range (0,1.2]")
         if (npop < 4):
             raise Exception("Error: number of populations, npop, must be greater than 3")
         self.trial = zeros(nparams,'d')
@@ -282,8 +282,8 @@ Differential Evolution
                 costmin = self.cost[i]
         return self.x1[imin,:]
     def printbestcost(self):
-        print "Generation %d, best cost %f worst cost %f"% \
-              (self.count,min(self.cost),max(self.cost))
+        print("Generation %d, best cost %f worst cost %f"% \
+              (self.count,min(self.cost),max(self.cost)))
     def getparamsmin(self,params):
         """Returns the min limit of parameters."""
         if callable(self.paramsmin): return self.paramsmin(params)
@@ -402,10 +402,10 @@ Do the optimization
                 self.printbestcost()
             elif ( (self.count%(nprint**2)) == 0):
                 self.printbestcost()
-                print self.best_params()
+                print(self.best_params())
 
         self.printbestcost()
-        print self.best_params()
+        print(self.best_params())
 
     ### --- threaded code below --- ###
     def initializememberthread(self,i):
@@ -442,7 +442,7 @@ sample set of parameters.
 
         initthreads = []
         for i in range(self.npop):
-            print "starting init thread ",i
+            print("starting init thread ",i)
             initthreads.append(
               threading.Thread(target=self.initializememberthread,
                                name='init%d'%i,
@@ -522,7 +522,7 @@ Do the optimization
             # --- loop through population
             iterthreads = []
             for i in range(self.npop):
-                print "starting thread ",i
+                print("starting thread ",i)
                 iterthreads.append(
                   threading.Thread(target=self.evolvememberthread,
                                    name='iter%d'%i,
@@ -546,10 +546,10 @@ Do the optimization
                 self.printbestcost()
             elif ( (self.count%(nprint**2)) == 0):
                 self.printbestcost()
-                print self.best_params()
+                print(self.best_params())
 
         self.printbestcost()
-        print self.best_params()
+        print(self.best_params())
 
 
 ###########################################################################
@@ -634,9 +634,9 @@ the previous best global parameters. The deceleration is also reset."""
         return decel
 
     def printbestcost(self):
-        print "Generation %d, global best cost %e, best cost %e, worst cost %e"% \
-              (self.count,self.globalbestcost,min(self.bestcost),max(self.bestcost))
-        print "Global best params ",self.globalbestparams
+        print("Generation %d, global best cost %e, best cost %e, worst cost %e"% \
+              (self.count,self.globalbestcost,min(self.bestcost),max(self.bestcost)))
+        print("Global best params ",self.globalbestparams)
     def getparamsmin(self,params):
         """Returns the min limit of parameters."""
         if callable(self.paramsmin): return self.paramsmin(params)
@@ -772,7 +772,7 @@ Do the optimization
 
         if nprint > 0:
             self.printbestcost()
-            print self.globalbestparams
+            print(self.globalbestparams)
 
     ##### --- threaded code below here --- #####
     def findbestneighborthread(self,neighborhood):
@@ -923,7 +923,7 @@ Do the optimization
                 self.printbestcost()
 
         self.printbestcost()
-        print self.globalbestparams
+        print(self.globalbestparams)
 
 
 ##############################################################################
@@ -992,7 +992,7 @@ not ease of use. This is probably not very robust.
             self.func(self.paramsmone(id))
             self.f[id,-1] = self.loss()
             #print self.params
-            print "loss = %e"%(self.f[id,0])
+            print("loss = %e"%(self.f[id,0]))
             if self.f[id,-1] < self.f[id,0] < self.f[id,1]:
                 self.x[id,+1] = - self.x[id,-1] + self.x[id,+1]
                 self.params[id] = self.pxmone(id)
@@ -1048,7 +1048,7 @@ not ease of use. This is probably not very robust.
             self.ii = self.ii + 1
             for i in range(self.nparams):
                 self.minimize1d(i,nsubiters)
-            print "Iteration number %d" %(self.ii)
-            print "Current values = "
-            print self.params
-            print "loss = %e %e"%(self.f[-1,0],self.f[-1,0]/tol)
+            print("Iteration number %d" %(self.ii))
+            print("Current values = ")
+            print(self.params)
+            print("loss = %e %e"%(self.f[-1,0],self.f[-1,0]/tol))

@@ -6,7 +6,7 @@ from wx.lib.anchors import LayoutAnchors
 from warp import *
 
 [wxID_CONSOLECLASS, wxID_CONSOLECLASSCONSOLE,
-] = map(lambda _init_ctrls: wx.NewId(), range(2))
+] = [wx.NewId() for _init_ctrls in range(2)]
 
 class ConsoleClass(wx.Panel):
     def _init_utils(self):
@@ -63,7 +63,7 @@ class ConsoleClass(wx.Panel):
 
     def sendcommand(self,c,addlist=1):
         r = self.inter.push(c)
-        if(addlist and c<>""):
+        if(addlist and c!=""):
             self.listcommands = self.listcommands + [c]
             self.numcommand = len(self.listcommands)
         return r
@@ -119,7 +119,7 @@ class ConsoleClass(wx.Panel):
 
     def Set_ins_point(self):
         newins_point = self.Console.GetInsertionPoint()
-        if(self.ins_point<>newins_point and newins_point>=self.CursorMin):
+        if(self.ins_point!=newins_point and newins_point>=self.CursorMin):
             self.ins_point = newins_point
 
     def Reset_ins_point(self):
@@ -127,12 +127,12 @@ class ConsoleClass(wx.Panel):
 
     def OnConsoleLeftUp(self, event):
         newins_point = self.Console.GetInsertionPoint()
-        if(self.ins_point<>newins_point and newins_point>=self.CursorMin):
+        if(self.ins_point!=newins_point and newins_point>=self.CursorMin):
             self.ins_point = newins_point
         event.Skip()
 
     def OnConsoleRightDown(self, event):
         self.GetParent().GetParent().GetParent().OutToMessageWindow()
-        print doc(self.Console.GetStringSelection(),printit=0)
+        print(doc(self.Console.GetStringSelection(),printit=0))
         self.GetParent().GetParent().GetParent().OutToConsole()
         event.Skip()

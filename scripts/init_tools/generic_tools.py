@@ -223,5 +223,5 @@ def remove_existing_directory( directory_list ):
         # Go through the list and remove directories
         for directory in directory_list:
             if os.path.exists( directory ):
-                print 'Removing previous directory %s' %directory
+                print('Removing previous directory %s' %directory)
                 shutil.rmtree( directory )

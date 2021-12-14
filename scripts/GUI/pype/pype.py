@@ -3,7 +3,7 @@
 #-------------- User changable settings are in configuration.py --------------
 
 #------------------------------ System Imports -------------------------------
-from __future__ import generators
+
 
 import sys
 #handy parsing and external command execution without external scripts
@@ -37,7 +37,7 @@ if __name__ == '__main__':
             sys.exit(0)
 
 import os
-import keyword, traceback, cStringIO, imp, fnmatch, re, string
+import keyword, traceback, io, imp, fnmatch, re, string
 import time, pprint
 from wxPython.wx import *
 from wxPython.stc import *
@@ -66,8 +66,8 @@ if 1:
 
     import string
     STRINGPRINTABLE = string.printable[:]
-    STRINGPRINTABLE = dict(zip(map(ord, STRINGPRINTABLE), len(STRINGPRINTABLE)*[None]))
-    ST = str(long(time.perf_counter()*100))
+    STRINGPRINTABLE = dict(list(zip(list(map(ord, STRINGPRINTABLE)), len(STRINGPRINTABLE)*[None])))
+    ST = str(int(time.perf_counter()*100))
     OUTF = "%s/.%s.tmp"%(homedir, ST)
     INF = OUTF+".out"
 
@@ -151,7 +151,7 @@ if 1:
                     return a
             return ''
         else:
-            for i in xrange(menu.GetMenuCount()):
+            for i in range(menu.GetMenuCount()):
                 r = menu.GetMenu(i)
                 if r.FindItemById(id):
                     return "%s->%s"%(menu.GetLabelTop(i), recmenu(r, id))
@@ -197,14 +197,14 @@ if 1:
 
     def getIcon():
         data = getData()
-        stream = cStringIO.StringIO(data)
+        stream = io.StringIO(data)
         image = wxImageFromStream(stream)
         bitmap = wxBitmapFromImage(image)
         icon = wxEmptyIcon()
         icon.CopyFromBitmap(bitmap)
         return icon
 
-    NEWDOCUMENT = 0L
+    NEWDOCUMENT = 0
     
     #required ids
     if 1:
@@ -214,16 +214,16 @@ if 1:
         CC_S = wxNewId()
         XM_S = wxNewId()
         TX_S = wxNewId()
-        lexers = dict(zip([PY_S, HT_S, CC_S, XM_S, TX_S], ['python', 'html', 'cpp', 'xml', 'text']))
-        lexers2 = dict(zip([wxSTC_LEX_PYTHON, wxSTC_LEX_HTML, wxSTC_LEX_CPP, wxSTC_LEX_XML, wxSTC_LEX_NULL], [PY_S, HT_S, CC_S, XM_S, TX_S]))
+        lexers = dict(list(zip([PY_S, HT_S, CC_S, XM_S, TX_S], ['python', 'html', 'cpp', 'xml', 'text'])))
+        lexers2 = dict(list(zip([wxSTC_LEX_PYTHON, wxSTC_LEX_HTML, wxSTC_LEX_CPP, wxSTC_LEX_XML, wxSTC_LEX_NULL], [PY_S, HT_S, CC_S, XM_S, TX_S])))
 
         PY_DS = wxNewId()
         HT_DS = wxNewId()
         CC_DS = wxNewId()
         XM_DS = wxNewId()
         TX_DS = wxNewId()
-        lexers.update(dict(zip([PY_DS, HT_DS, CC_DS, XM_DS, TX_DS], ['python', 'html', 'cpp', 'xml', 'text'])))
-        lexers3 = dict(zip(['python', 'html', 'cpp', 'xml', 'text'], [PY_DS, HT_DS, CC_DS, XM_DS, TX_DS]))
+        lexers.update(dict(list(zip([PY_DS, HT_DS, CC_DS, XM_DS, TX_DS], ['python', 'html', 'cpp', 'xml', 'text']))))
+        lexers3 = dict(list(zip(['python', 'html', 'cpp', 'xml', 'text'], [PY_DS, HT_DS, CC_DS, XM_DS, TX_DS])))
     
         #checkbox ids
         SNIPT = wxNewId()
@@ -247,7 +247,7 @@ if 1:
                       LL_LINE:wxSTC_EDGE_LINE,
                       LL_NONE:wxSTC_EDGE_NONE}
         LL_RMAPPING = {}
-        for i,j in LL_MAPPING.iteritems():
+        for i,j in LL_MAPPING.items():
             LL_RMAPPING[j] = i
 
         #line ending ids
@@ -258,7 +258,7 @@ if 1:
                         LE_LF:wxSTC_EOL_LF,
                         LE_CR:wxSTC_EOL_CR}
         LE_RMAPPING = {}
-        for i,j in LE_MAPPING.iteritems():
+        for i,j in LE_MAPPING.items():
             LE_RMAPPING[j] = i
 
 
@@ -275,12 +275,12 @@ if 1:
         BM9 = wxNewId()
     
         pm = [BM1,BM2,BM3,BM4,BM5,BM6,BM7,BM8,BM9]
-        kp = range(49,58)
+        kp = list(range(49,58))
         #The range(49,58) represents the key codes for numbers 1...9 inclusve.
         #                                key codes            49...57
-        pathmarks = dict(zip(kp, 9*[0]))
-        bmId2Keypress = dict(zip(pm, kp))
-        bmPm2Id = dict(zip(kp, pm))
+        pathmarks = dict(list(zip(kp, 9*[0])))
+        bmId2Keypress = dict(list(zip(pm, kp)))
+        bmPm2Id = dict(list(zip(kp, pm)))
         del pm;del kp
 
     #bookmark support
@@ -566,7 +566,7 @@ class MainWindow(wxFrame):
         pathmarkmenu.AppendSeparator()
 
         pmk = [BM1,BM2,BM3,BM4,BM5,BM6,BM7,BM8,BM9]
-        for i in xrange(49, 58):
+        for i in range(49, 58):
             if pathmarks.get(i, 0) != 0:
                 menuAdd(self, pathmarkmenu,
                         "Ctrl+%i\t%s"%(i-48, pathmarks[i]),
@@ -621,7 +621,7 @@ class MainWindow(wxFrame):
         return retr
 
     def exceptDialog(self, title="Error"):
-        k = cStringIO.StringIO()
+        k = io.StringIO()
         traceback.print_exc(file=k)
         k.seek(0)
         dlg = wxScrolledMessageDialog(self, k.read(), title)
@@ -793,7 +793,7 @@ class MainWindow(wxFrame):
     def selectAbsolute(self, path):
         if self.isAbsOpen(path):
             dn, fn = self.splitAbsolute(path)
-            for i in xrange(self.control.GetPageCount()):
+            for i in range(self.control.GetPageCount()):
                 win = self.control.GetPage(i).GetWindow1()
                 if (win.filename == fn) and (win.dirname == dn):
                     self.control.SetSelection(i)
@@ -880,7 +880,7 @@ class MainWindow(wxFrame):
     def OnSaveAll(self, e):
         sel = self.control.GetSelection()
         cnt = self.control.GetPageCount()
-        for i in xrange(cnt):
+        for i in range(cnt):
             self.control.SetSelection(i)
             try:
                 self.OnSave(e)
@@ -1065,7 +1065,7 @@ class MainWindow(wxFrame):
         sel = self.control.GetSelection()
         cnt = self.control.GetPageCount()
         try:
-            for i in xrange(cnt):
+            for i in range(cnt):
                 win = self.control.GetPage(i).GetWindow1()
                 if win.dirty:
                     self.control.SetSelection(i)
@@ -1087,7 +1087,7 @@ class MainWindow(wxFrame):
             del self.config['LASTOPEN']
         #saving document state
         self.config["lastopen"] = sav
-        self.config["LASTUSED"] = self.lastused.items() + LASTOPEN
+        self.config["LASTUSED"] = list(self.lastused.items()) + LASTOPEN
 
         self.saveHistory()
         if sel > -1:
@@ -1143,7 +1143,7 @@ class MainWindow(wxFrame):
         lnstart = win.LineFromPosition(x)
         lnend = win.LineFromPosition(y-1)
         lines = []
-        for ln in xrange(lnstart, lnend+1):
+        for ln in range(lnstart, lnend+1):
             lines.append(win.GetLine(ln))
         x = win.GetLineEndPosition(lnstart)-len(lines[0])
         y = win.GetLineEndPosition(lnend)
@@ -1167,7 +1167,7 @@ class MainWindow(wxFrame):
             lnstart = win.LineFromPosition(x)
             lnend = win.LineFromPosition(y-1)
         win.BeginUndoAction()
-        for ln in xrange(lnstart, lnend+1):
+        for ln in range(lnstart, lnend+1):
             count = win.GetLineIndentation(ln)
             m = (count+incr)
             m += cmp(0, incr)*(m%incr)
@@ -1277,7 +1277,7 @@ class MainWindow(wxFrame):
         wcount = self.control.GetPageCount()
         if not wcount:
             return evt.Skip()
-        for wnum in xrange(wcount):
+        for wnum in range(wcount):
             win = self.control.GetPage(wnum).GetWindow1()
             win.gcp = win.GetCurrentPos()
             #print win.gcp, "found gcp"
@@ -1293,7 +1293,7 @@ class MainWindow(wxFrame):
         wcount = self.control.GetPageCount()
         if not wcount:
             return evt.Skip()
-        for wnum in xrange(wcount):
+        for wnum in range(wcount):
             win = self.control.GetPage(wnum).GetWindow1()
             win.gcp = win.GetCurrentPos()
             win.last = 0
@@ -1653,7 +1653,7 @@ class MainWindow(wxFrame):
         n, win = self.getNumWin(e)
         lc = win.GetLineCount()
         win.ShowLines(0, lc-1)
-        for line in xrange(lc):
+        for line in range(lc):
             if win.GetFoldLevel(line) & wxSTC_FOLDLEVELHEADERFLAG:
                 win.SetFoldExpanded(line, 1)
 
@@ -1670,7 +1670,7 @@ class MainWindow(wxFrame):
         
         lc = win.GetLineCount()
         lines = []
-        for line in xrange(lc):
+        for line in range(lc):
             if win.GetFoldLevel(line) & wxSTC_FOLDLEVELHEADERFLAG:
                 lines.append(line)
         lines.reverse()
@@ -1835,7 +1835,7 @@ class MainWindow(wxFrame):
             self.SetStatusText("Changed path to %s"%pth)
 
     def ViewPathmarks(self, e, titl="Pathmarks", styl=wxOK, sel=0, st=type('')):
-        kys = pathmarks.keys()
+        kys = list(pathmarks.keys())
         kys.sort()
         out = []
         for i in kys:
@@ -1873,7 +1873,7 @@ class MainWindow(wxFrame):
 
     def itemPos(self, pmn):
         cnt = 0
-        for i in xrange(49, pmn):
+        for i in range(49, pmn):
             if pathmarks[i] != 0:
                 cnt += 1
         return cnt
@@ -1934,7 +1934,7 @@ class MainWindow(wxFrame):
         
         keypressed = GetKeyPress(event)
         
-        if showpress: print "keypressed", keypressed
+        if showpress: print("keypressed", keypressed)
         key = event.KeyCode()
         wnum = self.control.GetSelection()
         pagecount = self.control.GetPageCount()
@@ -1976,7 +1976,7 @@ class MainWindow(wxFrame):
                     elif pos:
                         xtra = 0
                         if (line.find(':')>-1):
-                            for i in xrange(linestart, min(pos, win.GetTextLength())):
+                            for i in range(linestart, min(pos, win.GetTextLength())):
                                 styl = win.GetStyleAt(i)
                                 #print styl, win.GetCharAt(i)
                                 if not xtra:
@@ -2117,7 +2117,7 @@ class MainWindow(wxFrame):
 
     def getLeftFunct(self, win):
         t = ' .,;:([)]}\'"\\<>%^&+-=*/|`'
-        bad = dict(zip(t, [0]*len(t)))
+        bad = dict(list(zip(t, [0]*len(t))))
         line = win.GetLine(win.GetCurrentLine())
         colpos = win.GetColumn(win.GetCurrentPos())
         cur = colpos-1
@@ -2308,7 +2308,7 @@ class PythonSTC(wxStyledTextCtrl):
                 'save_cursor':self.save_cursor,
                 'cursor_posn':self.GetCurrentPos()
                }
-        for line in xrange(self.GetLineCount()):
+        for line in range(self.GetLineCount()):
             if self.MarkerGet(line) & BOOKMARKMASK:
                 BM.append(line)
             
@@ -3051,7 +3051,7 @@ class hierCodeTreePanel(wxPanel):
             if numchildren>0:
                 ch, cookie = self.GetFirstChild(parent, wxNewId())
                 lst[self.GetItemText(ch)] = [ch]
-                for i in xrange(numchildren-1):
+                for i in range(numchildren-1):
                     ch, cookie = self.GetNextChild(parent, cookie)
                     txt = self.GetItemText(ch)
                     if txt in lst:
@@ -3108,7 +3108,7 @@ class hierCodeTreePanel(wxPanel):
                 elif icons:
                     self.tree.SetItemImage(item_no, 2, wxTreeItemIcon_Normal)
                     self.tree.SetItemImage(item_no, 2, wxTreeItemIcon_Selected)
-            for j in chlist.itervalues():
+            for j in chlist.values():
                 for i in j:
                     self.tree.DeleteChildren(i)
                     self.tree.Delete(i)
@@ -3475,17 +3475,17 @@ class lastused:
                 return
             a = self.first
             a.next.prev = None
-            self.first = a.next
+            self.first = a.__next__
             a.next = None
             del self.d[a.me[0]]
             del a
     def __delitem__(self, obj):
         nobj = self.d[obj]
         if nobj.prev:
-            nobj.prev.next = nobj.next
+            nobj.prev.next = nobj.__next__
         else:
-            self.first = nobj.next
-        if nobj.next:
+            self.first = nobj.__next__
+        if nobj.__next__:
             nobj.next.prev = nobj.prev
         else:
             self.last = nobj.prev
@@ -3493,28 +3493,28 @@ class lastused:
     def __iter__(self):
         cur = self.first
         while cur != None:
-            cur2 = cur.next
+            cur2 = cur.__next__
             yield cur.me[1]
             cur = cur2
         raise StopIteration
     def iteritems(self):
         cur = self.first
         while cur != None:
-            cur2 = cur.next
+            cur2 = cur.__next__
             yield cur.me
             cur = cur2
         raise StopIteration
     def iterkeys(self):
         return iter(self.d)
     def itervalues(self):
-        for i,j in self.iteritems():
+        for i,j in self.items():
             yield j
     def keys(self):
-        return [i for i,j in self.iteritems()]
+        return [i for i,j in self.items()]
     def values(self):
-        return [j for i,j in self.iteritems()]
+        return [j for i,j in self.items()]
     def items(self):
-        return [i for i in self.iteritems()]
+        return [i for i in self.items()]
         
 class findinfiles(wxDialog):
     def __init__(self, parent, choices):
@@ -3676,7 +3676,7 @@ class findinfiles(wxDialog):
 
         def getlist(c):
             cc = c.GetCount()
-            e = [c.GetString(i) for i in xrange(cc)]
+            e = [c.GetString(i) for i in range(cc)]
             a = c.GetValue()
             if a in e:
                 e.remove(a)
@@ -3684,7 +3684,7 @@ class findinfiles(wxDialog):
             e = e[:10]
             if len(e) > cc:
                 c.Append(e[-1])
-            for i in xrange(len(e)):
+            for i in range(len(e)):
                 c.SetString(i, e[i])
             c.SetSelection(0)
             return e
@@ -3790,7 +3790,7 @@ class findinfiles(wxDialog):
                 if line.find(pattern) > -1:
                     if not found:
                         found.append(filename)
-                    found.append('  '+`i+1` + ': '+lines[i].rstrip().replace('\t', spt))
+                    found.append('  '+repr(i+1) + ': '+lines[i].rstrip().replace('\t', spt))
             except: pass
             wxYield()
         return found
@@ -3808,7 +3808,7 @@ class findinfiles(wxDialog):
                 if pattern.search(line) is not None:
                     if not found:
                         found.append(filename)
-                    found.append('  '+`i+1` + ': '+line.rstrip().replace('\t', spt))
+                    found.append('  '+repr(i+1) + ': '+line.rstrip().replace('\t', spt))
             except: pass
             wxYield()
         return found

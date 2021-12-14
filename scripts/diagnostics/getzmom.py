@@ -2,10 +2,10 @@ from ..warp import *
 
 
 def getzmomdoc():
-    print """
+    print("""
 zmmnt  makes appropriate calls to compiled code to calculate the
        particle moments
-    """
+    """)
 
 
 def zmmnt(itask=0, js=None, jslist=None, groupsize=256):
@@ -50,7 +50,7 @@ zmmnt(itask=0,js=None, jslist=range(0,top.ns))
     # Calculate the moments
     if jslist is None:
         if js is None:
-            jslist = range(top.pgroup.ns)
+            jslist = list(range(top.pgroup.ns))
         else:
             jslist = [js]
     if (itask == 0 or itask == 2):

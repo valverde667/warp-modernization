@@ -1,26 +1,26 @@
 from ..warp import *
 import numpy.linalg as linalg
 
-print " "
-print "This scripts finds matched beam parameters for a periodic lattice."
-print "To use, first set the desired value of sigma."
-print "  sig_desr = ???"
-print "Then type the command ""match(n)"" where n is the number of iterations"
-print "which should be of the order 10 to 20."
-print "Check to make sure the numbers printed out are what you want."
-print "If not, then run more iterations.  If that doesn't work, the more"
-print "sophisticated matching algorithm built into the code should be used."
-print "Good luck."
-print " "
+print(" ")
+print("This scripts finds matched beam parameters for a periodic lattice.")
+print("To use, first set the desired value of sigma.")
+print("  sig_desr = ???")
+print("Then type the command ""match(n)"" where n is the number of iterations")
+print("which should be of the order 10 to 20.")
+print("Check to make sure the numbers printed out are what you want.")
+print("If not, then run more iterations.  If that doesn't work, the more")
+print("sophisticated matching algorithm built into the code should be used.")
+print("Good luck.")
+print(" ")
 
-print 'Envelope matching routines'
-print 'match(n) matches the beam giving the desired value of sigma'
-print 'sig_desr by varying the emittance.'
-print 'matchn(n) matches the beam giving the desired value of sigma'
-print 'sig_desr by varying the normalized emittance.'
-print 'match1(n) matches the beam by varying a0, b0, ap0, and bp0'
-print 'matchenv(quads,af,bf,apf,bpf) modifies the four quads specified'
-print 'by quads so that the envelope ends with the specified values'
+print('Envelope matching routines')
+print('match(n) matches the beam giving the desired value of sigma')
+print('sig_desr by varying the emittance.')
+print('matchn(n) matches the beam giving the desired value of sigma')
+print('sig_desr by varying the normalized emittance.')
+print('match1(n) matches the beam by varying a0, b0, ap0, and bp0')
+print('matchenv(quads,af,bf,apf,bpf) modifies the four quads specified')
+print('by quads so that the envelope ends with the specified values')
 
 # This is a very simple algorithm to match a beam over a lattice period.
 # The function sets a0 equal to average of 'a' at the beginning and end of
@@ -66,7 +66,7 @@ def match(n=1,sig_desr=20.):
         if fff[1] > fff[0]: ixxx = 1
         xxx[ixxx] = nxxx
         top.emit=xxx[ixxx];derivqty();match1(20);fff[ixxx]=top.sigmax - sig_desr
-        print "Error = %f" % fff[ixxx]
+        print("Error = %f" % fff[ixxx])
         env.lenvout = true
         step(1)
 
@@ -88,7 +88,7 @@ def matchn(n=1,sig_desr=20.):
         if fff[1] > fff[0]: ixxx = 1
         xxx[ixxx] = nxxx
         top.emitn=xxx[ixxx];derivqty();match1(20);fff[ixxx]=top.sigmax - sig_desr
-        print "Error = %f" % fff[ixxx]
+        print("Error = %f" % fff[ixxx])
         env.lenvout = true
         step(1)
 
@@ -121,11 +121,11 @@ def matchenv(quads,af,bf,apf,bpf,zz=None,maxiter=100,tol=1.e-10):
        - maxiter=100 maximum number of iterations to perform
        - tol=1.e-10 tolerance to match final values to"""
     if len(quads) != 4:
-        print 'Error: exactly four quads for varying must be specified'
+        print('Error: exactly four quads for varying must be specified')
         return
     if zz:
         if zz < env.zl or env.zu < zz:
-            print 'Error: the z location speficied must be within zl and zu'
+            print('Error: the z location speficied must be within zl and zu')
             return
     mat = zeros((4,4),'d')
     denv = zeros(4,'d')
@@ -213,11 +213,11 @@ def matchenv(quads,af,bf,apf,bpf,zz=None,maxiter=100,tol=1.e-10):
 
         # --- Check for convergence
         denv[:] = [af - asave,bf - bsave,apf - apsave, bpf - bpsave]
-        print "error => a = %10.3e b = %10.3e a' = %10.3e b' = %10.3e "%tuple(denv)
+        print("error => a = %10.3e b = %10.3e a' = %10.3e b' = %10.3e "%tuple(denv))
         if max(abs(denv)) < tol: notdone = 0
 
     if iter == maxiter:
-        print 'Warning: Maximum number of iterations reached'
+        print('Warning: Maximum number of iterations reached')
 
 ########################################################################
 def matchxenv(xf=0.,xpf=0.,yf=0.,ypf=0.,zz=None,maxiter=100,tol=1.e-10):
@@ -231,7 +231,7 @@ def matchxenv(xf=0.,xpf=0.,yf=0.,ypf=0.,zz=None,maxiter=100,tol=1.e-10):
        - tol=1.e-10 tolerance to match final values to"""
     if zz:
         if zz < env.zl or env.zu < zz:
-            print 'Error: the z location speficied must be within zl and zu'
+            print('Error: the z location speficied must be within zl and zu')
             return
     matx = zeros((2,2),'d')
     denvx = zeros(2,'d')
@@ -328,15 +328,15 @@ def matchxenv(xf=0.,xpf=0.,yf=0.,ypf=0.,zz=None,maxiter=100,tol=1.e-10):
         # --- Check for convergence
         denvx[:] = [xf - xsave,xpf - xpsave]
         denvy[:] = [yf - ysave,ypf - ypsave]
-        print "error => x = %10.3e x' = %10.3e"%tuple(denvx)
-        print "error => y = %10.3e y' = %10.3e"%tuple(denvy)
+        print("error => x = %10.3e x' = %10.3e"%tuple(denvx))
+        print("error => y = %10.3e y' = %10.3e"%tuple(denvy))
         if max(abs(denvx)) < tol and max(abs(denvy)) < tol: notdone = 0
 
     if iter == maxiter:
-        print 'Warning: Maximum number of iterations reached'
+        print('Warning: Maximum number of iterations reached')
     else:
-        print "top.x0 = %20.15e;top.xp0 = %20.15e"%(top.x0,top.xp0)
-        print "top.y0 = %20.15e;top.yp0 = %20.15e"%(top.y0,top.yp0)
+        print("top.x0 = %20.15e;top.xp0 = %20.15e"%(top.x0,top.xp0))
+        print("top.y0 = %20.15e;top.yp0 = %20.15e"%(top.y0,top.yp0))
 
 
 ######################################################################
@@ -431,27 +431,27 @@ class Match3:
         return delta**2 + deltb**2 + deltap**2 + deltbp**2 + \
                deltasig0x**2 + deltasigx**2 + deltasig0y**2 + deltasigy**2
     def printparam(self,p):
-        print p+' = ',
-        if p == 'a0': print top.a0
-        elif p == 'b0': print top.b0
-        elif p == 'ap0': print top.ap0
-        elif p == 'bp0': print top.bp0
-        elif p == 'ibeam': print top.ibeam
-        elif p == 'emit': print top.emit
-        elif p == 'emitn': print top.emitn
-        elif p == 'ekin': print top.ekin
-        elif p == 'vbeam': print top.vbeam
-        elif p == 'sigma0': print env.sig0x
-        elif p == 'sigma0x': print env.sig0x
-        elif p == 'sigma0y': print env.sig0y
-        elif p == 'sigma': print env.sigx
-        elif p == 'sigmax': print env.sigx
-        elif p == 'sigmay': print env.sigy
-        elif p == 'dedx': print abs(top.quadde[0])
-        elif p == 'dbdx': print abs(top.quaddb[0])
-        elif p == 'hlp': print (top.quadze[1] - top.quadze[0])
+        print(p+' = ', end=' ')
+        if p == 'a0': print(top.a0)
+        elif p == 'b0': print(top.b0)
+        elif p == 'ap0': print(top.ap0)
+        elif p == 'bp0': print(top.bp0)
+        elif p == 'ibeam': print(top.ibeam)
+        elif p == 'emit': print(top.emit)
+        elif p == 'emitn': print(top.emitn)
+        elif p == 'ekin': print(top.ekin)
+        elif p == 'vbeam': print(top.vbeam)
+        elif p == 'sigma0': print(env.sig0x)
+        elif p == 'sigma0x': print(env.sig0x)
+        elif p == 'sigma0y': print(env.sig0y)
+        elif p == 'sigma': print(env.sigx)
+        elif p == 'sigmax': print(env.sigx)
+        elif p == 'sigmay': print(env.sigy)
+        elif p == 'dedx': print(abs(top.quadde[0]))
+        elif p == 'dbdx': print(abs(top.quaddb[0]))
+        elif p == 'hlp': print((top.quadze[1] - top.quadze[0]))
         elif p == 'occupancy':
-            print (top.quadze[0]-top.quadzs[0])/(top.quadze[1] - top.quadze[0])
+            print((top.quadze[0]-top.quadzs[0])/(top.quadze[1] - top.quadze[0]))
     def getparam(self,p):
         if p == 'a0': return top.a0/self.a0scale
         elif p == 'b0': return top.b0/self.b0scale

@@ -144,7 +144,7 @@ class Maps_simple:
       il = pg.ins[js]-1+self.nparpgrp*ig
       iu = min(il+self.nparpgrp,pg.ins[js]-1+pg.nps[js])
       np = iu-il
-      if self.l_verbose:print 'fetche3d'
+      if self.l_verbose:print('fetche3d')
       fselfb=top.fselfb.copy()
       top.fselfb[...]=0.
       top.pgroup.fselfb[...]=0.
@@ -162,7 +162,7 @@ class Maps_simple:
         pg.ex[il:iu] = where(lzeros,0.,pg.ex[il:iu])
         pg.ey[il:iu] = where(lzeros,0.,pg.ey[il:iu])
         pg.ez[il:iu] = where(lzeros,0.,pg.ez[il:iu])
-      if self.l_verbose:print 'epush beam'
+      if self.l_verbose:print('epush beam')
       epush3d(np,pg.uxp[il:iu],pg.uyp[il:iu],pg.uzp[il:iu],
               pg.ex[il:iu],pg.ey[il:iu],pg.ez[il:iu],pg.sq[js],pg.sm[js],top.dt)
       gammaadv(np,pg.gaminv[il:iu],pg.uxp[il:iu],pg.uyp[il:iu],pg.uzp[il:iu],
@@ -171,7 +171,7 @@ class Maps_simple:
   def apply_bnd_conditions(self,sp):
     js=sp.jslist[0]
     if pg.nps[js]==0:return
-    if self.l_verbose:print 'stckxy3d beam'
+    if self.l_verbose:print('stckxy3d beam')
     xparticleboundaries(top.pgroup,js,js,w3d.xmmax,w3d.xmmin,true,false,false)
     yparticleboundaries(top.pgroup,js,js,w3d.ymmax,w3d.ymmin,true,false,false)
     zparticleboundaries(top.pgroup,js,js,w3d.zmmaxlocal,w3d.zmminlocal,true)
@@ -214,7 +214,7 @@ class Maps_simple:
     pg.uzp[il:iu] = -Sn*zp/Beta_z + Cn*uzp + uzb
     zp2=pg.zp[il:iu].copy()
     if(max(abs(zp2-zp1))>w3d.dz):
-      print 'error',max(abs(zp2-zp1)),w3d.dz
+      print('error',max(abs(zp2-zp1)),w3d.dz)
     gammaadv(np,pg.gaminv[il:iu],pg.uxp[il:iu],pg.uyp[il:iu],pg.uzp[il:iu],
              top.gamadv,top.lrelativ)
  
@@ -712,7 +712,7 @@ class Maps_twiss:
        il = pg.ins[js]-1+self.nparpgrp*ig
        iu = min(il+self.nparpgrp,pg.ins[js]-1+pg.nps[js])
        np = iu-il
-       if self.l_verbose:print 'fetche3d'
+       if self.l_verbose:print('fetche3d')
        fetche3dfrompositions(js+1,pg.ndts,np,
                             pg.xp[il:iu],pg.yp[il:iu],pg.zp[il:iu],
                             self.ex[:np],self.ey[:np],self.ez[:np],
@@ -722,19 +722,19 @@ class Maps_twiss:
          self.ex[:np] = where(lzeros,0.,self.ex[:np])
          self.ey[:np] = where(lzeros,0.,self.ey[:np])
          self.ez[:np] = where(lzeros,0.,self.ez[:np])
-       if self.l_verbose:print 'epush beam'
+       if self.l_verbose:print('epush beam')
        epush3d(np,pg.uxp[il:iu],pg.uyp[il:iu],pg.uzp[il:iu],
               self.ex[:np],self.ey[:np],self.ez[:np],pg.sq[js],pg.sm[js],top.dt)
        gammaadv(np,pg.gaminv[il:iu],pg.uxp[il:iu],pg.uyp[il:iu],pg.uzp[il:iu],
                top.gamadv,top.lrelativ)
-     print 'no RF, so epush'  
+     print('no RF, so epush')  
     else:
-      print 'RF, so no epush' 
+      print('RF, so no epush') 
   
   def apply_bnd_conditions(self,sp):
     js=sp.jslist[0]
     if pg.nps[js]==0:return
-    if self.l_verbose:print 'stckxy3d beam'
+    if self.l_verbose:print('stckxy3d beam')
     xparticleboundaries(top.pgroup,js,js,w3d.xmmax,w3d.xmmin,true,false,false)
     yparticleboundaries(top.pgroup,js,js,w3d.ymmax,w3d.ymmin,true,false,false)
     zparticleboundaries(top.pgroup,js,js,w3d.zmmaxlocal,w3d.zmminlocal,true)

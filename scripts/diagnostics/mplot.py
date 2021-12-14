@@ -58,7 +58,7 @@ def mountainplot1(qtyname,qty,kwdict={},**kw):
     kwvalues.update(kwdict)
     for arg in kwdefaults: exec(arg+" = kwvalues['"+arg+"']")
     badargs = checkarguments(kwvalues,kwdefaults)
-    if badargs: raise Exception("bad argument ",' '.join(badargs.keys()))
+    if badargs: raise Exception("bad argument ",' '.join(list(badargs.keys())))
 
     # --- Special arguments
     if iend is None: iend = shape(qty)[1] - 1

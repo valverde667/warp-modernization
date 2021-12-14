@@ -7,7 +7,7 @@ from ..warp import *
 
 def particlescraperdoc():
     from ..particles import particlescraper
-    print particlescraper.__doc__
+    print(particlescraper.__doc__)
 
 
 class ParticleScraper(object):
@@ -164,7 +164,7 @@ class ParticleScraper(object):
             if ((grid.nxlocal == 0 and grid.nylocal == 0 and grid.nzlocal == 0) or
                 (grid.nxlocal < 0 or grid.nylocal < 0 or grid.nzlocal < 0)):
                 if not lparallel:
-                    print "Grid: warning: the user supplied grid has zero extent."
+                    print("Grid: warning: the user supplied grid has zero extent.")
                 return
             self.updateconductors()
         # --- Install the call to scrape particles if requested
@@ -338,7 +338,7 @@ class ParticleScraper(object):
 
         if self.l_print_timing:
             tend=wtime()
-            print 'updategrid',tend-tstart
+            print('updategrid',tend-tstart)
 
     def updateconductors(self):
         """Generate the data on the grid from the scraping conductors. This will normally be called automatically."""
@@ -377,7 +377,7 @@ class ParticleScraper(object):
             result = jslist
         elif self.species is None:
             # --- The default is all species
-            result = range(top.pgroup.ns)
+            result = list(range(top.pgroup.ns))
         else:
             # --- Gather the jslists from each specified species
             result = []
@@ -467,17 +467,17 @@ class ParticleScraper(object):
                 else:
                     self.scrape(js);
                 if self.l_print_timing:tend=wtime()
-                if self.l_print_timing:print js,'scrape',tend-tstart
+                if self.l_print_timing:print(js,'scrape',tend-tstart)
                 if self.l_print_timing:tstart=wtime()
                 if clear or self.lsavecondid:
                     processlostpart(top.pgroup,js+1,top.clearlostpart,top.time,top.zbeam)
                 if self.l_print_timing:tend=wtime()
-                if self.l_print_timing:print js,'processlosspart',tend-tstart
+                if self.l_print_timing:print(js,'processlosspart',tend-tstart)
                 if self.l_print_timing:tstart=wtime()
                 if self.lsavecondid:
                     self.savecondid(js,local=local)
                 if self.l_print_timing:tend=wtime()
-                if self.l_print_timing:print js,'savecondid',tend-tstart
+                if self.l_print_timing:print(js,'savecondid',tend-tstart)
         if self.reflectiveconductors:
             # --- If there are any reflecting conductors, then redo the parallel
             # --- boundary conditions, since any reflected particles will have
@@ -1565,10 +1565,10 @@ class Dielectric_Particles(object):
         """
         # --- if needed, update list of dielectrics_id (is true if cond is a dielectric,
         # --- false otherwise).
-        if self.nconds<>len(listofallconductors):
+        if self.nconds!=len(listofallconductors):
             self.dielectrics_id = []
             for ic in arange(len(listofallconductors)):
-                self.dielectrics_id.append(listofallconductors[ic].permittivity<>None)
+                self.dielectrics_id.append(listofallconductors[ic].permittivity!=None)
                 
             self.nconds=len(listofallconductors)
             

@@ -21,8 +21,8 @@ from ..particles import singleparticle
 
 
 def rami_matchdoc():
-    import rami_match
-    print rami_match.__doc__
+    from . import rami_match
+    print(rami_match.__doc__)
 
 # --- Set diagnostic parameters to minimize output
 
@@ -58,23 +58,23 @@ def match(imtch=1,s=None):
     top.b0=0.5*(top.b0+2.*top.yrms[0])
     top.ap0=sign(0.5*(abs(top.ap0)+2.*top.vxrms[0]/top.vbeam),top.ap0)
     top.bp0=sign(0.5*(abs(top.bp0)+2.*top.vyrms[0]/top.vbeam),top.bp0)
-    print ("a0 = %9.6f b0 = %9.6f ap0 = %9.6f bp0 = %9.6f" %
-           (top.a0, top.b0, top.ap0, top.bp0))
+    print(("a0 = %9.6f b0 = %9.6f ap0 = %9.6f bp0 = %9.6f" %
+           (top.a0, top.b0, top.ap0, top.bp0)))
     for i in range(imtch):
         minit()
         step(s)
-        print "-"*70
-        print ("a error = %18.13e a' error = %18.13e"%
-               (2.*top.xrms[0]-top.a0,2.*top.vxrms[0]/top.vzbar[0]-abs(top.ap0)))
-        print ("b error = %18.13e b' error = %18.13e"%
-               (2.*top.yrms[0]-top.b0,2.*top.vyrms[0]/top.vzbar[0]-abs(top.bp0)))
-        print "-"*70
+        print("-"*70)
+        print(("a error = %18.13e a' error = %18.13e"%
+               (2.*top.xrms[0]-top.a0,2.*top.vxrms[0]/top.vzbar[0]-abs(top.ap0))))
+        print(("b error = %18.13e b' error = %18.13e"%
+               (2.*top.yrms[0]-top.b0,2.*top.vyrms[0]/top.vzbar[0]-abs(top.bp0))))
+        print("-"*70)
         top.a0=0.5*(top.a0+2.*top.xrms[0])
         top.b0=0.5*(top.b0+2.*top.yrms[0])
         top.ap0=sign(0.5*(abs(top.ap0)+2.*top.vxrms[0]/top.vbeam),top.ap0)
         top.bp0=sign(0.5*(abs(top.bp0)+2.*top.vyrms[0]/top.vbeam),top.bp0)
-        print ("a0 = %9.6f b0 = %9.6f ap0 = %9.6f bp0 = %9.6f" %
-               (top.a0, top.b0, top.ap0, top.bp0))
+        print(("a0 = %9.6f b0 = %9.6f ap0 = %9.6f bp0 = %9.6f" %
+               (top.a0, top.b0, top.ap0, top.bp0)))
 
 
 def match1(imtch=1,s=128):
@@ -91,10 +91,10 @@ def match1(imtch=1,s=128):
         top.bp0=sign(0.5*(abs(top.bp0)+2.*top.vyrms[0]/top.vbeam),top.bp0)
         minit()
         step(s)
-        print ("a error = %18.13e a' error = %18.13e"%
-               (2.*top.xrms[0]-top.a0,2.*top.vxrms[0]/top.vzbar[0]-top.ap0))
-        print ("b error = %18.13e b' error = %18.13e"%
-               (2.*top.yrms[0]-top.b0,2.*top.vyrms[0]/top.vzbar[0]+top.bp0))
+        print(("a error = %18.13e a' error = %18.13e"%
+               (2.*top.xrms[0]-top.a0,2.*top.vxrms[0]/top.vzbar[0]-top.ap0)))
+        print(("b error = %18.13e b' error = %18.13e"%
+               (2.*top.yrms[0]-top.b0,2.*top.vyrms[0]/top.vzbar[0]+top.bp0)))
 
 
 # --- This is an unrelated function which can be used to calculate sigma0
@@ -173,12 +173,12 @@ def matchx(xf=0.,xpf=0.,yf=0.,ypf=0.,zs=None,ze=None,s=None,
         top.yp0 = top.yp0 + sum(mati[3,:]*dsp)*yps
 
         # --- Check for convergence
-        print "error => x = %10.3e x' = %10.3e"%tuple(dsp[:2])
-        print "error => y = %10.3e y' = %10.3e"%tuple(dsp[2:])
+        print("error => x = %10.3e x' = %10.3e"%tuple(dsp[:2]))
+        print("error => y = %10.3e y' = %10.3e"%tuple(dsp[2:]))
         if max(abs(dsp)) < tol : notdone = 0
 
     if iter == maxiter:
-        print 'Warning: Maximum number of iterations reached'
+        print('Warning: Maximum number of iterations reached')
     else:
-        print "top.x0 = %20.15e;top.xp0 = %20.15e"%(top.x0,top.xp0)
-        print "top.y0 = %20.15e;top.yp0 = %20.15e"%(top.y0,top.yp0)
+        print("top.x0 = %20.15e;top.xp0 = %20.15e"%(top.x0,top.xp0))
+        print("top.y0 = %20.15e;top.yp0 = %20.15e"%(top.y0,top.yp0))

@@ -4,7 +4,7 @@ import copy
 
 
 def plot_conductordoc():
-    print """
+    print("""
   The following functions plot contours of the potential in various planes
   along with the conductors in that plane. The first three plot with the axis
   having units of meters. The suffix 'g' means that it plots with the axis
@@ -33,7 +33,7 @@ def plot_conductordoc():
 
   cleanconductors: not a plot routine, buts removes conductor points not
                    within the the range of the field solve
-    """
+    """)
 
 ######################################################################
 # functions to plot the conductor points and subgrid data            #
@@ -199,7 +199,7 @@ def plotsubgrid(iy,ix,iz,pp,izp,numb,ymin,xmin,dy,dx,color,subgridlen,mglevel,
         xx = take(xx,ii)
         yy = take(yy,ii)
         dl = take(dl,ii)
-        pp = pp + map(mapfunc,xx,yy,dl,dd*ones(len(xx)))
+        pp = pp + list(map(mapfunc,xx,yy,dl,dd*ones(len(xx))))
     # --- Convert the list to an array and plot it
     # --- If the length is zero, create an empty array that conforms
     if len(pp) == 0: pp = transpose(array([[],[],[],[]]))
@@ -799,7 +799,7 @@ def plotcondfillnew(yy,xx,zz,iz,ymin,xmin,dy,dx,mglevel,yscale,xscale,
             del z[-1]
 
     # --- Note that this may not work in parallel!!
-    print n
+    print(n)
     # --- Now that the data is gathered, make the plot.
     z = array(z).astype(ubyte)
     n = array(n).astype('l')
@@ -2588,10 +2588,10 @@ def srfrvout(rofzfunc=" ",volt=0.,zmin=None,zmax=None,xcent=0.,ycent=0.,
     condid=0: Id number to identify this conductor
   Output is put directly into the conductor arrays of Conductor3d.
     """
-    print """
+    print("""
   Warning: srfrvout is obsolete and should no longer be used.
   use ZSrfrvOut instead.
-    """
+    """)
     if xmin is None: xmin = w3d.xmminlocal
     if xmax is None: xmax = w3d.xmmaxlocal
     if ymin is None: ymin = w3d.ymminlocal
@@ -2688,10 +2688,10 @@ def srfrvin(rofzfunc=" ",volt=0.,zmin=None,zmax=None,xcent=0.,ycent=0.,
     condid=0: Id number to identify this conductor
   Output is put directly into the conductor arrays of Conductor3d.
     """
-    print """
+    print("""
   Warning: srfrvin is obsolete and should no longer be used.
   use ZSrfrvIn instead.
-    """
+    """)
     if xmin is None: xmin = w3d.xmminlocal
     if xmax is None: xmax = w3d.xmmaxlocal
     if ymin is None: ymin = w3d.ymminlocal
@@ -2786,10 +2786,10 @@ def srfrvinout(rminofz=" ",rmaxofz=" ",volt=0.,zmin=None,zmax=None,
     condid=0: Id number to identify this conductor
   Output is put directly into the conductor arrays of Conductor3d.
     """
-    print """
+    print("""
   Warning: srfrvinout is obsolete and should no longer be used.
   use ZSrfrvInOut instead.
-    """
+    """)
     if xmin is None: xmin = w3d.xmminlocal
     if xmax is None: xmax = w3d.xmmaxlocal
     if ymin is None: ymin = w3d.ymminlocal
@@ -2934,7 +2934,7 @@ def setconductorvoltage(voltage,condid=0,discrete=false,setvinject=false,
             try:
                 solver.setconductorvoltage(voltage,condid,discrete,setvinject)
             except AttributeError:
-                print "Warning: setconductorvoltage not implemented for the resgisterd solver"
+                print("Warning: setconductorvoltage not implemented for the resgisterd solver")
             return
         else:
             conductors = f3d.conductors
@@ -2999,7 +2999,7 @@ def setconductorvoltage(voltage,condid=0,discrete=false,setvinject=false,
             # --- is set, then round down to the nearest grid point.
             ecmz = iecz + where(logical_and(0 < evensubgrid.dels[4,:],evensubgrid.dels[4,:] < 1.),
                                 -evensubgrid.dels[4,:],0)*iecl
-            iecmz = ecmz.astype(long)
+            iecmz = ecmz.astype(int)
             if discrete: wecmz = 0.
             else:        wecmz = ecmz - iecmz
             ecvmz = take(voltage,iecmz)*(1.-wecmz) + take(voltage,iecmz+1)*wecmz
@@ -3007,7 +3007,7 @@ def setconductorvoltage(voltage,condid=0,discrete=false,setvinject=false,
             # --- Same for conductors to the right. If discrete is set, round up.
             ecpz = iecz + where(logical_and(0 < evensubgrid.dels[5,:],evensubgrid.dels[5,:] < 1.),
                                 -evensubgrid.dels[5,:],0)*iecl
-            iecpz = ecpz.astype(long)
+            iecpz = ecpz.astype(int)
             if discrete: wecpz = 1.
             else:        wecpz = ecpz - iecpz
             ecvpz = take(voltage,iecpz)*(1.-wecpz) + take(voltage,iecpz+1)*wecpz
@@ -3026,14 +3026,14 @@ def setconductorvoltage(voltage,condid=0,discrete=false,setvinject=false,
 
             ocmz = iocz + where(logical_and(0 < oddsubgrid.dels[4,:],oddsubgrid.dels[4,:] < 1.),
                                 -oddsubgrid.dels[4,:],0)*iocl
-            iocmz = ocmz.astype(long)
+            iocmz = ocmz.astype(int)
             if discrete: wocmz = 0.
             else:        wocmz = ocmz - iocmz
             ocvmz = take(voltage,iocmz)*(1.-wocmz) + take(voltage,iocmz+1)*wocmz
 
             ocpz = iocz + where(logical_and(0 < oddsubgrid.dels[5,:],oddsubgrid.dels[5,:] < 1.),
                                 -oddsubgrid.dels[5,:],0)*iocl
-            iocpz = ocpz.astype(long)
+            iocpz = ocpz.astype(int)
             if discrete: wocpz = 1.
             else:        wocpz = ocpz - iocpz
             ocvpz = take(voltage,iocpz)*(1.-wocpz) + take(voltage,iocpz+1)*wocpz
@@ -3268,7 +3268,7 @@ def visualizeconductors(condid=None,color=None,mglevel=0,
         gchange("ConductorGeometryVisualization")
         tt = f3d.triangles - gridmin[:,newaxis,newaxis]
         tt = tt[0,:,:]**2 + tt[1,:,:]**2 + tt[2,:,:]**2
-        tt = (tt/max(tt)*100000000).astype(long)
+        tt = (tt/max(tt)*100000000).astype(int)
         tt.shape = (3*f3d.ntriangles,)
         ii = argsort(tt)
         conductorsmoothshading(tt,ii)

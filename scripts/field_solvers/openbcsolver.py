@@ -60,7 +60,7 @@ class OpenBC3D(SubcycledPoissonSolver):
         self.ncomponents = 1
 
         # --- If there are any remaning keyword arguments, raise an error.
-        assert len(kw.keys()) == 0,"Bad keyword arguemnts %s"%kw.keys()
+        assert len(list(kw.keys())) == 0,"Bad keyword arguemnts %s"%list(kw.keys())
 
         # --- By default, the E field is not directly calculated.
         self.lwithselfe = 0

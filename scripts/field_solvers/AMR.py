@@ -1,6 +1,6 @@
-from __future__ import generators
+
 from warp import *
-from MeshRefinement import *
+from .MeshRefinement import *
 try:
     import Opyndx
     VisualizableClass = Opyndx.Visualizable
@@ -170,7 +170,7 @@ class AMRTree(VisualizableClass):
             try:
                 bg=frz.basegrid
                 self.restorefrzgrid()
-                for block in self.blocks.itervalues():
+                for block in self.blocks.values():
                     g = block['grid']
                     if conductor not in block['installed_conductors']:
                         try:
@@ -824,7 +824,7 @@ class AMRTree(VisualizableClass):
                 if self.solvergeom == w3d.XYZgeom:
                     lower = nint(array(patch[:3])*r)
                     upper = lower + nint(array(patch[3:])*r)
-                    print lower,upper,upper-lower
+                    print(lower,upper,upper-lower)
                     mothergrid.addchild(lower,upper,refinement=self.MRfact)
                 else:
                     try:
@@ -856,7 +856,7 @@ class AMRTree(VisualizableClass):
                 g = frz.basegrid
                 for i in range(1,frz.ngrids):
                     try:
-                        g = g.next
+                        g = g.__next__
                     except:
                         g=g.down
                     self.blocks[g.gid[0]] = {'grid':g,'installed_conductors':[]}
@@ -880,7 +880,7 @@ class AMRTree(VisualizableClass):
     def del_blocks2d(self,g=None):
         if g==None: g=frz.basegrid
         try:
-            self.del_blocks2d(g.next)
+            self.del_blocks2d(g.__next__)
         except:
             try:
                 self.del_blocks2d(g.down)
@@ -925,7 +925,7 @@ class AMRTree(VisualizableClass):
         if ifcond:
             self.beforefs()
             return
-        print 'generate grids at it = ',top.it
+        print('generate grids at it = ',top.it)
 
         # check if w3d.AMRlevels set properly and set defaut variables
         if w3d.AMRlevels<=0: raise Exception('Error: AMRTree.generate called with w3d.AMRlevels<=0/')
@@ -974,7 +974,7 @@ class AMRTree(VisualizableClass):
             self.f = None
             if l_timing:
                 endtime = time.perf_counter()
-                print 'created nbcells in ',endtime-starttime,' seconds.'
+                print('created nbcells in ',endtime-starttime,' seconds.')
         else:
             if callable(self.nbcells_user):
                 self.nbcells = self.nbcells_user()
@@ -990,7 +990,7 @@ class AMRTree(VisualizableClass):
                 self.setlist(self.nbcells[:-1,:-1],w3d.AMRcoalescing,self.MRfact,true)
             if l_timing:
                 endtime = time.perf_counter()
-                print 'generated list in ',endtime-starttime,' seconds.'
+                print('generated list in ',endtime-starttime,' seconds.')
 
             if not l_allocate_blocks:return
 
@@ -999,7 +999,7 @@ class AMRTree(VisualizableClass):
             self.setblocks()
             if l_timing:
                 endtime = time.perf_counter()
-                print 'generated blocks in ',endtime-starttime,' seconds.'
+                print('generated blocks in ',endtime-starttime,' seconds.')
 
             # clear inactive regions in each blocks
             if not w3d.AMRuse_inactive_regions:
@@ -1014,7 +1014,7 @@ class AMRTree(VisualizableClass):
                         self.blocks.clearinactiveregions(self.nbcells)
                 if l_timing:
                     endtime = time.perf_counter()
-                    print 'Cleared inactive regions in ',endtime-starttime,' seconds.'
+                    print('Cleared inactive regions in ',endtime-starttime,' seconds.')
 
         # set conductor data
         if l_timing: starttime = time.perf_counter()
@@ -1030,7 +1030,7 @@ class AMRTree(VisualizableClass):
                     for idummy in range(frz.ngrids-1):
                         rdummy=g.nr
                         try:
-                            g=g.next
+                            g=g.__next__
                         except:
                             try:
                                 g=g.down
@@ -1038,7 +1038,7 @@ class AMRTree(VisualizableClass):
                                 pass
                 # install conductors
                 for cond,dfill in zip(self.conductors,self.conductorsdfill):
-                    for block in self.blocks.itervalues():
+                    for block in self.blocks.values():
                         g=block['grid']
                         if g is not frz.basegrid:
                             if cond not in block['installed_conductors']:
@@ -1053,7 +1053,7 @@ class AMRTree(VisualizableClass):
                     self.blocks.installconductor(cond,dfill=dfill)
         if l_timing:
             endtime = time.perf_counter()
-            print 'generated conductors in ',endtime-starttime,' seconds.'
+            print('generated conductors in ',endtime-starttime,' seconds.')
 
         if l_timing: starttime = time.perf_counter()
         # load charge density on new set of blocks
@@ -1069,10 +1069,10 @@ class AMRTree(VisualizableClass):
                 self.blocks.loadrho(lzero=true,lfinalize_rho=true,lrootonly=0)
         if l_timing:
             endtime = time.perf_counter()
-            print 'loaded rho in ',endtime-starttime,' seconds.'
+            print('loaded rho in ',endtime-starttime,' seconds.')
 
         self.beforefs()
-        print 'Generated ',self.nblocks,' blocks.'
+        print('Generated ',self.nblocks,' blocks.')
 
     def draw_blocks2d(self,level=None,color='black',width=1.,allmesh=0,f=1):
         for ii,blocks in enumerate(self.listblocks[1:]):
@@ -1266,7 +1266,7 @@ def plphirz(grid=None,which='phi',cmin=None,cmax=None,
     pyg_idler()
     if(siblings):
         try:
-            plphirz(g.next,which,cmin,cmax,border,bordercolor,borderwidth,mesh,meshcolor,meshwidth,meshr,
+            plphirz(g.__next__,which,cmin,cmax,border,bordercolor,borderwidth,mesh,meshcolor,meshwidth,meshr,
                        siblings,children=0,firstcall=0,level=level,maxlevel=maxlevel,delay=delay,transit=transit,
                        l_transpose=l_transpose)
         except:
@@ -1301,7 +1301,7 @@ def plcondrz(grid=None,border=1,bordercolor='yellow',mesh=0,meshcolor='white',me
         if(i==0):
             c = b.cndfirst
         else:
-            c = c.next
+            c = c.__next__
         color=red
         for ic in range(c.nbbnd):
             if ic>=c.nbbndred:color=green
@@ -1325,7 +1325,7 @@ def plcondrz(grid=None,border=1,bordercolor='yellow',mesh=0,meshcolor='white',me
     pyg_idler()
     if(siblings):
         try:
-            plcondrz(g.next,border,bordercolor,mesh,meshcolor,meshr,
+            plcondrz(g.__next__,border,bordercolor,mesh,meshcolor,meshr,
                        siblings,children=0,firstcall=0,level=level,maxlevel=maxlevel,delay=delay)
         except:
             pass
@@ -1397,7 +1397,7 @@ def walkfrzgrid(bnd=0,cnd=0,base=None):
 
     # --- Check for a next object. This applies to grids, BNDs, and CONDs.
     if base.getpyobject('next') is not None:
-        for g in walkfrzgrid(bnd=bnd,cnd=cnd,base=base.next):
+        for g in walkfrzgrid(bnd=bnd,cnd=cnd,base=base.__next__):
             if g is not None: yield g
             else: break
 

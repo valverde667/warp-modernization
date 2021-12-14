@@ -10,7 +10,7 @@ def create(parent):
  wxID_WXDIALOG1RESTORE, wxID_WXDIALOG1SKIP, wxID_WXDIALOG1STATICTEXT1,
  wxID_WXDIALOG1STATICTEXT2, wxID_WXDIALOG1TEXT3, wxID_WXDIALOG1VARSUFFIX,
  wxID_WXDIALOG1VERBOSE,
-] = map(lambda _init_ctrls: wxNewId(), range(10))
+] = [wxNewId() for _init_ctrls in range(10)]
 
 class wxDialog1(wxDialog):
     def _init_utils(self):

@@ -98,7 +98,7 @@ def matchenv(iquads, af, bf, apf, bpf, zz=None, maxiter=100, tol=1.e-10,
         bpsave = env.bpenv[env.nenv]
     fvec = array([asave-af, apsave-apf, bsave-bf, bpsave-bpf])
     f = 0.5 * sum(fvec*fvec)
-    print('Initial error is ' + str(max(abs(fvec))))
+    print(('Initial error is ' + str(max(abs(fvec)))))
     scaling = array([1.0, 1.0, 1.0, 1.0])
     stpmax = 4.0 * STPMX
 
@@ -234,7 +234,7 @@ def matchenv(iquads, af, bf, apf, bpf, zz=None, maxiter=100, tol=1.e-10,
             alam = max(tmplam, 0.1*alam)  # lambda >= 0.1 lambda1
         # End of linesearch
         test = max(abs(fvec))
-        print('Error is ' + str(test))
+        print(('Error is ' + str(test)))
         if test < tol:
             print('***** Iteration finished *****')
             notdone = 0

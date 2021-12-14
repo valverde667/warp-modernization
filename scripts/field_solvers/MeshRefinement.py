@@ -1,11 +1,11 @@
 """Implements adaptive mesh refinement in 3d
 """
-from __future__ import generators
+
 __all__ = ['MeshRefinement',
            'MRBlock3D','MRBlock','MRBlock2D','MRBlockRZ','MRBlock2DDielectric',
            'MRBlockImplicit2D','EMMRBlock']
 from ..warp import *
-from find_mgparam import find_mgparam
+from .find_mgparam import find_mgparam
 import types
 import collections
 try:
@@ -988,11 +988,11 @@ class MeshRefinement(VisualizableClass):
         for pe in self.neighborpeslist: senddictsleft[pe] = {}
         for pe in self.neighborpeslist: senddictsright[pe] = {}
         for block in self.listofblocks:
-            for (pe,othernumber),data in block.overlapsparallelleft.iteritems():
+            for (pe,othernumber),data in block.overlapsparallelleft.items():
                 l,u = data
                 sourcep = block.getsourcepslice(l,u)
                 senddictsleft[pe].setdefault(othernumber,[]).append((l,u,sourcep))
-            for (pe,othernumber),data in block.overlapsparallelright.iteritems():
+            for (pe,othernumber),data in block.overlapsparallelright.items():
                 l,u = data
                 sourcep = block.getsourcepslice(l,u)
                 senddictsright[pe].setdefault(othernumber,[]).append((l,u,sourcep))
@@ -1020,7 +1020,7 @@ class MeshRefinement(VisualizableClass):
             blocksreceivingdata = []
 
             # --- Add in the data from the right
-            for blocknumber,data in dictfromright.iteritems():
+            for blocknumber,data in dictfromright.items():
                 block = self.getblockfromnumber(blocknumber)
                 for l,u,osourcep in data:
                     ssourcep = block.getsourcepslice(l,u)
@@ -1028,7 +1028,7 @@ class MeshRefinement(VisualizableClass):
                 blocksreceivingdata.append(block)
 
             # --- The from the left
-            for blocknumber,data in dictfromleft.iteritems():
+            for blocknumber,data in dictfromleft.items():
                 block = self.getblockfromnumber(blocknumber)
                 for l,u,osourcep in data:
                     ssourcep = block.getsourcepslice(l,u)
@@ -1064,7 +1064,7 @@ class MeshRefinement(VisualizableClass):
         # --- (unecessary) computational work, since it already will be done
         # --- at the end of gathersourcepfromchildren.
         for block in self.listofblocks:
-            for othernumber,overlapdomain in block.overlapshigher.iteritems():
+            for othernumber,overlapdomain in block.overlapshigher.items():
                 other = block.getblockfromnumber(othernumber)
                 l,u = overlapdomain
                 ssourcep = block.getsourcepslice(l,u)
@@ -1128,7 +1128,7 @@ class MeshRefinement(VisualizableClass):
     called separately by each block from gathersourcepfromchildren.
         """
         if self.l_EM: return
-        for othernumber,overlapdomain in self.overlapslower.iteritems():
+        for othernumber,overlapdomain in self.overlapslower.items():
             l,u = overlapdomain
             ssourcep = self.getsourcepslice(l,u)
             ssourcep[...] = 0.
@@ -1195,7 +1195,7 @@ class MeshRefinement(VisualizableClass):
         # --- The loop does not need to be in ascending order, but this just
         # --- matches the getsourcepfromoverlaps routine.
         for block in self.listofblocks:
-            for othernumber,overlapdomain in block.overlapslower.iteritems():
+            for othernumber,overlapdomain in block.overlapslower.items():
                 other = block.getblockfromnumber(othernumber)
                 l,u = overlapdomain
                 ssourcep = block.getsourcepslice(l,u)
@@ -1637,7 +1637,7 @@ class MeshRefinement(VisualizableClass):
             name = name + '%d'%ichild
             __main__.__dict__[name] = self
         self.mainname = name
-        for child,ichild in zip(self.children,range(1,1+len(self.children))):
+        for child,ichild in zip(self.children,list(range(1,1+len(self.children)))):
             child.setname(name,ichild)
 
     def getmem(self):
@@ -1731,7 +1731,7 @@ class MeshRefinement(VisualizableClass):
     def getfieldslice(self,lower=None,upper=None,comp=slice(None),r=[1,1,1]):
         if lower is None: lower = self.lower
         if upper is None: upper = self.upper
-        if isinstance(comp, basestring):
+        if isinstance(comp, str):
             ic = ['x','y','z'].index(comp)
         else:
             ic = comp
@@ -1777,7 +1777,7 @@ class MeshRefinement(VisualizableClass):
     def find_mgparam(self,lsavephi=false,resetpasses=0):
         for block in self.listofblocks:
             if not block.isactive: continue
-            print "Finding mgparam for block number ",block.blocknumber,me
+            print("Finding mgparam for block number ",block.blocknumber,me)
             # --- Temporarily remove the children so the solve is only done
             # --- on this block
             childrensave = block.children
@@ -1816,7 +1816,7 @@ class MeshRefinement(VisualizableClass):
         getdata = getattr(self,getdataname)
         array = getdata(self.fulllower,self.fullupper)
 
-        if not isinstance(comp,types.IntType):
+        if not isinstance(comp,int):
             # --- 'E','B','J','A' will give the field magnitude
             try:
                 ic = ['x','y','z','E','B','J','A'].index(comp)
@@ -1829,7 +1829,7 @@ class MeshRefinement(VisualizableClass):
                     pass
         else:
             ic = comp
-        assert isinstance(ic,types.IntType),"Unrecognized component was input"
+        assert isinstance(ic,int),"Unrecognized component was input"
 
         if ic is not None and len(shape(array)) == 4:
             if ic > 2:
@@ -2785,7 +2785,7 @@ class MRBlock2DDielectric(MeshRefinement,MultiGrid2DDielectric):
                 mesh = arange(iz1,iz2+1)/self.totalrefinement[2] + 0.5
             iz1 += -self.fulllower[2] + self.nzguard
             iz2 += -self.fulllower[2] + self.nzguard
-            print self.epsilon[ix1,iz1:iz2+1].shape,mesh.shape
+            print(self.epsilon[ix1,iz1:iz2+1].shape,mesh.shape)
             plg(self.epsilon[ix1,iz1:iz2+1],mesh,
                 color=colors[self.blocknumber%len(colors)])
             if not selfonly:
@@ -3039,13 +3039,13 @@ class EMMRBlock(MeshRefinement,EM3D):
         if self.mode==2:
             self.solve2ndhalfmode2()
             return
-        if self.l_verbose:print 'solve 2nd half',self
+        if self.l_verbose:print('solve 2nd half',self)
         if top.dt != self.dtinit:raise Exception('Time step has been changed since initialization of EM3D.')
         self.push_b_part_2()
         if self.l_pushf:self.exchange_f()
         self.exchange_b()
         self.move_window_fields()
-        if self.l_verbose:print 'solve 2nd half done'
+        if self.l_verbose:print('solve 2nd half done')
 
     def dosolve(self,iwhich=0,*args):
         self.getconductorobject()
@@ -3060,7 +3060,7 @@ class EMMRBlock(MeshRefinement,EM3D):
             self.dosolvemode2()
             return
         if any(top.fselfb != 0.):raise Exception('Error:EM solver does not work if fselfb != 0.')
-        if self.l_verbose:print 'solve 1st half'
+        if self.l_verbose:print('solve 1st half')
         if top.dt != self.dtinit:raise Exception('Time step has been changed since initialization of EM3D.')
         if self.fields.spectral:
 #            self.move_window_fields()
@@ -3097,12 +3097,12 @@ class EMMRBlock(MeshRefinement,EM3D):
         # --- for fields that are overcycled, they need to be pushed backward every ntsub
         self.push_e(dir=-1)
         self.exchange_e(dir=-1)
-        if self.l_verbose:print 'solve 1st half done'
+        if self.l_verbose:print('solve 1st half done')
 
 
     def step(self,n=1,freq_print=10,lallspecl=0,l_alawarpx=False):
         for i in range(n):
-            if top.it%freq_print==0:print 'it = %g time = %g'%(top.it,top.time)
+            if top.it%freq_print==0:print('it = %g time = %g'%(top.it,top.time))
             if lallspecl:
                 l_first=l_last=1
             else:
@@ -3404,7 +3404,7 @@ class EMMRBlock(MeshRefinement,EM3D):
         self.gathersourcepfromchildren()
 
     def finalizesourcep(self):
-        if self.l_verbose:print 'finalizesourcep',self.sourcepfinalized
+        if self.l_verbose:print('finalizesourcep',self.sourcepfinalized)
         if self.sourcepfinalized: return
         self.sourcepfinalized = True
         self.add_source_ndts_slices()
@@ -3416,7 +3416,7 @@ class EMMRBlock(MeshRefinement,EM3D):
         for i in range(len(self.laser_antenna)):
             self.add_laser(self.block.core.yf, self.laser_antenna[i])
         self.applysourceboundaryconditions()
-        if self.l_verbose:print 'finalizesourcep done'
+        if self.l_verbose:print('finalizesourcep done')
 
     def gathersourcepfromchildren(self):
         """

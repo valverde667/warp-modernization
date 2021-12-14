@@ -6,12 +6,12 @@ Two functions are available for saving an ExtPart object in a file.
 __all__ = ['ExtPart','dumpExtPart','restoreExtPart','ZCrossingParticles']
 from ..warp import *
 from ..utils.appendablearray import *
-import cPickle
+import pickle
 import types
 
 def extpartdoc():
     from ..particles import extpart
-    print extpart.__doc__
+    print(extpart.__doc__)
 
 _extforcenorestore = 0
 def extforcenorestore():
@@ -124,7 +124,7 @@ self.topgroupname
     def __init__(self,iz=-1,zz=0.,laccumulate=0,lsavefields=False,
                  name=None,lautodump=0,dumptofile=0):
         # --- Save input values, getting default values when needed
-        assert isinstance(iz,types.IntType),"iz must be an integer"
+        assert isinstance(iz,int),"iz must be an integer"
         assert iz >= 0 or zz is not None,"Either iz or zz must be specified"
         self.iz = iz
         self.zz = zz
@@ -496,9 +496,9 @@ accumulated. If the data is being accumulated, any existing data is preserved.
             ff = PW.PW(self.name+'_%05d_%05d_%sdump.pdb'%(me,npes,self.type))
             dumpsmode = 0
             if ff is None:
-                print "%s: %s unable to dump data to file."%(self.topgroupname,self.name)
+                print("%s: %s unable to dump data to file."%(self.topgroupname,self.name))
                 return
-            ff.write(self.name+'@pickle',cPickle.dumps(self,dumpsmode))
+            ff.write(self.name+'@pickle',pickle.dumps(self,dumpsmode))
             ff.close()
         self.clear()
         # --- Disable is done last so that the object written out to the
@@ -526,7 +526,7 @@ accumulated. If the data is being accumulated, any existing data is preserved.
                     # --- Only create the file if there is data to write out.
                     ff = PW.PW(self.name+'_%s_%05d_%05d.pdb'%(self.type,me,npes),'a',verbose=0)
                 if ff is None:
-                    print "%s: %s unable to dump data to file."%(self.topgroupname,self.name)
+                    print("%s: %s unable to dump data to file."%(self.topgroupname,self.name))
                     return
                 suffix = "_%d_%d"%(top.it,js)
                 ff.write('n'+suffix,len(self.t[js][:]))
@@ -560,25 +560,25 @@ accumulated. If the data is being accumulated, any existing data is preserved.
                     else:
                         ff = open(self.name+'_%s.pkl'%self.type,'ab')
                 if ff is None:
-                    print "%s: %s unable to dump data to file."%(self.topgroupname,self.name)
+                    print("%s: %s unable to dump data to file."%(self.topgroupname,self.name))
                     return
                 suffix = "_%d_%d"%(top.it,js)
-                cPickle.dump(('n'+suffix,len(self.t[js][:])),ff,-1)
-                cPickle.dump(('t'+suffix,self.t[js][:]),ff,-1)
-                cPickle.dump(('x'+suffix,self.x[js][:]),ff,-1)
-                cPickle.dump(('y'+suffix,self.y[js][:]),ff,-1)
-                cPickle.dump(('ux'+suffix,self.ux[js][:]),ff,-1)
-                cPickle.dump(('uy'+suffix,self.uy[js][:]),ff,-1)
-                cPickle.dump(('uz'+suffix,self.uz[js][:]),ff,-1)
-                cPickle.dump(('gaminv'+suffix,self.gaminv[js][:]),ff,-1)
-                cPickle.dump(('pid'+suffix,self.pid[js][...]),ff,-1)
+                pickle.dump(('n'+suffix,len(self.t[js][:])),ff,-1)
+                pickle.dump(('t'+suffix,self.t[js][:]),ff,-1)
+                pickle.dump(('x'+suffix,self.x[js][:]),ff,-1)
+                pickle.dump(('y'+suffix,self.y[js][:]),ff,-1)
+                pickle.dump(('ux'+suffix,self.ux[js][:]),ff,-1)
+                pickle.dump(('uy'+suffix,self.uy[js][:]),ff,-1)
+                pickle.dump(('uz'+suffix,self.uz[js][:]),ff,-1)
+                pickle.dump(('gaminv'+suffix,self.gaminv[js][:]),ff,-1)
+                pickle.dump(('pid'+suffix,self.pid[js][...]),ff,-1)
                 if self.lsavefields:
-                    cPickle.dump(('ex'+suffix,self.ex[js][:]),ff,-1)
-                    cPickle.dump(('ey'+suffix,self.ey[js][:]),ff,-1)
-                    cPickle.dump(('ez'+suffix,self.ez[js][:]),ff,-1)
-                    cPickle.dump(('bx'+suffix,self.bx[js][:]),ff,-1)
-                    cPickle.dump(('by'+suffix,self.by[js][:]),ff,-1)
-                    cPickle.dump(('bz'+suffix,self.bz[js][:]),ff,-1)
+                    pickle.dump(('ex'+suffix,self.ex[js][:]),ff,-1)
+                    pickle.dump(('ey'+suffix,self.ey[js][:]),ff,-1)
+                    pickle.dump(('ez'+suffix,self.ez[js][:]),ff,-1)
+                    pickle.dump(('bx'+suffix,self.bx[js][:]),ff,-1)
+                    pickle.dump(('by'+suffix,self.by[js][:]),ff,-1)
+                    pickle.dump(('bz'+suffix,self.bz[js][:]),ff,-1)
 
         if ff is not None:
             ff.close()
@@ -630,7 +630,7 @@ feature.
                         nprocs = npes
                     else:
                         # --- Read the data in from all processors.
-                        nplist = range(nprocs)
+                        nplist = list(range(nprocs))
                     for iproc in nplist:
                         fname = self.name+'_%s_%05d_%05d.pkl'%(self.type,iproc,nprocs)
                         fnametries.append(fname)
@@ -638,9 +638,9 @@ feature.
                             files.append(fname)
 
         if len(files) == 0:
-            print "%s restoredata: warning, no files were found, nothing will be restored"%self.topgroupname
+            print("%s restoredata: warning, no files were found, nothing will be restored"%self.topgroupname)
             if len(fnametries) > 0:
-                print "Tried the filenames:",fnametries
+                print("Tried the filenames:",fnametries)
 
         #datadict = self.getPDBdatadict(files)
         datadict = self.getPickledatadict(files)
@@ -651,7 +651,7 @@ feature.
         # --- declared.
         ntot = []
         jsmax = top.ns - 1
-        for var,val in datadict.iteritems():
+        for var,val in datadict.items():
             if var[0] == 'n':
                 ss = var.split('_')
                 jsmax = max(jsmax,int(ss[2]))
@@ -669,7 +669,7 @@ feature.
         # --- If self.topnpidmax is nonzero and different than the size
         # --- of pid, raise an exception since there is likely something
         # --- wrong.
-        for var,val in datadict.iteritems():
+        for var,val in datadict.items():
             if var[0:3] == 'pid':
                 try:
                     npid = val.shape[1]
@@ -709,7 +709,7 @@ feature.
         self.laccumulate = save_laccumulate
 
         # --- This loop must be ordered because of the append
-        varlist = datadict.keys()
+        varlist = list(datadict.keys())
         varlist.sort()
         for var in varlist:
             if var[0] == 'n':
@@ -751,7 +751,7 @@ feature.
             with open(file,'rb') as ff:
                 while 1:
                     try:
-                        data = cPickle.load(ff)
+                        data = pickle.load(ff)
                     except:
                         break
                     datadict[data[0]+'_'+file] = data[1]
@@ -1247,7 +1247,7 @@ functions.
         """
         badargs = ppgeneric(checkargs=1,kwdict=kw)
         kw['allowbadargs'] = 1
-        if badargs: raise Exception('bad arguments ',' '.join(badargs.keys()))
+        if badargs: raise Exception('bad arguments ',' '.join(list(badargs.keys())))
 
     def titleright(self,tc=None,wt=None,z=None,slope=None):
         if tc is None:
@@ -1276,9 +1276,9 @@ each species and each one in the list. Also assign colors accordingly
         if js != -1 and not isinstance(js,list):
             return false
         else:
-            if js == -1: js = range(self.getns())
+            if js == -1: js = list(range(self.getns()))
             ncolor = kw.get('ncolor',240)
-            color = kw.get('color',range(0,ncolor,ncolor/len(js)))
+            color = kw.get('color',list(range(0,ncolor,ncolor/len(js))))
             for i in range(len(js)):
                 args[0] = js[i]
                 kw['color'] = color[i]
@@ -1316,7 +1316,7 @@ The same arguments for :py:func:`selectparticles` and :py:func:`~warpplots.ppgen
         if self.ppmultispecies(self.pxvx,(js,tc,wt,tp,z),kw): return
         x = self.getx(js,tc,wt,tp,z)
         vx = self.getvx(js,tc,wt,tp)
-        if isinstance(slope,basestring):
+        if isinstance(slope,str):
             if len(x) > 0:
                 slope = (ave(x*vx)-ave(x)*ave(vx))/(ave(x*x) - ave(x)**2)
                 offset = ave(vx)-slope*ave(x)
@@ -1345,7 +1345,7 @@ The same arguments for :py:func:`selectparticles` and :py:func:`~warpplots.ppgen
             return
         y = self.gety(js,tc,wt,tp,z)
         vy = self.getvy(js,tc,wt,tp)
-        if isinstance(slope,basestring):
+        if isinstance(slope,str):
             if len(y) > 0:
                 slope = (ave(y*vy)-ave(y)*ave(vy))/(ave(y*y) - ave(y)**2)
                 offset = ave(vy)-slope*ave(y)
@@ -1407,7 +1407,7 @@ The same arguments for :py:func:`selectparticles` and :py:func:`~warpplots.ppgen
         r = sqrt(x**2 + y**2)
         t = arctan2(y,x)
         vr = vx*cos(t) + vy*sin(t)
-        if isinstance(slope,basestring):
+        if isinstance(slope,str):
             if len(r) > 0:
                 slope = ave(r*vr)/ave(r*r)
             else:
@@ -1432,7 +1432,7 @@ The same arguments for :py:func:`selectparticles` and :py:func:`~warpplots.ppgen
         if self.ppmultispecies(self.pxxp,(js,tc,wt,tp,z),kw): return
         x = self.getx(js,tc,wt,tp,z)
         xp = self.getxp(js,tc,wt,tp)
-        if isinstance(slope,basestring):
+        if isinstance(slope,str):
             if len(x) > 0:
                 slope = (ave(x*xp)-ave(x)*ave(xp))/(ave(x*x) - ave(x)**2)
                 offset = ave(xp)-slope*ave(x)
@@ -1463,7 +1463,7 @@ The same arguments for :py:func:`selectparticles` and :py:func:`~warpplots.ppgen
             return
         y = self.gety(js,tc,wt,tp,z)
         yp = self.getyp(js,tc,wt,tp)
-        if isinstance(slope,basestring):
+        if isinstance(slope,str):
             if len(y) > 0:
                 slope = (ave(y*yp)-ave(y)*ave(yp))/(ave(y*y) - ave(y)**2)
                 offset = ave(yp)-slope*ave(y)
@@ -1529,7 +1529,7 @@ The same arguments for :py:func:`selectparticles` and :py:func:`~warpplots.ppgen
         r = sqrt(x**2 + y**2)
         t = arctan2(y,x)
         rp = xp*cos(t) + yp*sin(t)
-        if isinstance(slope,basestring):
+        if isinstance(slope,str):
             if len(r) > 0:
                 slope = ave(r*rp)/ave(r*r)
             else:
@@ -1772,28 +1772,28 @@ The same arguments for :py:func:`selectparticles` and :py:func:`~warpplots.ppgen
 
         kw['view'] = 3
         kw['pplimits'] = pplimits[0]
-        if isinstance(slope,basestring):
+        if isinstance(slope,str):
             kw['slope'] = 0.
         settitles("Y vs X","X","Y",titler)
         ppgeneric(y,x,kwdict=kw)
 
         kw['view'] = 4
         kw['pplimits'] = pplimits[1]
-        if isinstance(slope,basestring):
+        if isinstance(slope,str):
             kw['slope'] = (ave(y*yp)-ave(y)*ave(yp))/dvnz(ave(y*y) - ave(y)**2)
         settitles("Y' vs Y","Y","Y'",titler)
         ppgeneric(yp,y,kwdict=kw)
 
         kw['view'] = 5
         kw['pplimits'] = pplimits[2]
-        if isinstance(slope,basestring):
+        if isinstance(slope,str):
             kw['slope'] = (ave(x*xp)-ave(x)*ave(xp))/dvnz(ave(x*x) - ave(x)**2)
         settitles("X' vs X","X","X'",titler)
         ppgeneric(xp,x,kwdict=kw)
 
         kw['view'] = 6
         kw['pplimits'] = pplimits[3]
-        if isinstance(slope,basestring):
+        if isinstance(slope,str):
             kw['slope'] = 0.
         settitles("X' vs Y'","Y'","X'",titler)
         ppgeneric(xp,yp,kwdict=kw)
@@ -2142,7 +2142,7 @@ def dumpExtPart(object,filename):
         # --- Only PE0 writes the object to the file since it is the processor
         # --- where the data is gathered.
         with open(filename,'wb') as ff:
-            cPickle.dump(object,ff,1)
+            pickle.dump(object,ff,1)
 
 def restoreExtPart(object,filename):
     """Restore extrapolated data from the given file"""
@@ -2150,7 +2150,7 @@ def restoreExtPart(object,filename):
         # --- Only PE0 wrote the object to the file since it is the processor
         # --- where the data was gathered.
         with open(filename,'rb') as ff:
-            result = cPickle.load(ff)
+            result = pickle.load(ff)
         result.enable()
         # --- Get the value of iz
         iz = result.iz
@@ -2175,7 +2175,7 @@ class ExtPartDeprecated:
     def __init__(self,iz=-1,zz=0.,wz=None,nepmax=None,laccumulate=0,
                  lepsaveonce=None,name=None,lautodump=0,dumptofile=0):
         # --- Save input values, getting default values when needed
-        assert isinstance(iz,types.IntType),"iz must be an integer"
+        assert isinstance(iz,int),"iz must be an integer"
         assert iz >= 0 or zz is not None,"Either iz or zz must be specified"
         self.iz = iz
         self.zz = zz
@@ -2474,9 +2474,9 @@ class ExtPartDeprecated:
             ff = PW.PW(self.name+'_%05d_%05d_epdump.pdb'%(me,npes))
             dumpsmode = 0
             if ff is None:
-                print "ExtPart: %s unable to dump data to file."%self.name
+                print("ExtPart: %s unable to dump data to file."%self.name)
                 return
-            ff.write(self.name+'@pickle',cPickle.dumps(self,dumpsmode))
+            ff.write(self.name+'@pickle',pickle.dumps(self,dumpsmode))
             ff.close()
         self.nepmax = 1
         self.clear()
@@ -2505,7 +2505,7 @@ class ExtPartDeprecated:
                     # --- Only create the file if there is data to write out.
                     ff = PW.PW(self.name+'_ep_%05d_%05d.pdb'%(me,npes),'a',verbose=0)
                 if ff is None:
-                    print "ExtPart: %s unable to dump data to file."%self.name
+                    print("ExtPart: %s unable to dump data to file."%self.name)
                     return
                 suffix = "_%d_%d"%(top.it,js)
                 ff.write('n'+suffix,len(self.tep[js][:]))
@@ -2531,17 +2531,17 @@ class ExtPartDeprecated:
                     else:
                         ff = open(self.name+'_ep.pkl','ab')
                 if ff is None:
-                    print "ExtPart: %s unable to dump data to file."%self.name
+                    print("ExtPart: %s unable to dump data to file."%self.name)
                     return
                 suffix = "_%d_%d"%(top.it,js)
-                cPickle.dump(('n'+suffix,len(self.tep[js][:])),ff,-1)
-                cPickle.dump(('t'+suffix,self.tep[js][:]),ff,-1)
-                cPickle.dump(('x'+suffix,self.xep[js][:]),ff,-1)
-                cPickle.dump(('y'+suffix,self.yep[js][:]),ff,-1)
-                cPickle.dump(('ux'+suffix,self.uxep[js][:]),ff,-1)
-                cPickle.dump(('uy'+suffix,self.uyep[js][:]),ff,-1)
-                cPickle.dump(('uz'+suffix,self.uzep[js][:]),ff,-1)
-                cPickle.dump(('pid'+suffix,self.pidep[js][...]),ff,-1)
+                pickle.dump(('n'+suffix,len(self.tep[js][:])),ff,-1)
+                pickle.dump(('t'+suffix,self.tep[js][:]),ff,-1)
+                pickle.dump(('x'+suffix,self.xep[js][:]),ff,-1)
+                pickle.dump(('y'+suffix,self.yep[js][:]),ff,-1)
+                pickle.dump(('ux'+suffix,self.uxep[js][:]),ff,-1)
+                pickle.dump(('uy'+suffix,self.uyep[js][:]),ff,-1)
+                pickle.dump(('uz'+suffix,self.uzep[js][:]),ff,-1)
+                pickle.dump(('pid'+suffix,self.pidep[js][...]),ff,-1)
         if ff is not None:
             ff.close()
 
@@ -2588,7 +2588,7 @@ feature.
                         nprocs = npes
                     else:
                         # --- Read the data in from all processors.
-                        nplist = range(nprocs)
+                        nplist = list(range(nprocs))
                     for iproc in nplist:
                         fname = self.name+'_ep_%05d_%05d.pkl'%(iproc,nprocs)
                         fnametries.append(fname)
@@ -2596,9 +2596,9 @@ feature.
                             files.append(fname)
 
         if len(files) == 0:
-            print "ExtPart restoredata: warning, no files were found, nothing will be restored"
+            print("ExtPart restoredata: warning, no files were found, nothing will be restored")
             if len(fnametries) > 0:
-                print "Tried the filenames:",fnametries
+                print("Tried the filenames:",fnametries)
 
         #datadict = self.getPDBdatadict(files)
         datadict = self.getPickledatadict(files)
@@ -2606,7 +2606,7 @@ feature.
         # --- Get total number of particles
         ntot = []
         jsmax = 0
-        for var,val in datadict.iteritems():
+        for var,val in datadict.items():
             if var[0] == 'n':
                 name,ii,js = var.split('_')
                 jsmax = max(jsmax,eval(js))
@@ -2619,7 +2619,7 @@ feature.
         # --- If top.npidepmax is nonzero and different than the size
         # --- of pid, raise an exception since there is likely something
         # --- wrong.
-        for var,val in datadict.iteritems():
+        for var,val in datadict.items():
             if var[0:3] == 'pid':
                 try:
                     npid = val.shape[1]
@@ -2650,7 +2650,7 @@ feature.
         self.setuparrays(jsmax+1,bump=bump)
 
         # --- This loop must be ordered because of the append
-        varlist = datadict.keys()
+        varlist = list(datadict.keys())
         varlist.sort()
         for var in varlist:
             if var[0] == 'n':
@@ -2676,7 +2676,7 @@ feature.
             with open(file,'rb') as ff:
                 while 1:
                     try:
-                        data = cPickle.load(ff)
+                        data = pickle.load(ff)
                     except:
                         break
                     datadict[data[0]] = data[1]
@@ -2881,7 +2881,7 @@ functions.
         """
         badargs = ppgeneric(checkargs=1,kwdict=kw)
         kw['allowbadargs'] = 1
-        if badargs: raise Exception('bad arguments ',' '.join(badargs.keys()))
+        if badargs: raise Exception('bad arguments ',' '.join(list(badargs.keys())))
 
     def titleright(self,tc=None,wt=None,z=None,slope=None):
         if tc is None:
@@ -2910,9 +2910,9 @@ each species and each one in the list. Also assign colors accordingly
         if js != -1 and not isinstance(js,list):
             return false
         else:
-            if js == -1: js = range(self.getns())
+            if js == -1: js = list(range(self.getns()))
             ncolor = kw.get('ncolor',240)
-            color = kw.get('color',range(0,ncolor,ncolor/len(js)))
+            color = kw.get('color',list(range(0,ncolor,ncolor/len(js))))
             for i in range(len(js)):
                 args[0] = js[i]
                 kw['color'] = color[i]
@@ -2944,7 +2944,7 @@ each species and each one in the list. Also assign colors accordingly
         if self.ppmultispecies(self.pxxp,(js,tc,wt,tp,z),kw): return
         x = self.getx(js,tc,wt,tp,z)
         xp = self.getxp(js,tc,wt,tp)
-        if isinstance(slope,basestring):
+        if isinstance(slope,str):
             if len(x) > 0:
                 slope = (ave(x*xp)-ave(x)*ave(xp))/(ave(x*x) - ave(x)**2)
                 offset = ave(xp)-slope*ave(x)
@@ -2972,7 +2972,7 @@ each species and each one in the list. Also assign colors accordingly
             return
         y = self.gety(js,tc,wt,tp,z)
         yp = self.getyp(js,tc,wt,tp)
-        if isinstance(slope,basestring):
+        if isinstance(slope,str):
             if len(y) > 0:
                 slope = (ave(y*yp)-ave(y)*ave(yp))/(ave(y*y) - ave(y)**2)
                 offset = ave(yp)-slope*ave(y)
@@ -3032,7 +3032,7 @@ each species and each one in the list. Also assign colors accordingly
         r = sqrt(x**2 + y**2)
         t = arctan2(y,x)
         rp = xp*cos(t) + yp*sin(t)
-        if isinstance(slope,basestring):
+        if isinstance(slope,str):
             if len(r) > 0:
                 slope = ave(r*rp)/ave(r*r)
             else:
@@ -3223,28 +3223,28 @@ Plots X-Y, X-X', Y-Y', Y'-X' in single page
 
         kw['view'] = 3
         kw['pplimits'] = pplimits[0]
-        if isinstance(slope,basestring):
+        if isinstance(slope,str):
             kw['slope'] = 0.
         settitles("Y vs X","X","Y",titler)
         ppgeneric(y,x,kwdict=kw)
 
         kw['view'] = 4
         kw['pplimits'] = pplimits[1]
-        if isinstance(slope,basestring):
+        if isinstance(slope,str):
             kw['slope'] = (ave(y*yp)-ave(y)*ave(yp))/dvnz(ave(y*y) - ave(y)**2)
         settitles("Y' vs Y","Y","Y'",titler)
         ppgeneric(yp,y,kwdict=kw)
 
         kw['view'] = 5
         kw['pplimits'] = pplimits[2]
-        if isinstance(slope,basestring):
+        if isinstance(slope,str):
             kw['slope'] = (ave(x*xp)-ave(x)*ave(xp))/dvnz(ave(x*x) - ave(x)**2)
         settitles("X' vs X","X","X'",titler)
         ppgeneric(xp,x,kwdict=kw)
 
         kw['view'] = 6
         kw['pplimits'] = pplimits[3]
-        if isinstance(slope,basestring):
+        if isinstance(slope,str):
             kw['slope'] = 0.
         settitles("X' vs Y'","Y'","X'",titler)
         ppgeneric(xp,yp,kwdict=kw)

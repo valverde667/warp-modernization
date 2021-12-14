@@ -256,7 +256,7 @@ class PlasmaInjector( object ):
                     lallindomain=True )
         if self.ions is not None:
             # For each element, only add particles to the lowest charge state
-            for element in self.ions.keys():
+            for element in list(self.ions.keys()):
                 # Use only the mean momenta
                 lowest_state_species = self.ions[ element ][0]
                 lowest_state_species.addpart( x=x0, y=y0, z=z0,

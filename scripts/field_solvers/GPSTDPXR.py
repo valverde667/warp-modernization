@@ -36,14 +36,14 @@ try:
     from picsar_python import picsarpy as pxrpy
     pxr = pxrpy.picsar
     l_pxr=True
-    print 'PICSAR package found and loaded.'
+    print('PICSAR package found and loaded.')
 except:
     l_pxr=False
-    print 'PICSAR package not found.'
+    print('PICSAR package not found.')
 try:
     from mpi4py import MPI
 except:
-    print 'Error cannot import mpi4py'
+    print('Error cannot import mpi4py')
 import numpy as np
 
 class GPSTDPXR(GPSTD):
@@ -88,19 +88,19 @@ class GPSTDPXR(GPSTD):
         ixl,ixu,iyl,iyu,izl,izu = self.get_ius()
         if self.Ffields=={}:
             self.fields_shape = [ixu-ixl,iyu-iyl,izu-izl]
-            for k in self.fields.keys():
+            for k in list(self.fields.keys()):
                 self.plan_rfftn[k] = self.create_plan_rfftn(np.asarray(self.fields_shape))
                 self.Ffields[k]    =self.rfftn(self.fields[k][ixl:ixu,iyl:iyu,izl:izu],plan=self.plan_rfftn[k])
         else:
-            for k in self.fields.keys():
+            for k in list(self.fields.keys()):
                 self.Ffields[k]=self.rfftn(self.fields[k][ixl:ixu,iyl:iyu,izl:izu],field_out=self.Ffields[k],plan=self.plan_rfftn[k])
 
     def get_fields(self):
         ixl,ixu,iyl,iyu,izl,izu = self.get_ius()
         if (self.plan_irfftn=={}):
-            for k in self.fields.keys():
+            for k in list(self.fields.keys()):
                     self.plan_irfftn[k] = self.create_plan_irfftn(np.asarray(self.fields_shape))
-        for k in self.fields.keys():
+        for k in list(self.fields.keys()):
             if not self.LSource[k]:
                 shapek = np.asarray(np.shape(self.fields[k][ixl:ixu,iyl:iyu,izl:izu]))
                 self.fields[k][ixl:ixu,iyl:iyu,izl:izu] = self.irfftn(self.Ffields[k], shapek, field_out=self.fields[k][ixl:ixu,iyl:iyu,izl:izu], plan=self.plan_irfftn[k])
@@ -110,17 +110,17 @@ class GPSTDPXR(GPSTD):
         # --- Fourier transforming fields
         self.get_Ffields()
         # --- filter sources before push
-        for k in self.Sfilters.keys():
+        for k in list(self.Sfilters.keys()):
            self.Ffields[k]*=self.Sfilters[k]
         mymat = self.mymat
         n = len(mymat)
         # --- set dictionary of field values before time step
         oldfields = {}
-        for k in self.Ffields.keys():
+        for k in list(self.Ffields.keys()):
             oldfields[k] = self.Ffields[k].copy(order='F')
         # --- set dictionary of field flags for update
         updated_fields = {}
-        for k in self.Ffields.keys():
+        for k in list(self.Ffields.keys()):
             updated_fields[k] = False
         # --- Alias block vectors in Fortran
         for i in range(1,n+1):
@@ -155,7 +155,7 @@ class GPSTDPXR(GPSTD):
         del oldfields
 
         # --- filter fields after push
-        for k in self.Ffilters.keys():
+        for k in list(self.Ffilters.keys()):
            self.Ffields[k]*=self.Ffilters[k]
         # Fourier transforming back fields
         self.get_fields()
@@ -174,19 +174,19 @@ class GPSTDPXR(GPSTD):
             ngz = 0
 
         if self.bc_periodic[0]:
-            for k in self.fields.keys():
+            for k in list(self.fields.keys()):
                 if updated_fields[k]:
                     f = self.fields[k]
                     f[-ngx-1:,...]=f[ngx:2*ngx+1,...]
                     f[:ngx,...]=f[-2*ngx-1:-ngx-1,...]
         if self.bc_periodic[1]:
-            for k in self.fields.keys():
+            for k in list(self.fields.keys()):
                 if updated_fields[k]:
                     f = self.fields[k]
                     f[:,-ngy-1:,:]=f[:,ngy:2*ngy+1,:]
                     f[:,:ngy,:]=f[:,-2*ngy-1:-ngy-1,:]
         if self.bc_periodic[2]:
-            for k in self.fields.keys():
+            for k in list(self.fields.keys()):
                 if updated_fields[k]:
                     f = self.fields[k]
                     f[...,-ngz-1:]=f[...,ngz:2*ngz+1]
@@ -372,7 +372,7 @@ class PSATD_Maxwell_PML(GPSTDPXR):
 
         self.push_fields()
 
-        for f in self.fields.values():
+        for f in list(self.fields.values()):
             if self.nx>1:
                 f[:self.nxguard,...]=0.
                 f[-self.nxguard/2:,...]=0.
@@ -749,12 +749,12 @@ class PSATD_Maxwell(GPSTDPXR):
             self.mymat = self.getmaxwellmat(self.kxpn,self.kypn,self.kzpn,\
                      self.kxmn,self.kymn,self.kzmn,dt,cdt)
         else:
-            if np.any(self.V_galilean<>0.):
+            if np.any(self.V_galilean!=0.):
                 self.mymat = self.getmaxwellmat_galilean(self.kxpn,self.kypn, \
                             self.kzpn, self.kxmn,self.kymn,self.kzmn,dt,cdt, \
                             self.V_galilean)
 
-            if np.any(self.V_pseudogalilean<>0.):
+            if np.any(self.V_pseudogalilean!=0.):
                 self.mymat = self.getmaxwellmat_pseudogalilean(self.kxpn, \
                              self.kypn, self.kzpn, self.kxmn,self.kymn, \
                              self.kzmn,dt,cdt,self.V_pseudogalilean)
@@ -977,7 +977,7 @@ class PSATD_Maxwell(GPSTDPXR):
             mymat.add_op('ez',{'ez':CT,'bx':-aym*c,'by': axm*c,'jz':EJmult,'rhonew':kzpn*ERhomult,'rhoold':kzpn*ERhooldmult})
 
         if self.l_pushf:
-            print 'l_pushf not yet implemented in PSATD Galilean'
+            print('l_pushf not yet implemented in PSATD Galilean')
             raise
             mymat.add_op('f',{'f':CT,'ex':axm,'ey':aym,'ez':azm, \
                                     'jx': kxmn*FJmult,'jy': kymn*FJmult,'jz': kzmn*FJmult, \
@@ -985,7 +985,7 @@ class PSATD_Maxwell(GPSTDPXR):
                                     'rhoold':-FRhomult - Soverk/self.eps0})
 
         if self.l_pushg:
-            print 'l_pushg not yet implemented in PSATD Galilean'
+            print('l_pushg not yet implemented in PSATD Galilean')
             raise
             mymat.add_op('g',{'g':CT,'bx':axp*c,'by':ayp*c,'bz':azp*c})
 
@@ -1123,7 +1123,7 @@ class PSATD_Maxwell(GPSTDPXR):
             mymat.add_op('ez',{'ez':C,'bx':-aym*c,'by': axm*c,'jz':EJmult,'rhonew':kzpn*ERhomult,'rhoold':kzpn*ERhooldmult})
 
         if self.l_pushf:
-            print 'l_pushf not yet implemented in PSATD PseudoGalilean'
+            print('l_pushf not yet implemented in PSATD PseudoGalilean')
             raise
             mymat.add_op('f',{'f':C,'ex':axm,'ey':aym,'ez':azm, \
                                     'jx': kxmn*FJmult,'jy': kymn*FJmult,'jz': kzmn*FJmult, \

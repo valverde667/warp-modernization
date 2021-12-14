@@ -2,13 +2,13 @@
 
 import wx
 #from wx import *
-import WarpPanel
+from . import WarpPanel
 
 def create(parent):
     return wx.Dialog1(parent)
 
 [wxID_WXDIALOG1, wxID_WXDIALOG1TONOTEBOOK, wxID_WXDIALOG1WINDOW1,
-] = map(lambda _init_ctrls: wx.NewId(), range(3))
+] = [wx.NewId() for _init_ctrls in range(3)]
 
 class wxDialog1(wx.Dialog):
     def _init_utils(self):

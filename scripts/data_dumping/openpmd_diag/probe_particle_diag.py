@@ -13,9 +13,9 @@ import os
 import numpy as np
 import time
 from scipy.constants import c
-from particle_diag import ParticleDiagnostic
+from .particle_diag import ParticleDiagnostic
 from warp_parallel import gatherarray, mpiallgather, comm_world
-from data_dict import particle_quantity_dict
+from .data_dict import particle_quantity_dict
 
 class ParticleAccumulator(ParticleDiagnostic):
     """
@@ -113,7 +113,7 @@ class ParticleAccumulator(ParticleDiagnostic):
         """
         # Loop through the particle species and register the
         # particle arrays in the particle storer object (buffering)
-        for species_name, species in self.species_dict.iteritems():
+        for species_name, species in self.species_dict.items():
 
             slice_array = self.particle_catcher.extract_slice(
                         species, self.select )
@@ -160,7 +160,7 @@ class ParticleAccumulator(ParticleDiagnostic):
 
                     if self.rank == 0:
                         # Get the number of quantities
-                        nquant = np.shape(self.particle_catcher.particle_to_index.keys())[0]
+                        nquant = np.shape(list(self.particle_catcher.particle_to_index.keys()))[0]
 
                         # Prepare an empty array for reshaping purposes. The
                         # final shape of the array is (8, total_num_particles)
@@ -172,7 +172,7 @@ class ParticleAccumulator(ParticleDiagnostic):
                         # Loop over all the processors, if the processor
                         # contains particles, we reshape the gathered_array
                         # and reconstruct by concatenation
-                        for i in xrange(self.top.nprocs):
+                        for i in range(self.top.nprocs):
 
                             if n_rank[i] != 0:
                                 parray_dict[species_name] = \
@@ -588,10 +588,10 @@ class ParticleCatcher:
 
         # Get the particles
         num_part = self.get_particle_slice( species )
-        slice_array = np.empty((np.shape(p2i.keys())[0], num_part,))
+        slice_array = np.empty((np.shape(list(p2i.keys()))[0], num_part,))
 
         # Get the particle quantities
-        for quantity in self.particle_to_index.keys():
+        for quantity in list(self.particle_to_index.keys()):
             # Here typical values for 'quantity' are e.g. 'z', 'ux', 'gamma'
             # you should just gather array locally
             slice_array[ p2i[quantity], ... ] = self.gather_array(quantity)
@@ -606,10 +606,10 @@ class ParticleCatcher:
             # Temp_slice_array is a 1D numpy array, we reshape it so that it
             # has the same size as slice_array
             slice_array = np.reshape(
-                temp_slice_array,(np.shape(p2i.keys())[0],-1))
+                temp_slice_array,(np.shape(list(p2i.keys()))[0],-1))
 
         # Multiplying momenta by the species mass to make them unitless
-        for quantity in self.particle_to_index.keys():
+        for quantity in list(self.particle_to_index.keys()):
              if quantity in ["ux", "uy", "uz"]:
                 slice_array[p2i[quantity]] *= species.mass
 
@@ -706,7 +706,7 @@ class ParticleCatcher:
 
         # Apply the rules successively
         # Go through the quantities on which a rule applies
-        for quantity in select.keys():
+        for quantity in list(select.keys()):
             # Lower bound
             if select[quantity][0] is not None:
                 select_array = np.logical_and(

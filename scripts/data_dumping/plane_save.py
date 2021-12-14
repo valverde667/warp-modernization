@@ -7,7 +7,7 @@ simulation. The two simulations are linked together.
 __all__ = ['PlaneSave']
 
 from warp import *
-import cPickle
+import pickle
 
 
 class PlaneSave:
@@ -96,7 +96,7 @@ Input:
             self._f = open(self.filename,'ab')
 
         # --- Write the data out as a named tuple
-        cPickle.dump((name,val),self._f,-1)
+        pickle.dump((name,val),self._f,-1)
 
     def flush(self):
         if me > 0: return
@@ -124,7 +124,7 @@ Input:
 
         # --- initializes list of species
         if self.js is None:
-            self.jslist = range(top.ns)
+            self.jslist = list(range(top.ns))
         else:
             try:
                 list(self.js)

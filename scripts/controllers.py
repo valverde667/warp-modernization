@@ -58,14 +58,14 @@ def myplots():
 installafterstep(myplots)
 
 """
-from __future__ import generators
+
 
 
 def controllersdoc():
-    import controllers
-    print controllers.__doc__
+    from . import controllers
+    print(controllers.__doc__)
 
-from warp import *
+from .warp import *
 import types
 import copy
 import time
@@ -126,7 +126,7 @@ class ControllerFunction:
         dict['funcs'] = funcnamelist
         return dict
 
-    def __nonzero__(self):
+    def __bool__(self):
         "Returns True of functions are installed, otherwise false"
         return self.hasfuncsinstalled()
 
@@ -148,7 +148,7 @@ class ControllerFunction:
         for f in self.funcs:
             if isinstance(f,list):
                 result = f
-            elif isinstance(f,basestring):
+            elif isinstance(f,str):
                 import __main__
                 if f in __main__.__dict__:
                     result = f
@@ -169,7 +169,7 @@ class ControllerFunction:
                     self.funcs.remove(f)
                     continue
                 result = getattr(object,f[1])
-            elif isinstance(f,basestring):
+            elif isinstance(f,str):
                 import __main__
                 if f in __main__.__dict__:
                     result = __main__.__dict__[f]
@@ -181,17 +181,17 @@ class ControllerFunction:
             else:
                 result = f
             if not callable(result):
-                print "\n\nWarning: a controller was found that is not callable."
+                print("\n\nWarning: a controller was found that is not callable.")
                 if self.name is not None:
-                    print "For %s"%self.name
-                print "Only callable objects can be installed."
-                print "It is possible that the callable's name has been overwritten"
-                print "by something not callable. This can happen during restart"
-                print "if a function name had later been used as a variable name."
-                print self.name
-                if isinstance(f,basestring):
-                    print "The name of the controller is ",f
-                print "\n\n"
+                    print("For %s"%self.name)
+                print("Only callable objects can be installed.")
+                print("It is possible that the callable's name has been overwritten")
+                print("by something not callable. This can happen during restart")
+                print("if a function name had later been used as a variable name.")
+                print(self.name)
+                if isinstance(f,str):
+                    print("The name of the controller is ",f)
+                print("\n\n")
                 continue
             yield result
 
@@ -199,7 +199,7 @@ class ControllerFunction:
         if isinstance(f,types.MethodType):
             # --- If the function is a method of a class instance, then save a full
             # --- reference to that instance and the method name.
-            finstance = f.im_self
+            finstance = f.__self__
             fname = f.__name__
             self.funcs.append([finstance,fname])
         elif callable(f):
@@ -227,15 +227,15 @@ class ControllerFunction:
                 return
             elif isinstance(func,list) and isinstance(f,types.MethodType):
                 object = self._getmethodobject(func)
-                if f.im_self is object and f.__name__ == func[1]:
+                if f.__self__ is object and f.__name__ == func[1]:
                     self.funcs.remove(func)
                     return
-            elif isinstance(func,basestring):
+            elif isinstance(func,str):
                 if f.__name__ == func:
                     self.funcs.remove(func)
                     return
-            elif isinstance(f,basestring):
-                if isinstance(func,basestring): funcname = func
+            elif isinstance(f,str):
+                if isinstance(func,str): funcname = func
                 elif isinstance(func,list): funcname = None
                 else:                        funcname = func.__name__
                 if f == funcname:
@@ -251,9 +251,9 @@ class ControllerFunction:
                 return 1
             elif isinstance(func,list) and isinstance(f,types.MethodType):
                 object = self._getmethodobject(func)
-                if f.im_self is object and f.__name__ == func[1]:
+                if f.__self__ is object and f.__name__ == func[1]:
                     return 1
-            elif isinstance(func,basestring):
+            elif isinstance(func,str):
                 if f.__name__ == func:
                     return 1
         return 0
@@ -331,7 +331,7 @@ class PicklableFunction:
         """
         if isinstance(self.func,list):
             result = self.func
-        elif isinstance(self.func,basestring):
+        elif isinstance(self.func,str):
             import __main__
             if self.func in __main__.__dict__:
                 result = self.func
@@ -350,7 +350,7 @@ class PicklableFunction:
             if object is None:
                 raise Exception("The method's class instance could not be found")
             result = getattr(object,self.func[1])
-        elif isinstance(self.func,basestring):
+        elif isinstance(self.func,str):
             import __main__
             if self.func in __main__.__dict__:
                 result = __main__.__dict__[self.func]
@@ -362,14 +362,14 @@ class PicklableFunction:
         else:
             result = self.func
         if not callable(result):
-            print "\n\nWarning: a controller was found that is not callable."
-            print "Only callable objects can be installed."
-            print "It is possible that the callable's name has been overwritten"
-            print "by something not callable. This can happen during restart"
-            print "if a function name had later been used as a variable name."
-            if isinstance(self.func,basestring):
-                print "The name of the controller is ",self.func
-            print "\n\n"
+            print("\n\nWarning: a controller was found that is not callable.")
+            print("Only callable objects can be installed.")
+            print("It is possible that the callable's name has been overwritten")
+            print("by something not callable. This can happen during restart")
+            print("if a function name had later been used as a variable name.")
+            if isinstance(self.func,str):
+                print("The name of the controller is ",self.func)
+            print("\n\n")
             raise Exception("The function is not callable")
         return result
 
@@ -377,7 +377,7 @@ class PicklableFunction:
         if isinstance(f,types.MethodType):
             # --- If the function is a method of a class instance, then save a full
             # --- reference to that instance and the method name.
-            finstance = f.im_self
+            finstance = f.__self__
             fname = f.__name__
             self.func = [finstance,fname]
         elif callable(f):
@@ -390,9 +390,9 @@ class PicklableFunction:
             return 1
         elif isinstance(self.func,list) and isinstance(f,types.MethodType):
             object = self._getmethodobject(self.func)
-            if f.im_self is object and f.__name__ == self.func[1]:
+            if f.__self__ is object and f.__name__ == self.func[1]:
                 return 1
-        elif isinstance(self.func,basestring):
+        elif isinstance(self.func,str):
             if f.__name__ == self.func:
                 return 1
         return 0
@@ -449,7 +449,7 @@ class ControllerFunctionContainer:
     def __init__(self,clist):
         self.clist = clist
     def __setstate__(self,dict):
-        import controllers
+        from . import controllers
         import __main__
         self.__dict__.update(dict)
         for c in self.clist:
@@ -463,7 +463,7 @@ class ControllerFunctionContainer:
             if ControllerFunctionContainer.clearfunctionlists:
                 origcontroller.clearlist()
             for f in c.funcs:
-                if isinstance(f,basestring):
+                if isinstance(f,str):
                     # --- Check if f is already in the original list of functions,
                     # --- and skip it if it is. Both the function name (f) and the
                     # --- actual function in main are checked.
@@ -498,7 +498,7 @@ class ControllerFunctionContainer:
         """
         if ff is None: ff = sys.stdout
         for c in self.clist:
-            for fname,time in c.timers.items():
+            for fname,time in list(c.timers.items()):
                 vlist = array(gather(time))
                 if me > 0: continue
                 vsum = sum(vlist)
@@ -899,7 +899,7 @@ def isinstalleduserappliedfields(f):
 # ----------------------------------------------------------------------------
 def fixcontrollersfromolddump():
     import __main__
-    import controllers
+    from . import controllers
     controllernames = ['aftergenerate','beforefs','afterfs','callscraper',
                        'calladdconductor','callbeforestepfuncs',
                        'callafterstepfuncs','callbeforeplotfuncs',
@@ -913,4 +913,4 @@ def fixcontrollersfromolddump():
                 controller.funcs = controller.funcnamelist
                 del controller.funcnamelist
         else:
-            print "Controller ",cname," not found"
+            print("Controller ",cname," not found")

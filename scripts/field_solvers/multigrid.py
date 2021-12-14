@@ -7,7 +7,7 @@ Classed for doing multigrid field solve in 3-D
 #  - incorporate instances into the particle mover, so charge is deposited and
 #    the E fields gather appropriately.
 from ..warp import *
-from find_mgparam import find_mgparam
+from .find_mgparam import find_mgparam
 
 try:
     import psyco
@@ -97,7 +97,7 @@ class MultiGrid3D(SubcycledPoissonSolver):
         self.processdefaultsfrompackage(MultiGrid3D.__f3dinputs__,f3d,kw)
 
         # --- If there are any remaning keyword arguments, raise an error.
-        assert len(kw.keys()) == 0,"Bad keyword arguemnts %s"%kw.keys()
+        assert len(list(kw.keys())) == 0,"Bad keyword arguemnts %s"%list(kw.keys())
 
         self.initializeconductors()
 
@@ -820,7 +820,7 @@ class MultiGrid3D(SubcycledPoissonSolver):
     def clearconductors(self,fselfblist=None):
         "Clear out the conductor data"
         if fselfblist is None:
-            fselfblist = self.conductorobjects.keys()
+            fselfblist = list(self.conductorobjects.keys())
         for fselfb in fselfblist:
             if fselfb in self.conductorobjects:
                 conductorobject = self.conductorobjects[fselfb]
@@ -1366,7 +1366,7 @@ class MultiGridImplicit3D(MultiGrid3D):
         self.processdefaultsfrompackage(MultiGrid3D.__f3dinputs__,f3d,kw)
 
         # --- If there are any remaning keyword arguments, raise an error.
-        assert len(kw.keys()) == 0,"Bad keyword arguemnts %s"%kw.keys()
+        assert len(list(kw.keys())) == 0,"Bad keyword arguemnts %s"%list(kw.keys())
 
         # --- Create conductor objects
         self.initializeconductors()

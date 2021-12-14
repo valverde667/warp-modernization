@@ -3,6 +3,7 @@ emi code"""
 from warp import *
 from ..diagnostics.getzmom import * 
 import operator
+import collections.abc
 
 try:
   import psyco
@@ -52,7 +53,7 @@ class EM2D(object):
         #self.__dict__[name] = kw.pop(name,getattr(em2d,name)) # Python2.3
         self.__dict__[name] = kw.get(name,getattr(em2d,name))
       if name in kw: del kw[name]
-    for name,defvalue in EM2D.__flaginputs__.iteritems():
+    for name,defvalue in EM2D.__flaginputs__.items():
       if name not in self.__dict__:
         #self.__dict__[name] = kw.pop(name,getattr(top,name)) # Python2.3
         self.__dict__[name] = kw.get(name,defvalue)
@@ -85,7 +86,7 @@ class EM2D(object):
           if self.forcesymmetries: self.ymmin = 0.
 
     # --- If there are any remaning keyword arguments, raise an error.
-    assert len(kw.keys()) == 0,"Bad keyword arguemnts %s"%kw.keys()
+    assert len(list(kw.keys())) == 0,"Bad keyword arguemnts %s"%list(kw.keys())
 
     assert self.solvergeom == w3d.XZgeom or not self.l_moving_window,"The moving window can only be used with XZ geometry"
 
@@ -209,7 +210,7 @@ class EM2D(object):
     # --- Check if laser_amplitude is a function, table, or constant
     self.laser_amplitude_func = None
     self.laser_amplitude_table = None
-    if operator.isSequenceType(self.laser_amplitude):
+    if isinstance(self.laser_amplitude, collections.abc.Sequence):
       assert len(self.laser_amplitude.shape) == 2 and \
              self.laser_amplitude.shape[1] == 2,\
              "The laser_amplitude table is not formatted properly"
@@ -232,7 +233,7 @@ class EM2D(object):
 #      self.laser_profile = exp(-(xx/self.laser_gauss_width)**2/2.)
       yy = arange(f.ny+4)*f.dy+f.ymin*f.dy - 0.5*f.ny*f.dy
       f.laser_profile = exp(-0.5*(yy/self.laser_gauss_width)**2)
-    elif operator.isSequenceType(self.laser_profile):
+    elif isinstance(self.laser_profile, collections.abc.Sequence):
       assert len(f.laser_profile) == f.ny+4,"The specified profile must be of length ny+4"
     elif callable(self.laser_profile):
       self.laser_profile_func = self.laser_profile
@@ -292,8 +293,8 @@ class EM2D(object):
         giin = take(gaminv,iin)
         field = self.fpatchfine
         wtmp = zeros(nin,'d')
-        print min(xin),max(xin),field.xmin,field.xmax
-        print min(yin),max(yin),field.ymin,field.ymax
+        print(min(xin),max(xin),field.xmin,field.xmax)
+        print(min(yin),max(yin),field.ymin,field.ymax)
         em2d_depose_jxjy_esirkepov_linear_serial(field.J,nin,xin,yin,uxin,uyin,uzin,
                giin,wtmp,q*w,field.xmin,field.ymin,top.dt,
                field.dx,field.dy,field.nx,field.ny,
@@ -307,8 +308,8 @@ class EM2D(object):
         giout = take(gaminv,iout)
         field = self.field
         wtmp = zeros(nout,'d')
-        print min(xout),max(xout),field.xmin,field.xmax
-        print min(yout),max(yout),field.ymin,field.ymax
+        print(min(xout),max(xout),field.xmin,field.xmax)
+        print(min(yout),max(yout),field.ymin,field.ymax)
         em2d_depose_jxjy_esirkepov_linear_serial(field.J,nout,xout,yout,uxout,uyout,uzout,
                giout,wtmp,q*w,field.xmin,field.ymin,top.dt,
                field.dx,field.dy,field.nx,field.ny,
@@ -937,7 +938,7 @@ class EM2D(object):
     callafterstepfuncs.callfuncsinlist()
 
   def fetcheb(self,js):
-    if self.l_verbose:print me,'enter fetcheb'
+    if self.l_verbose:print(me,'enter fetcheb')
     pg = top.pgroup
     np = pg.nps[js]
     if np==0:return
@@ -947,7 +948,7 @@ class EM2D(object):
     self.fetchb()
 
   def push_velocity_first_half(self,js):
-    if self.l_verbose:print me,'enter push_ions_velocity_first_half'
+    if self.l_verbose:print(me,'enter push_ions_velocity_first_half')
     pg = top.pgroup
     np = pg.nps[js]
     if np==0:return
@@ -970,10 +971,10 @@ class EM2D(object):
                   pg.bx[il:iu], pg.by[il:iu], pg.bz[il:iu], 
                   pg.sq[js],pg.sm[js],0.5*top.dt, top.ibpush)
 
-    if self.l_verbose:print me,'exit push_ions_velocity_first_half'
+    if self.l_verbose:print(me,'exit push_ions_velocity_first_half')
     
   def push_velocity_second_half(self,js):
-    if self.l_verbose:print me,'enter push_ions_velocity_second_half'
+    if self.l_verbose:print(me,'enter push_ions_velocity_second_half')
     pg = top.pgroup
     np = pg.nps[js]
     if np==0:return
@@ -996,10 +997,10 @@ class EM2D(object):
       # --- update gamma
       self.set_gamma(js)
 
-    if self.l_verbose:print me,'exit push_ions_velocity_second_half'
+    if self.l_verbose:print(me,'exit push_ions_velocity_second_half')
     
   def set_gamma(self,js):
-    if self.l_verbose:print me,'enter set_gamma'
+    if self.l_verbose:print(me,'enter set_gamma')
     pg = top.pgroup
     np = pg.nps[js]
     if np==0:return
@@ -1009,10 +1010,10 @@ class EM2D(object):
     gammaadv(np,pg.gaminv[il:iu],pg.uxp[il:iu],pg.uyp[il:iu],pg.uzp[il:iu],
              top.gamadv,top.lrelativ)
 
-    if self.l_verbose:print me,'exit push_ions_velocity_second_half'
+    if self.l_verbose:print(me,'exit push_ions_velocity_second_half')
     
   def push_positions(self,js):
-    if self.l_verbose:print me,'enter push_ions_positions'
+    if self.l_verbose:print(me,'enter push_ions_positions')
     pg = top.pgroup
     np = pg.nps[js]
     if np==0:return
@@ -1022,18 +1023,18 @@ class EM2D(object):
                    pg.uxp[il:iu],pg.uyp[il:iu],pg.uzp[il:iu],
                    pg.gaminv[il:iu],top.dt)      
 
-    if self.l_verbose:print me,'exit push_ions_positions'
+    if self.l_verbose:print(me,'exit push_ions_positions')
 
   def apply_bndconditions(self,js):
-    if self.l_verbose:print me,'enter apply_ions_bndconditions'
+    if self.l_verbose:print(me,'enter apply_ions_bndconditions')
     # --- apply boundary conditions
     pg = top.pgroup
     if pg.nps[js]==0:return
     self.apply_bnd_conditions(js)
-    if self.l_verbose:print me,'exit apply_ions_bndconditions'
+    if self.l_verbose:print(me,'exit apply_ions_bndconditions')
     
   def apply_bnd_conditions(self,js):
-    if self.l_verbose:print me,'enter apply_bnd_conditions'
+    if self.l_verbose:print(me,'enter apply_bnd_conditions')
     pg = top.pgroup
     if pg.nps[js]==0:return
     il = pg.ins[js]-1
@@ -1060,7 +1061,7 @@ class EM2D(object):
       if js==w3d.nzp-1:top.pbound0=0
     if self.scraper is not None:self.scraper.scrape(js)
     processlostpart(pg,js+1,top.clearlostpart,top.time+top.dt*pg.ndts[js],top.zbeam)
-    if self.l_verbose:print me,'enter apply_bnd_conditions'
+    if self.l_verbose:print(me,'enter apply_bnd_conditions')
 
   def initfrompoisson(self):
     tmpbound0  = w3d.bound0

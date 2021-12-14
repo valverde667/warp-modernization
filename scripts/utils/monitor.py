@@ -23,10 +23,7 @@ from warp import *
 import socket
 import time
 import re
-if sys.hexversion >= 0x20501f0:
-    import hashlib
-else:
-    import md5 as hashlib
+import hashlib
 
 
 def socketsend(sock, s):
@@ -172,7 +169,7 @@ class Monitor:
                     try:
                         # --- First, try to evaluate the command
                         rrr = eval(comm, __main__.__dict__)
-                        print('eval('+comm+')')
+                        print(('eval('+comm+')'))
                         result = repr(rrr)
                     except SyntaxError:
                         # --- If there was a syntax error, try to exec
@@ -180,7 +177,7 @@ class Monitor:
                         # --- an assignment.  Still, catch any errors
                         # --- in case there really are syntax or other
                         # --- errors in the command.
-                        print('exec('+comm+')')
+                        print(('exec('+comm+')'))
                         try:
                             exec(comm, __main__.__dict__)
                             result = "OK"
@@ -234,7 +231,7 @@ def createmonitor(port=50007, passwd='fj39jfgks'):
 # --- Send continue command
 def sendcont():
     socketsend(_sock, 'EOF')
-    print(socketrecv(_sock))
+    print((socketrecv(_sock)))
 
 
 # --- Reads command from stdin and sends them off. Assumes that anything
@@ -243,11 +240,11 @@ def sendcont():
 def sendcommands():
     while 1:
         try:
-            s = raw_input('+++ ')
+            s = input('+++ ')
         except EOFError:
             try:
                 socketsend(_sock, 'EOF')
-                print(socketrecv(_sock))
+                print((socketrecv(_sock)))
             except socket.error:
                 pass
             break
@@ -256,17 +253,17 @@ def sendcommands():
                 pass
             elif s == 'EOF':
                 socketsend(_sock, 'EOF')
-                print(socketrecv(_sock))
+                print((socketrecv(_sock)))
                 break
             elif s[:6] == 'print ':
                 # --- Print is special since normally the quantity
                 # --- would only be printed to the output of the
                 # --- remotely running job.
                 socketsend(_sock, s[6:])
-                print(socketrecv(_sock))
+                print((socketrecv(_sock)))
             else:
                 socketsend(_sock, s)
-                print(socketrecv(_sock))
+                print((socketrecv(_sock)))
         except socket.error:
             break
 
@@ -310,7 +307,7 @@ def connect(machine="localhost", port=50007, passwd='fj39jfgks', auto=1):
         print("Error")
         _sock.close()
         return
-    print(socketrecv(_sock))
+    print((socketrecv(_sock)))
     if auto:
         sendcommands()
         _sock.close()

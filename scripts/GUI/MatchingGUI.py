@@ -4,7 +4,7 @@ import wx
 #from wx import *
 from wx.lib.anchors import LayoutAnchors
 from ..envelope import matchenv
-import newstdout
+from . import newstdout
 import warp
 import sys
 import __main__
@@ -17,7 +17,7 @@ import __main__
  wxID_PANELPLOTENDMATCH, wxID_PANELSETQUAD0, wxID_PANELSETQUAD1, 
  wxID_PANELSETQUAD2, wxID_PANELSETQUAD3, wxID_PANELUSEEMLT, wxID_PANELUSEHELE, 
  wxID_PANELUSEMMLT, wxID_PANELUSEQUAD, wxID_PANELVARYQUADS, 
-] = map(lambda _init_ctrls: wx.NewId(), range(25))
+] = [wx.NewId() for _init_ctrls in range(25)]
 
 class panel(wx.Panel):
     def _init_coll_MatchingTypes_Pages(self, parent):

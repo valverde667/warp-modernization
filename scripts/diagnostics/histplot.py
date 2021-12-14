@@ -1,10 +1,10 @@
-from histplots import *
+from .histplots import *
 
 
 def histplotdoc():
-    print """
+    print("""
 Contains the command histplot() which plots a standard set of history plots.
-"""
+""")
 
 def histplot(**kw):
     hpzbeam(kwdict=kw); fma()

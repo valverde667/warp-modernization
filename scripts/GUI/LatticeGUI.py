@@ -4,7 +4,7 @@ import wx
 #from wx import *
 from wx.lib.anchors import LayoutAnchors
 from warp import *
-import sortlattice
+from . import sortlattice
 from ..lattice import lattice
 import __main__
 
@@ -27,7 +27,7 @@ def create(parent):
  wxID_LATTICEGUIQUADZSLABEL, wxID_LATTICEGUIQUADZSUNITS,
  wxID_LATTICEGUISETELEMENTNUM, wxID_LATTICEGUISETMADLATTICE,
  wxID_LATTICEGUISETMADLATTICELABEL,
-] = map(lambda _init_ctrls: wx.NewId(), range(35))
+] = [wx.NewId() for _init_ctrls in range(35)]
 
 class LatticeGUI(wx.Dialog):
     def _init_utils(self):

@@ -49,7 +49,7 @@ class Boosted_Frame(object):
 
     def boost(self,species,zinject=0.,tinit=0.,l_inject_plane=1,lallindomain=0,
               l_rmzmean=1.,l_deprho=1,l_savezinit=0,l_focus=1,l_project=1):
-        print( 'enter boost',top.pgroup.nps)
+        print(( 'enter boost',top.pgroup.nps))
         if l_savezinit:
             if top.zbirthlabpid==0:
                 top.zbirthlabpid = nextpid()
@@ -238,7 +238,7 @@ class Boosted_Frame(object):
                     if top.uyoldpid>0:top.pgroup.pid[il:iu,top.uyoldpid-1]=top.pgroup.uyp[il:iu]
                     if top.uzoldpid>0:top.pgroup.pid[il:iu,top.uzoldpid-1]=top.pgroup.uzp[il:iu]
         if not lallindomain:particleboundaries3d(top.pgroup,-1,False)
-        print( 'exit boost',top.pgroup.nps)
+        print(( 'exit boost',top.pgroup.nps))
 
     def add_boosted_species_multigroups(self):
         do_inject = 0
