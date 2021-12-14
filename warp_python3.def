@@ -50,10 +50,10 @@ cd /usr/local/warp/pywarp90 \
 && echo 'FCOMP= -F gfortran' >> Makefile.local \
 && echo 'FCOMP= -F gfortran' >> Makefile.local.pympi \
 && echo 'FCOMPEXEC= --fcompexec mpifort' >> Makefile.local.pympi \
-&& make install3 \
-&& make clean3 \
-&& make pinstall3 \
-&& make pclean3
+&& make install \
+&& make clean \
+&& make pinstall \
+&& make pclean
 
 # Create a mountpoint for $HOME as seen on the host by the user executing the image
 # (so s/he is expected to use -H $HOME:/home_mnt/)

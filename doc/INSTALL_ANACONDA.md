@@ -54,7 +54,7 @@ Replace the fcompexec argument with the appropriate name of the gfortran compile
 
 Serial Warp can now be compiled and installed.
 ```
-make -j install3
+make -j install
 ```
 
 ## Installing Parallel Warp
@@ -73,7 +73,7 @@ echo 'FCOMPEXEC = --fcompexec mpifort' >> Makefile.local3.pympi
 
 Then build and install it.
 ```
-make -j pinstall3
+make -j pinstall
 ```
 
 ## Installing pygist
