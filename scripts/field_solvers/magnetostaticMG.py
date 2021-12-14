@@ -537,7 +537,7 @@ class MagnetostaticMGSlice(MagnetostaticMG):
         f3d.gridmode = 1
 
         # --- If there are any remaning keyword arguments, raise an error.
-        assert len(kw.keys()) == 0, "Bad keyword arguemnts %s"%kw.keys()
+        assert len(list(kw.keys())) == 0, "Bad keyword arguemnts %s"%list(kw.keys())
 
         # --- Create a conductor object, which by default is empty.
         self.conductors = ConductorType()
