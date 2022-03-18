@@ -318,7 +318,7 @@ fprintf(stderr,"Getmult returns %08x %08x\n",m48[1],m48[0]);
  *   A 1 is masked into the lowest bit position to make sure the value
  *   is odd.  (The upper 18 bits of m48[1] will be ignored if nonzero.)
  */
-void Setmult(u32 *m48)
+void Setmult(u32 m48[2])
 {
     u16 p[3];
     double pm_mult[2];
