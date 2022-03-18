@@ -3487,7 +3487,7 @@ def addgriddedgap(zcenter=None,gaplength=None,ap=None,apleft=None,apright=None,
     
     egrdids = []
     for iz, zoff in enumerate(z_offsets):
-        if iz is 0:
+        if iz == 0:
             egid = addnewegrd(Esolver.zmmin+zoff,
                               Esolver.zmmax+zoff,
                               dx=Esolver.dx,dy=Esolver.dy,
