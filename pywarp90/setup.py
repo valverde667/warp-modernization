@@ -9,12 +9,9 @@ from Forthon.compilers import FCompiler
 import getopt
 
 try:
-    import distutils
-    from distutils.core import setup, Extension
-    from distutils.dist import Distribution
-    from distutils.command.build import build
+    import setuptools
 except:
-    raise SystemExit('Distutils problem')
+    raise SystemExit('setuptools problem')
 
 optlist, args = getopt.getopt(sys.argv[1:], 'gt:F:',
                               ['parallel', 'fargs=', 'cargs=', 'fcompexec=','mpifort_compiler='])
@@ -40,7 +37,7 @@ fcompiler = FCompiler(machine = machine,
                       fcompexec = fcompexec,
                       mpifort_compiler = mpifort_compiler)
 
-dummydist = Distribution()
+dummydist = setuptools.Distribution()
 dummydist.parse_command_line()
 dummybuild = dummydist.get_command_obj('build')
 dummybuild.finalize_options()
@@ -84,8 +81,7 @@ if parallel:
 else:
     name = 'warpC'
 
-# --- With distutils, the object files are always put in a build/temp
-# --- directory relative to where the
+# --- The object files are always put in a build/temp directory relative to where the
 # --- source file is, rather than relative to the main build directory.
 # --- This tells distutils to put the objects in the same directory
 # --- as the source files.
@@ -136,26 +132,25 @@ elif parallel:
         except (OSError, subprocess.CalledProcessError):
             pass
 
-setup (name = 'warp',
-       version = '4.6',
-       author = 'David P. Grote, Jean-Luc Vay, et. al.',
-       author_email = 'dpgrote@lbl.gov',
-       description = 'Warp PIC accelerator code',
-       long_description = """
+setuptools.setup (name = 'warp',
+                  version = '4.6',
+                  author = 'David P. Grote, Jean-Luc Vay, et. al.',
+                  author_email = 'dpgrote@lbl.gov',
+                  description = 'Warp PIC accelerator code',
+                  long_description = """
 Warp is a PIC code designed to model particle accelerators and similar
 machines that are space-charge dominated.""",
-       url = 'http://warp.lbl.gov',
-       platforms = 'Linux, Unix, Windows (bash), Mac OSX',
-       ext_modules = [Extension('warp.' + name,
-                                ['warpC_Forthon.c',
-                                 os.path.join(builddir, 'Forthon.c'),
-                                 'pmath_rng.c', 'ranf.c', 'ranffortran.c'],
-                                include_dirs=include_dirs,
-                                library_dirs=library_dirs,
-                                libraries=libraries,
-                                define_macros=define_macros,
-                                extra_link_args=extra_link_args,
-                                extra_compile_args=fcompiler.extra_compile_args
-                               )]
-
-       )
+                  url = 'http://warp.lbl.gov',
+                  platforms = 'Linux, Unix, Windows (bash), Mac OSX',
+                  ext_modules = [setuptools.Extension('warp.' + name,
+                                           ['warpC_Forthon.c',
+                                            os.path.join(builddir, 'Forthon.c'),
+                                            'pmath_rng.c', 'ranf.c', 'ranffortran.c'],
+                                           include_dirs=include_dirs,
+                                           library_dirs=library_dirs,
+                                           libraries=libraries,
+                                           define_macros=define_macros,
+                                           extra_link_args=extra_link_args,
+                                           extra_compile_args=fcompiler.extra_compile_args
+                                          )]
+                  )
