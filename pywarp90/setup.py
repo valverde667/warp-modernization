@@ -46,7 +46,7 @@ builddir = dummybuild.build_temp
 if dummydist.commands[-1] == 'install':
     # --- During an install, remove the build/lib directory, since distutils
     # --- doesn't update an older warpC.so even if there were changes.
-    os.system('rm -rf %s'%dummybuild.build_platlib)
+    os.system(f'rm -rf {dummybuild.build_platlib}/warp/warpC*')
 
 warppkgs = ['top', 'env', 'w3d', 'f3d', 'wxy', 'fxy', 'wrz', 'frz', 'her', 'cir', 'cho', 'em3d']
 
@@ -132,25 +132,53 @@ elif parallel:
         except (OSError, subprocess.CalledProcessError):
             pass
 
-setuptools.setup (name = 'warp',
-                  version = '4.6',
-                  author = 'David P. Grote, Jean-Luc Vay, et. al.',
-                  author_email = 'dpgrote@lbl.gov',
-                  description = 'Warp PIC accelerator code',
-                  long_description = """
+# --- Write out git versioning information
+with open('../scripts/__version__.py', 'w') as ff:
+    ff.write('__origindate__ = "%s"\n'%os.popen('git log --branches=master --remotes=origin -n 1 --pretty=%aD').read().strip())
+    ff.write('__localdate__ = "%s"\n'%os.popen('git log -n 1 --pretty=%aD').read().strip())
+    ff.write('__hash__ = "%s"\n'%os.popen('git log -n 1 --pretty=%h').read().strip())
+    ff.write('__fullhash__ = "%s"\n'%os.popen('git log -n 1 --pretty=%H').read().strip())
+
+setuptools.setup(name = 'warp',
+                 packages = ['warp', 'warpoptions', 'warp_parallel',
+                             'warp.attic',
+                             'warp.data_dumping',
+                             'warp.data_dumping.openpmd_diag',
+                             'warp.diagnostics',
+                             'warp.diagnostics.palettes',
+                             'warp.envelope',
+                             'warp.field_solvers',
+                             'warp.field_solvers.laser',
+                             'warp.GUI',
+                             'warp.init_tools',
+                             'warp.lattice',
+                             'warp.particles',
+                             'warp.run_modes',
+                             'warp.utils'],
+                 package_dir = {'warp':'../scripts',
+                                'warpoptions':'../scripts/warpoptions',
+                                'warp_parallel':'../scripts/warp_parallel'},
+                 package_data = {'warp': ['../scripts/diagnostics/palettes/*.gs',
+                                          '../scripts/diagnostics/palettes/*.gp',
+                                          '../scripts/particles/aladdin_8.txt']},
+                 version = '4.6',
+                 author = 'David P. Grote, Jean-Luc Vay, et. al.',
+                 author_email = 'dpgrote@lbl.gov',
+                 description = 'Warp PIC accelerator code',
+                 long_description = """
 Warp is a PIC code designed to model particle accelerators and similar
 machines that are space-charge dominated.""",
-                  url = 'http://warp.lbl.gov',
-                  platforms = 'Linux, Unix, Windows (bash), Mac OSX',
-                  ext_modules = [setuptools.Extension('warp.' + name,
-                                           ['warpC_Forthon.c',
-                                            os.path.join(builddir, 'Forthon.c'),
-                                            'pmath_rng.c', 'ranf.c', 'ranffortran.c'],
-                                           include_dirs=include_dirs,
-                                           library_dirs=library_dirs,
-                                           libraries=libraries,
-                                           define_macros=define_macros,
-                                           extra_link_args=extra_link_args,
-                                           extra_compile_args=fcompiler.extra_compile_args
-                                          )]
-                  )
+                 url = 'http://warp.lbl.gov',
+                 platforms = 'Linux, Unix, Windows (bash), Mac OSX',
+                 ext_modules = [setuptools.Extension('warp.' + name,
+                                                     ['warpC_Forthon.c',
+                                                      os.path.join(builddir, 'Forthon.c'),
+                                                      'pmath_rng.c', 'ranf.c', 'ranffortran.c'],
+                                                     include_dirs = include_dirs,
+                                                     library_dirs = library_dirs,
+                                                     libraries = libraries,
+                                                     define_macros = define_macros,
+                                                     extra_link_args = extra_link_args,
+                                                     extra_compile_args = fcompiler.extra_compile_args
+                                                    )]
+                 )
