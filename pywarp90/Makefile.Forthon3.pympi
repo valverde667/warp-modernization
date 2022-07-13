@@ -7,17 +7,13 @@ VERBOSE = #-v
 FORTHON = Forthon3
 PYTHON = python3
 BUILDBASEDIR = build3parallel
-INSTALL = --install
 INSTALLOPTIONS = #--user
 -include Makefile.local3.pympi
 BUILDBASE = --build-base $(BUILDBASEDIR)
-INSTALLARGS = --pkgbase warp $(BUILDBASE) $(INSTALL)
+INSTALLARGS = --pkgbase warp $(BUILDBASE)
 MPIPARALLEL = --farg "-DMPIPARALLEL"
 
-install: installso
-	(cd ../scripts;$(PYTHON) setup.py build $(BUILDBASE) install $(INSTALLOPTIONS))
-
-installso: $(BUILDBASEDIR)/topparallelpydep $(BUILDBASEDIR)/envparallelpydep $(BUILDBASEDIR)/w3dparallelpydep $(BUILDBASEDIR)/f3dparallelpydep $(BUILDBASEDIR)/wxyparallelpydep $(BUILDBASEDIR)/fxyparallelpydep $(BUILDBASEDIR)/wrzparallelpydep $(BUILDBASEDIR)/frzparallelpydep $(BUILDBASEDIR)/herparallelpydep $(BUILDBASEDIR)/cirparallelpydep $(BUILDBASEDIR)/choparallelpydep $(BUILDBASEDIR)/em3dparallelpydep ranffortran.c
+install: $(BUILDBASEDIR)/topparallelpydep $(BUILDBASEDIR)/envparallelpydep $(BUILDBASEDIR)/w3dparallelpydep $(BUILDBASEDIR)/f3dparallelpydep $(BUILDBASEDIR)/wxyparallelpydep $(BUILDBASEDIR)/fxyparallelpydep $(BUILDBASEDIR)/wrzparallelpydep $(BUILDBASEDIR)/frzparallelpydep $(BUILDBASEDIR)/herparallelpydep $(BUILDBASEDIR)/cirparallelpydep $(BUILDBASEDIR)/choparallelpydep $(BUILDBASEDIR)/em3dparallelpydep ranffortran.c
 	$(PYTHON) setup.py $(FCOMP) $(FCOMPEXEC) --parallel build $(BUILDBASE) install $(INSTALLOPTIONS)
 
 build: $(BUILDBASEDIR)/topparallelpydep $(BUILDBASEDIR)/envparallelpydep $(BUILDBASEDIR)/w3dparallelpydep $(BUILDBASEDIR)/f3dparallelpydep $(BUILDBASEDIR)/wxyparallelpydep $(BUILDBASEDIR)/fxyparallelpydep $(BUILDBASEDIR)/wrzparallelpydep $(BUILDBASEDIR)/frzparallelpydep $(BUILDBASEDIR)/herparallelpydep $(BUILDBASEDIR)/cirparallelpydep $(BUILDBASEDIR)/choparallelpydep $(BUILDBASEDIR)/em3dparallelpydep ranffortran.c
