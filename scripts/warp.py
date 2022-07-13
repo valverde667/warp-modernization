@@ -67,23 +67,6 @@ except ImportError:
 # --- among the packages can be satisfied.
 sys.setdlopenflags(os.RTLD_LAZY | os.RTLD_GLOBAL)
 
-# --- Test for a mixed installed of Warp, if the old pre-reorganized version is still installed.
-try:
-    # --- This should fail
-    from . import colortext
-except ImportError:
-    pass
-else:
-    # --- If not, that means that there is the file warp/colortext.py which should not be there.
-    from . import warp
-    import os
-    print('\n\n')
-    print(colortext.coloredtext('Error: A mixed installation of Warp has been found.', colortext.textBRed))
-    print(colortext.coloredtext('Please remove the directory %s,'%os.path.dirname(warp.__file__), colortext.textBRed))
-    print(colortext.coloredtext('and do "make cleanall" and re-install Warp.', colortext.textBRed))
-    print('\n\n')
-    raise Exception('Mixed installation of Warp found')
-
 # Import the warpC shared object which contains all of Warp
 # --- If python had been built statically, then warpCparallel is linked
 # --- in under the name warpC.
