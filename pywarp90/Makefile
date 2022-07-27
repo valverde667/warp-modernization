@@ -36,7 +36,7 @@ installall: install pinstall
 debugall: debug pdebug
 
 cleanall: clean pclean cleandebug pcleandebug
-	rm -rf build* ../scripts/build*
+	rm -rf build*
 
 help:
 	@echo "Possible targets: (install is the default)"
