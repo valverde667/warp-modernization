@@ -34,10 +34,10 @@ w3d.l4symtry = false
 w3d.l2symtry = true
 if w3d.l4symtry:
     w3d.xmmin = 0.
-    w3d.nx /= 2
+    w3d.nx //= 2
 if w3d.l2symtry or w3d.l4symtry:
     w3d.ymmin = 0.
-    w3d.ny /= 2
+    w3d.ny //= 2
 
 @callfromparticleloader
 def loadparticles():
