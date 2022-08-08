@@ -1211,9 +1211,9 @@ or pli( z, x0, y0, x1, y1 )
         y1 = y1 or (ny - 1)
         dx = (x1 - x0)/(nx-1)
         dy = (y1 - y0)/(ny-1)
-        xx = arange(x0-dx/2.,x1+dx/2.,dx)
-        yy = arange(y0-dy/2.,y1+dy/2.,dy)
-        xg,yg = meshgrid(xx,yy)
+        xx = linspace(x0-dx/2., x1+dx/2., nx)
+        yy = linspace(y0-dy/2., y1+dy/2., ny)
+        xg,yg = meshgrid(xx, yy)
         callplotfunction("pcolor",[xg,yg,z],kw)
 def plf(z,y=None,x=None,ireg=None,local=1,**kw):
     """
