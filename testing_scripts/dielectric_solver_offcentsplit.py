@@ -1,4 +1,3 @@
-from __future__ import division
 from warp import * 
 import numpy as np
 import h5py
@@ -17,7 +16,7 @@ The initial domain decomposition for epsilon is done manually and this test will
 if comm_world.size != 1:
     synchronizeQueuedOutput_mpi4py(out=False, error=False)
 
-print "rank:", comm_world.rank
+print("rank:", comm_world.rank)
 
 top.inject = 0 
 top.npinject = 0
@@ -89,7 +88,7 @@ elif comm_world.size == 1:
 	if not z_dependence:		
 		testarray = np.ones([w3d.nx + 2, w3d.nz + 2]) * 8.854e-12
 
-print 'shape:',testarray.shape
+print('shape:',testarray.shape)
 top.depos_order = 1
 
 solverE = MultiGrid2DDielectric(epsilon=testarray)
@@ -119,8 +118,8 @@ generate()
 
 step(150)
 
-print solverE.getselfe().shape
-print getselfe('z').shape
+print(solverE.getselfe().shape)
+print(getselfe('z').shape)
 zfield = getselfe('z')
 if comm_world.size > 1:
 	if comm_world.rank == 0:

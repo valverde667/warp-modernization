@@ -54,9 +54,9 @@ restriction = Restrict2dCellCentered(nx, nz, nxlocal, nzlocal,
                                      level_0_data['lxoffset'], level_0_data['lzoffset'])
 
 restriction.calculate_z_values()
-print restriction.wza.shape
+print(restriction.wza.shape)
 restriction.calculate_x_values()
-print restriction.wxa.shape
+print(restriction.wxa.shape)
 restriction.create_coarse_grid(restriction.calculate_x_values(), restriction.calculate_z_values())
-print restriction.ucoarse.shape
-print restriction.ucoarse
+print(restriction.ucoarse.shape)
+print(restriction.ucoarse)

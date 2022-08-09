@@ -39,8 +39,8 @@ class Restrict2dCellCentered(object):
         self.izmaxa = []
 
         for izcoarse in range(0, self.nzlocalcoarse):
-            izmin = ((izcoarse - 1 + 1) * self.nz - self.lzoffset + 4 * self.nzcoarse) / self.nzcoarse - 3
-            izmax = ((izcoarse + 1 + 1) * self.nz - self.lzoffset - 1) / self.nzcoarse
+            izmin = ((izcoarse - 1 + 1) * self.nz - self.lzoffset + 4 * self.nzcoarse) // self.nzcoarse - 3
+            izmax = ((izcoarse + 1 + 1) * self.nz - self.lzoffset - 1) // self.nzcoarse
 
             if izmin < 0:
                 izmin = 0
@@ -65,8 +65,8 @@ class Restrict2dCellCentered(object):
         self.ixmaxa = []
 
         for ixcoarse in range(0, self.nxlocalcoarse):
-            ixmin = ((ixcoarse - 1 + 1) * self.nx - self.lxoffset + 4 * self.nxcoarse) / self.nxcoarse - 3
-            ixmax = ((ixcoarse + 1 + 1) * self.nx - self.lxoffset - 1) / self.nxcoarse
+            ixmin = ((ixcoarse - 1 + 1) * self.nx - self.lxoffset + 4 * self.nxcoarse) // self.nxcoarse - 3
+            ixmax = ((ixcoarse + 1 + 1) * self.nx - self.lxoffset - 1) // self.nxcoarse
 
             if ixmin < 0:
                 ixmin = 0
@@ -77,7 +77,7 @@ class Restrict2dCellCentered(object):
 
             for ix in range(ixmin, ixmax + 1):
                 wx[ix - ixmin] = 1. - abs(ixcoarse + 1 - (ix + 1. * self.lxoffset / self.nxcoarse) * self.dxi)
-                print ix, ix - ixmin, ixmax
+                print(ix, ix - ixmin, ixmax)
             self.ixmina.append(ixmin)
             self.ixmaxa.append(ixmax)
             self.wxa[:, ixcoarse] = wx
@@ -142,11 +142,11 @@ if __name__ == "__main__":
                                          epsiloncoarse, localbounds, localboundscoarse,
                                          lxoffset, lzoffset)
 
-    print restriction.calculate_z_values()
+    print(restriction.calculate_z_values())
 
-    print restriction.calculate_x_values()
+    print(restriction.calculate_x_values())
 
-    print restriction.create_coarse_grid(restriction.calculate_x_values(), restriction.calculate_z_values())
+    print(restriction.create_coarse_grid(restriction.calculate_x_values(), restriction.calculate_z_values()))
 
 
 

@@ -10,7 +10,6 @@
 # 
 # Nathan Cook
 
-from __future__ import division
 import sys
 del sys.argv[1:] #  Necessry to run 'from warp import *' in IPython notebook without conflict.
 
@@ -63,7 +62,7 @@ epsn = 7.
 if comm_world.size != 1:
     synchronizeQueuedOutput_mpi4py(out=False, error=False)
 
-print "rank:", comm_world.rank
+print("rank:", comm_world.rank)
 
 top.inject = 0 
 top.npinject = 0
@@ -120,7 +119,7 @@ dt = w3d.dz/vzfinal #5e-15
 top.dt = 0.1*dt*4
 
 if vzfinal*top.dt > w3d.dz:
-    print "Time step dt = {:.3e}s does not constrain motion to a single cell".format(top.dt)
+    print("Time step dt = {:.3e}s does not constrain motion to a single cell".format(top.dt))
 
 
 #### Set up field solver
@@ -271,8 +270,8 @@ step(num_steps)
 
 raise
 
-print solverE.getselfe().shape
-print getselfe('z').shape
+print(solverE.getselfe().shape)
+print(getselfe('z').shape)
 zfield = getselfe('z')
 if comm_world.size > 1:
 	if comm_world.rank == 0:

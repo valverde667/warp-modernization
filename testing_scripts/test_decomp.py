@@ -1,4 +1,3 @@
-from __future__ import division
 from warp import * 
 import numpy as np
 import h5py
@@ -15,7 +14,7 @@ File has modes to generate:
 if comm_world.size != 1:
     synchronizeQueuedOutput_mpi4py(out=False, error=False)
 
-print "rank:", comm_world.rank
+print("rank:", comm_world.rank)
 
 top.inject = 0 
 top.npinject = 0
@@ -118,8 +117,8 @@ generate()
 step(500)
 
 zfield = getselfe('z')
-print comm_world.rank,solverE.zmminlocal,solverE.zmmaxlocal,solverE.nzlocal,(solverE.zmmaxlocal - solverE.zmminlocal) /solverE.nzlocal
-print comm_world.rank,solverE.getphi().shape
+print(comm_world.rank,solverE.zmminlocal,solverE.zmmaxlocal,solverE.nzlocal,(solverE.zmmaxlocal - solverE.zmminlocal) /solverE.nzlocal)
+print(comm_world.rank,solverE.getphi().shape)
 if comm_world.size > 1:
 	if comm_world.rank == 0:
 		np.save('phi_0_0.npy',solverE.getphi())

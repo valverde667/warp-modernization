@@ -1,4 +1,3 @@
-from __future__ import division
 from warp import * 
 import numpy as np
 import h5py
@@ -18,7 +17,7 @@ epsn = 1.1294*2
 if comm_world.size != 1:
     synchronizeQueuedOutput_mpi4py(out=False, error=False)
 
-print "rank:", comm_world.rank
+print(("rank:", comm_world.rank))
 
 top.inject = 0 
 top.npinject = 0

@@ -58,6 +58,6 @@ restriction.calculate_x_values()
 restriction.wxa[3, :] = 1.8999999999999996E-010
 restriction.create_coarse_grid(restriction.wxa, restriction.wza)
 
-print restriction.wxa
-print restriction.wza
-print restriction.ucoarse
+print(restriction.wxa)
+print(restriction.wza)
+print(restriction.ucoarse)
