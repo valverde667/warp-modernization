@@ -991,6 +991,48 @@ or limits( old_limits )
         return rr
     if with_matplotlib:
         callplotfunction("axis",[(xmin,xmax,ymin,ymax)],kw)
+
+def ylimits(ymin=None,ymax=None):
+    """Set plot ylimits
+      Set the y-axis plot limits in the current coordinate system to
+      YMIN, YMAX, which may each be a number to fix the corresponding
+      limit to a specified value, or the string "e" to make the
+      corresponding limit take on the extreme value of the currently
+      displayed data. Arguments may be omitted only from the right. Use
+      limits( xmin, xmax ) to accomplish the same function for the x-axis
+      plot limits.  Note that the corresponding Yorick function for
+      ylimits is 'range' - since this word is a Python built-in function,
+      I've changed the name to avoid the collision.
+      SEE ALSO: plsys, limits, logxy, plg
+    """
+    if with_gist:
+        if ymax is None: ymax = 'e'
+        callplotfunction("ylimits",[ymin,ymax])
+    if with_matplotlib:
+        callplotfunction("ylim",[(ymin,ymax)])
+
+def logxy(xflag, yflag=0):
+    """
+    logxy( xflag, yflag )
+     Sets the linear/log axis scaling flags for the current coordinate
+     system. XFLAG and YFLAG may be 0 to select linear scaling, or 1 to
+     select log scaling. YFLAG may be omitted (but not XFLAG).
+
+   SEE ALSO: plsys, limits, ylimits, plg, gridxy
+
+    """
+    if with_gist:
+        callplotfunction("logxy",[xflag,yflag])
+    if with_matplotlib:
+        if xflag:
+            callplotfunction("xscale",['log'])
+        else:
+            callplotfunction("xscale",['linear'])
+        if yflag:
+            callplotfunction("yscale",['log'])
+        else:
+            callplotfunction("yscale",['linear'])
+
 def pldj(x0,y0,x1,y1,local=1,**kw):
     """
 pldj( x0, y0, x1, y1 )
