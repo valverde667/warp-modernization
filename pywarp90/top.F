@@ -6792,12 +6792,14 @@ c=============================================================================
       enddo
       ncuminty(ny) = 1.
 
-!     --- Initialize xp and yp
+!     --- Initialize xp and yp if needed
 !     --- This is slightly faster in a separate loop.
-      do i=1,np
-        x(i) = rnrev(i,2)
-        y(i) = .5/np + (i - 1.)/np
-      enddo
+      if (x(1) == 0.) then
+        do i=1,np
+          x(i) = rnrev(i,2)
+          y(i) = .5/np + (i - 1.)/np
+        enddo
+      endif
 
 !     --- Now distribute the particles in y
 !     --- When the distribution has a nearly uniform section, a modified
