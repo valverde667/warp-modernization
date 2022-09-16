@@ -6651,22 +6651,22 @@ c   From interpreter, rma(&a,n) returns n Gaussian random numbers.
       end
 c=============================================================================
 c=============================================================================
-      subroutine load1d(np,x,nx,n,dx)
-      integer(ISZ):: np,nx
-      real(kind=8):: x(np),n(0:nx)
+      subroutine load1d(np, x, nx, n, dx)
+      integer(ISZ):: np, nx
+      real(kind=8):: x(np), n(0:nx)
       real(kind=8):: dx
       integer(ISZ):: ip
       real(kind=8):: rnrev
       do ip=1,np
         x(ip) = rnrev(ip, 2)
       enddo
-      call load1drandom(np,x,nx,n,dx)
+      call load1drandom(np, x, nx, n, dx)
       return
       end
 c=============================================================================
-      subroutine load1drandom(np,x,nx,n,dx)
-      integer(ISZ):: np,nx
-      real(kind=8):: x(np),n(0:nx)
+      subroutine load1drandom(np, x, nx, n, dx)
+      integer(ISZ):: np, nx
+      real(kind=8):: x(np), n(0:nx)
       real(kind=8):: dx
 
 c Load particles onto a one dimensional distribution.  This load is only
@@ -6675,8 +6675,8 @@ c the same 1-D grid from which the distribution is taken, the distribution
 c is not exactly reproduced. (The exact version is still under development.)
 c The x needs to be filled with uniformly spaced numbers between 0 and 1.
 
-      integer(ISZ):: i,ip,ix,di
-      real(kind=8):: nnorm(0:nx),n1x(0:nx),sumn
+      integer(ISZ):: i, ip, ix, di
+      real(kind=8):: nnorm(0:nx), sumn
       real(kind=8):: nintx(0:nx)
 
       if (minval(n) < 0.) then
@@ -6684,15 +6684,50 @@ c The x needs to be filled with uniformly spaced numbers between 0 and 1.
         return
       endif
 
+      call load1dgeneratenorm(nx, n, nnorm, nintx)
+      call load1drandomwithnorm(np, x, nx, nnorm, nintx, dx)
+
+      return
+      end
+c=============================================================================
+      subroutine load1dgeneratenorm(nx, n, nnorm, nintx)
+      integer(ISZ):: nx
+      real(kind=8):: n(0:nx)
+      real(kind=8):: nnorm(0:nx)
+      real(kind=8):: nintx(0:nx)
+
+c Precalculates the normalized distribution and integrated distribution.
+
+      integer(ISZ):: ix
+      real(kind=8):: sumn
+
       sumn = sum(n) - 0.5*n(0) - 0.5*n(nx)
       nnorm = n/sumn
 
 c     --- nintx is the partial sum of n
 c     --- nintx(0:nx) = psum(n) - 0.5*n(0) - 0.5*n
       nintx(0) = 0.
-      do ix=1,nx
+      do ix=1, nx
         nintx(ix) = nintx(ix-1) + 0.5*(nnorm(ix-1) + nnorm(ix))
       enddo
+
+      return
+      end
+c=============================================================================
+      subroutine load1drandomwithnorm(np, x, nx, nnorm, nintx, dx)
+      integer(ISZ):: np, nx
+      real(kind=8):: x(np), nnorm(0:nx), nintx(0:nx)
+      real(kind=8):: dx
+
+c Load particles onto a one dimensional distribution.  This load is only
+c approximate in that when the resulting particles are loaded back onto
+c the same 1-D grid from which the distribution is taken, the distribution
+c is not exactly reproduced. (The exact version is still under development.)
+c The x needs to be filled with uniformly spaced numbers between 0 and 1.
+c
+c This version takes as input the normalized and the integreated distribution
+
+      integer(ISZ):: i, ip, di
 
 c     --- Now distribute the particles
 c     --- The algorithm assumes that n is piece-wise linear between grid
@@ -6700,12 +6735,12 @@ c     --- points and uses the analytic integration of that form between
 c     --- the grid points.
 c     --- When the distribution has a nearly uniform section, a modified
 c     --- expression is required.
-      do ip=1,np
+      do ip=1, np
 
 c       --- x needs to be prefilled in this version
 c       --- Initialize xp with a uniform load
 c       x(ip) = .5/np + wranf()*(np-1.)/np
-c       x(ip) = wrandom(method,ip,2,1958,252)
+c       x(ip) = wrandom(method, ip, 2, 1958, 252)
 
 c       --- Linear search
 c       i=0

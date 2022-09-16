@@ -3278,6 +3278,10 @@ load1d(np:integer,x(np):real,nx:integer,n(0:nx):real,dx:real)
              subroutine # Loads particles approximately into a 1-D distribution
 load1drandom(np:integer,x(np):real,nx:integer,n(0:nx):real,dx:real)
              subroutine # Loads particles approximately into a 1-D distribution using a random load with the x prefilled
+load1dgeneratenorm(nx:integer, n(0:nx):real, nnorm(0:nx):real, nintx(0:nx):real)
+             subroutine # Precalculates the normalized and integrated distribution
+load1drandomwithnorm(np:integer, x(np):real, nx:integer, nnorm(0:nx):real, nintx(0:nx):real, dx:real)
+             subroutine # Loads particles approximately into a 1-D distribution with x prefilled and norm precalculated
 load2d(np:integer,x(np):real,y(np):real,nx:integer,ny:integer,n(0:nx,0:ny):real,dx:real,dy:real)
              subroutine # Loads particles approximately into a 2-D distribution
 load2dfast(np:integer,x(np):real,y(np):real,nx:integer,ny:integer,n(0:nx,0:ny):real,dx:real,dy:real,xmin:real,ymin:real)
