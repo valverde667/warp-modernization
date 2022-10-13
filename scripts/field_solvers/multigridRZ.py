@@ -1366,8 +1366,8 @@ class MultiGrid2DSlice(MultiGrid3D):
         f3d.gridmode = 1
 
         # --- Save input parameters
-        self.processdefaultsfrompackage(MultiGrid2D.__w3dinputs__,w3d,kw)
-        self.processdefaultsfrompackage(MultiGrid2D.__f3dinputs__,f3d,kw)
+        self.processdefaultsfrompackage(MultiGrid2DSlice.__w3dinputs__,w3d,kw)
+        self.processdefaultsfrompackage(MultiGrid2DSlice.__f3dinputs__,f3d,kw)
         self.lapplyphiclamp = kw.pop('lapplyphiclamp', false)
 
         # --- If there are any remaning keyword arguments, raise an error.
@@ -1405,10 +1405,10 @@ class MultiGrid2DSlice(MultiGrid3D):
                                :]
 
     def getselfe(self,*args,**kw):
-        return super(MultiGrid2D,self).getselfe(*args,**kw)
+        return super(MultiGrid2DSlice,self).getselfe(*args,**kw)
 
     def getselfep(self,*args,**kw):
-        return super(MultiGrid2D,self).getselfep(*args,**kw)
+        return super(MultiGrid2DSlice,self).getselfep(*args,**kw)
 
     def setsourcepatposition(self,x,y,z,ux,uy,uz,gaminv,wfact,zgrid,q,w,
                              depos_order):
