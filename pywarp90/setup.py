@@ -41,7 +41,11 @@ dummydist = setuptools.Distribution()
 dummydist.parse_command_line()
 dummybuild = dummydist.get_command_obj('build')
 dummybuild.finalize_options()
-builddir = dummybuild.build_temp
+
+if parallel:
+    builddir = os.path.join(dummybuild.build_base, 'temp_parallel')
+else:
+    builddir = os.path.join(dummybuild.build_base, 'temp')
 
 if dummydist.commands[-1] == 'install':
     # --- During an install, remove the build/lib directory, since distutils
