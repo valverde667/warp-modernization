@@ -10,66 +10,66 @@ BUILDBASEDIR = build3
 INSTALLOPTIONS = #--user
 -include Makefile.local3.pympi
 BUILDBASE = --build-base $(BUILDBASEDIR)
-BUILDDIR = --builddir $(BUILDBASEDIR)/temp_parallel
+TEMPBUILDDIR = $(BUILDBASEDIR)/temp_parallel
 INSTALLARGS = --pkgbase warp $(BUILDBASE)
 MPIPARALLEL = --farg "-DMPIPARALLEL"
 
-install: $(BUILDBASEDIR)/topparallelpydep $(BUILDBASEDIR)/envparallelpydep $(BUILDBASEDIR)/w3dparallelpydep $(BUILDBASEDIR)/f3dparallelpydep $(BUILDBASEDIR)/wxyparallelpydep $(BUILDBASEDIR)/fxyparallelpydep $(BUILDBASEDIR)/wrzparallelpydep $(BUILDBASEDIR)/frzparallelpydep $(BUILDBASEDIR)/herparallelpydep $(BUILDBASEDIR)/cirparallelpydep $(BUILDBASEDIR)/choparallelpydep $(BUILDBASEDIR)/em3dparallelpydep ranffortran.c
+install: $(TEMPBUILDDIR)/topparallelpydep $(TEMPBUILDDIR)/envparallelpydep $(TEMPBUILDDIR)/w3dparallelpydep $(TEMPBUILDDIR)/f3dparallelpydep $(TEMPBUILDDIR)/wxyparallelpydep $(TEMPBUILDDIR)/fxyparallelpydep $(TEMPBUILDDIR)/wrzparallelpydep $(TEMPBUILDDIR)/frzparallelpydep $(TEMPBUILDDIR)/herparallelpydep $(TEMPBUILDDIR)/cirparallelpydep $(TEMPBUILDDIR)/choparallelpydep $(TEMPBUILDDIR)/em3dparallelpydep ranffortran.c
 	$(PYTHON) setup.py $(FCOMP) $(FCOMPEXEC) --parallel build $(BUILDBASE) install $(INSTALLOPTIONS)
 
-build: $(BUILDBASEDIR)/topparallelpydep $(BUILDBASEDIR)/envparallelpydep $(BUILDBASEDIR)/w3dparallelpydep $(BUILDBASEDIR)/f3dparallelpydep $(BUILDBASEDIR)/wxyparallelpydep $(BUILDBASEDIR)/fxyparallelpydep $(BUILDBASEDIR)/wrzparallelpydep $(BUILDBASEDIR)/frzparallelpydep $(BUILDBASEDIR)/herparallelpydep $(BUILDBASEDIR)/cirparallelpydep $(BUILDBASEDIR)/choparallelpydep $(BUILDBASEDIR)/em3dparallelpydep ranffortran.c
+build: $(TEMPBUILDDIR)/topparallelpydep $(TEMPBUILDDIR)/envparallelpydep $(TEMPBUILDDIR)/w3dparallelpydep $(TEMPBUILDDIR)/f3dparallelpydep $(TEMPBUILDDIR)/wxyparallelpydep $(TEMPBUILDDIR)/fxyparallelpydep $(TEMPBUILDDIR)/wrzparallelpydep $(TEMPBUILDDIR)/frzparallelpydep $(TEMPBUILDDIR)/herparallelpydep $(TEMPBUILDDIR)/cirparallelpydep $(TEMPBUILDDIR)/choparallelpydep $(TEMPBUILDDIR)/em3dparallelpydep ranffortran.c
 	$(PYTHON) setup.py $(FCOMP) $(FCOMPEXEC) --parallel build $(BUILDBASE)
 
-$(BUILDBASEDIR)/topparallelpydep: top.F top_lattice.F top_fsl.F dtop.F util.F topparallel.F top.v
-	$(FORTHON) -a --pkgsuffix parallel $(BUILDDIR) $(INSTALLARGS) $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) top top_lattice.F top_fsl.F dtop.F util.F topparallel.F $(INSTALLOPTIONS)
+$(TEMPBUILDDIR)/topparallelpydep: top.F top_lattice.F top_fsl.F dtop.F util.F topparallel.F top.v
+	$(FORTHON) -a --pkgsuffix parallel --builddir $(TEMPBUILDDIR) $(INSTALLARGS) $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) top top_lattice.F top_fsl.F dtop.F util.F topparallel.F $(INSTALLOPTIONS)
 	touch $@
 
-$(BUILDBASEDIR)/envparallelpydep: $(BUILDBASEDIR)/topparallelpydep env.F env.v
-	$(FORTHON) -a --pkgsuffix parallel $(BUILDDIR) $(INSTALLARGS) $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) env $(INSTALLOPTIONS)
+$(TEMPBUILDDIR)/envparallelpydep: $(TEMPBUILDDIR)/topparallelpydep env.F env.v
+	$(FORTHON) -a --pkgsuffix parallel --builddir $(TEMPBUILDDIR) $(INSTALLARGS) $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) env $(INSTALLOPTIONS)
 	touch $@
 
-$(BUILDBASEDIR)/w3dparallelpydep: $(BUILDBASEDIR)/topparallelpydep w3d.F dw3d.F w3d_injection.F w3d_interp.F w3d_collisions.F w3d_utilities.F w3d_load.F w3dparallel.F w3d.v
-	$(FORTHON) -a --pkgsuffix parallel $(BUILDDIR) $(INSTALLARGS) $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) --macros top.v w3d dw3d.F w3d_injection.F w3d_interp.F w3d_collisions.F w3d_load.F w3d_utilities.F w3dparallel.F $(INSTALLOPTIONS)
+$(TEMPBUILDDIR)/w3dparallelpydep: $(TEMPBUILDDIR)/topparallelpydep w3d.F dw3d.F w3d_injection.F w3d_interp.F w3d_collisions.F w3d_utilities.F w3d_load.F w3dparallel.F w3d.v
+	$(FORTHON) -a --pkgsuffix parallel --builddir $(TEMPBUILDDIR) $(INSTALLARGS) $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) --macros top.v w3d dw3d.F w3d_injection.F w3d_interp.F w3d_collisions.F w3d_load.F w3d_utilities.F w3dparallel.F $(INSTALLOPTIONS)
 	touch $@
 
-$(BUILDBASEDIR)/f3dparallelpydep: $(BUILDBASEDIR)/topparallelpydep $(BUILDBASEDIR)/w3dparallelpydep f3d.F f3d_mgrid.F f3d_ImplicitES.F f3d_mgrid_be.F f3d_bfield.F f3d_conductors.F fft.F f3d.v f3dparallel.F
-	$(FORTHON) -a --pkgsuffix parallel $(BUILDDIR) $(INSTALLARGS) $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) --macros top.v f3d f3d_mgrid.F f3d_ImplicitES.F f3d_mgrid_be.F f3d_bfield.F f3d_conductors.F fft.F f3dparallel.F $(INSTALLOPTIONS)
+$(TEMPBUILDDIR)/f3dparallelpydep: $(TEMPBUILDDIR)/topparallelpydep $(TEMPBUILDDIR)/w3dparallelpydep f3d.F f3d_mgrid.F f3d_ImplicitES.F f3d_mgrid_be.F f3d_bfield.F f3d_conductors.F fft.F f3d.v f3dparallel.F
+	$(FORTHON) -a --pkgsuffix parallel --builddir $(TEMPBUILDDIR) $(INSTALLARGS) $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) --macros top.v f3d f3d_mgrid.F f3d_ImplicitES.F f3d_mgrid_be.F f3d_bfield.F f3d_conductors.F fft.F f3dparallel.F $(INSTALLOPTIONS)
 	touch $@
 
-$(BUILDBASEDIR)/wxyparallelpydep: $(BUILDBASEDIR)/topparallelpydep $(BUILDBASEDIR)/w3dparallelpydep wxy.F wxy.v
-	$(FORTHON) -a --pkgsuffix parallel $(BUILDDIR) $(INSTALLARGS) $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) wxy $(INSTALLOPTIONS)
+$(TEMPBUILDDIR)/wxyparallelpydep: $(TEMPBUILDDIR)/topparallelpydep $(TEMPBUILDDIR)/w3dparallelpydep wxy.F wxy.v
+	$(FORTHON) -a --pkgsuffix parallel --builddir $(TEMPBUILDDIR) $(INSTALLARGS) $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) wxy $(INSTALLOPTIONS)
 	touch $@
 
-$(BUILDBASEDIR)/fxyparallelpydep: $(BUILDBASEDIR)/topparallelpydep $(BUILDBASEDIR)/w3dparallelpydep $(BUILDBASEDIR)/f3dparallelpydep fxy.F fxy_mgrid.F fxy.v
-	$(FORTHON) -a --pkgsuffix parallel $(BUILDDIR) $(INSTALLARGS) $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) fxy fxy_mgrid.F $(INSTALLOPTIONS)
+$(TEMPBUILDDIR)/fxyparallelpydep: $(TEMPBUILDDIR)/topparallelpydep $(TEMPBUILDDIR)/w3dparallelpydep $(TEMPBUILDDIR)/f3dparallelpydep fxy.F fxy_mgrid.F fxy.v
+	$(FORTHON) -a --pkgsuffix parallel --builddir $(TEMPBUILDDIR) $(INSTALLARGS) $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) fxy fxy_mgrid.F $(INSTALLOPTIONS)
 	touch $@
 
-$(BUILDBASEDIR)/wrzparallelpydep: $(BUILDBASEDIR)/topparallelpydep $(BUILDBASEDIR)/w3dparallelpydep wrz.F dwrz.F wrz.v
-	$(FORTHON) -a --pkgsuffix parallel $(BUILDDIR) $(INSTALLARGS) $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) --macros top.v wrz dwrz.F $(INSTALLOPTIONS)
+$(TEMPBUILDDIR)/wrzparallelpydep: $(TEMPBUILDDIR)/topparallelpydep $(TEMPBUILDDIR)/w3dparallelpydep wrz.F dwrz.F wrz.v
+	$(FORTHON) -a --pkgsuffix parallel --builddir $(TEMPBUILDDIR) $(INSTALLARGS) $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) --macros top.v wrz dwrz.F $(INSTALLOPTIONS)
 	touch $@
 
-$(BUILDBASEDIR)/frzparallelpydep: $(BUILDBASEDIR)/topparallelpydep $(BUILDBASEDIR)/w3dparallelpydep $(BUILDBASEDIR)/f3dparallelpydep frz.F frz_mgrid.F90 frz_mgrid_be.F frz_ImplicitES.F frz.v frzparallel.F90
-	$(FORTHON) -a --pkgsuffix parallel $(BUILDDIR) $(INSTALLARGS) $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) --compile_first frzparallel frz frz_mgrid.F90 frz_mgrid_be.F frz_ImplicitES.F frzparallel.F90 $(INSTALLOPTIONS)
+$(TEMPBUILDDIR)/frzparallelpydep: $(TEMPBUILDDIR)/topparallelpydep $(TEMPBUILDDIR)/w3dparallelpydep $(TEMPBUILDDIR)/f3dparallelpydep frz.F frz_mgrid.F90 frz_mgrid_be.F frz_ImplicitES.F frz.v frzparallel.F90
+	$(FORTHON) -a --pkgsuffix parallel --builddir $(TEMPBUILDDIR) $(INSTALLARGS) $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) --compile_first frzparallel frz frz_mgrid.F90 frz_mgrid_be.F frz_ImplicitES.F frzparallel.F90 $(INSTALLOPTIONS)
 	touch $@
 
-$(BUILDBASEDIR)/herparallelpydep: $(BUILDBASEDIR)/topparallelpydep $(BUILDBASEDIR)/wrzparallelpydep her.F her.v
-	$(FORTHON) -a --pkgsuffix parallel $(BUILDDIR) $(INSTALLARGS) $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) her $(INSTALLOPTIONS)
+$(TEMPBUILDDIR)/herparallelpydep: $(TEMPBUILDDIR)/topparallelpydep $(TEMPBUILDDIR)/wrzparallelpydep her.F her.v
+	$(FORTHON) -a --pkgsuffix parallel --builddir $(TEMPBUILDDIR) $(INSTALLARGS) $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) her $(INSTALLOPTIONS)
 	touch $@
 
-$(BUILDBASEDIR)/cirparallelpydep: $(BUILDBASEDIR)/topparallelpydep cir.F cir.v
-	$(FORTHON) -a --pkgsuffix parallel $(BUILDDIR) $(INSTALLARGS) $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) cir $(INSTALLOPTIONS)
+$(TEMPBUILDDIR)/cirparallelpydep: $(TEMPBUILDDIR)/topparallelpydep cir.F cir.v
+	$(FORTHON) -a --pkgsuffix parallel --builddir $(TEMPBUILDDIR) $(INSTALLARGS) $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) cir $(INSTALLOPTIONS)
 	touch $@
 
-$(BUILDBASEDIR)/choparallelpydep: $(BUILDBASEDIR)/topparallelpydep $(BUILDBASEDIR)/f3dparallelpydep cho.F cho.v
-	$(FORTHON) -a --pkgsuffix parallel $(BUILDDIR) $(INSTALLARGS) $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) cho $(INSTALLOPTIONS)
+$(TEMPBUILDDIR)/choparallelpydep: $(TEMPBUILDDIR)/topparallelpydep $(TEMPBUILDDIR)/f3dparallelpydep cho.F cho.v
+	$(FORTHON) -a --pkgsuffix parallel --builddir $(TEMPBUILDDIR) $(INSTALLARGS) $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) cho $(INSTALLOPTIONS)
 	touch $@
 
-$(BUILDBASEDIR)/em2dparallelpydep: $(BUILDBASEDIR)/topparallelpydep em2d.F90 em2d_apml.F90 em2d_apml_cummer.F90 em2d_maxwell.F90 em2d.v
-	$(FORTHON) -a --pkgsuffix parallel $(BUILDDIR) $(INSTALLARGS) $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) em2d em2d_apml.F90 em2d_apml_cummer.F90 em2d_maxwell.F90 $(INSTALLOPTIONS)
+$(TEMPBUILDDIR)/em2dparallelpydep: $(TEMPBUILDDIR)/topparallelpydep em2d.F90 em2d_apml.F90 em2d_apml_cummer.F90 em2d_maxwell.F90 em2d.v
+	$(FORTHON) -a --pkgsuffix parallel --builddir $(TEMPBUILDDIR) $(INSTALLARGS) $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) em2d em2d_apml.F90 em2d_apml_cummer.F90 em2d_maxwell.F90 $(INSTALLOPTIONS)
 	touch $@
 
-$(BUILDBASEDIR)/em3dparallelpydep: $(BUILDBASEDIR)/topparallelpydep $(BUILDBASEDIR)/frzparallelpydep em3d.F90 em3d_maxwell.F90 em3d.v
-	$(FORTHON) -a --pkgsuffix parallel $(BUILDDIR) $(INSTALLARGS) $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) em3d em3d_maxwell.F90 $(INSTALLOPTIONS)
+$(TEMPBUILDDIR)/em3dparallelpydep: $(TEMPBUILDDIR)/topparallelpydep $(TEMPBUILDDIR)/frzparallelpydep em3d.F90 em3d_maxwell.F90 em3d.v
+	$(FORTHON) -a --pkgsuffix parallel --builddir $(TEMPBUILDDIR) $(INSTALLARGS) $(VERBOSE) $(FCOMP) $(FCOMPEXEC) $(FARGS) $(DEBUG) $(MPIPARALLEL) em3d em3d_maxwell.F90 $(INSTALLOPTIONS)
 	touch $@
 
 ranffortran.c: ranffortran.m
