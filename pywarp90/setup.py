@@ -55,11 +55,6 @@ if dummydist.commands[-1] == 'install':
     else:
         os.system(f'rm -rf {dummybuild.build_platlib}/warp/warpC.*')
 
-warppkgs = ['top', 'env', 'w3d', 'f3d', 'wxy', 'fxy', 'wrz', 'frz', 'her', 'cir', 'cho', 'em3d']
-
-def makeobjects(pkg):
-    return [pkg + '.o', pkg + '_p.o', pkg + 'pymodule.o']
-
 library_dirs = fcompiler.libdirs
 libraries = fcompiler.libs
 extra_link_args = ['-g'] + fcompiler.extra_link_args
