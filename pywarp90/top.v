@@ -3101,6 +3101,9 @@ grid2grid(unew(0:nxnew,0:nynew):real,nxnew:integer,nynew:integer,
           uold(0:nxold,0:nyold):real,nxold:integer,nyold:integer,
           xminold:real,xmaxold:real,yminold:real,ymaxold:real) subroutine
         # project field from one grid to another using linear weighting
+setgrid2dbysorting(nsort:integer, np:integer, nd:integer, x(np):real, y(np):real, dd(np,nd):real,
+                   nx:integer, ny:integer, grid(0:nx,0:ny,nd):real,
+                   xmin:real, xmax:real, ymin:real, ymax:real) subroutine
 gridtogrid3d(nxin:integer,nyin:integer,nzin:integer,
              xminin:real,xmaxin:real,yminin:real,ymaxin:real,
              zminin:real,zmaxin:real,

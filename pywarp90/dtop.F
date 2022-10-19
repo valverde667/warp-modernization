@@ -3301,6 +3301,105 @@ c       --- if within grid, gather
       return
       end
 c=============================================================================
+      subroutine setgrid2dbysorting(nsort, np, nd, x, y, dd, nx, ny, grid, xmin, xmax, ymin, ymax)
+      integer(ISZ):: nsort, nx, ny, nd, np
+      real(kind=8):: x(np), y(np), dd(np, nd)
+      real(kind=8):: grid(0:nx,0:ny, nd)
+      real(kind=8):: xmin, xmax, ymin, ymax
+
+      integer(ISZ):: ip, ix, iy,  idist, isort
+      integer(ISZ):: ixmin, ixmax, iymin, iymax, ixg, iyg
+      integer(ISZ):: nsum
+      real(kind=8):: gx, gy, dx, dy, dxi, dyi, wx, wy, dist, distsum, maxdist
+      real(kind=8):: xg, yg
+      real(kind=8), allocatable:: distgrid(:,:,:)
+      integer(ISZ), allocatable:: ipgrid(:,:,:)
+      integer(ISZ), allocatable:: gridcount(:,:)
+
+      allocate(distgrid(nsort,0:nx,0:ny))
+      allocate(ipgrid(nsort,0:nx,0:ny))
+      allocate(gridcount(0:nx,0:ny))
+
+      distgrid = 1.e20
+      ipgrid = 0
+      gridcount = 0
+
+      if (xmax == xmin .or. ymax == ymin) then
+        call kaboom("setgrid2d: the grid extent is zero, xmin==xmax or ymin==ymax")
+        return
+      endif
+
+c     --- set grid cell inverse sizes
+      dx = (xmax - xmin)/nx
+      dy = (ymax - ymin)/ny
+      dxi = nx/(xmax - xmin)
+      dyi = ny/(ymax - ymin)
+
+      idist = nx/5
+
+c     --- loop over particles
+      do ip=1,np
+
+c       --- find location on grid
+        gx = (x(ip) - xmin)*dxi
+        gy = (y(ip) - ymin)*dyi
+
+        ix = int(gx)
+        iy = int(gy)
+
+        ixmin = max(0, ix - idist)
+        ixmax = min(nx, ix + idist)
+        iymin = max(0, iy - idist)
+        iymax = min(ny, iy + idist)
+
+        do iyg=iymin, iymax
+          do ixg=ixmin, ixmax
+            xg = xmin + ixg*dx
+            yg = ymin + iyg*dy
+            dist = sqrt((x(ip) - xg)**2 + (y(ip) - yg)**2)
+            isort = nsort + 1
+            do while (isort > 1 .and. dist < distgrid(isort-1,ixg,iyg))
+              isort = isort - 1
+              if (isort < nsort) then
+                distgrid(isort+1,ixg,iyg) = distgrid(isort,ixg,iyg)
+                ipgrid(isort+1,ixg,iyg) = ipgrid(isort,ixg,iyg)
+               endif
+            enddo
+            if (isort <= nsort) then
+               distgrid(isort,ixg,iyg) = dist
+               ipgrid(isort,ixg,iyg) = ip
+               gridcount(ixg,iyg) = gridcount(ixg,iyg) + 1
+            endif
+          enddo
+        enddo
+      enddo
+      print*,"max count", maxval(gridcount)
+      print*,"min count", minval(gridcount)
+
+      grid = 0.
+      do iyg=0, ny
+        do ixg=0, nx
+          distsum = 0.
+          nsum = min(nsort, gridcount(ixg,iyg))
+          do isort=1, nsum
+            ip = ipgrid(isort,ixg,iyg)
+            dist = distgrid(isort,ixg,iyg)
+            distsum = distsum + 1.
+            grid(ixg,iyg,:) = grid(ixg,iyg,:) + dd(ip,:)
+          enddo
+          if (distsum > 0.) then
+            grid(ixg,iyg,:) = grid(ixg,iyg,:)/distsum
+          endif
+        enddo
+      enddo
+
+      deallocate(distgrid)
+      deallocate(ipgrid)
+      deallocate(gridcount)
+
+      return
+      end
+c=============================================================================
       subroutine gridtogrid3d(nxin,nyin,nzin,
      &                        xminin,xmaxin,yminin,ymaxin,zminin,zmaxin,gridin,
      &                        nxout,nyout,nzout,
