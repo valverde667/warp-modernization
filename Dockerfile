@@ -65,8 +65,8 @@ RUN cd /home/warp_user/warp/pywarp90 \
     && echo 'FCOMP= -F gfortran' >> Makefile.local3.pympi \
     && echo 'FCOMPEXEC= --fcompexec mpifort' >> Makefile.local3.pympi \
     && make install \
-    && make clean \
     && make pinstall \
+    && make clean \
     && make pclean
 
 RUN chown -R warp_user /home/warp_user/warp/
