@@ -72,6 +72,12 @@ RUN cd /home/warp_user/warp/pywarp90 \
 RUN chown -R warp_user /home/warp_user/warp/
 RUN chgrp -R warp_user /home/warp_user/warp/
 
+# This is a bit of a hack. The permissions are not being set properly
+# for the package data files that Warp installs. This fixes it.
+# This shouldn't matter for anything else since everything else
+# should already have those same permissions.
+RUN chmod -R go+rX /usr/local
+
 # Grant sudo access without password
 RUN echo 'warp_user ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
 
