@@ -57,6 +57,14 @@ RUN cd /home/warp_user/warp/pywarp90 \
     #&& make pinstall \
     #&& make pclean
 
+# This is a bit of a hack. The permissions are not being set properly
+# for the package data files that Warp installs. This fixes it.
+# This shouldn't matter for anything else since everything else
+# should already have those same permissions.
+RUN find /usr/local -name \*.gs -exec chmod go+r {} \;
+RUN find /usr/local -name \*.gp -exec chmod go+r {} \;
+RUN find /usr/local -name aladdin_8.txt -exec chmod go+r {} \;
+
 RUN chown -R warp_user /home/warp_user/warp/
 RUN chgrp -R warp_user /home/warp_user/warp/
 

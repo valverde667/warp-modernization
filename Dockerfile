@@ -76,7 +76,9 @@ RUN chgrp -R warp_user /home/warp_user/warp/
 # for the package data files that Warp installs. This fixes it.
 # This shouldn't matter for anything else since everything else
 # should already have those same permissions.
-RUN chmod -R go+rX /usr/local
+RUN find /usr/local -name \*.gs -exec chmod go+r {} \;
+RUN find /usr/local -name \*.gp -exec chmod go+r {} \;
+RUN find /usr/local -name aladdin_8.txt -exec chmod go+r {} \;
 
 # Grant sudo access without password
 RUN echo 'warp_user ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
