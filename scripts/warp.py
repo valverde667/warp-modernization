@@ -181,12 +181,9 @@ if lparallel:
 
 #=============================================================================
 # --- Set physical constants which depend on others.
-# --- Magnetic constant = 4*pi*1.e-7
-top.mu0 = 4*top.pi/10000000
 # --- Conversion factor from joules to eV is just echarge
 top.jperev = top.echarge
-# --- Epsilon_0 calculated from speed of light and mu_0
-top.eps0 = 1/(top.mu0*top.clight*top.clight)
+
 # --- Create python versions of the constants
 amu       = top.amu
 clight    = top.clight
