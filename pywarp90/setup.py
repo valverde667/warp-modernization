@@ -48,7 +48,7 @@ else:
     builddir = os.path.join(dummybuild.build_base, 'temp')
 
 if dummydist.commands[-1] == 'install':
-    # --- During an install, remove the build/lib directory, since distutils
+    # --- During an install, remove the build/lib directory, since setuptools
     # --- doesn't update an older warpC.so even if there were changes.
     if parallel:
         os.system(f'rm -rf {dummybuild.build_platlib}/warp/warpCparallel.*')
@@ -85,7 +85,7 @@ else:
 
 # --- The object files are always put in a build/temp directory relative to where the
 # --- source file is, rather than relative to the main build directory.
-# --- This tells distutils to put the objects in the same directory
+# --- This tells setuptools to put the objects in the same directory
 # --- as the source files.
 if dummydist.commands[-1] == 'build':
     sys.argv += ['--build-temp', '']

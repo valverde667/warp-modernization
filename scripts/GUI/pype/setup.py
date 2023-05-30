@@ -4,12 +4,12 @@
 #      http://starship.python.net/crew/theller/py2exe/
 # 2. run the following command:
 #      python setup.py py2exe -w -f
-from distutils.core import setup
+import setuptools
 import py2exe
 import pype
 
-setup(name="PyPE-win32",
-      version=pype.VERSION,
-      scripts=["pype.py"],
-      data_files=[('', ('stc-styles.rc.cfg', 'readme.txt', 'gpl.txt', 'changelog.txt', 'wxProject.py'))],
+setuptools.setup(name="PyPE-win32",
+                 version=pype.VERSION,
+                 scripts=["pype.py"],
+                 data_files=[('', ('stc-styles.rc.cfg', 'readme.txt', 'gpl.txt', 'changelog.txt', 'wxProject.py'))],
 )
