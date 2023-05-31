@@ -2447,6 +2447,7 @@ class Grid:
       conductor. Note that these are relative to the lab frame.
     - zbeam=top.zbeam: location of grid frame relative to lab frame
     - nx,ny,nz: Number of grid cells in the mesh. Defaults to values from w3d
+    - nxlocal,nylocal,nzlocal: Number of grid cells in the local mesh. Defaults to values from w3d
     - xmmin,xmmax,ymmin,ymmax,zmmin,zmmax: extent of mesh. Defaults to values
                                            from w3d
     - zscale=1.: scale factor on dz. This is used when the relativistic scaling
