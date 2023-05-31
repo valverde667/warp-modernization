@@ -6,7 +6,7 @@ top.lprntpara = false
 top.lpsplots = false
 def setup():
     """This dummy function replaces the setup from warp and is only needed
-    when sing Nose. Nose calls setup before running the test functions
+    when using Nose. Nose calls setup before running the test functions
     (and there is no way of preventing it)."""
     pass
 
@@ -18,10 +18,10 @@ top.runmaker = "David P. Grote"
 # --- Create the beam species
 beam = Species(type=Potassium,charge_state=+1,name="Beam species")
 
-# --- Set input parameters describing the beam, 72 to 17.
-beam.a0       = 15.60152892731585*mm
-beam.b0       =  8.75924684128793*mm
-beam.emit     = 62.46985327098694e-06
+# --- Set input parameters describing the beam, 72 to 20.
+beam.a0       = 15.601529105582029*mm
+beam.b0       =  8.759246941372836*mm
+beam.emit     = 62.46985469857296e-06
 beam.ap0      = 0.e0
 beam.bp0      = 0.e0
 beam.ibeam    = 2.e-03
@@ -35,7 +35,7 @@ beam.vthz     = .5e0*beam.vbeam*beam.emit/sqrt(beam.a0*beam.b0) # Vthz ~ Vthperp
 hlp     = 36.0e-2  # half lattice period length
 piperad = 2.0e-2 # pipe radius
 quadlen = 11.e-2   # quadrupole length
-dbdx    = 8.4817662372660610
+dbdx    = 8.481766426477135
 
 # --- Set general lattice variables.
 top.tunelen   = 2.e0*hlp

@@ -374,12 +374,10 @@ c     Set species data
       call species
 
 c     Set constants that are derived from one another
-c     --- Magnetic constant = 4*pi*1.e-7
-      mu0 = 4.*pi*1.e-7
+c     --- Magnetic constant, set from eps0 and clight
+      mu0 = 1./(eps0*clight*clight)
 c     --- Conversion factor from joules to eV is just echarge
       jperev = echarge
-c     --- Epsilon_0 calculated from speed of light and mu_0
-      eps0 = 1./(mu0*clight*clight)
 
 c     --- Compute gammabar and vbeam or ekin (beam kinetic energy) from
 c     --- whichever of the two quantities, vbeam or ekin, the user has

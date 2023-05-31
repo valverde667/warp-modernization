@@ -177,7 +177,7 @@ eps0          real /8.8541878128e-12/ [F/m] # Permittivity of free space
 euler         real /0.57721566490153386/  # Euler-Masceroni constant
 jperev        real /0.0/    [J/eV]        # Conversion factor, Joules per eV
                                           # Set to echarge in derivqty
-mu0           real /1.25663706212e-6/ [H/m] # Permeability of free space
+mu0           real /0.0/ [H/m] # Permeability of free space
 boltzmann     real /1.380649e-23/ [J/K]  # Boltzmann's constant
 avogadro      real /6.02214076e23/        # Avogadro's Number
 planck        real /6.62607015e-34/ [J.s] # Planck's constant
