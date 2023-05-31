@@ -1164,6 +1164,8 @@ boost_z0                  real /0./
    # it is assumed that t=0 in both frames at initialization
 allspecl                  logical  /.false./
    # flag for making all time steps "special" ones
+nonespecl                 logical /.false./
+   # flag for making no time steps "special" ones
 depos                     character*8 /"direct1"/
    # Specifies charge deposition algorithm, "scalar", "vector", "vector1",
    # "direct", "direct1", "dspline2".

@@ -866,7 +866,7 @@ c  be done at the end of this step.
          llabwn   = dolabwn()
          lspecial = (lfinishd .or. lalways .or. lseldom .or. ldump .or.
      &            lmoments .or. lhist .or. llabwn .or. llast .or.
-     &            (it == 0) .or. allspecl)
+     &            (it == 0) .or. allspecl) .and. (.not. nonespecl)
 
 c  Set the "gap" electric field.
 
