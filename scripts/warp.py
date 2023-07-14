@@ -224,7 +224,7 @@ top.starttimedump = top.starttime
 # --- only ~1.e15. 1./numpy.finfo('d').eps is the largest floating point
 # --- number such that the number minus 0.5 is correct (the 0.5 is needed
 # --- since it is used in nint).
-top.ssn = int(min(sys.maxsize,1./numpy.finfo('d').eps)/npes*me + 1)
+top.ssn = int(minimum(sys.maxsize,1./numpy.finfo('d').eps)/npes*me + 1)
 
 # --- Simple function to calculate Child-Langmuir current density
 def childlangmuir(v,d,q=None,m=None):
