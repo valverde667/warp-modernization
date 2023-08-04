@@ -279,7 +279,7 @@ class MultiGrid3D(SubcycledPoissonSolver):
         except AttributeError:
             self.lwithselfep = 0
         self.lwithselfep = (self.lwithselfep or
-                            sometrue(top.efetch == 3) or
+                            any(top.efetch == 3) or
                             maxnd(top.depos_order) > 1)
 
         if self.lwithselfep:
@@ -619,7 +619,7 @@ class MultiGrid3D(SubcycledPoissonSolver):
                                    self.nxp,self.nyp,self.nzp,
                                    self.nxguardphi,self.nyguardphi,self.nzguardphi,
                                    self.potentialp,self.bounds)
-        if sometrue(top.efetch == 3) or maxnd(top.depos_order) > 1:
+        if any(top.efetch == 3) or maxnd(top.depos_order) > 1:
             self.setfieldpforparticles(*args)
             indts = args[1]
             # --- If this is the first group, set make sure that fieldp gets
@@ -881,7 +881,7 @@ class MultiGrid3D(SubcycledPoissonSolver):
             # --- in case of some unforeseen problem with the code below.
             #ii = (top.cbendzs <= self.zmmax+zgrid and
             #                     self.zmmin+zgrid <= top.cbendze)
-            #self.linbend = sometrue(ii)
+            #self.linbend = any(ii)
 
             setrstar(rstar,self.nzlocal,self.dz,self.zmminlocal,self.getzgrid())
             self.linbend = rstar.min() < largepos
@@ -1286,7 +1286,7 @@ class FullMultiGrid3D(MultiGrid3D):
             # --- in case of some unforeseen problem with the code below.
             #ii = (top.cbendzs <= self.zmmax+zgrid and
             #                     self.zmmin+zgrid <= top.cbendze)
-            #self.linbend = sometrue(ii)
+            #self.linbend = any(ii)
 
             setrstar(rstar,self.nzlocal,self.dz,self.zmminlocal,self.getzgrid())
             self.linbend = rstar.min() < largepos
@@ -1528,7 +1528,7 @@ class MultiGridImplicit3D(MultiGrid3D):
             # --- in case of some unforeseen problem with the code below.
             #ii = (top.cbendzs <= self.zmmax+zgrid and
             #                     self.zmmin+zgrid <= top.cbendze)
-            #self.linbend = sometrue(ii)
+            #self.linbend = any(ii)
 
             setrstar(rstar,self.nzlocal,self.dz,self.zmminlocal,self.getzgrid())
             self.linbend = rstar.min() < largepos

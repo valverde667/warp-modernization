@@ -831,7 +831,7 @@ class MeshRefinement(VisualizableClass):
             # --- Find intersection of parent, self, and child
             cl = maximum(child.fullloweroverrefinement,l)
             cu = minimum(child.fullupperoverrefinement,u)
-            #if sometrue(cl > cu): continue
+            #if any(cl > cu): continue
             if cl[0] > cu[0] or cl[1] > cu[1] or cl[2] > cu[2]: continue
 
             # --- Get childdomains in the intersection region, Wherever the

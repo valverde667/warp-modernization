@@ -504,7 +504,7 @@ class EM3D(SubcycledPoissonSolver):
             # --- Number of fields (E only)
             nfields = 1
 
-        if sometrue(top.efetch == 3):
+        if any(top.efetch == 3):
             return ((1+self.nxp,1+self.nyp,1+self.nzp),
                     (3,1+self.nxp,1+self.nyp,1+self.nzp,nfields),
                     (1+self.nxp+2*self.nxguard,1+self.nyp+2*self.nyguard,1+self.nzp+2*self.nzguard))

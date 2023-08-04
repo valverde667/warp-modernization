@@ -73,7 +73,7 @@ def fieldsolve(iwhich=0,lbeforefs=false,lafterfs=false):
     # --- Now do extra work, updating arrays which depend directly on phi,
     # --- but only when a complete field solve was done.
     if iwhich == -1 or iwhich == 0:
-        if ((sometrue(top.efetch == 3) or maxnd(top.depos_order) > 1) and
+        if ((any(top.efetch == 3) or maxnd(top.depos_order) > 1) and
             top.fstype != 12 and
             (w3d.solvergeom == w3d.XYZgeom or
              w3d.solvergeom == w3d.RZgeom or

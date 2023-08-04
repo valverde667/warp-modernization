@@ -206,7 +206,7 @@ class FieldSolver3dBase(object):
         self.rho = fzeros((1+self.nx,1+self.ny,1+self.nzlocal),'d')
         self.phi = fzeros((1+self.nx,1+self.ny,3+self.nzlocal),'d')
         self.rstar = fzeros(3+self.nzlocal,'d')
-        if sometrue(top.efetch == 3) or maxnd(top.depos_order) > 1:
+        if any(top.efetch == 3) or maxnd(top.depos_order) > 1:
             self.selfe = fzeros((3,1+self.nx,1+self.ny,1+self.nzlocal),'d')
         else:
             self.selfe = 0.

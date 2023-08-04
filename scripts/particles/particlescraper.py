@@ -1333,7 +1333,7 @@ class ParticleScraper(object):
         # --- a code problem. This checks if dtover hasn't been zeroed out
         # --- which means that the particle was never flagged as being inside
         # --- in the loop above.
-        if sometrue(dtover > 0.):
+        if any(dtover > 0.):
             userefined = ((dtover == 0.) | luserefinedifnotlost)
             xc[:] = where(userefined,xc,xcsave)
             yc[:] = where(userefined,yc,ycsave)

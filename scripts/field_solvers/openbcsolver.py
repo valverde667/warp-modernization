@@ -93,7 +93,7 @@ class OpenBC3D(SubcycledPoissonSolver):
         except AttributeError:
             self.lwithselfep = 0
         self.lwithselfep = (self.lwithselfep or
-                            sometrue(top.efetch == 3) or
+                            any(top.efetch == 3) or
                             maxnd(top.depos_order) > 1)
 
         if self.lwithselfep:
@@ -368,7 +368,7 @@ class OpenBC3D(SubcycledPoissonSolver):
                                   self.nxp,self.nyp,self.nzp,self.potentialp,
                                   self.fsdecomp,self.ppdecomp)
 
-        if sometrue(top.efetch == 3) or maxnd(top.depos_order) > 1:
+        if any(top.efetch == 3) or maxnd(top.depos_order) > 1:
             self.setfieldpforparticles(*args)
             indts = args[1]
             # --- If this is the first group, set make sure that fieldp gets
