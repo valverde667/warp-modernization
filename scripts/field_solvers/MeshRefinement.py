@@ -75,7 +75,7 @@ class MeshRefinement(VisualizableClass):
         # --- dimension to zero. (The code only works with XYZ and RZ now.)
         if self.solvergeom == w3d.RZgeom and 0:
             if refinement is not None:
-                if isinstance(refinement,(ndarray,collections.Sequence)):
+                if isinstance(refinement,(ndarray,collections.abc.Sequence)):
                     refinement = [refinement[0],1,refinement[-1]]
                 else:
                     refinement = [refinement,1,refinement]
@@ -2074,7 +2074,7 @@ class MeshRefinement(VisualizableClass):
     def plpotentialz(self,comp=None,ix=None,iy=None,colors=None,selfonly=0,
                      scale=1):
         if colors is None: colors = color
-        elif not isinstance(colors,collections.Sequence): colors = list([colors])
+        elif not isinstance(colors,collections.abc.Sequence): colors = list([colors])
         if self is self.root: accumulateplotlists()
         try:
             if ix < self.fulllower[0]: return
@@ -2102,7 +2102,7 @@ class MeshRefinement(VisualizableClass):
     def plpotentialx(self,comp=None,iy=None,iz=None,colors=None,selfonly=0,
                      scale=1):
         if colors is None: colors = color
-        elif not isinstance(colors,collections.Sequence): colors = list([colors])
+        elif not isinstance(colors,collections.abc.Sequence): colors = list([colors])
         if self is self.root: accumulateplotlists()
         try:
             if iy < self.fulllower[1]: return
@@ -2130,7 +2130,7 @@ class MeshRefinement(VisualizableClass):
     def plpotentialy(self,comp=None,ix=None,iz=None,colors=None,selfonly=0,
                      scale=1):
         if colors is None: colors = color
-        elif not isinstance(colors,collections.Sequence): colors = list([colors])
+        elif not isinstance(colors,collections.abc.Sequence): colors = list([colors])
         if self is self.root: accumulateplotlists()
         try:
             if ix < self.fulllower[0]: return
@@ -2160,7 +2160,7 @@ class MeshRefinement(VisualizableClass):
         # --- Note that rho at the child boundaries is incorrect and not used, so
         # --- don't plot it.
         if colors is None: colors = color
-        elif not isinstance(colors,collections.Sequence): colors = list([colors])
+        elif not isinstance(colors,collections.abc.Sequence): colors = list([colors])
         if self is self.root: accumulateplotlists()
         try:
             if ix < self.fulllower[0]: return
@@ -2201,7 +2201,7 @@ class MeshRefinement(VisualizableClass):
         # --- Note that source at the child boundaries is incorrect and not used, so
         # --- don't plot it.
         if colors is None: colors = color
-        elif not isinstance(colors,collections.Sequence): colors = list([colors])
+        elif not isinstance(colors,collections.abc.Sequence): colors = list([colors])
         if self is self.root: accumulateplotlists()
         try:
             if iy < self.fulllower[1]: return
@@ -2242,7 +2242,7 @@ class MeshRefinement(VisualizableClass):
         # --- Note that source at the child boundaries is incorrect and not used, so
         # --- don't plot it.
         if colors is None: colors = color
-        elif not isinstance(colors,collections.Sequence): colors = list([colors])
+        elif not isinstance(colors,collections.abc.Sequence): colors = list([colors])
         if self is self.root: accumulateplotlists()
         try:
             if ix < self.fulllower[0]: return
@@ -2281,7 +2281,7 @@ class MeshRefinement(VisualizableClass):
     def plfieldz(self,comp=2,ix=None,iy=None,colors=None,selfonly=0,scale=1,
                  withguard=1):
         if colors is None: colors = color
-        elif not isinstance(colors,collections.Sequence): colors = list([colors])
+        elif not isinstance(colors,collections.abc.Sequence): colors = list([colors])
         if withguard:
             lower,upper = self.fulllower,self.fullupper
             iz = slice(None)
@@ -2315,7 +2315,7 @@ class MeshRefinement(VisualizableClass):
     def plfieldx(self,comp=2,iy=None,iz=None,colors=None,selfonly=0,scale=1,
                  withguard=1):
         if colors is None: colors = color
-        elif not isinstance(colors,collections.Sequence): colors = list([colors])
+        elif not isinstance(colors,collections.abc.Sequence): colors = list([colors])
         if withguard:
             lower,upper = self.fulllower,self.fullupper
             ix = slice(None)
@@ -2349,7 +2349,7 @@ class MeshRefinement(VisualizableClass):
     def plfieldy(self,comp=2,ix=None,iz=None,colors=None,selfonly=0,scale=1,
                  withguard=1):
         if colors is None: colors = color
-        elif not isinstance(colors,collections.Sequence): colors = list([colors])
+        elif not isinstance(colors,collections.abc.Sequence): colors = list([colors])
         if withguard:
             lower,upper = self.fulllower,self.fullupper
             iy = slice(None)
@@ -2771,7 +2771,7 @@ class MRBlock2DDielectric(MeshRefinement,MultiGrid2DDielectric):
 
     def plepsilonz(self,ix=None,colors=None,selfonly=0,scale=1):
         if colors is None: colors = color
-        elif not isinstance(colors,collections.Sequence): colors = list([colors])
+        elif not isinstance(colors,collections.abc.Sequence): colors = list([colors])
         if self is self.root: accumulateplotlists()
         try:
             if ix < self.fulllower[0]: return
@@ -2796,7 +2796,7 @@ class MRBlock2DDielectric(MeshRefinement,MultiGrid2DDielectric):
 
     def plepsilonx(self,iz=None,colors=None,selfonly=0,scale=1):
         if colors is None: colors = color
-        elif not isinstance(colors,collections.Sequence): colors = list([colors])
+        elif not isinstance(colors,collections.abc.Sequence): colors = list([colors])
         if self is self.root: accumulateplotlists()
         try:
             if iz < self.fulllower[2]: return
@@ -2883,7 +2883,7 @@ class MRBlockImplicit2D(MeshRefinement,MultiGridImplicit2D):
 
     def plphiz(self,ix=None,colors=None,selfonly=0):
         if colors is None: colors = color
-        elif not isinstance(colors,collections.Sequence): colors = list([colors])
+        elif not isinstance(colors,collections.abc.Sequence): colors = list([colors])
         if ix < self.fulllower[0]: return
         if ix > self.fullupper[0]: return
         if self is self.root: accumulateplotlists()
@@ -2898,7 +2898,7 @@ class MRBlockImplicit2D(MeshRefinement,MultiGridImplicit2D):
 
     def plphix(self,iz=None,colors=None,selfonly=0):
         if colors is None: colors = color
-        elif not isinstance(colors,collections.Sequence): colors = list([colors])
+        elif not isinstance(colors,collections.abc.Sequence): colors = list([colors])
         if iz < self.fulllower[2]: return
         if iz > self.fullupper[2]: return
         if self is self.root: accumulateplotlists()
@@ -2913,7 +2913,7 @@ class MRBlockImplicit2D(MeshRefinement,MultiGridImplicit2D):
 
     def plrhoz(self,ix=None,colors=None,selfonly=0):
         if colors is None: colors = color
-        elif not isinstance(colors,collections.Sequence): colors = list([colors])
+        elif not isinstance(colors,collections.abc.Sequence): colors = list([colors])
         if ix < self.fulllower[0]: return
         if ix > self.fullupper[0]: return
         if self is self.root: accumulateplotlists()
@@ -2928,7 +2928,7 @@ class MRBlockImplicit2D(MeshRefinement,MultiGridImplicit2D):
 
     def plrhox(self,iz=None,colors=None,selfonly=0):
         if colors is None: colors = color
-        elif not isinstance(colors,collections.Sequence): colors = list([colors])
+        elif not isinstance(colors,collections.abc.Sequence): colors = list([colors])
         if iz < self.fulllower[2]: return
         if iz > self.fullupper[2]: return
         if self is self.root: accumulateplotlists()
@@ -2943,7 +2943,7 @@ class MRBlockImplicit2D(MeshRefinement,MultiGridImplicit2D):
 
     def plselfez(self,comp=2,ix=None,colors=None,selfonly=0,withguard=1):
         if colors is None: colors = color
-        elif not isinstance(colors,collections.Sequence): colors = list([colors])
+        elif not isinstance(colors,collections.abc.Sequence): colors = list([colors])
         if withguard:
             lower,upper = self.fulllower,self.fullupper
             iz = slice(None)
@@ -2966,7 +2966,7 @@ class MRBlockImplicit2D(MeshRefinement,MultiGridImplicit2D):
 
     def plselfex(self,comp=2,iz=None,colors=None,selfonly=0,withguard=1):
         if colors is None: colors = color
-        elif not isinstance(colors,collections.Sequence): colors = list([colors])
+        elif not isinstance(colors,collections.abc.Sequence): colors = list([colors])
         if withguard:
             lower,upper = self.fulllower,self.fullupper
             ix = slice(None)

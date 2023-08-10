@@ -5065,7 +5065,7 @@ class ZSrfrvOut(Srfrv,Assembly):
 
         # --- Deal with tablized data.
         # --- Make sure the input is consistent
-        if isinstance(rofzdata,(ndarray,collections.Sequence)):
+        if isinstance(rofzdata,(ndarray,collections.abc.Sequence)):
             self.lrofzfunc = false
             self.zdata = zdata
             self.rofzdata = self.setdatadefaults(rofzdata,len(zdata),rmax)
@@ -5236,7 +5236,7 @@ class ZSrfrvIn(Srfrv,Assembly):
 
         # --- Deal with tablized data.
         # --- Make sure the input is consistent
-        if isinstance(rofzdata,(ndarray,collections.Sequence)):
+        if isinstance(rofzdata,(ndarray,collections.abc.Sequence)):
             self.lrofzfunc = false
             self.zdata = zdata
             self.rofzdata = self.setdatadefaults(rofzdata,len(zdata),rmin)
@@ -5414,7 +5414,7 @@ class ZSrfrvInOut(Srfrv,Assembly):
 
         # --- Deal with tablized data.
         # --- Making sure the input is consistent
-        if isinstance(zmindata,(ndarray,collections.Sequence)):
+        if isinstance(zmindata,(ndarray,collections.abc.Sequence)):
             self.lrminofz = false
             self.zmindata = zmindata
             self.rminofzdata = self.setdatadefaults(rminofzdata,len(zmindata),0.)
@@ -5441,7 +5441,7 @@ class ZSrfrvInOut(Srfrv,Assembly):
             self.rcmindata = None
             self.zcmindata = None
 
-        if isinstance(zmaxdata,(ndarray,collections.Sequence)):
+        if isinstance(zmaxdata,(ndarray,collections.abc.Sequence)):
             self.lrmaxofz = false
             self.zmaxdata = zmaxdata
             self.rmaxofzdata = self.setdatadefaults(rmaxofzdata,len(zmaxdata),

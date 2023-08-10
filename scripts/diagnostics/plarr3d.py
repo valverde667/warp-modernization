@@ -445,8 +445,8 @@ phi is rotation of local coord. about local y axis, relative
         # if specified rgb values for lcolor or rcolor, create
         # a custom palette with the rgb values
         lcoloruse=lcolor;rcoloruse=rcolor
-        if (isinstance(lcolor,collections.Sequence) or isinstance(lcolor,ndarray)
-          or isinstance(rcolor,collections.Sequence) or isinstance(rcolor,ndarray)):
+        if (isinstance(lcolor,collections.abc.Sequence) or isinstance(lcolor,ndarray)
+          or isinstance(rcolor,collections.abc.Sequence) or isinstance(rcolor,ndarray)):
             (lcoloruse,rcoloruse) = makepalette(lcolor,rcolor)
         origframecolor=self.framecolor
         #plot right frame
