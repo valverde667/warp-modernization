@@ -180,10 +180,11 @@ if lparallel:
 #    pass
 
 #=============================================================================
-# --- Set physical constants which depend on others.
-# --- Conversion factor from joules to eV is just echarge
-top.jperev = top.echarge
+# --- Call derivqty to calculate eps0 and jperev
+derivqty()
 
+#=============================================================================
+# --- Set physical constants which depend on others.
 # --- Create python versions of the constants
 amu       = top.amu
 clight    = top.clight
@@ -332,10 +333,6 @@ def warpdoc():
   gethzarrays: Fixes the ordering of hlinechg and hvzofz data from a paralle run
   printtimers: Print timers in a nice annotated format
     """)
-
-#=============================================================================
-# --- Call derivqty to calculate eps0 and jperev
-derivqty()
 
 #=============================================================================
 # --- Convenience function for random numbers.
