@@ -12655,6 +12655,33 @@ subroutine Jyee2node3d(f)
   return
 end subroutine Jyee2node3d
 
+subroutine Jnode2yee3d(f)
+  ! puts EM field back from node to Yee grid
+  use mod_emfield3d
+  implicit none
+  TYPE(EM3D_YEEFIELDtype) :: f
+
+  INTEGER :: j,k,l
+  !return
+  
+    write(0,*) 'Jnode2yee3d '
+
+            k=0
+            do l=-f%nzguard+1,f%nz+f%nzguard-1
+               do j=-f%nxguard,f%nx+f%nxguard
+                  f%jz(j,k,l)=0.5*(f%jz(j,k,l)+f%jz(j,k,l+1))
+               enddo
+            enddo
+
+            do l=-f%nzguard,f%nz+f%nzguard
+               do j=-f%nxguard+1,f%nx+f%nxguard-1
+                  f%jx(j,k,l)=0.5*(f%jx(j,k,l)+f%jx(j+1,k,l))
+               enddo
+            enddo
+
+  return
+end subroutine Jnode2yee3d
+
 subroutine add_current_slice_3d(f,i)
   use mod_emfield3d
   TYPE(EM3D_YEEFIELDtype) :: f

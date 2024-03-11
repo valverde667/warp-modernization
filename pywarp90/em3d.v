@@ -187,8 +187,7 @@ depose_j_n_2dxz(jx:real, jy:real,jz:real,
                            l_particles_weight:logical,
                            l4symtry:logical,
                            l_deposit_nodal:logical,
-                           nsubsteps:integer,
-                           l_coefs_uniform:logical)
+                           l_lower_order_in_v:logical)
                            subroutine
 depose_j_n_2dxz_direct(cj:real,
                            n:integer,x(n):real,z(n):real,
@@ -397,6 +396,7 @@ getb1dz_n_energy_conserving(n:integer,zp(n):real,
 yee2node3d(f:EM3D_YEEFIELDtype) subroutine
 node2yee3d(f:EM3D_YEEFIELDtype) subroutine
 Jyee2node3d(f:EM3D_YEEFIELDtype) subroutine
+Jnode2yee3d(f:EM3D_YEEFIELDtype) subroutine
 em3d_exchange_e(b:EM3D_BLOCKtype) subroutine
 em3d_exchange_b(b:EM3D_BLOCKtype) subroutine
 em3d_exchange_f(b:EM3D_BLOCKtype) subroutine
