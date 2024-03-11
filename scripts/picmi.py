@@ -442,6 +442,9 @@ class CylindricalGrid(picmistandard.PICMI_CylindricalGrid):
 
 class Cartesian2DGrid(picmistandard.PICMI_Cartesian2DGrid):
     def init(self, kw):
+        self.nx, self.ny = self.number_of_cells
+        self.xmin, self.ymin = self.lower_bound
+        self.xmax, self.ymax = self.upper_bound
         w3d.nx = self.nx
         w3d.ny = 2
         w3d.nz = self.ny
@@ -475,6 +478,9 @@ class Cartesian2DGrid(picmistandard.PICMI_Cartesian2DGrid):
 
 class Cartesian3DGrid(picmistandard.PICMI_Cartesian3DGrid):
     def init(self, kw):
+        self.nx, self.ny, self.nz = self.number_of_cells
+        self.xmin, self.ymin, self.zmin  = self.lower_bound
+        self.xmax, self.ymax, self.zmax  = self.upper_bound
         w3d.nx = self.nx
         w3d.ny = self.ny
         w3d.nz = self.nz
