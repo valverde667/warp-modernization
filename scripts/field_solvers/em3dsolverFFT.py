@@ -27,7 +27,7 @@ class EM3DFFT(EM3D):
         self.l_spectral_staggered = not self.l_nodalgrid
 
         self.l_getrho=True
-        self.pml_method=2
+        if self.spectral: self.pml_method=2
 
     def finalize(self,lforce=False):
         if self.finalized and not lforce: return
