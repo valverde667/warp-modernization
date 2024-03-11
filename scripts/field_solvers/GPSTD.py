@@ -153,11 +153,11 @@ def FD_weights_hvincenti(p,l_staggered=False):
     for i in range(p//2):
         l=i+1
         if l_staggered:
-            lognumer = math.log(16.)*(1.-p/2.)+math.log(factorial(p-1.))*2
-            logdenom = math.log(2.*l-1.)*2.+math.log(factorial(p/2.+l-1.))+math.log(factorial(p/2.-l))+2*math.log(factorial(p/2.-1.))
+            lognumer = math.log(16.)*(1.-p/2.)+math.log(factorial(p-1))*2
+            logdenom = math.log(2.*l-1.)*2.+math.log(factorial(p//2+l-1))+math.log(factorial(p//2-l))+2*math.log(factorial(p//2-1))
         else:
-            lognumer = math.log(factorial(p/2.))*2
-            logdenom = math.log(factorial(p/2.+l))+math.log(factorial(p/2.-l))+math.log(l)
+            lognumer = math.log(factorial(p//2.))*2
+            logdenom = math.log(factorial(p//2+l))+math.log(factorial(p//2-l))+math.log(l)
         c[i] = (-1.)**(l+1)*np.exp(lognumer-logdenom)
     return c
 
