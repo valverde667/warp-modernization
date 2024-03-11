@@ -2478,6 +2478,12 @@ vdyoldpid   integer /0/  # position of particles previous y drift velocity in ar
                        # (FORTRAN indexed: based 1)                  
 vdzoldpid   integer /0/  # position of particles previous z drift velocity in array pid
                        # (FORTRAN indexed: based 1)                  
+vxeffpid   integer /0/  # position of particles effective x velocity in array pid
+                       # (FORTRAN indexed: based 1)                  
+vyeffpid   integer /0/  # position of particles effective y velocity in array pid
+                       # (FORTRAN indexed: based 1)                  
+vzeffpid   integer /0/  # position of particles effective z velocity in array pid
+                       # (FORTRAN indexed: based 1)                  
 dxpid   integer /0/    # position of particles dx grid cell size in array pid
                        # (FORTRAN indexed: based 1)                  
 dypid   integer /0/    # position of particles dy grid cell size in array pid

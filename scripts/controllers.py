@@ -430,6 +430,8 @@ userinjection = ControllerFunction('userinjection')
 userinjection2 = ControllerFunction('userinjection2')
 generateuserparticlesforinjection = ControllerFunction('generateuserparticlesforinjection')
 userappliedfields = ControllerFunction('userappliedfields')
+middlexpush = ControllerFunction('middlexpush')
+middlevpush = ControllerFunction('middlevpush')
 
 #=============================================================================
 class ControllerFunctionContainer:
@@ -893,6 +895,44 @@ def uninstalluserappliedfields(f):
 def isinstalleduserappliedfields(f):
     "Checks if the function is called when which applies fields"
     return userappliedfields.isinstalledfuncinlist(f)
+
+# ----------------------------------------------------------------------------
+def callfrommiddlexpush(f):
+    installmiddlexpush(f)
+    return f
+def installmiddlexpush(f):
+    """
+  Adds a user defined function in the middle of the push of positions, i.e., between two x-pushes with dt/2.
+  """
+    middlexpush.installfuncinlist(f)
+    w3d.lmiddlexpush = true
+def uninstallmiddlexpush(f):
+    "Removes the function installed by installmiddlexpush"
+    middlexpush.uninstallfuncinlist(f)
+    if not middlexpush.hasfuncsinstalled():
+        w3d.lmiddlexpush = false
+def isinstalledmiddlexpush(f):
+    "Checks if the function is called when which applies fields"
+    return middlexpush.isinstalledfuncinlist(f)
+
+# ----------------------------------------------------------------------------
+def callfrommiddlevpush(f):
+    installmiddlevpush(f)
+    return f
+def installmiddlevpush(f):
+    """
+  Adds a user defined function in the middle of the push of velocities, i.e., between two v-pushes with dt/2.
+  """
+    middlevpush.installfuncinlist(f)
+    w3d.lmiddlevpush = true
+def uninstallmiddlevpush(f):
+    "Removes the function installed by installmiddlevpush"
+    middlevpush.uninstallfuncinlist(f)
+    if not middlevpush.hasfuncsinstalled():
+        w3d.lmiddlevpush = false
+def isinstalledmiddlevpush(f):
+    "Checks if the function is called when which applies fields"
+    return middlevpush.isinstalledfuncinlist(f)
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------

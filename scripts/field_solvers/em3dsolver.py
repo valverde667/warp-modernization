@@ -73,7 +73,8 @@ class EM3D(SubcycledPoissonSolver):
                       'l_fieldcenterK':False, # if using staggered grid with node-centered gather (efetch=1); centers field by shifts in k-space rather than averaging in real space
                       'V_galilean':array([0.,0.,0.]),
                       'V_pseudogalilean':array([0.,0.,0.]),
-                      'circ_m':0, 'l_laser_cart':0, 'type_rz_depose':0}
+                      'circ_m':0, 'l_laser_cart':0, 'type_rz_depose':0,
+                      'l_use_effective_velocity_in_J_deposition':0}
 
     def __init__(self,**kw):
         try:
@@ -474,6 +475,12 @@ class EM3D(SubcycledPoissonSolver):
               'divE':{'getter':'getdive', 'centering':'node', 'units':'V/m**2'},
             }
 
+        if self.l_use_effective_velocity_in_J_deposition:
+            top.vxeffpid = nextpid()
+            top.vyeffpid = nextpid()
+            top.vzeffpid = nextpid()
+            setuppgroup(top.pgroup)
+        
     def processdefaultsfrompackage(self,defaults,package,kw):
         for name in defaults:
             if name not in self.__dict__:
@@ -984,10 +991,22 @@ class EM3D(SubcycledPoissonSolver):
         x  = pgroup.xp[i:i+n]
         y  = pgroup.yp[i:i+n]
         z  = pgroup.zp[i:i+n]
-        ux = pgroup.uxp[i:i+n]
-        uy = pgroup.uyp[i:i+n]
-        uz = pgroup.uzp[i:i+n]
-        gaminv = pgroup.gaminv[i:i+n]
+
+        if self.l_use_effective_velocity_in_J_deposition:        
+            pg=pgroup
+            vx  = pg.pid[i:i+n,top.vxeffpid-1]
+            vy  = pg.pid[i:i+n,top.vyeffpid-1]
+            vz  = pg.pid[i:i+n,top.vzeffpid-1]
+            gaminv = sqrt(1.-(vx*vx+vy*vy+vz*vz)/(clight*clight))
+            ux=vx/gaminv
+            uy=vy/gaminv
+            uz=vz/gaminv
+        else:
+            ux = pgroup.uxp[i:i+n]
+            uy = pgroup.uyp[i:i+n]
+            uz = pgroup.uzp[i:i+n]
+            gaminv = pgroup.gaminv[i:i+n]
+        
         q  = pgroup.sq[js]
         w  = pgroup.sw[js]*pgroup.dtscale[js]
         if top.wpid==0:
@@ -1122,7 +1141,7 @@ class EM3D(SubcycledPoissonSolver):
                                         noz,
                                         l_particles_weight,
                                         w3d.l4symtry,
-                                        self.l_deposit_nodal,1,True)
+                                        self.l_deposit_nodal,self.l_lower_order_in_v )
             else:
                 if 0:#nox==1 and noy==1 and noz==1 and not w3d.l4symtry:
                     depose_jxjyjz_esirkepov_linear_serial(self.fields.Jx,self.fields.Jy,self.fields.Jz,n,
@@ -2904,13 +2923,28 @@ class EM3D(SubcycledPoissonSolver):
         # --- push
         if l_first:
             for js in range(top.pgroup.ns):
+                if w3d.lmiddlevpush:
+                    middlevpush.callfuncsinlist()
                 self.push_velocity_second_half(js)
-                self.record_old_positions(js)
-                self.push_positions(js)
         else:
             for js in range(top.pgroup.ns):
-                self.push_velocity_full(js)
-                self.record_old_positions(js)
+                if w3d.lmiddlevpush:
+                    self.push_velocity_first_half(js)
+                    middlevpush.callfuncsinlist()
+                    self.push_velocity_second_half(js)
+                else:
+                    self.push_velocity_full(js)
+
+        for js in range(top.pgroup.ns):
+            self.record_old_positions(js)
+            if w3d.lmiddlexpush:
+                self.push_positions(js,dtmult=0.5)
+                self.reset_eff_velocities(js)
+                self.record_eff_velocities(js)
+                middlexpush.callfuncsinlist()
+                self.record_eff_velocities(js)
+                self.push_positions(js,dtmult=0.5)
+            else:
                 self.push_positions(js)
 
         inject3d(1, top.pgroup)
@@ -3002,14 +3036,29 @@ class EM3D(SubcycledPoissonSolver):
         w3d.pgroupfsapi = top.pgroup
         for js in range(top.pgroup.ns):
             self.fetcheb(js)
-            self.push_velocity_full(js)
+            self.push_velocity_first_half(js)
+
+        print ("before inject")
+
+        # --- call user-defined injection routines
+        userinjection.callfuncsinlist()
+
+        print ("after inject")
+
+        for js in range(top.pgroup.ns):
+            self.push_velocity_second_half(js)
+
+
+        for js in range(top.pgroup.ns):
             self.record_old_positions(js)
             self.push_positions(js)
+
+
 
         inject3d(1, top.pgroup)
 
         # --- call user-defined injection routines
-        userinjection.callfuncsinlist()
+#        userinjection.callfuncsinlist()
 
         particleboundaries3d(top.pgroup,-1,False)
 
@@ -3181,7 +3230,7 @@ class EM3D(SubcycledPoissonSolver):
 
         if self.l_verbose:print(me,'exit push_positions')
 
-    def record_old_positions(self,js,pg=None,dtmult=1.):
+    def record_old_positions(self,js,pg=None):
         if self.l_verbose:print(me,'enter record_old_positions')
         if pg is None:
             pg = top.pgroup
@@ -3190,7 +3239,6 @@ class EM3D(SubcycledPoissonSolver):
         setuppgroup(pg)
         il = pg.ins[js]-1
         iu = il+pg.nps[js]
-        dt = top.dt*dtmult
         if top.xoldpid>0:pg.pid[il:iu,top.xoldpid-1] = pg.xp[il:iu].copy()
         if top.yoldpid>0:pg.pid[il:iu,top.yoldpid-1] = pg.yp[il:iu].copy()
         if top.zoldpid>0:pg.pid[il:iu,top.zoldpid-1] = pg.zp[il:iu].copy()
@@ -3199,6 +3247,36 @@ class EM3D(SubcycledPoissonSolver):
         if top.uzoldpid>0:pg.pid[il:iu,top.uzoldpid-1] = pg.uzp[il:iu].copy()
 
         if self.l_verbose:print(me,'exit record_old_positions')
+
+    def record_eff_velocities(self,js,pg=None):
+        if self.l_verbose:print(me,'enter record_eff_velocities')
+        if pg is None:
+            pg = top.pgroup
+        np = pg.nps[js]
+        if np==0:return
+        setuppgroup(pg)
+        il = pg.ins[js]-1
+        iu = il+pg.nps[js]
+        if top.vxeffpid>0:pg.pid[il:iu,top.vxeffpid-1] += 0.5*pg.uxp[il:iu]*pg.gaminv[il:iu]
+        if top.vyeffpid>0:pg.pid[il:iu,top.vyeffpid-1] += 0.5*pg.uyp[il:iu]*pg.gaminv[il:iu]
+        if top.vzeffpid>0:pg.pid[il:iu,top.vzeffpid-1] += 0.5*pg.uzp[il:iu]*pg.gaminv[il:iu]
+
+        if self.l_verbose:print(me,'exit record_eff_velocities')
+
+    def reset_eff_velocities(self,js,pg=None):
+        if self.l_verbose:print(me,'enter record_eff_velocities')
+        if pg is None:
+            pg = top.pgroup
+        np = pg.nps[js]
+        if np==0:return
+        setuppgroup(pg)
+        il = pg.ins[js]-1
+        iu = il+pg.nps[js]
+        if top.vxeffpid>0:pg.pid[il:iu,top.vxeffpid-1] = 0.
+        if top.vyeffpid>0:pg.pid[il:iu,top.vyeffpid-1] = 0.
+        if top.vzeffpid>0:pg.pid[il:iu,top.vzeffpid-1] = 0.
+
+        if self.l_verbose:print(me,'exit record_eff_velocities')
 
     def apply_bndconditions(self,js,pg=None):
         if self.l_verbose:print(me,'enter apply_ions_bndconditions')
