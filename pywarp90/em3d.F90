@@ -3446,25 +3446,26 @@ subroutine depose_rho_n(rho,np,xp,yp,zp,w,q,xmin,ymin,zmin,dx,dy,dz,nx,ny,nz,nxg
   return
 end subroutine depose_rho_n
 
-subroutine depose_j_n_2dxz(jx,jy,jz,np,xp,zp,ux,uy,uz,gaminv,w,q,xmin,zmin,dto,dx,dz,nx,nz,nxguard,nzguard,nox,noz, &
-                        l_particles_weight,l4symtry,l_deposit_nodal,nsubsteps,l_coefs_uniform)
+subroutine depose_j_n_2dxz(jx,jy,jz,np,xp,zp,ux,uy,uz,gaminv,w,q,xmin,zmin,dt,dx,dz,nx,nz,nxguard,nzguard,nox,noz, &
+                        l_particles_weight,l4symtry,l_deposit_nodal,l_lower_order_in_v)
    use Timers, Only: deposetime
    implicit none
-   integer(ISZ) :: np,nx,nz,nox,noz,nxguard,nzguard,nsubsteps
+   integer(ISZ) :: np,nx,nz,nox,noz,nxguard,nzguard
    real(kind=8), dimension(-nxguard:nx+nxguard,0:0,-nzguard:nz+nzguard), intent(in out) :: jx,jy,jz
    real(kind=8), dimension(np) :: xp,zp,w,ux,uy,uz,gaminv
-   real(kind=8), intent(in) :: q,dto,dx,dz,xmin,zmin
-   logical(ISZ) :: l_particles_weight,l4symtry,l_deposit_nodal,l_coefs_uniform
+   real(kind=8), intent(in) :: q,dt,dx,dz,xmin,zmin
+   logical(ISZ) :: l_particles_weight,l4symtry,l_deposit_nodal,l_lower_order_in_v
 
    real(kind=8) :: dxi,dzi,xint,zint, &
                    oxint,ozint,xintsq,zintsq,oxintsq,ozintsq
-   real(kind=8) :: x,z,wq,invvol,vx,vy,vz,dt,dxp,dzp
+   real(kind=8) :: x,z,wq,invvol,vx,vy,vz
    real(kind=8) :: sx(-int(nox/2):int((nox+1)/2)), &
-                   sz(-int(noz/2):int((noz+1)/2)), &
-                   wcoefs(nsubsteps)
+                   sz(-int(noz/2):int((noz+1)/2))
+   real(kind=8), dimension(:), allocatable :: sx0,sz0
    real(kind=8), parameter :: onesixth=1./6.,twothird=2./3.
-   integer(ISZ) :: j,l,ip,jj,ll,ixmin, ixmax, izmin, izmax, it
+   integer(ISZ) :: j,l,j0,l0,ip,jj,ll,ixmin, ixmax, izmin, izmax, ixmin0, ixmax0, izmin0, izmax0, it
    real(kind=8):: starttime, wtime
+   integer:: alloc_status
 
    starttime = wtime()
    
@@ -3476,22 +3477,28 @@ subroutine depose_j_n_2dxz(jx,jy,jz,np,xp,zp,ux,uy,uz,gaminv,w,q,xmin,zmin,dto,d
       ixmax = int((nox+1)/2)
       izmin = -int(noz/2)
       izmax = int((noz+1)/2)
-      
-      if (l_coefs_uniform) then
-          wcoefs = 1./nsubsteps
-      
+ 
+       if (l_lower_order_in_v) then
+        ixmin0 = -int((nox-1)/2)
+        ixmax0 =  int((nox)/2)
+        izmin0 = -int((noz-1)/2)
+        izmax0 =  int((noz)/2)
       else
-          wcoefs = 0.
-          wcoefs(1)=1.
-      
-          do ip=1,nsubsteps-1
-              wcoefs(2:nsubsteps) =  0.5*(wcoefs(2:nsubsteps) + wcoefs(1:nsubsteps-1))
-              wcoefs(1) = wcoefs(1)*0.5
-          end do
-      
+        ixmin0 = -int((nox)/2)
+        ixmax0 =  int((nox+1)/2)
+        izmin0 = -int((noz)/2)
+        izmax0 =  int((noz+1)/2)
       end if
+      allocate(sx0(ixmin0:ixmax0),sz0(izmin0:izmax0), stat=alloc_status)
+      if (alloc_status /= 0) then
+        print*,"Error:gete2dxz_n_energy_conserving: sx0 and sz0 could not be allocated"
+        stop
+      endif
       
-      dt = dto/nsubsteps
+      sx = 0.
+      sz = 0.
+      sx0 = 0.
+      sz0 = 0.
 
       do ip=1,np
       
@@ -3499,16 +3506,8 @@ subroutine depose_j_n_2dxz(jx,jy,jz,np,xp,zp,ux,uy,uz,gaminv,w,q,xmin,zmin,dto,d
         vy = uy(ip)*gaminv(ip)
         vz = uz(ip)*gaminv(ip)
         
-        x = (xp(ip)-vx*dto-0.5*vx*dt-xmin)*dxi
-        z = (zp(ip)-vz*dto-0.5*vz*dt-zmin)*dzi
-        
-        dxp = vx*dt*dxi
-        dzp = vz*dt*dzi
-        
-        do it=1, nsubsteps
-        
-        x = x+dxp
-        z = z+dzp
+        x = (xp(ip)-0.5*vx*dt-xmin)*dxi
+        z = (zp(ip)-0.5*vz*dt-zmin)*dzi
         
         if (l4symtry) then
           x=abs(x)
@@ -3516,24 +3515,45 @@ subroutine depose_j_n_2dxz(jx,jy,jz,np,xp,zp,ux,uy,uz,gaminv,w,q,xmin,zmin,dto,d
         
         ! --- finds node of cell containing particles for current positions 
         ! --- (different for odd/even spline orders)
-        if (nox==2*(nox/2)) then
-          j=nint(x)
+        if (l_lower_order_in_v) then
+          if (nox==2*(nox/2)) then
+            j=nint(x)
+            j0=floor(x-0.5)
+          else
+            j=floor(x)
+            j0=floor(x)
+          end if
+          if (noz==2*(noz/2)) then
+            l=nint(z)
+            l0=floor(z-0.5)
+          else
+            l=floor(z)
+            l0=floor(z)
+          end if
         else
-          j=floor(x)
-        end if
-        if (noz==2*(noz/2)) then
-          l=nint(z)
-        else
-          l=floor(z)
+          if (nox==2*(nox/2)) then
+            j=nint(x)
+            j0=floor(x)
+          else
+            j=floor(x)
+            j0=floor(x-0.5)
+          end if
+          if (noz==2*(noz/2)) then
+            l=nint(z)
+            l0=floor(z)
+          else
+            l=floor(z)
+            l0=floor(z-0.5)
+          end if
         end if
 
         xint = x-j
         zint = z-l
 
         if (l_particles_weight) then
-          wq=q*w(ip)*invvol*wcoefs(it)
+          wq=q*w(ip)*invvol
         else
-          wq=q*w(1)*invvol*wcoefs(it)
+          wq=q*w(1)*invvol
         end if
       
         select case(nox)
@@ -3578,6 +3598,80 @@ subroutine depose_j_n_2dxz(jx,jy,jz,np,xp,zp,ux,uy,uz,gaminv,w,q,xmin,zmin,dto,d
           sz( 2) = onesixth*zintsq*zint
         end select        
 
+        xint = x-0.5-j0
+        zint = z-0.5-l0
+
+        if (l_lower_order_in_v) then
+ 
+         select case(nox)
+         case(1)
+          sx0( 0) = 1.
+         case(2)
+          sx0( 0) = 1.-xint
+          sx0( 1) = xint
+         case(3)
+          xintsq = xint*xint
+          sx0(-1) = 0.5*(0.5-xint)**2
+          sx0( 0) = 0.75-xintsq
+          sx0( 1) = 0.5*(0.5+xint)**2
+        end select        
+
+        select case(noz)
+         case(1)
+          sz0( 0) = 1.
+         case(2)
+          sz0( 0) = 1.-zint
+          sz0( 1) = zint
+         case(3)
+          zintsq = zint*zint
+          sz0(-1) = 0.5*(0.5-zint)**2
+          sz0( 0) = 0.75-zintsq
+          sz0( 1) = 0.5*(0.5+zint)**2
+        end select
+        else
+         select case(nox)
+         case(0)
+          sx0( 0) = 1.
+         case(1)
+          sx0( 0) = 1.-xint
+          sx0( 1) = xint
+         case(2)
+          xintsq = xint*xint
+          sx0(-1) = 0.5*(0.5-xint)**2
+          sx0( 0) = 0.75-xintsq
+          sx0( 1) = 0.5*(0.5+xint)**2
+         case(3)
+          oxint = 1.-xint
+          xintsq = xint*xint
+          oxintsq = oxint*oxint
+          sx0(-1) = onesixth*oxintsq*oxint
+          sx0( 0) = twothird-xintsq*(1.-xint/2)
+          sx0( 1) = twothird-oxintsq*(1.-oxint/2)
+          sx0( 2) = onesixth*xintsq*xint
+        end select        
+
+        select case(noz)
+         case(0)
+          sz0( 0) = 1.
+         case(1)
+          sz0( 0) = 1.-zint
+          sz0( 1) = zint
+         case(2)
+          zintsq = zint*zint
+          sz0(-1) = 0.5*(0.5-zint)**2
+          sz0( 0) = 0.75-zintsq
+          sz0( 1) = 0.5*(0.5+zint)**2
+         case(3)
+          ozint = 1.-zint
+          zintsq = zint*zint
+          ozintsq = ozint*ozint
+          sz0(-1) = onesixth*ozintsq*ozint
+          sz0( 0) = twothird-zintsq*(1.-zint/2)
+          sz0( 1) = twothird-ozintsq*(1.-ozint/2)
+          sz0( 2) = onesixth*zintsq*zint
+        end select
+        end if
+        
         if (l_deposit_nodal) then
             ! deposit on nodal grid
             do ll = izmin, izmax
@@ -3590,18 +3684,24 @@ subroutine depose_j_n_2dxz(jx,jy,jz,np,xp,zp,ux,uy,uz,gaminv,w,q,xmin,zmin,dto,d
         else
             ! deposit on staggered grid
             do ll = izmin, izmax
+                do jj = ixmin0, ixmax0
+                  jx(j0+jj ,0,l +ll )  = jx(j0+jj  ,0,l +ll )  + sx0(jj)*sz (ll)*wq*vx
+                end do
+            end do
+            do ll = izmin, izmax
                 do jj = ixmin, ixmax
-                  jx(j+jj  ,0,l+ll ) = jx(j+jj  ,0,l+ll ) + sx(jj)*sz(ll)*wq*vx*0.5
-                  jx(j+jj-1,0,l+ll ) = jx(j+jj-1,0,l+ll ) + sx(jj)*sz(ll)*wq*vx*0.5
-                  jy(j+jj  ,0,l+ll ) = jy(j+jj  ,0,l+ll ) + sx(jj)*sz(ll)*wq*vy
-                  jz(j+jj  ,0,l+ll ) = jz(j+jj  ,0,l+ll ) + sx(jj)*sz(ll)*wq*vz*0.5
-                  jz(j+jj  ,0,l+ll-1) = jz(j+jj  ,0,l+ll-1) + sx(jj)*sz(ll)*wq*vz*0.5
+                  jy(j +jj ,0,l +ll )  = jy(j +jj  ,0,l +ll )  + sx (jj)*sz (ll)*wq*vy
+                end do
+            end do
+            do ll = izmin0, izmax0
+                do jj = ixmin, ixmax
+                  jz(j +jj ,0,l0+ll )  = jz(j +jj  ,0,l0+ll )  + sx (jj)*sz0(ll)*wq*vz
                 end do
             end do
         end if
 
       end do
-    end do
+     deallocate(sx0,sz0)
 
   deposetime = deposetime + (wtime() - starttime)
   return
@@ -4961,14 +5061,14 @@ subroutine getf2drz_circ_n(np,xp,yp,zp,ex,ey,ez,xmin,zmin,dx,dz,nx,ny,nz, &
       integer:: alloc_status
 
       starttime = wtime()
-
+      
       dxi = 1./dx
       dzi = 1./dz
 
       ixmin = -int(nox/2)
-      ixmax =  int((nox+1)/2)-1
+      ixmax =  int((nox+1)/2)
       izmin = -int(noz/2)
-      izmax =  int((noz+1)/2)-1
+      izmax =  int((noz+1)/2)
 
       if (l_lower_order_in_v) then
         ixmin0 = -int((nox-1)/2)
@@ -4988,6 +5088,11 @@ subroutine getf2drz_circ_n(np,xp,yp,zp,ex,ey,ez,xmin,zmin,dx,dz,nx,ny,nz, &
       endif
 
       signx = 1.
+      
+      sx = 0.
+      sz = 0.
+      sx0 = 0.
+      sz0 = 0.
 
       do ip=1,np
 
@@ -5053,15 +5158,18 @@ subroutine getf2drz_circ_n(np,xp,yp,zp,ex,ey,ez,xmin,zmin,dx,dz,nx,ny,nz, &
         xint=x-j
         zint=z-l
 
-        if (nox==1) then
+        select case(nox)
+         case(0)
+          sx( 0) = 1.
+         case(1)
           sx( 0) = 1.-xint
           sx( 1) = xint
-        elseif (nox==2) then
+         case(2)
           xintsq = xint*xint
           sx(-1) = 0.5*(0.5-xint)**2
           sx( 0) = 0.75-xintsq
           sx( 1) = 0.5*(0.5+xint)**2
-        elseif (nox==3) then
+         case(3)
           oxint = 1.-xint
           xintsq = xint*xint
           oxintsq = oxint*oxint
@@ -5069,17 +5177,20 @@ subroutine getf2drz_circ_n(np,xp,yp,zp,ex,ey,ez,xmin,zmin,dx,dz,nx,ny,nz, &
           sx( 0) = twothird-xintsq*(1.-xint/2)
           sx( 1) = twothird-oxintsq*(1.-oxint/2)
           sx( 2) = onesixth*xintsq*xint
-        end if
+        end select        
 
-        if (noz==1) then
+        select case(noz)
+         case(0)
+          sz( 0) = 1.
+         case(1)
           sz( 0) = 1.-zint
           sz( 1) = zint
-        elseif (noz==2) then
+         case(2)
           zintsq = zint*zint
           sz(-1) = 0.5*(0.5-zint)**2
           sz( 0) = 0.75-zintsq
           sz( 1) = 0.5*(0.5+zint)**2
-        elseif (noz==3) then
+         case(3)
           ozint = 1.-zint
           zintsq = zint*zint
           ozintsq = ozint*ozint
@@ -5087,48 +5198,51 @@ subroutine getf2drz_circ_n(np,xp,yp,zp,ex,ey,ez,xmin,zmin,dx,dz,nx,ny,nz, &
           sz( 0) = twothird-zintsq*(1.-zint/2)
           sz( 1) = twothird-ozintsq*(1.-ozint/2)
           sz( 2) = onesixth*zintsq*zint
-        end if
+        end select        
 
         xint=x-0.5-j0
         zint=z-0.5-l0
 
         if (l_lower_order_in_v) then
-        
-         if (nox==1) then
+ 
+         select case(nox)
+         case(1)
           sx0( 0) = 1.
-         elseif (nox==2) then
+         case(2)
           sx0( 0) = 1.-xint
           sx0( 1) = xint
-         elseif (nox==3) then
+         case(3)
           xintsq = xint*xint
           sx0(-1) = 0.5*(0.5-xint)**2
           sx0( 0) = 0.75-xintsq
           sx0( 1) = 0.5*(0.5+xint)**2
-         end if
+        end select        
 
-         if (noz==1) then
+        select case(noz)
+         case(1)
           sz0( 0) = 1.
-         elseif (noz==2) then
+         case(2)
           sz0( 0) = 1.-zint
           sz0( 1) = zint
-         elseif (noz==3) then
+         case(3)
           zintsq = zint*zint
           sz0(-1) = 0.5*(0.5-zint)**2
           sz0( 0) = 0.75-zintsq
           sz0( 1) = 0.5*(0.5+zint)**2
-         end if
-
+        end select
         else
-
-         if (nox==1) then
+         select case(nox)
+         case(0)
+          sx0( 0) = 1.
+         case(1)
           sx0( 0) = 1.-xint
           sx0( 1) = xint
-         elseif (nox==2) then
+         case(2)
           xintsq = xint*xint
           sx0(-1) = 0.5*(0.5-xint)**2
           sx0( 0) = 0.75-xintsq
           sx0( 1) = 0.5*(0.5+xint)**2
-         elseif (nox==3) then
+         case(3)
           oxint = 1.-xint
           xintsq = xint*xint
           oxintsq = oxint*oxint
@@ -5136,17 +5250,20 @@ subroutine getf2drz_circ_n(np,xp,yp,zp,ex,ey,ez,xmin,zmin,dx,dz,nx,ny,nz, &
           sx0( 0) = twothird-xintsq*(1.-xint/2)
           sx0( 1) = twothird-oxintsq*(1.-oxint/2)
           sx0( 2) = onesixth*xintsq*xint
-         end if
+        end select        
 
-         if (noz==1) then
+        select case(noz)
+         case(0)
+          sz0( 0) = 1.
+         case(1)
           sz0( 0) = 1.-zint
           sz0( 1) = zint
-         elseif (noz==2) then
+         case(2)
           zintsq = zint*zint
           sz0(-1) = 0.5*(0.5-zint)**2
           sz0( 0) = 0.75-zintsq
           sz0( 1) = 0.5*(0.5+zint)**2
-         elseif (noz==3) then
+         case(3)
           ozint = 1.-zint
           zintsq = zint*zint
           ozintsq = ozint*ozint
@@ -5154,15 +5271,14 @@ subroutine getf2drz_circ_n(np,xp,yp,zp,ex,ey,ez,xmin,zmin,dx,dz,nx,ny,nz, &
           sz0( 0) = twothird-zintsq*(1.-zint/2)
           sz0( 1) = twothird-ozintsq*(1.-ozint/2)
           sz0( 2) = onesixth*zintsq*zint
-         end if
-
+        end select
         end if
 
         if (l_2drz) then
        
 !          write(0,*) 'field gathering needs to be done for fstype=4 in EM-RZ'
 !          stop
-          do ll = izmin, izmax+1
+          do ll = izmin, izmax
             do jj = ixmin0, ixmax0
               ex(ip) = ex(ip) + sz(ll)*sx0(jj)*(exg(j0+jj,1,l+ll)*costheta-eyg(j0+jj,1,l+ll)*sintheta)
               ey(ip) = ey(ip) + sz(ll)*sx0(jj)*(exg(j0+jj,1,l+ll)*sintheta+eyg(j0+jj,1,l+ll)*costheta)
@@ -5171,14 +5287,14 @@ subroutine getf2drz_circ_n(np,xp,yp,zp,ex,ey,ez,xmin,zmin,dx,dz,nx,ny,nz, &
 
         else
 
-          do ll = izmin, izmax+1
+          do ll = izmin, izmax
             do jj = ixmin0, ixmax0
               ex(ip) = ex(ip) + sx0(jj)*sz(ll)*exg(j0+jj,1,l+ll)*signx
             end do
           end do
 
-          do ll = izmin, izmax+1
-            do jj = ixmin, ixmax+1
+          do ll = izmin, izmax
+            do jj = ixmin, ixmax
               ey(ip) = ey(ip) + sx(jj)*sz(ll)*eyg(j+jj,1,l+ll)
             end do
           end do
@@ -5186,7 +5302,7 @@ subroutine getf2drz_circ_n(np,xp,yp,zp,ex,ey,ez,xmin,zmin,dx,dz,nx,ny,nz, &
         end if
 
           do ll = izmin0, izmax0
-            do jj = ixmin, ixmax+1
+            do jj = ixmin, ixmax
               ez(ip) = ez(ip) + sx(jj)*sz0(ll)*ezg(j+jj,1,l0+ll)
             end do
           end do
