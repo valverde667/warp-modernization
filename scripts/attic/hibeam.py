@@ -14,18 +14,18 @@ latticefile = ''
 wirefile = ''
 inputfile = ''
 for arg in sys.argv[1:]:
-    mr = re.search('r=(\w*)',arg)
-    ml = re.search('l=(\w*)',arg)
-    mw = re.search('w=(\w*)',arg)
-    mi = re.search('i=(\w*)',arg)
+    mr = re.search(r'r=(\w*)',arg)
+    ml = re.search(r'l=(\w*)',arg)
+    mw = re.search(r'w=(\w*)',arg)
+    mi = re.search(r'i=(\w*)',arg)
     if mr: runname = mr.group(1)
     if ml: latticefile = ml.group(1)
     if mw: wirefile = mw.group(1)
     if mi: inputfile = mi.group(1)
-    mr = re.search('-r\s(\w*)',arg)
-    ml = re.search('-l\s(\w*)',arg)
-    mw = re.search('-w\s(\w*)',arg)
-    mi = re.search('-i\s(\w*)',arg)
+    mr = re.search(r'-r\s(\w*)',arg)
+    ml = re.search(r'-l\s(\w*)',arg)
+    mw = re.search(r'-w\s(\w*)',arg)
+    mi = re.search(r'-i\s(\w*)',arg)
     if mr: runname = mr.group(1)
     if ml: latticefile = ml.group(1)
     if mw: wirefile = mw.group(1)
@@ -45,12 +45,12 @@ except KeyError:
     ztime = {}
 
 for k,v in hinit.items():
-    v = re.sub('\.f\w*','0',v) # Change .false. to 0
-    v = re.sub('\.t\w*','1',v) # Change .true. to 1
+    v = re.sub(r'\.f\w*','0',v) # Change .false. to 0
+    v = re.sub(r'\.t\w*','1',v) # Change .true. to 1
     exec(k+'='+v)
 for k,v in ztime.items():
-    v = re.sub('\.f\w*','0',v) # Change .false. to 0
-    v = re.sub('\.t\w*','1',v) # Change .true. to 1
+    v = re.sub(r'\.f\w*','0',v) # Change .false. to 0
+    v = re.sub(r'\.t\w*','1',v) # Change .true. to 1
     exec(k+'='+v)
 
 # --- Parse the lattice file.

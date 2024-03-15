@@ -139,7 +139,7 @@ def hibeamlattice(file):
         # --- Remove carriage return at end of line
         data[i] = data[i][:-1]
         # --- Remove all white space
-        data[i] = re.sub('\s','',data[i])
+        data[i] = re.sub(r'\s','',data[i])
         # --- Remove comments
         data[i] = re.sub('!.*','',data[i])
         # --- Delete empty lines

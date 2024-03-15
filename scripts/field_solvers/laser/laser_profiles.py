@@ -656,7 +656,7 @@ class GaussianSTCProfile( object ):
         return( E0 * profile.real )
 
 class LaguerreGaussianProfile(object):
-    """
+    r"""
     Class that calculates a Laguerre-Gaussian laser pulse.
     A typical LG pulse is defined as :
 

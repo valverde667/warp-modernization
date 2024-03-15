@@ -311,7 +311,7 @@ class PlasmaInjector( object ):
 
 
 def unalign_angles( thetap ) :
-    """
+    r"""
     Shifts the angles by a random amount
 
     Parameter

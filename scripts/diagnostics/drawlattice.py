@@ -74,7 +74,7 @@ def drawlattice(zlatmin=0,zlatmax=None,ilinflg=0,ilabflg=1,ratio=None,narc=10,
                 zdipo=None,xdipo=None,dipolab=None,dipocolor=185,
                 zbend=None,xbend=None,bendlab=None,bendcolor=20,
                 zlmap=None,xlmap=None,lmaplab=None,lmapcolor=100):
-    """
+    r"""
   Draws the lattice.  All lattice elements starting in the interval
    - zlatmin=0,zlatmax: lattice elements within the range are plotted.
                         zlatmax defaults to zlatperi when it is nonzero,

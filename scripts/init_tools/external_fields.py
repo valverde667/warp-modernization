@@ -10,7 +10,7 @@ from scipy.constants import m_e, c, e
 
 def add_external_sstf_laser( a0, w0, ctau, zf, tf, beta=0,
                 lambda0=0.8e-6, theta_pol=0., forward_propagating=True ):
-    """
+    r"""
     Add a linearly-polarized laser with simultaneous spatial
     and temporal focusing (SSTF).
 

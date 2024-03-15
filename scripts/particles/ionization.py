@@ -989,8 +989,8 @@ class AladdinCrossSection(object):
             return ''
         t = stype.Symbol
         if t[-1] == '2':
-            t = t[:-1] + '\{2\}'
-        t += ' \[\% + d\]'%charge_state
+            t = t[:-1] + r'\{2\}'
+        t += r' \[\% + d\]'%charge_state
         return t
 
     def constuctheaders(self):
