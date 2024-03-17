@@ -2922,29 +2922,33 @@ class EM3D(SubcycledPoissonSolver):
 
         # --- push
         if l_first:
+            if w3d.lmiddlevpush:
+                middlevpush.callfuncsinlist()
             for js in range(top.pgroup.ns):
-                if w3d.lmiddlevpush:
-                    middlevpush.callfuncsinlist()
                 self.push_velocity_second_half(js)
         else:
-            for js in range(top.pgroup.ns):
-                if w3d.lmiddlevpush:
+            if w3d.lmiddlevpush:
+                for js in range(top.pgroup.ns):
                     self.push_velocity_first_half(js)
-                    middlevpush.callfuncsinlist()
+                middlevpush.callfuncsinlist()
+                for js in range(top.pgroup.ns):
                     self.push_velocity_second_half(js)
-                else:
+            else:
+                for js in range(top.pgroup.ns):
                     self.push_velocity_full(js)
 
-        for js in range(top.pgroup.ns):
-            self.record_old_positions(js)
-            if w3d.lmiddlexpush:
+        if w3d.lmiddlexpush:
+            for js in range(top.pgroup.ns):
+                self.record_old_positions(js)
                 self.push_positions(js,dtmult=0.5)
                 self.reset_eff_velocities(js)
                 self.record_eff_velocities(js)
-                middlexpush.callfuncsinlist()
+            middlexpush.callfuncsinlist()
+            for js in range(top.pgroup.ns):
                 self.record_eff_velocities(js)
                 self.push_positions(js,dtmult=0.5)
-            else:
+        else:
+            for js in range(top.pgroup.ns):
                 self.push_positions(js)
 
         inject3d(1, top.pgroup)
