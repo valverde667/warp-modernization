@@ -432,6 +432,7 @@ generateuserparticlesforinjection = ControllerFunction('generateuserparticlesfor
 userappliedfields = ControllerFunction('userappliedfields')
 middlexpush = ControllerFunction('middlexpush')
 middlevpush = ControllerFunction('middlevpush')
+aftervpush = ControllerFunction('aftervpush')
 
 #=============================================================================
 class ControllerFunctionContainer:
@@ -933,6 +934,25 @@ def uninstallmiddlevpush(f):
 def isinstalledmiddlevpush(f):
     "Checks if the function is called when which applies fields"
     return middlevpush.isinstalledfuncinlist(f)
+
+# ----------------------------------------------------------------------------
+def callfromaftervpush(f):
+    installaftervpush(f)
+    return f
+def installaftervpush(f):
+    """
+  Adds a user defined function in the after of the push of velocities, i.e., between two v-pushes with dt/2.
+  """
+    aftervpush.installfuncinlist(f)
+    w3d.laftervpush = true
+def uninstallaftervpush(f):
+    "Removes the function installed by installaftervpush"
+    aftervpush.uninstallfuncinlist(f)
+    if not aftervpush.hasfuncsinstalled():
+        w3d.laftervpush = false
+def isinstalledaftervpush(f):
+    "Checks if the function is called when which applies fields"
+    return aftervpush.isinstalledfuncinlist(f)
 
 # ----------------------------------------------------------------------------
 # ----------------------------------------------------------------------------

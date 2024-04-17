@@ -2937,6 +2937,8 @@ class EM3D(SubcycledPoissonSolver):
                 for js in range(top.pgroup.ns):
                     self.push_velocity_full(js)
 
+        if w3d.laftervpush:aftervpush.callfuncsinlist()
+
         if w3d.lmiddlexpush:
             for js in range(top.pgroup.ns):
                 self.record_old_positions(js)

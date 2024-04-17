@@ -53,6 +53,7 @@ luserappliedfields logical /.false./ # Turns on call to python function "userapp
                                      # just before particle advance
 lmiddlexpush logical /.false./ # Turns on call to python function "usermiddlexpush"
 lmiddlevpush logical /.false./ # Turns on call to python function "usermiddlevpush"
+laftervpush  logical /.false./ # Turns on call to python function "useraftervpush"
 solvergeom integer    /0/  # Geometry of field solver
 XYZgeom    integer    /0/  # 3D-XYZ geometry will be used if solvergeom=XYZgeom
 RZgeom     integer    /1/  # axisymmetric RZ geometry will be used if solvergeom=RZgeom
