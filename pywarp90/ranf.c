@@ -51,7 +51,7 @@
  *    961011  Modifed Setranf and Setmult to work OK on Cray's when given
  *            values saved on a 32-bit workstation. (FNF)
  *    961212  Corrected dimension error in Getmult.  (FNF per E. Brooks)
- *    
+ *
  * -----------------------------------------------------------------------
  */
 
@@ -150,7 +150,7 @@ void Mixranf(int *s,u32 s48[2])
         struct timeval tv;
         struct timezone tz;
 #if !defined(__sgi)
-        int gettimeofday();
+        int gettimeofday(struct timeval *, void *);
 #endif
 
         (void)gettimeofday(&tv,&tz);
@@ -172,7 +172,7 @@ fprintf(stderr,"Mixranf set 48-bit seed  %08x %08x\n",s48[1],s48[0]);
 #endif
 }
 
- 
+
 /* Getranf - Get the 48-bit seed value.
  *
  * Calling sequence:
@@ -266,7 +266,7 @@ fprintf(stderr,"Leaving Setranf\n");
 #endif
 }
 
- 
+
 /* Getmult - Get the current 48-bit multiplier.
  *
  * Calling sequence:
