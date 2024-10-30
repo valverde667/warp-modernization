@@ -107,10 +107,16 @@ SRFRVLA_rnd_rectangle(name,c,l,h,r)
 # AssemblyMinus
 # Delta
 
-from ..warp import *
 import collections
 import types
+import copy
+
+import numpy as np
+
+from .. import warp
+#from ..warp import *
 from ..utils.appendablearray import *
+
 try:
     import Opyndx
     VisualizableClass = Opyndx.Visualizable
@@ -127,10 +133,10 @@ _lwithnewconductorgeneration = True
 def usenewconductorgeneration():
     """Use the faster, new method for conductor data generation"""
     global _lwithnewconductorgeneration
-    _lwithnewconductorgeneration = true
+    _lwithnewconductorgeneration = True
 def useoldconductorgeneration():
     global _lwithnewconductorgeneration
-    _lwithnewconductorgeneration = false
+    _lwithnewconductorgeneration = False
 
 ##############################################################################
 installedconductors = []
@@ -175,7 +181,7 @@ def installconductor(a,xmin=None,xmax=None,ymin=None,ymax=None,
     if conductors is None and gridrz is None:
         # --- If conductors was not specified, first check if mesh-refinement
         # --- or other special solver is being used.
-        solver = getregisteredsolver()
+        solver = warp.getregisteredsolver()
         import __main__
         if solver is not None:
             solver.installconductor(a,dfill=dfill)
@@ -188,11 +194,11 @@ def installconductor(a,xmin=None,xmax=None,ymin=None,ymax=None,
 
     # --- Use whatever conductors object was specified, or
     # --- if no special solver is being used, use f3d.conductors.
-    if conductors is None: conductors = f3d.conductors
+    if conductors is None: conductors = warp.f3d.conductors
 
     # --- Set the installrz argument if needed.
     if installrz is None:
-        installrz = (frz.getpyobject('basegrid') is not None)
+        installrz = (warp.frz.getpyobject('basegrid') is not None)
 
     # First, create a grid object
     g = Grid(xmin,xmax,ymin,ymax,zmin,zmax,zbeam,nx,ny,nz,nxlocal,nylocal,nzlocal,
@@ -395,18 +401,18 @@ class Assembly(VisualizableClass):
         if zcent is None: zcent = self.zcent
         xcent += xshift
         zcent += zshift
-        z = array(z) + zcent
-        r = array(r)
+        z = np.array(z) + zcent
+        r = np.array(r)
         if filled is not None:
             if filled == 'condid': filled = self.condid
-            c = array([filled]).astype(ubyte)
-            plfp(c,xcent+r,z,[len(r)],**kw)
+            c = np.array([filled]).astype(ubyte)
+            warp.plfp(c,xcent+r,z,[len(r)],**kw)
             if fullplane:
-                plfp(c,xcent-array(r),z,[len(r)],**kw)
+                warp.plfp(c,xcent-np.array(r),z,[len(r)],**kw)
         if color is not None:
-            plg(xcent+r,z,color=color,**kw)
+            warp.plg(xcent+r,z,color=color,**kw)
             if fullplane:
-                plg(xcent-array(r),z,color=color,**kw)
+                warp.plg(xcent-np.array(r),z,color=color,**kw)
 
     def getvoltage(self,time=None):
         "Routine to get appropriate voltage on the conductor"
@@ -416,11 +422,11 @@ class Assembly(VisualizableClass):
             v = self.timedependentvoltage
         elif callable(self.voltage):
             if time is None:
-                time = top.time
+                time = warp.top.time
             v = self.voltage(time)
         elif hasattr(self.voltage, 'getvolt') and callable(self.voltage.getvolt):
             if time is None:
-                time = top.time
+                time = warp.top.time
             v = self.voltage.getvolt(time)
         else:
             v = self.voltage
@@ -436,42 +442,42 @@ class Assembly(VisualizableClass):
         try:
             emin = self.lostparticles_minenergy[js]
             emax = self.lostparticles_maxenergy[js]
-            ne = shape(self.lostparticles_energies[js])[0]
+            ne = np.shape(self.lostparticles_energies[js])[0]
         except:
-            emin = largepos
-            emax = smallpos
+            emin = warp.largepos
+            emax = warp.smallpos
             ne = 0
-        emintot=parallelmin(emin)
-        emaxtot=parallelmax(emax)
+        emintot=warp.parallelmin(emin)
+        emaxtot=warp.parallelmax(emax)
         netot=0
         if me>0:
-            mpisend((ne,emin,emax), dest = 0, tag = 1)
+            warp.mpisend((ne,emin,emax), dest = 0, tag = 1)
             if ne>0:
-                mpisend(self.lostparticles_energies[js], dest = 0, tag = 1)
+                warp.mpisend(self.lostparticles_energies[js], dest = 0, tag = 1)
         else:
-            henergies = zeros(n+1,'d')
+            henergies = np.zeros(n+1,'d')
             if ne>0:
                 netot+=ne
                 de = (emax-emin)/(ne-1)
-                energies = emin+arange(ne,dtype='l')*de
-                setgrid1dw(ne,energies,self.lostparticles_energies[js],n,henergies,emintot,emaxtot)
+                energies = emin+np.arange(ne,dtype='l')*de
+                warp.setgrid1dw(ne,energies,self.lostparticles_energies[js],n,henergies,emintot,emaxtot)
             for i in range(1,npes):
                 ne,emin,emax = mpirecv(source = i, tag = 1)
                 if ne>0:
                     netot+=ne
                     he = mpirecv(source = i, tag = 1)
                     de = (emax-emin)/(ne-1)
-                    energies = emin+arange(ne,dtype='l')*de
-                    setgrid1dw(ne,energies,he,n,henergies,emintot,emaxtot)
+                    energies = emin+np.arange(ne,dtype='l')*de
+                    warp.setgrid1dw(ne,energies,he,n,henergies,emintot,emaxtot)
 
         if netot>0:
             de = (emaxtot-emintot)/n
-            energies = emintot+arange(n+1,dtype='l')*de
+            energies = emintot+np.arange(n+1,dtype='l')*de
             return henergies,energies
         else:
             return None,None
 
-    def plot_energy_histogram(self,js=0,color=black,width=1,n=1000):
+    def plot_energy_histogram(self,js=0,color=warp.black,width=1,n=1000):
         """
      Plot energy distribution of particles of species js that have impacted on conductor:
        - js=0        : species to plot,
@@ -483,7 +489,7 @@ class Assembly(VisualizableClass):
         if histo is None:
             print("Nothing to plot")
         else:
-            pla(histo,energies,color=color,width=width)
+            warp.pla(histo,energies,color=color,width=width)
 
     def get_current_history(self,js=None,l_lost=1,l_emit=1,l_image=1,tmin=None,tmax=None,nt=100):
         """
@@ -497,7 +503,7 @@ class Assembly(VisualizableClass):
         - nt=100    : nb of cells
         """
         if tmin is None:
-            tminl=tmine=tmini=top.time
+            tminl=tmine=tmini=warp.top.time
         if tmax is None:
             tmaxl=tmaxe=tmaxi=0.
         # collect lost particles data
@@ -510,9 +516,9 @@ class Assembly(VisualizableClass):
             if tmax is None:tmaxl=max(tl)
             if js is not None:
                 jl = datal[:,3].copy()
-                ql = compress(jl==js,ql)
-                tl = compress(jl==js,tl)
-            nl = shape(ql)[0]
+                ql = np.compress(jl==js,ql)
+                tl = np.compress(jl==js,tl)
+            nl = np.shape(ql)[0]
         # collect emitted particles data
         ne = 0
         datae = self.emitparticles_data.data()
@@ -523,9 +529,9 @@ class Assembly(VisualizableClass):
             if tmax is None:tmaxe=max(te)
             if js is not None:
                 je = datae[:,3].copy()
-                qe = compress(je==js,qe)
-                te = compress(je==js,te)
-            ne = shape(qe)[0]
+                qe = np.compress(je==js,qe)
+                te = np.compress(je==js,te)
+            ne = np.shape(qe)[0]
         # collect accumulated image data
         ni = 0
         datai = self.imageparticles_data.data()
@@ -534,21 +540,21 @@ class Assembly(VisualizableClass):
             ti = datai[1:-1,0].copy()
             if tmin is None:tmini=min(ti)
             if tmax is None:tmaxi=max(ti)
-            ni = shape(qi)[0]
+            ni = np.shape(qi)[0]
         # setup time min/max and arrays
         if tmin is None:tmin=min(tminl,tmine,tmini)
         if tmax is None:tmax=max(tmaxl,tmaxe,tmaxi)
-        if tmax == tmin: tmax += top.dt
-        qt = zeros(nt+1,'d')
-        qtmp = zeros(nt+1,'d')
+        if tmax == tmin: tmax += warp.top.dt
+        qt = np.zeros(nt+1,'d')
+        qtmp = np.zeros(nt+1,'d')
         dt = (tmax-tmin)/nt
         # accumulate data
-        if nl>0:deposgrid1d(1,nl,tl,ql,nt,qt,qtmp,tmin,tmax)
-        if ne>0:deposgrid1d(1,ne,te,qe,nt,qt,qtmp,tmin,tmax)
-        if ni>0:deposgrid1d(1,ni,ti,qi,nt,qt,qtmp,tmin,tmax)
-        return arange(tmin,tmax+0.1*dt,dt,dtype='d'),qt/dt
+        if nl>0:warp.deposgrid1d(1,nl,tl,ql,nt,qt,qtmp,tmin,tmax)
+        if ne>0:warp.deposgrid1d(1,ne,te,qe,nt,qt,qtmp,tmin,tmax)
+        if ni>0:warp.deposgrid1d(1,ni,ti,qi,nt,qt,qtmp,tmin,tmax)
+        return np.arange(tmin,tmax+0.1*dt,dt,dtype='d'),qt/dt
 
-    def plot_current_history(self,js=None,l_lost=1,l_emit=1,l_image=1,tmin=None,tmax=None,nt=100,color=black,width=1,type='solid'):
+    def plot_current_history(self,js=None,l_lost=1,l_emit=1,l_image=1,tmin=None,tmax=None,nt=100,color=warp.black,width=1,type='solid'):
         """
       Plots conductor current history:
         - js=None      : select species to consider (default None means that contribution from all species are added)
@@ -564,74 +570,74 @@ class Assembly(VisualizableClass):
         """
         if me != 0:return
         time,current=self.get_current_history(js=js,l_lost=l_lost,l_emit=l_emit,l_image=l_image,tmin=tmin,tmax=tmax,nt=nt)
-        plg(current,time,color=color,width=width,type=type)
+        warp.plg(current,time,color=color,width=width,type=type)
         ptitles('Current history at '+self.name,'time (s)','I (A)')
 
     def enable_accuimagecharge(self):
         if self.accuimagechargeenabled: return
         self.accuimagechargeenabled = 1
-        if not isinstalledafterfs(self.accuimagecharge):
-            installafterfs(self.accuimagecharge)
+        if not warp.isinstalledafterfs(self.accuimagecharge):
+            warp.installafterfs(self.accuimagecharge)
 
     def disable_accuimagecharge(self):
         if not self.accuimagechargeenabled: return
         self.accuimagechargeenabled = 0
-        if isinstalledafterfs(self.accuimagecharge):
-            uninstallafterfs(self.accuimagecharge)
+        if warp.isinstalledafterfs(self.accuimagecharge):
+            warp.uninstallafterfs(self.accuimagecharge)
 
-    def accuimagecharge(self,doplot=false,l_verbose=false):
+    def accuimagecharge(self,doplot=False,l_verbose=False):
         """
         """
         # get extents
         mins = self.getextent().mins
         maxs = self.getextent().maxs
-        g = getregisteredsolver()
-        if g is None and (w3d.solvergeom in [w3d.RZgeom,w3d.XYgeom,w3d.XZgeom]):
-            g = frz.basegrid
-            # --- Note that frz.basegrid.phi has fortran ordering and the .shape
+        g = warp.getregisteredsolver()
+        if g is None and (warp.w3d.solvergeom in [warp.w3d.RZgeom,warp.w3d.XYgeom,warp.w3d.XZgeom]):
+            g = warp.frz.basegrid
+            # --- Note that warp.frz.basegrid.phi has fortran ordering and the .shape
             # --- attribute can only be changed on C ordered arrays. The transpose
             # --- converts from fortran to C ordering so shape can be applied.
             # --- The modified array is then tranposed back.
-            phit = transpose(frz.basegrid.phi)
+            phit = np.transpose(warp.frz.basegrid.phi)
             phit.shape = [phit.shape[0],1,phit.shape[1]]
-            phi = transpose(phit)[1:-1,:,:]
-            rhot = transpose(frz.basegrid.rho)
+            phi = np.transpose(phit)[1:-1,:,:]
+            rhot = np.transpose(warp.frz.basegrid.rho)
             rhot.shape = [rhot.shape[0],1,rhot.shape[1]]
-            rho = transpose(rhot)
-            nx = frz.basegrid.nr
+            rho = np.transpose(rhot)
+            nx = warp.frz.basegrid.nr
             ny = 0
-            nz = frz.basegrid.nz
-            if lparallel:
-                nxlocal = frz.basegrid.nrpar
+            nz = warp.frz.basegrid.nz
+            if warp.lparallel:
+                nxlocal = warp.frz.basegrid.nrpar
                 nylocal = ny
-                nzlocal = frz.basegrid.nzpar
+                nzlocal = warp.frz.basegrid.nzpar
             else:
                 nxlocal = nx
                 nylocal = ny
                 nzlocal = nz
-            dx = frz.basegrid.dr
+            dx = warp.frz.basegrid.dr
             dy = 1.
-            dz = frz.basegrid.dz
-            xmmin = frz.basegrid.rmin
-            xmmax = frz.basegrid.rmax
+            dz = warp.frz.basegrid.dz
+            xmmin = warp.frz.basegrid.rmin
+            xmmax = warp.frz.basegrid.rmax
             ymmin = mins[1]
             ymmax = mins[1]
-            zmmin = frz.basegrid.zmin
-            zmmax = frz.basegrid.zmax
-            ixproc = top.fsdecomp.ixproc
-            iyproc = top.fsdecomp.iyproc
-            izproc = top.fsdecomp.izproc
-            ixlocal = top.fsdecomp.ix[ixproc]
-            iylocal = top.fsdecomp.iy[iyproc]
-            izlocal = top.fsdecomp.iz[izproc]
+            zmmin = warp.frz.basegrid.zmin
+            zmmax = warp.frz.basegrid.zmax
+            ixproc = warp.top.fsdecomp.ixproc
+            iyproc = warp.top.fsdecomp.iyproc
+            izproc = warp.top.fsdecomp.izproc
+            ixlocal = warp.top.fsdecomp.ix[ixproc]
+            iylocal = warp.top.fsdecomp.iy[iyproc]
+            izlocal = warp.top.fsdecomp.iz[izproc]
             # --- This needs to be fixed to handle mesh refinement properly
-            l2symtry = w3d.l2symtry
-            l4symtry = w3d.l4symtry
+            l2symtry = warp.w3d.l2symtry
+            l4symtry = warp.w3d.l4symtry
         else:
             if g is None:
-                g = w3d
-                fsdecomp = top.fsdecomp
-                interior = f3d.conductors.interior
+                g = warp.w3d
+                fsdecomp = warp.top.fsdecomp
+                interior = warp.f3d.conductors.interior
             else:
                 fsdecomp = g.fsdecomp
                 try:
@@ -704,14 +710,14 @@ class Assembly(VisualizableClass):
         if iyproc>0:iyminlocal=max(iyminlocal,2)
         if izproc>0:izminlocal=max(izminlocal,2)
 
-        if w3d.solvergeom in [w3d.RZgeom]:
+        if warp.w3d.solvergeom in [warp.w3d.RZgeom]:
             # --- The rfac is to take into account the r dtheta term in the integrals.
-            rfac = 2.*pi*(iota(ixmin,ixmax)*dx + xmmin)
+            rfac = 2.*pi*(warp.iota(ixmin,ixmax)*dx + xmmin)
             rfac.shape = (rfac.shape[0],1)
             rmin = 2.*pi*((ixmin - 0.5)*dx + xmmin)
             rmax = 2.*pi*((ixmax + 0.5)*dx + xmmin)
         else:
-            rfac = ones([ixmax-ixmin+1,iymax-iymin+1],'d')
+            rfac = np.ones([ixmax-ixmin+1,iymax-iymin+1],'d')
             rmin = 1.
             rmax = 1.
 
@@ -724,7 +730,7 @@ class Assembly(VisualizableClass):
             qc = sum(sum(sum(rho[ixminlocal:ixmaxlocal+1,
                                  iyminlocal:iymaxlocal+1,
                                  izminlocal:izmaxlocal+1]*
-                             rfac[:,:,newaxis])))*dx*dy*dz
+                             rfac[:,:,np.newaxis])))*dx*dy*dz
 
 # --- This block of code is needed if the rho in conductor interiors is
 # --- not zeroed out. Note that the setting of interior above is also needed.
@@ -733,18 +739,18 @@ class Assembly(VisualizableClass):
             # --- potential and so is not represented in sum of Enormal and so is not
             # --- accounted for properly. It needs to be explicitly subtracted off
             # --- since it should not be included as image charge.)
-            qinterior=zeros(1,'d')
-            if (w3d.solvergeom in [w3d.RZgeom,w3d.XYgeom,w3d.XZgeom] and
-                getregisteredsolver() is None):
-                cond_sumrhointerior2d(qinterior,g,nxlocal,nzlocal,rho[:,0,:],
-                                      ixminlocal,ixmaxlocal,izminlocal,izmaxlocal,
-                                      dx,xmmin)
+            qinterior=np.zeros(1,'d')
+            if (warp.w3d.solvergeom in [warp.w3d.RZgeom,warp.w3d.XYgeom,warp.w3d.XZgeom] and
+                warp.getregisteredsolver() is None):
+                warp.cond_sumrhointerior2d(qinterior,g,nxlocal,nzlocal,rho[:,0,:],
+                                           ixminlocal,ixmaxlocal,izminlocal,izmaxlocal,
+                                           dx,xmmin)
             else:
-                subcond_sumrhointerior(qinterior,interior,nxlocal,nylocal,nzlocal,
-                                       g.nxguardrho,g.nyguardrho,g.nzguardrho,
-                                       rho,
-                                       ixminlocal,ixmaxlocal,iyminlocal,iymaxlocal,
-                                       izminlocal,izmaxlocal)
+                warp.subcond_sumrhointerior(qinterior,interior,nxlocal,nylocal,nzlocal,
+                                            g.nxguardrho,g.nyguardrho,g.nzguardrho,
+                                            rho,
+                                            ixminlocal,ixmaxlocal,iyminlocal,iymaxlocal,
+                                            izminlocal,izmaxlocal)
             qc = qc - qinterior[0]*dx*dy*dz
 
             # --- Sum the normal E field on the surface of the volume
@@ -826,31 +832,31 @@ class Assembly(VisualizableClass):
                     qc += sum(rho[ixminlocal,iyminlocal,izminlocal:izmaxlocal+1])*dx*dy*dz
 
         # --- Gather up the charges from all of the parallel processors.
-        q  = parallelsum(q)
-        qc = parallelsum(qc)
+        q  = warp.parallelsum(q)
+        qc = warp.parallelsum(qc)
 
-        self.imageparticles_data.append(array([top.time,q*eps0+qc]))
-        if l_verbose:print(self.name,q*eps0,qc)
+        self.imageparticles_data.append(np.array([warp.top.time,q*warp.eps0+qc]))
+        if l_verbose:print(self.name,q*warp.eps0,qc)
         if doplot:
-            window(0)
-            pldj([zmin,zmin,zmin,zmax],[xmin,xmin,xmax,xmin],
-                 [zmax,zmin,zmax,zmax],[xmin,xmax,xmax,xmax],color=red,width=3)
-            window(1)
-            pldj([zmin,zmin,zmin,zmax],[ymin,ymin,ymax,ymin],
-                 [zmax,zmin,zmax,zmax],[ymin,ymax,ymax,ymax],color=red,width=3)
-            window(0)
+            warp.window(0)
+            warp.pldj([zmin,zmin,zmin,zmax],[xmin,xmin,xmax,xmin],
+                      [zmax,zmin,zmax,zmax],[xmin,xmax,xmax,xmax],color=warp.red,width=3)
+            warp.window(1)
+            warp.pldj([zmin,zmin,zmin,zmax],[ymin,ymin,ymax,ymin],
+                      [zmax,zmin,zmax,zmax],[ymin,ymax,ymax,ymax],color=warp.red,width=3)
+            warp.window(0)
             xmin=xmmin+ixminlocal*dx
             xmax=xmmin+ixmaxlocal*dx
             ymin=ymmin+iyminlocal*dy
             ymax=ymmin+iymaxlocal*dy
             zmin=zmmin+izminlocal*dz
             zmax=zmmin+izmaxlocal*dz
-            pldj([zmin,zmin,zmin,zmax],[xmin,xmin,xmax,xmin],
-                 [zmax,zmin,zmax,zmax],[xmin,xmax,xmax,xmax],color=blue,width=3)
-            window(1)
-            pldj([zmin,zmin,zmin,zmax],[ymin,ymin,ymax,ymin],
-                 [zmax,zmin,zmax,zmax],[ymin,ymax,ymax,ymax],color=blue,width=3)
-            window(0)
+            warp.pldj([zmin,zmin,zmin,zmax],[xmin,xmin,xmax,xmin],
+                      [zmax,zmin,zmax,zmax],[xmin,xmax,xmax,xmax],color=warp.blue,width=3)
+            warp.window(1)
+            warp.pldj([zmin,zmin,zmin,zmax],[ymin,ymin,ymax,ymin],
+                      [zmax,zmin,zmax,zmax],[ymin,ymax,ymax,ymax],color=warp.blue,width=3)
+            warp.window(0)
 
          # Operations which return an Assembly expression.
     def __mul__(self,right):
@@ -1107,10 +1113,10 @@ class EllipticAssembly(Assembly):
 
         self.circlegeneratord(*arglist)
 
-        tt = arctan2(y,x)
-        dx = distance*cos(tt)
-        dy = distance*sin(tt)*self.ellipticity
-        distance[:] = sqrt(dx**2 + dy**2)*sign(distance)
+        tt = np.arctan2(y,x)
+        dx = distance*np.cos(tt)
+        dy = distance*np.sin(tt)*self.ellipticity
+        distance[:] = np.sqrt(dx**2 + dy**2)*sign(distance)
 
     def ellipseintercept(self,*argtuple):
         arglist = list(argtuple)
@@ -1125,7 +1131,7 @@ class EllipticAssembly(Assembly):
         self.circlegeneratori(*arglist)
 
         yi[:] = yi*self.ellipticity
-        iphi[:] = arctan2(sin(iphi),self.ellipticity*cos(iphi))
+        iphi[:] = np.arctan2(np.sin(iphi),self.ellipticity*np.cos(iphi))
 
     def __getstate__(self):
         """
@@ -1259,23 +1265,23 @@ class XAssembly(Assembly):
         arglist[-4] = argtuple[-3]
         arglist[-3] = argtuple[-5]
         # --- Create temps for the surface normal angles
-        arglist[-2] = zeros(shape(argtuple[-2]),'d')
-        arglist[-1] = zeros(shape(argtuple[-1]),'d')
+        arglist[-2] = np.zeros(np.shape(argtuple[-2]),'d')
+        arglist[-1] = np.zeros(np.shape(argtuple[-1]),'d')
         self.zgeneratori(*arglist)
         # --- Undo the surface normals
         ttheta = arglist[-2]
         tphi = arglist[-1]
         if 0:  # original coding from DPG
-            itheta = arctan2(sqrt(cos(ttheta)**2 + (cos(tphi)*sin(ttheta))**2),
-                             sin(tphi)*sin(ttheta))
-            iphi = arctan2(cos(tphi)*sin(ttheta),cos(ttheta))
+            itheta = np.arctan2(np.sqrt(np.cos(ttheta)**2 + (np.cos(tphi)*np.sin(ttheta))**2),
+                             np.sin(tphi)*np.sin(ttheta))
+            iphi = np.arctan2(np.cos(tphi)*np.sin(ttheta),np.cos(ttheta))
         else: # alternative from JLV
-            y=cos(tphi)*sin(ttheta)
-            z=sin(tphi)*sin(ttheta)
-            x=cos(ttheta)
-            r=sqrt(x*x+y*y)
-            itheta = arctan2(r,z)
-            iphi   = arctan2(y,x)
+            y=np.cos(tphi)*np.sin(ttheta)
+            z=np.sin(tphi)*np.sin(ttheta)
+            x=np.cos(ttheta)
+            r=np.sqrt(x*x+y*y)
+            itheta = np.arctan2(r,z)
+            iphi   = np.arctan2(y,x)
         argtuple[-2][:] = itheta
         argtuple[-1][:] = iphi
 
@@ -1414,23 +1420,23 @@ class YAssembly(Assembly):
         arglist[-4] = argtuple[-5]
         arglist[-3] = argtuple[-4]
         # --- Create temps for the surface normal angles
-        arglist[-2] = zeros(shape(argtuple[-2]),'d')
-        arglist[-1] = zeros(shape(argtuple[-1]),'d')
+        arglist[-2] = np.zeros(np.shape(argtuple[-2]),'d')
+        arglist[-1] = np.zeros(np.shape(argtuple[-1]),'d')
         self.zgeneratori(*arglist)
         # --- Undo the surface normals
         ttheta = arglist[-2]
         tphi = arglist[-1]
         if 0:  # original coding from DPG
-            itheta = arctan2(sqrt((sin(tphi)*sin(ttheta))**2 + cos(ttheta)**2),
-                           cos(tphi)*sin(ttheta))
-            iphi = arctan2(cos(ttheta),sin(tphi)*sin(ttheta))
+            itheta = np.arctan2(np.sqrt((np.sin(tphi)*np.sin(ttheta))**2 + np.cos(ttheta)**2),
+                                np.cos(tphi)*np.sin(ttheta))
+            iphi = np.arctan2(np.cos(ttheta),np.sin(tphi)*np.sin(ttheta))
         else: # alternative from JLV
-            z=cos(tphi)*sin(ttheta)
-            x=sin(tphi)*sin(ttheta)
-            y=cos(ttheta)
-            r=sqrt(x*x+y*y)
-            itheta = arctan2(r,z)
-            iphi   = arctan2(y,x)
+            z=np.cos(tphi)*np.sin(ttheta)
+            x=np.sin(tphi)*np.sin(ttheta)
+            y=np.cos(ttheta)
+            r=np.sqrt(x*x+y*y)
+            itheta = np.arctan2(r,z)
+            iphi   = np.arctan2(y,x)
         argtuple[-2][:] = itheta
         argtuple[-1][:] = iphi
 
@@ -1464,9 +1470,9 @@ class ConductorExtent:
   class, but it does provide a nice way of putting this into one spot.
     """
     def __init__(self,mins,maxs,cent):
-        self._mins = array(mins).copy()
-        self._maxs = array(maxs).copy()
-        self.cent = array(cent).copy()
+        self._mins = np.array(mins).copy()
+        self._maxs = np.array(maxs).copy()
+        self.cent = np.array(cent).copy()
     def getmins(self):
         return self._mins + self.cent
     def getmaxs(self):
@@ -1497,17 +1503,17 @@ class ConductorExtent:
 
     def __neg__(self):
         "This one is doesn't help much"
-        return ConductorExtent([-largepos,-largepos,-largepos],
-                               [+largepos,+largepos,+largepos],
-                               zeros(3))
+        return ConductorExtent([-warp.largepos,-warp.largepos,-warp.largepos],
+                               [+warp.largepos,+warp.largepos,+warp.largepos],
+                               np.zeros(3))
     def __add__(self,right):
-        return ConductorExtent(minimum(self.mins,right.mins),
-                               maximum(self.maxs,right.maxs),
-                               zeros(3))
+        return ConductorExtent(np.minimum(self.mins,right.mins),
+                               np.maximum(self.maxs,right.maxs),
+                               np.zeros(3))
     def __mul__(self,right):
-        return ConductorExtent(maximum(self.mins,right.mins),
-                               minimum(self.maxs,right.maxs),
-                               zeros(3))
+        return ConductorExtent(np.maximum(self.mins,right.mins),
+                               np.minimum(self.maxs,right.maxs),
+                               np.zeros(3))
     def __sub__(self,right):
         return ConductorExtent(self._mins,self._maxs,self.cent)
 
@@ -1552,7 +1558,7 @@ class Delta:
             self.xx = xx
             self.yy = yy
             self.zz = zz
-            self.dels = zeros((6,self.ndata),'d')
+            self.dels = np.zeros((6,self.ndata),'d')
             fuzz = 1.e-13
             arglist = kwlist + [self.ndata, self.xx, self.yy, self.zz,
                                 self.dels[0, :], self.dels[1, :],
@@ -1587,7 +1593,7 @@ class Delta:
     Normalizes the data with respect to the grid cell sizes.
     dx,dy,dz: the grid cell sizes
         """
-        self.dels[:,:] /= array([dx,dx,dy,dy,dz,dz])[:,newaxis]
+        self.dels[:,:] /= np.array([dx,dx,dy,dy,dz,dz])[:,np.newaxis]
         if self.neumann:
             # --- For points that are within fuzz of 0 or 1, force them to be 0 or 1.
             # --- For Neumann boundaries, dels=0 is a valid value and this deals
@@ -1605,18 +1611,18 @@ class Delta:
             self.fixneumannzeros(3,2,fuzz)
             self.fixneumannzeros(4,5,fuzz)
             self.fixneumannzeros(5,4,fuzz)
-            self.dels[:,:] = where((1.-fuzz < self.dels[:,:])&(self.dels[:,:] < 1.),
+            self.dels[:,:] = np.where((1.-fuzz < self.dels[:,:])&(self.dels[:,:] < 1.),
                                    1.,self.dels[:,:])
             # --- This deals with points that straddle a surface, where some
             # --- directions are inside and others outside. This ensures that all
             # --- directions are inside in these cases by changing dels that are
             # --- outside so that they are deep inside. This still doesn't seem to
             # --- be enough to fix the problems with convergence.
-            delsmin = minimum.reduce(self.dels)
-            delsmax = maximum.reduce(self.dels)
-            ii = compress((delsmin < 0.)&(delsmax > 0.),list(range(self.dels.shape[1])))
+            delsmin = np.minimum.reduce(self.dels)
+            delsmax = np.maximum.reduce(self.dels)
+            ii = np.compress((delsmin < 0.)&(delsmax > 0.),list(range(self.dels.shape[1])))
             for i in ii:
-                self.dels[:,i] = where(self.dels[:,i] > 0.,-2.,self.dels[:,i])
+                self.dels[:,i] = np.where(self.dels[:,i] > 0.,-2.,self.dels[:,i])
             # --- This deals with special case points. It can sometimes happen that
             # --- when a point is on a surface, one of the dels can be zero, but others
             # --- can be between -1 and 0. This is an attempt to fix those points.
@@ -1625,11 +1631,11 @@ class Delta:
             # --- subgrid algorithm would be applied, leading to serious errors.
             # --- However, this fix doesn't seen to fix the whole problem since the
             # --- code still has problems converging when there are points with dels=0.
-            delsmin = minimum.reduce(abs(self.dels))
+            delsmin = np.minimum.reduce(abs(self.dels))
             for i in range(6):
-                ccc = where((-1+fuzz<self.dels[i,:])&(self.dels[i,:]<0.),
+                ccc = np.where((-1+fuzz<self.dels[i,:])&(self.dels[i,:]<0.),
                             -2.,self.dels[i,:])
-                self.dels[i,:] = where(delsmin==0.,ccc,self.dels[i,:])
+                self.dels[i,:] = np.where(delsmin==0.,ccc,self.dels[i,:])
 
     def fixneumannzeros(self,i0,i1,fuzz):
         # --- If a point is between -fuzz and 0, make sure it gets put on the
@@ -1637,9 +1643,9 @@ class Delta:
         # --- of the point must be switched (between plus and minus) since
         # --- the point is being moved from inside the surface to on the
         # --- surface.
-        self.dels[i0,:] = where((-fuzz < self.dels[i1,:])&(self.dels[i1,:] < 0.),
+        self.dels[i0,:] = np.where((-fuzz < self.dels[i1,:])&(self.dels[i1,:] < 0.),
                                 0.,self.dels[i0,:])
-        self.dels[i1,:] = where((-fuzz < self.dels[i1,:])&(self.dels[i1,:] < 0.),
+        self.dels[i1,:] = np.where((-fuzz < self.dels[i1,:])&(self.dels[i1,:] < 0.),
                                 -2.,self.dels[i1,:])
 
     def setparity(self,dfill,fuzzsign):
@@ -1651,7 +1657,7 @@ class Delta:
         """
         # --- Using the inplace add is slightly faster since it doesn't have to
         # --- allocate a new array.
-        self.parity = zeros(self.ndata,'l')
+        self.parity = np.zeros(self.ndata,'l')
         add(self.parity,999,self.parity)
         self.fuzzsign = fuzzsign
         if self.neumann: fuzz0 = 0.
@@ -1674,9 +1680,9 @@ class Delta:
         self.xx    = self.xx[ii]
         self.yy    = self.yy[ii]
         self.zz    = self.zz[ii]
-        self.dels  = take(self.dels,ii,1)
-        self.vs    = take(self.vs,ii,1)
-        self.ns    = take(self.ns,ii,1)
+        self.dels  = np.take(self.dels,ii,1)
+        self.vs    = np.take(self.vs,ii,1)
+        self.ns    = np.take(self.ns,ii,1)
         self.parity= self.parity[ii]
         self.ndata = len(self.ix)
 
@@ -1689,7 +1695,7 @@ class Delta:
         """
         # --- If no conductors object was passed in, use the default one
         # --- from the f3d package.
-        if conductors is None: conductors = f3d.conductors
+        if conductors is None: conductors = warp.f3d.conductors
 
         conductors.fuzzsign = self.fuzzsign
         if self.neumann: delssign = -1
@@ -1706,9 +1712,9 @@ class Delta:
         # --- of the accumulated data will be copied back into the database.
         # --- The way around that is to make the call to install_conductors_rz
         # --- only after all of the objects have been installed.
-        if solvergeom is None: solvergeom = w3d.solvergeom
+        if solvergeom is None: solvergeom = warp.w3d.solvergeom
         if(installrz and
-           (solvergeom in [w3d.RZgeom,w3d.XZgeom,w3d.XYgeom])):
+           (solvergeom in [warp.w3d.RZgeom,warp.w3d.XZgeom,warp.w3d.XYgeom])):
             conductors.interior.n = 0
             conductors.evensubgrid.n = 0
             conductors.oddsubgrid.n = 0
@@ -1757,8 +1763,8 @@ class Delta:
                 conductors.interior.indx[0,nc:nc+ncnew] = data.ix[ii]
                 conductors.interior.indx[1,nc:nc+ncnew] = data.iy[ii]
                 conductors.interior.indx[2,nc:nc+ncnew] = data.iz[ii]
-                conductors.interior.volt[nc:nc+ncnew] = take(data.vs[0,:],ii)
-                conductors.interior.numb[nc:nc+ncnew] = take(data.ns[0,:],ii)
+                conductors.interior.volt[nc:nc+ncnew] = np.take(data.vs[0,:],ii)
+                conductors.interior.numb[nc:nc+ncnew] = np.take(data.ns[0,:],ii)
                 conductors.interior.ilevel[nc:nc+ncnew] = data.mglevel[ii]
                 nc = nc + ncnew
 
@@ -1768,9 +1774,9 @@ class Delta:
                 conductors.evensubgrid.indx[0,ne:ne+nenew] = data.ix[ii]
                 conductors.evensubgrid.indx[1,ne:ne+nenew] = data.iy[ii]
                 conductors.evensubgrid.indx[2,ne:ne+nenew] = data.iz[ii]
-                conductors.evensubgrid.dels[:,ne:ne+nenew] = take(data.dels,ii,1)*delssign
-                conductors.evensubgrid.volt[:,ne:ne+nenew] = take(data.vs,ii,1)
-                conductors.evensubgrid.numb[:,ne:ne+nenew] = take(data.ns,ii,1)
+                conductors.evensubgrid.dels[:,ne:ne+nenew] = np.take(data.dels,ii,1)*delssign
+                conductors.evensubgrid.volt[:,ne:ne+nenew] = np.take(data.vs,ii,1)
+                conductors.evensubgrid.numb[:,ne:ne+nenew] = np.take(data.ns,ii,1)
                 conductors.evensubgrid.ilevel[ne:ne+nenew] = data.mglevel[ii]
                 ne = ne + nenew
 
@@ -1781,9 +1787,9 @@ class Delta:
                 conductors.oddsubgrid.indx[0,no:no+nonew] = data.ix[ii]
                 conductors.oddsubgrid.indx[1,no:no+nonew] = data.iy[ii]
                 conductors.oddsubgrid.indx[2,no:no+nonew] = data.iz[ii]
-                conductors.oddsubgrid.dels[:,no:no+nonew] = take(data.dels,ii,1)*delssign
-                conductors.oddsubgrid.volt[:,no:no+nonew] = take(data.vs,ii,1)
-                conductors.oddsubgrid.numb[:,no:no+nonew] = take(data.ns,ii,1)
+                conductors.oddsubgrid.dels[:,no:no+nonew] = np.take(data.dels,ii,1)*delssign
+                conductors.oddsubgrid.volt[:,no:no+nonew] = np.take(data.vs,ii,1)
+                conductors.oddsubgrid.numb[:,no:no+nonew] = np.take(data.ns,ii,1)
                 conductors.oddsubgrid.ilevel[no:no+nonew] = data.mglevel[ii]
                 no = no + nonew
 
@@ -1791,11 +1797,11 @@ class Delta:
         # --- database. This also copies all of the accumulated data back into
         # --- the database to allow for plotting and diagnostics.
         if ntot > 0 and installrz:
-            if solvergeom in [w3d.RZgeom,w3d.XZgeom,w3d.XYgeom]:
+            if solvergeom in [warp.w3d.RZgeom,warp.w3d.XZgeom,warp.w3d.XYgeom]:
                 if grid is None:
-                    frz.install_conductors_rz(conductors,frz.basegrid)
+                    warp.frz.install_conductors_rz(conductors,warp.frz.basegrid)
                 else:
-                    frz.install_conductors_rz(conductors,grid)
+                    warp.frz.install_conductors_rz(conductors,grid)
 
     def __neg__(self):
         "Delta not operator."
@@ -1806,7 +1812,7 @@ class Delta:
         "'and' operator, returns maximum of distances to surfaces."
         assert self.neumann == right.neumann,\
           "Neumann objects cannot be mixed with Dirichlet objects"
-        c = less(self.dels,right.dels)
+        c = np.less(self.dels,right.dels)
         return Delta(self.ix,self.iy,self.iz,self.xx,self.yy,self.zz,
                      choose(c,(self.dels,right.dels)),
                      choose(c,(self.vs  ,right.vs)),
@@ -1816,7 +1822,7 @@ class Delta:
         "'or' operator, returns minimum of distances to surfaces."
         assert self.neumann == right.neumann,\
           "Neumann objects cannot be mixed with Dirichlet objects"
-        c = greater(self.dels,right.dels)
+        c = np.greater(self.dels,right.dels)
         return Delta(self.ix,self.iy,self.iz,self.xx,self.yy,self.zz,
                      choose(c,(self.dels,right.dels)),
                      choose(c,(self.vs  ,right.vs)),
@@ -1827,7 +1833,7 @@ class Delta:
         assert self.neumann == right.neumann,\
           "Neumann objects cannot be mixed with Dirichlet objects"
         rdels = -right.dels
-        c = less(self.dels,rdels)
+        c = np.less(self.dels,rdels)
         result = Delta(self.ix,self.iy,self.iz,self.xx,self.yy,self.zz,
                        choose(c,(self.dels,rdels)),
                        choose(c,(self.vs  ,right.vs)),
@@ -1837,7 +1843,7 @@ class Delta:
         # --- the above algorithm leaves a zero thickness shell there.
         # --- This fix effectively removes those points in common so the shell
         # --- does not appear.
-        result.dels = where(abs(self.dels - right.dels)<1.e-10,largepos,result.dels)
+        result.dels = np.where(abs(self.dels - right.dels)<1.e-10,warp.largepos,result.dels)
         return result
 
     def __str__(self):
@@ -1858,7 +1864,7 @@ class GridIntercepts(object):
         if intercepts is not None:
             self.intercepts = intercepts
         else:
-            self.intercepts = ConductorInterceptType()
+            self.intercepts = warp.ConductorInterceptType()
             self.intercepts.mglevel = mglevel
             self.intercepts.xmmin = xmmin
             self.intercepts.ymmin = ymmin
@@ -1891,8 +1897,8 @@ class GridIntercepts(object):
             # --- of the point must be switched (between plus and minus) since
             # --- the point is being moved from inside the surface to on the
             # --- surface.
-            dels[i0,:] = where((-fuzz < dels[i1,:])&(dels[i1,:] < 0.), 0., dels[i0,:])
-            dels[i1,:] = where((-fuzz < dels[i1,:])&(dels[i1,:] < 0.), -2., dels[i1,:])
+            dels[i0,:] = np.where((-fuzz < dels[i1,:])&(dels[i1,:] < 0.), 0., dels[i0,:])
+            dels[i1,:] = np.where((-fuzz < dels[i1,:])&(dels[i1,:] < 0.), -2., dels[i1,:])
 
         # --- For points that are within fuzz of 0 or 1, force them to be 0 or 1.
         # --- For Neumann boundaries, dels=0 is a valid value and this deals
@@ -1910,17 +1916,17 @@ class GridIntercepts(object):
         _fixneumannzeros(3, 2, fuzz)
         _fixneumannzeros(4, 5, fuzz)
         _fixneumannzeros(5, 4, fuzz)
-        dels[:,:] = where((1.-fuzz < dels[:,:])&(dels[:,:] < 1.), 1., dels[:,:])
+        dels[:,:] = np.where((1.-fuzz < dels[:,:])&(dels[:,:] < 1.), 1., dels[:,:])
         # --- This deals with points that straddle a surface, where some
         # --- directions are inside and others outside. This ensures that all
         # --- directions are inside in these cases by changing dels that are
         # --- outside so that they are deep inside. This still doesn't seem to
         # --- be enough to fix the problems with convergence.
-        delsmin = minimum.reduce(dels)
-        delsmax = maximum.reduce(dels)
-        ii = compress((delsmin < 0.)&(delsmax > 0.), list(range(dels.shape[1])))
+        delsmin = np.minimum.reduce(dels)
+        delsmax = np.maximum.reduce(dels)
+        ii = np.compress((delsmin < 0.)&(delsmax > 0.), list(range(dels.shape[1])))
         for i in ii:
-            dels[:,i] = where(dels[:,i] > 0., -2., dels[:,i])
+            dels[:,i] = np.where(dels[:,i] > 0., -2., dels[:,i])
         # --- This deals with special case points. It can sometimes happen that
         # --- when a point is on a surface, one of the dels can be zero, but others
         # --- can be between -1 and 0. This is an attempt to fix those points.
@@ -1929,10 +1935,10 @@ class GridIntercepts(object):
         # --- subgrid algorithm would be applied, leading to serious errors.
         # --- However, this fix doesn't seen to fix the whole problem since the
         # --- code still has problems converging when there are points with dels=0.
-        delsmin = minimum.reduce(abs(dels))
+        delsmin = np.minimum.reduce(abs(dels))
         for i in range(6):
-            ccc = where((-1+fuzz<dels[i,:])&(dels[i,:]<0.), -2., dels[i,:])
-            dels[i,:] = where(delsmin==0., ccc, dels[i,:])
+            ccc = np.where((-1+fuzz<dels[i,:])&(dels[i,:]<0.), -2., dels[i,:])
+            dels[i,:] = np.where(delsmin==0., ccc, dels[i,:])
 
     def installlist(interceptslist,installrz,solvergeom,conductors,gridrz,neumann):
 
@@ -1941,9 +1947,9 @@ class GridIntercepts(object):
         conductorslist = []
         fuzz = 1.e-13
         for intercepts,dfill in interceptslist:
-            conductorslist.append(ConductorType())
-            conductordelfromintercepts(intercepts.intercepts,
-                                       conductorslist[-1],dfill,fuzz,neumann)
+            conductorslist.append(warp.ConductorType())
+            warp.conductordelfromintercepts(intercepts.intercepts,
+                                            conductorslist[-1],dfill,fuzz,neumann)
 
         # --- If the RZ solver is being used and the data is to be installed,
         # --- then clear out an existing conductor data in the database first.
@@ -1956,9 +1962,9 @@ class GridIntercepts(object):
         # --- of the accumulated data will be copied back into the database.
         # --- The way around that is to make the call to install_conductors_rz
         # --- only after all of the objects have been installed.
-        if solvergeom is None: solvergeom = w3d.solvergeom
+        if solvergeom is None: solvergeom = warp.w3d.solvergeom
         if(installrz and
-           (solvergeom in [w3d.RZgeom,w3d.XZgeom,w3d.XYgeom])):
+           (solvergeom in [warp.w3d.RZgeom,warp.w3d.XZgeom,warp.w3d.XYgeom])):
             conductors.interior.n = 0
             conductors.evensubgrid.n = 0
             conductors.oddsubgrid.n = 0
@@ -2035,11 +2041,11 @@ class GridIntercepts(object):
         # --- database. This also copies all of the accumulated data back into
         # --- the database to allow for plotting and diagnostics.
         if ncnew + nenew + nonew > 0 and installrz:
-            if solvergeom in [w3d.RZgeom,w3d.XZgeom,w3d.XYgeom]:
+            if solvergeom in [warp.w3d.RZgeom,warp.w3d.XZgeom,warp.w3d.XYgeom]:
                 if gridrz is None:
-                    frz.install_conductors_rz(conductors,frz.basegrid)
+                    warp.frz.install_conductors_rz(conductors,warp.frz.basegrid)
                 else:
-                    frz.install_conductors_rz(conductors,gridrz)
+                    warp.frz.install_conductors_rz(conductors,gridrz)
 
     # --- Set so installlist can be called directly from GridIntercepts
     installlist = staticmethod(installlist)
@@ -2052,7 +2058,7 @@ class GridIntercepts(object):
             xmax = self.intercepts.xmmin + self.intercepts.dx*self.intercepts.nx
         xx = self.intercepts.xintercepts[ii,:,:]
         xx = xx.clip(xmin,xmax)
-        ppgeneric(gridt=xx,
+        warp.ppgeneric(gridt=xx,
                   xmin=self.intercepts.zmmin,
                   xmax=self.intercepts.zmmin+self.intercepts.dz*self.intercepts.nz,
                   ymin=self.intercepts.ymmin,
@@ -2065,7 +2071,7 @@ class GridIntercepts(object):
             ymax = self.intercepts.ymmin + self.intercepts.dy*self.intercepts.ny
         yy = self.intercepts.yintercepts[ii,:,:]
         yy = yy.clip(ymin,ymax)
-        ppgeneric(gridt=yy,
+        warp.ppgeneric(gridt=yy,
                   xmin=self.intercepts.zmmin,
                   xmax=self.intercepts.zmmin+self.intercepts.dz*self.intercepts.nz,
                   ymin=self.intercepts.xmmin,
@@ -2078,7 +2084,7 @@ class GridIntercepts(object):
             zmax = self.intercepts.zmmin + self.intercepts.dz*self.intercepts.nz
         zz = self.intercepts.zintercepts[ii,:,:]
         zz = zz.clip(zmin,zmax)
-        ppgeneric(grid=zz,
+        warp.ppgeneric(grid=zz,
                   xmin=self.intercepts.xmmin,
                   xmax=self.intercepts.xmmin+self.intercepts.dx*self.intercepts.nx,
                   ymin=self.intercepts.ymmin,
@@ -2088,7 +2094,7 @@ class GridIntercepts(object):
         "'not' operator, returns inverse of the object"
          #assert self.neumann == right.neumann,\
          #  "Neumann objects cannot be mixed with Dirichlet objects"
-        intercepts = ConductorInterceptType()
+        intercepts = warp.ConductorInterceptType()
         intercepts_not(self.intercepts,intercepts)
         return GridIntercepts(intercepts=intercepts)
 
@@ -2096,7 +2102,7 @@ class GridIntercepts(object):
         "'and' operator, returns intersection of the objects"
          #assert self.neumann == right.neumann,\
          #  "Neumann objects cannot be mixed with Dirichlet objects"
-        intercepts = ConductorInterceptType()
+        intercepts = warp.ConductorInterceptType()
         intercepts_and(self.intercepts,right.intercepts,intercepts)
         return GridIntercepts(intercepts=intercepts)
 
@@ -2104,7 +2110,7 @@ class GridIntercepts(object):
         "'or' operator, returns union of the objects"
          #assert self.neumann == right.neumann,\
          #  "Neumann objects cannot be mixed with Dirichlet objects"
-        intercepts = ConductorInterceptType()
+        intercepts = warp.ConductorInterceptType()
         intercepts_or(self.intercepts,right.intercepts,intercepts)
         return GridIntercepts(intercepts=intercepts)
 
@@ -2131,7 +2137,7 @@ class Distance:
             self.xx = xx
             self.yy = yy
             self.zz = zz
-            self.distance = zeros(self.ndata,'d')
+            self.distance = np.zeros(self.ndata,'d')
             arglist = kwlist + [self.ndata, self.xx, self.yy, self.zz,
                                 self.distance[:]]
             generator(*arglist)
@@ -2151,8 +2157,8 @@ class Distance:
         # --- Note that outside of the object, the magnitude of the distances
         # --- may not be correct (but the sign will be correctly positive).
         return Distance(self.xx,self.yy,self.zz,
-                        maximum(self.distance,right.distance))
-#   c = less(self.distance,right.distance)
+                        np.maximum(self.distance,right.distance))
+#   c = np.less(self.distance,right.distance)
 #   return Distance(self.xx,self.yy,self.zz,
 #                   choose(c,(self.distance,right.distance)))
 
@@ -2161,16 +2167,16 @@ class Distance:
         # --- Note that inside of the object, the magnitude of the distances
         # --- may not be correct (but the sign will be correctly negative).
         return Distance(self.xx,self.yy,self.zz,
-                        minimum(self.distance,right.distance))
+                        np.minimum(self.distance,right.distance))
 #   --- Don't remember why the code was originally written as below,
 #   --- especially the two extra where statements. They seem to be
 #   --- redundant.
-#   c = greater(self.distance,right.distance)
+#   c = np.greater(self.distance,right.distance)
 #   dd = Distance(self.xx,self.yy,self.zz,
 #                 choose(c,(self.distance,right.distance)))
-#   dd.distance = where((self.distance < 0.) & (right.distance >= 0.),
+#   dd.distance = np.where((self.distance < 0.) & (right.distance >= 0.),
 #                       self.distance,dd.distance)
-#   dd.distance = where((self.distance >= 0.) & (right.distance < 0.),
+#   dd.distance = np.where((self.distance >= 0.) & (right.distance < 0.),
 #                       right.distance,dd.distance)
 #   return dd
 
@@ -2181,27 +2187,27 @@ class Distance:
         # --- hand side is a cylinder.
         rdistance = -right.distance
         dd = Distance(self.xx,self.yy,self.zz,self.distance)
-        dd.distance = where((rdistance >= 0.) & (self.distance >= 0.),
-                            sqrt(rdistance**2+self.distance**2),
+        dd.distance = np.where((rdistance >= 0.) & (self.distance >= 0.),
+                            np.sqrt(rdistance**2+self.distance**2),
                             dd.distance)
-        dd.distance = where((rdistance >= 0.) & (self.distance <= 0.),
+        dd.distance = np.where((rdistance >= 0.) & (self.distance <= 0.),
                             rdistance,dd.distance)
-        dd.distance = where((rdistance < 0.) & (self.distance <= 0.),
-                            maximum(rdistance,self.distance),dd.distance)
+        dd.distance = np.where((rdistance < 0.) & (self.distance <= 0.),
+                            np.maximum(rdistance,self.distance),dd.distance)
 #   # --- This is an alternate solution that gaurantees that distance will
 #   # --- have the correct sign.
-#   c = greater(abs(self.distance),abs(right.distance))
+#   c = np.greater(abs(self.distance),abs(right.distance))
 #   dd = Distance(self.xx,self.yy,self.zz,
 #                 choose(c,(self.distance,right.distance)))
-#   dd.distance = where((self.distance < 0.) & (right.distance > 0.),
+#   dd.distance = np.where((self.distance < 0.) & (right.distance > 0.),
 #                       maximum(-right.distance,self.distance),dd.distance)
-#   dd.distance = where((self.distance < 0.) & (right.distance <= 0.),
+#   dd.distance = np.where((self.distance < 0.) & (right.distance <= 0.),
 #                       -right.distance,dd.distance)
-#   dd.distance = where((self.distance >= 0.) & (right.distance < 0.),
+#   dd.distance = np.where((self.distance >= 0.) & (right.distance < 0.),
 #                       -right.distance,dd.distance)
-#   dd.distance = where((self.distance >= 0.) & (right.distance > 0.),
+#   dd.distance = np.where((self.distance >= 0.) & (right.distance > 0.),
 #                       self.distance,dd.distance)
-#   dd.distance = where((self.distance == 0.) & (right.distance == 0.),
+#   dd.distance = np.where((self.distance == 0.) & (right.distance == 0.),
 #                       1.,dd.distance)
         return dd
 
@@ -2232,11 +2238,11 @@ class IsInside:
             self.zz = zz
             self.condid = condid
             self.aura = aura
-            distance = zeros(self.ndata,'d')
+            distance = np.zeros(self.ndata,'d')
             arglist = kwlist + [self.ndata, self.xx, self.yy, self.zz,
                                 distance[:]]
             generator(*arglist)
-            self.isinside = where(distance <= aura,condid,0.)
+            self.isinside = np.where(distance <= aura,condid,0.)
         else:
             self.ndata = len(xx)
             self.xx = xx
@@ -2248,25 +2254,25 @@ class IsInside:
     def __neg__(self):
         "IsInside not operator."
         return IsInside(self.xx,self.yy,self.zz,
-                        logical_not(self.isinside).astype('d'),
+                        np.logical_not(self.isinside).astype('d'),
                         condid=self.condid,aura=self.aura)
 
     def __mul__(self,right):
         "'and' operator, returns logical and of isinsides."
         return IsInside(self.xx,self.yy,self.zz,
-                        logical_and(self.isinside,right.isinside).astype('d'),
+                        np.logical_and(self.isinside,right.isinside).astype('d'),
                         condid=self.condid,aura=self.aura)
 
     def __add__(self,right):
         "'or' operator, returns logical or of isinsides."
         return IsInside(self.xx,self.yy,self.zz,
-                        logical_or(self.isinside,right.isinside).astype('d'),
+                        np.logical_or(self.isinside,right.isinside).astype('d'),
                         condid=self.condid,aura=self.aura)
 
     def __sub__(self,right):
         "'or' operator, returns logical or of isinsides."
         return IsInside(self.xx,self.yy,self.zz,
-                        logical_and(self.isinside,logical_not(right.isinside)).astype('d'),
+                        np.logical_and(self.isinside,np.logical_not(right.isinside)).astype('d'),
                         condid=self.condid,aura=self.aura)
 
     def __str__(self):
@@ -2296,11 +2302,11 @@ class Intercept:
         self.vy = vy
         self.vz = vz
         if generator is not None:
-            self.xi = zeros(self.ndata,'d')
-            self.yi = zeros(self.ndata,'d')
-            self.zi = zeros(self.ndata,'d')
-            self.itheta = zeros(self.ndata,'d')
-            self.iphi = zeros(self.ndata,'d')
+            self.xi = np.zeros(self.ndata,'d')
+            self.yi = np.zeros(self.ndata,'d')
+            self.zi = np.zeros(self.ndata,'d')
+            self.itheta = np.zeros(self.ndata,'d')
+            self.iphi = np.zeros(self.ndata,'d')
             arglist = kwlist + [self.ndata, self.xx, self.yy, self.zz,
                                 self.vx, self.vy, self.vz,
                                 self.xi, self.yi, self.zi, self.itheta, self.iphi]
@@ -2338,14 +2344,14 @@ class Intercept:
         # --- should end up on the farther side of one of the objects.
         # --- This uses the intercepts as starting points to find the next
         # --- further intercept.
-        while any(logical_and(selfdist.distance<-surffuzz,
+        while any(np.logical_and(selfdist.distance<-surffuzz,
                               rightdist.distance<-surffuzz)):
-            ii = logical_and(selfdist.distance<-surffuzz,rightdist.distance<-surffuzz)
+            ii = np.logical_and(selfdist.distance<-surffuzz,rightdist.distance<-surffuzz)
             # --- For each of these points, choose the intercept that is closest
             # --- to the surface of the combined object.
-            xx = where(selfdist.distance[ii]>rightdist.distance[ii],self.xi[ii],right.xi[ii])
-            yy = where(selfdist.distance[ii]>rightdist.distance[ii],self.yi[ii],right.yi[ii])
-            zz = where(selfdist.distance[ii]>rightdist.distance[ii],self.zi[ii],right.zi[ii])
+            xx = np.where(selfdist.distance[ii]>rightdist.distance[ii],self.xi[ii],right.xi[ii])
+            yy = np.where(selfdist.distance[ii]>rightdist.distance[ii],self.yi[ii],right.yi[ii])
+            zz = np.where(selfdist.distance[ii]>rightdist.distance[ii],self.zi[ii],right.zi[ii])
             # --- The v's are the same in both self and right.
             vx = self.vx[ii]
             vy = self.vy[ii]
@@ -2357,7 +2363,7 @@ class Intercept:
             # --- conductors will be found starting from that point. That
             # --- intercept should be on the next farther surface, which may
             # --- be on the surface of the combined object.
-            s = 1.e-9/sqrt(vx**2 + vy**2 + vz**2)
+            s = 1.e-9/np.sqrt(vx**2 + vy**2 + vz**2)
             xx -= s*vx
             yy -= s*vy
             zz -= s*vz
@@ -2388,21 +2394,21 @@ class Intercept:
         cc = si < ri
         # --- If the intercepts points from both conductors lie on the surface,
         # --- Choose the one closest to the original point.
-        cc = where((si < surffuzz) & (ri < surffuzz),ds < dr,cc)
+        cc = np.where((si < surffuzz) & (ri < surffuzz),ds < dr,cc)
         # --- Pick the intercept point which satisfies the above criteria.
-        xi = where(cc,self.xi,right.xi)
-        yi = where(cc,self.yi,right.yi)
-        zi = where(cc,self.zi,right.zi)
-        itheta = where(cc,self.itheta,right.itheta+addpi)
-        iphi = where(cc,self.iphi,right.iphi)
+        xi = np.where(cc,self.xi,right.xi)
+        yi = np.where(cc,self.yi,right.yi)
+        zi = np.where(cc,self.zi,right.zi)
+        itheta = np.where(cc,self.itheta,right.itheta+addpi)
+        iphi = np.where(cc,self.iphi,right.iphi)
         # --- Check for cases where neither point lies on the surface. This is
-        # --- when the distances to the surface are greater than the fuzz value.
-        dd = (minimum(si,ri) < surffuzz)
-        xi = where(dd,xi,largepos)
-        yi = where(dd,yi,largepos)
-        zi = where(dd,zi,largepos)
-        itheta = where(dd,itheta,0.)
-        iphi = where(dd,iphi,0.)
+        # --- when the distances to the surface are np.greater than the fuzz value.
+        dd = (np.minimum(si,ri) < surffuzz)
+        xi = np.where(dd,xi,warp.largepos)
+        yi = np.where(dd,yi,warp.largepos)
+        zi = np.where(dd,zi,warp.largepos)
+        itheta = np.where(dd,itheta,0.)
+        iphi = np.where(dd,iphi,0.)
         return Intercept(self.xx,self.yy,self.zz,self.vx,self.vy,self.vz,
                          xi,yi,zi,itheta,iphi,conductor=cond,condid=self.condid)
 
@@ -2479,8 +2485,8 @@ class Grid:
         _default = lambda x,d: (x,d)[x is None]
 
         if solver is None:
-            solver = w3d
-            solvertop = top
+            solver = warp.w3d
+            solvertop = warp.top
         else:
             solvertop = solver
 
@@ -2502,11 +2508,11 @@ class Grid:
         if self.nxlocal == 0: self.nxlocal = self.nx
         if self.nylocal == 0: self.nylocal = self.ny
         if self.nzlocal == 0: self.nzlocal = self.nz
-        if nx is not None and nxlocal is None and not lparallel:
+        if nx is not None and nxlocal is None and not warp.lparallel:
             self.nxlocal = self.nx
-        if ny is not None and nylocal is None and not lparallel:
+        if ny is not None and nylocal is None and not warp.lparallel:
             self.nylocal = self.ny
-        if nz is not None and nzlocal is None and not lparallel:
+        if nz is not None and nzlocal is None and not warp.lparallel:
             self.nzlocal = self.nz
         self.xmmin = _default(xmmin,solver.xmmin)
         self.ymmin = _default(ymmin,solver.ymmin)
@@ -2586,17 +2592,17 @@ class Grid:
         if self.nz > 0: self.dz = (self.zmmax - self.zmmin)/self.nz
         else:           self.dz = (self.zmmax - self.zmmin)
 
-        # --- Check if frz.basegrid is allocated if installrz is set.
+        # --- Check if warp.frz.basegrid is allocated if installrz is set.
         # --- If not, then turn off installrz.
         if installrz is None:
-            installrz = (frz.getpyobject('basegrid') is not None)
+            installrz = (warp.frz.getpyobject('basegrid') is not None)
 
-        if (solver.solvergeom not in [w3d.RZgeom,w3d.XZgeom,w3d.XYgeom]
+        if (solver.solvergeom not in [warp.w3d.RZgeom,warp.w3d.XZgeom,warp.w3d.XYgeom]
             or not installrz):
-            conductors = ConductorType()
+            conductors = warp.ConductorType()
             nx,ny,nz = self.nx,self.ny,self.nz
             nxlocal,nylocal,nzlocal = self.nxlocal,self.nylocal,self.nzlocal
-            getmglevels(nx,ny,nz,nxlocal,nylocal,nzlocal,
+            warp.getmglevels(nx,ny,nz,nxlocal,nylocal,nzlocal,
                         self.dx,self.dy,self.dz*zscale,conductors,self.decomp)
             self.mglevels = conductors.levels
             self.mglevelix = conductors.levelix[:self.mglevels].copy()
@@ -2609,18 +2615,18 @@ class Grid:
             self.mglevelly = conductors.levelly[:self.mglevels].copy()
             self.mglevellz = conductors.levellz[:self.mglevels].copy()
         else:
-            if gridrz is None:gridrz=frz.basegrid
-            setmglevels_rz(gridrz)
-            self.mglevels = f3d.mglevels
-            self.mglevelix = f3d.mglevelsix[:f3d.mglevels].copy()
-            self.mglevelnx = f3d.mglevelsnx[:f3d.mglevels].copy()
-            self.mgleveliy = f3d.mglevelsiy[:f3d.mglevels].copy()
-            self.mglevelny = f3d.mglevelsny[:f3d.mglevels].copy()
-            self.mgleveliz = f3d.mglevelsiz[:f3d.mglevels].copy()
-            self.mglevelnz = f3d.mglevelsnz[:f3d.mglevels].copy()
-            self.mglevellx = f3d.mglevelslx[:f3d.mglevels].copy()
-            self.mglevelly = f3d.mglevelsly[:f3d.mglevels].copy()
-            self.mglevellz = f3d.mglevelslz[:f3d.mglevels].copy()
+            if gridrz is None:gridrz=warp.frz.basegrid
+            warp.setmglevels_rz(gridrz)
+            self.mglevels = warp.f3d.mglevels
+            self.mglevelix = warp.f3d.mglevelsix[:warp.f3d.mglevels].copy()
+            self.mglevelnx = warp.f3d.mglevelsnx[:warp.f3d.mglevels].copy()
+            self.mgleveliy = warp.f3d.mglevelsiy[:warp.f3d.mglevels].copy()
+            self.mglevelny = warp.f3d.mglevelsny[:warp.f3d.mglevels].copy()
+            self.mgleveliz = warp.f3d.mglevelsiz[:warp.f3d.mglevels].copy()
+            self.mglevelnz = warp.f3d.mglevelsnz[:warp.f3d.mglevels].copy()
+            self.mglevellx = warp.f3d.mglevelslx[:warp.f3d.mglevels].copy()
+            self.mglevelly = warp.f3d.mglevelsly[:warp.f3d.mglevels].copy()
+            self.mglevellz = warp.f3d.mglevelslz[:warp.f3d.mglevels].copy()
 
         if self.mgmaxlevels is not None:
             self.mglevels = self.mgmaxlevels
@@ -2633,7 +2639,7 @@ class Grid:
 
     def getzbeam(self):
         if self._zbeam is None:
-            return top.zbeam
+            return warp.top.zbeam
         else:
             return self._zbeam
     def setzbeam(self,zbeam):
@@ -2666,8 +2672,8 @@ class Grid:
         zmin = max(self.zmin,self.zmmin+iz*dz+zbeam)
         zmax = min(self.zmax,self.zmmin+(iz+nzlocal)*dz+zbeam)
         if extent is not None:
-            xmin,ymin,zmin = maximum(array(extent.mins),array([xmin,ymin,zmin]))
-            xmax,ymax,zmax = minimum(array(extent.maxs),array([xmax,ymax,zmax]))
+            xmin,ymin,zmin = np.maximum(np.array(extent.mins),np.array([xmin,ymin,zmin]))
+            xmax,ymax,zmax = np.minimum(np.array(extent.maxs),np.array([xmax,ymax,zmax]))
 
         # --- The conductor extent is completely outside the grid
         if xmin-dx > xmax or ymin-dy > ymax or zmin-dz > zmax:
@@ -2677,18 +2683,18 @@ class Grid:
         ymmin = self.ymmin + iy*dy
         zmmin = self.zmmin + iz*dz
 
-        xmesh = xmmin + dx*arange(nxlocal+1,dtype='l')
-        ymesh = ymmin + dy*arange(nylocal+1,dtype='l')
-        zmesh = zmmin + dz*arange(nzlocal+1,dtype='l') + zbeam
-        xmesh = compress(logical_and(xmin-dx <= xmesh,xmesh <= xmax+dx),xmesh)
-        ymesh = compress(logical_and(ymin-dy <= ymesh,ymesh <= ymax+dy),ymesh)
-        zmesh = compress(logical_and(zmin-dz <= zmesh,zmesh <= zmax+dz),zmesh)
-        x = ravel(xmesh[:,newaxis]*ones(len(ymesh)))
-        y = ravel(ymesh*ones(len(xmesh))[:,newaxis])
-        z = zeros(len(xmesh)*len(ymesh),'d')
-        ix = nint((x - xmmin)/dx)
-        iy = nint((y - ymmin)/dy)
-        iz = zeros(len(xmesh)*len(ymesh),'l')
+        xmesh = xmmin + dx*np.arange(nxlocal+1,dtype='l')
+        ymesh = ymmin + dy*np.arange(nylocal+1,dtype='l')
+        zmesh = zmmin + dz*np.arange(nzlocal+1,dtype='l') + zbeam
+        xmesh = np.compress(np.logical_and(xmin-dx <= xmesh,xmesh <= xmax+dx),xmesh)
+        ymesh = np.compress(np.logical_and(ymin-dy <= ymesh,ymesh <= ymax+dy),ymesh)
+        zmesh = np.compress(np.logical_and(zmin-dz <= zmesh,zmesh <= zmax+dz),zmesh)
+        x = np.ravel(xmesh[:,np.newaxis]*np.ones(len(ymesh)))
+        y = np.ravel(ymesh*np.ones(len(xmesh))[:,np.newaxis])
+        z = np.zeros(len(xmesh)*len(ymesh),'d')
+        ix = warp.nint((x - xmmin)/dx)
+        iy = warp.nint((y - ymmin)/dy)
+        iz = np.zeros(len(xmesh)*len(ymesh),'l')
         return ix,iy,iz,x,y,z,zmmin,dx,dy,dz,nxlocal,nylocal,nzlocal,zmesh,zbeam
 
     def getmeshnew(self,mglevel=0,extent=None):
@@ -2726,12 +2732,12 @@ class Grid:
                 if zmax < extent.maxs[2]+dz: zmax += dz
                 if zmax <= zmin: zmax = zmin + 2*dz
 
-            nxlocal = nint((xmax - xmin)/dx)
-            nylocal = nint((ymax - ymin)/dy)
-            nzlocal = nint((zmax - zmin)/dz)
-            ixlocal = nint((xmin - (self.xmmin+ix*dx))/dx)
-            iylocal = nint((ymin - (self.ymmin+iy*dy))/dy)
-            izlocal = nint((zmin - (self.zmmin+iz*dz+zbeam))/dz)
+            nxlocal = warp.nint((xmax - xmin)/dx)
+            nylocal = warp.nint((ymax - ymin)/dy)
+            nzlocal = warp.nint((zmax - zmin)/dz)
+            ixlocal = warp.nint((xmin - (self.xmmin+ix*dx))/dx)
+            iylocal = warp.nint((ymin - (self.ymmin+iy*dy))/dy)
+            izlocal = warp.nint((zmin - (self.zmmin+iz*dz+zbeam))/dz)
 
         return (xmin,ymin,zmin,dx,dy,dz,nxlocal,nylocal,nzlocal,
                 ixlocal,iylocal,izlocal)
@@ -2741,7 +2747,7 @@ class Grid:
 
         dx,dy,dz,nxlocal,nylocal,nzlocal,ix,iy,iz = self.getmeshsize(mglevel)
 
-        if lparallel:
+        if warp.lparallel:
             zbeam = self.zbeam
             xmin = max(self.xmin,self.xmmin+ix*dx)
             xmax = min(self.xmax,self.xmmin+(ix+nxlocal)*dx)
@@ -2757,8 +2763,8 @@ class Grid:
             zmin = self.zmin
             zmax = self.zmax
 
-        xmin,ymin,zmin = maximum(array(extent.mins),array([xmin,ymin,zmin]))
-        xmax,ymax,zmax = minimum(array(extent.maxs),array([xmax,ymax,zmax]))
+        xmin,ymin,zmin = np.maximum(np.array(extent.mins),np.array([xmin,ymin,zmin]))
+        xmax,ymax,zmax = np.minimum(np.array(extent.maxs),np.array([xmax,ymax,zmax]))
 
         if zmin-dz > zmax or xmin-dx > xmax or ymin-dy > ymax: return 0
         return 1
@@ -2781,7 +2787,7 @@ class Grid:
 
         # --- Check if total conductor overlaps with the grid. If it doesn't,
         # --- then there is no need to check any individual pieces.
-        if not lparallel:
+        if not warp.lparallel:
             aextent = a.getextent()
             # --- Note that the highest mglevel is used, with the largest cell
             # --- size.
@@ -2804,47 +2810,47 @@ class Grid:
             self.getdata(a.right,dfill=dfill,fuzzsign=fuzzsign)
             return
 
-        starttime = wtime()
+        starttime = warp.wtime()
         timeit = 0
-        if timeit: tt1 = wtime()
-        if timeit: tt2 = zeros(10,'d')
+        if timeit: tt1 = warp.wtime()
+        if timeit: tt2 = np.zeros(10,'d')
         aextent = a.getextent()
         # --- Leave dall empty. It is created if needed below.
         dall = None
-        if timeit: tt2[8] = tt2[8] + wtime() - tt1
+        if timeit: tt2[8] = tt2[8] + warp.wtime() - tt1
         for i in range(self.mglevels):
-            if timeit: tt1 = wtime()
+            if timeit: tt1 = warp.wtime()
             ix,iy,iz,x,y,z,zmmin,dx,dy,dz,nxlocal,nylocal,nzlocal,zmesh,zbeam=self.getmesh(i,aextent)
-            if timeit: tt2[0] = tt2[0] + wtime() - tt1
+            if timeit: tt2[0] = tt2[0] + warp.wtime() - tt1
             if len(x) == 0: continue
             for zz in zmesh:
-                if timeit: tt1 = wtime()
+                if timeit: tt1 = warp.wtime()
                 z[:] = zz
-                iz[:] = nint((zz - zmmin - zbeam)/dz)
-                if timeit: tt2[1] = tt2[1] + wtime() - tt1
-                if timeit: tt1 = wtime()
+                iz[:] = warp.nint((zz - zmmin - zbeam)/dz)
+                if timeit: tt2[1] = tt2[1] + warp.wtime() - tt1
+                if timeit: tt1 = warp.wtime()
                 d = a.griddistance(ix,iy,iz,x,y,z)
-                if timeit: tt2[2] = tt2[2] + wtime() - tt1
-                if timeit: tt1 = wtime()
+                if timeit: tt2[2] = tt2[2] + warp.wtime() - tt1
+                if timeit: tt1 = warp.wtime()
                 d.normalize(dx,dy,dz)
-                if timeit: tt2[3] = tt2[3] + wtime() - tt1
-                if timeit: tt1 = wtime()
+                if timeit: tt2[3] = tt2[3] + warp.wtime() - tt1
+                if timeit: tt1 = warp.wtime()
                 d.setparity(dfill,fuzzsign)
-                if timeit: tt2[4] = tt2[4] + wtime() - tt1
-                if timeit: tt1 = wtime()
+                if timeit: tt2[4] = tt2[4] + warp.wtime() - tt1
+                if timeit: tt1 = warp.wtime()
                 d.clean()
-                if timeit: tt2[5] = tt2[5] + wtime() - tt1
-                if timeit: tt1 = wtime()
+                if timeit: tt2[5] = tt2[5] + warp.wtime() - tt1
+                if timeit: tt1 = warp.wtime()
                 d.setlevels(i)
-                if timeit: tt2[6] = tt2[6] + wtime() - tt1
-                if timeit: tt1 = wtime()
+                if timeit: tt2[6] = tt2[6] + warp.wtime() - tt1
+                if timeit: tt1 = warp.wtime()
                 if dall is None:
                     # --- Only create the Delta instance if it is actually needed.
                     dall = Delta(neumann=a.neumann)
                     self.dlist.append(dall)
                 dall.append(d)
-                if timeit: tt2[7] = tt2[7] + wtime() - tt1
-        endtime = wtime()
+                if timeit: tt2[7] = tt2[7] + warp.wtime() - tt1
+        endtime = warp.wtime()
         self.generatetime = endtime - starttime
         if timeit: tt2[9] = endtime - starttime
         if timeit: print(tt2)
@@ -2867,7 +2873,7 @@ class Grid:
 
         # --- Check if total conductor overlaps with the grid. If it doesn't,
         # --- then there is no need to check any individual pieces.
-        if not lparallel:
+        if not warp.lparallel:
             aextent = a.getextent()
             # --- Note that the highest mglevel is used, with the largest cell
             # --- size.
@@ -2891,32 +2897,32 @@ class Grid:
             self.getdatanew(a.right,dfill=dfill,fuzzsign=fuzzsign)
             return
 
-        starttime = wtime()
+        starttime = warp.wtime()
         timeit = 0
-        if timeit: tt1 = wtime()
-        if timeit: tt2 = zeros(5,'d')
+        if timeit: tt1 = warp.wtime()
+        if timeit: tt2 = np.zeros(5,'d')
         aextent = a.getextent()
-        if timeit: tt2[3] = tt2[3] + wtime() - tt1
+        if timeit: tt2[3] = tt2[3] + warp.wtime() - tt1
         for mglevel in range(self.mglevels):
 
-            if timeit: tt1 = wtime()
+            if timeit: tt1 = warp.wtime()
             xmin,ymin,zmin,dx,dy,dz,nxlocal,nylocal,nzlocal,ixlocal,iylocal,izlocal=self.getmeshnew(mglevel,aextent)
-            if timeit: tt2[0] = tt2[0] + wtime() - tt1
+            if timeit: tt2[0] = tt2[0] + warp.wtime() - tt1
 
-            if timeit: tt1 = wtime()
+            if timeit: tt1 = warp.wtime()
             intercepts = a.gridintercepts(xmin,ymin,zmin,dx,dy,dz,
                                           nxlocal,nylocal,nzlocal,
                                           ixlocal,iylocal,izlocal,mglevel)
             self.interceptslist.append((intercepts,dfill))
-            if timeit: tt2[1] = tt2[1] + wtime() - tt1
+            if timeit: tt2[1] = tt2[1] + warp.wtime() - tt1
 
-        endtime = wtime()
+        endtime = warp.wtime()
         self.generatetime = endtime - starttime
         if timeit: tt2[4] = endtime - starttime
         if timeit: print(tt2)
 
     def installdata(self,installrz=1,gridmode=1,solvergeom=None,
-                    conductors=f3d.conductors,gridrz=None):
+                    conductors=warp.f3d.conductors,gridrz=None):
         """
     Installs the conductor data into the fortran database
         """
@@ -2935,10 +2941,10 @@ class Grid:
         self.dlistinstalled += self.dlist
         self.dlist = []
         if gridmode is not None:
-            f3d.gridmode = gridmode
+            warp.f3d.gridmode = gridmode
 
     def installintercepts(self,installrz=1,gridmode=1,solvergeom=None,
-                          conductors=f3d.conductors,gridrz=None,neumann=False):
+                          conductors=warp.f3d.conductors,gridrz=None,neumann=False):
         """
     Installs the conductor data into the fortran database
         """
@@ -2957,7 +2963,7 @@ class Grid:
         self.interceptsinstalled += self.interceptslist
         self.interceptslist = []
         if gridmode is not None:
-            f3d.gridmode = gridmode
+            warp.f3d.gridmode = gridmode
 
     def getdistances(self,a,mglevel=0,lreset=False):
         """
@@ -2965,40 +2971,40 @@ class Grid:
     grid points.
      - a: the assembly
      - mglevel=0: coarsening level to use
-     - lreset=False: when true, reset the distances array so only the conductor
+     - lreset=False: when True, reset the distances array so only the conductor
                      passed in will be included. Otherwise, the distances will
                      include conductors passed in in previous calls.
         """
-        starttime = wtime()
-        tt2 = zeros(4,'d')
-        tt1 = wtime()
+        starttime = warp.wtime()
+        tt2 = np.zeros(4,'d')
+        tt1 = warp.wtime()
         ix,iy,iz,x,y,z,zmmin,dx,dy,dz,nxlocal,nylocal,nzlocal,zmesh,zbeam = self.getmesh(mglevel)
         if 'distances' not in self.__dict__:
-            self.distances = fzeros((1+nxlocal,1+nylocal,1+nzlocal),'d')
+            self.distances = warp.fzeros((1+nxlocal,1+nylocal,1+nzlocal),'d')
             lreset = True
         if lreset:
-            self.distances.fill(largepos)
+            self.distances.fill(warp.largepos)
         ix1 = min(ix)
         ix2 = max(ix) + 1
         iy1 = min(iy)
         iy2 = max(iy) + 1
-        tt2[0] = tt2[0] + wtime() - tt1
+        tt2[0] = tt2[0] + warp.wtime() - tt1
         if len(x) == 0: return
         for zz in zmesh:
-            tt1 = wtime()
+            tt1 = warp.wtime()
             z[:] = zz
-            iz[:] = nint((zz - zmmin - zbeam)/dz)
-            tt2[1] = tt2[1] + wtime() - tt1
-            tt1 = wtime()
+            iz[:] = warp.nint((zz - zmmin - zbeam)/dz)
+            tt2[1] = tt2[1] + warp.wtime() - tt1
+            tt1 = warp.wtime()
             d = a.distance(x,y,z)
-            tt2[2] = tt2[2] + wtime() - tt1
-            tt1 = wtime()
+            tt2[2] = tt2[2] + warp.wtime() - tt1
+            tt1 = warp.wtime()
             dd = d.distance
             dd.shape = (ix2-ix1,iy2-iy1)
             dorig = self.distances[ix1:ix2,iy1:iy2,iz[0]]
-            self.distances[ix1:ix2,iy1:iy2,iz[0]] = minimum(dd,dorig)
-            tt2[3] = tt2[3] + wtime() - tt1
-        endtime = wtime()
+            self.distances[ix1:ix2,iy1:iy2,iz[0]] = np.minimum(dd,dorig)
+            tt2[3] = tt2[3] + warp.wtime() - tt1
+        endtime = warp.wtime()
         self.generatetime = endtime - starttime
         #print tt2
 
@@ -3007,7 +3013,7 @@ class Grid:
     Clears out any data in isinside by recreating the array.
         """
         ix,iy,iz,x,y,z,zmmin,dx,dy,dz,nxlocal,nylocal,nzlocal,zmesh,zbeam = self.getmesh(mglevel)
-        self.isinside = fzeros((1+nxlocal,1+nylocal,1+nzlocal),'d')
+        self.isinside = warp.fzeros((1+nxlocal,1+nylocal,1+nzlocal),'d')
 
     def removeisinside(self,a,nooverlap=0):
         """
@@ -3015,10 +3021,10 @@ class Grid:
     does not overlap any others. The flag nooverlap must be set as a reminder.
         """
         if nooverlap:
-            self.isinside = where(self.isinside==a.condid,0,self.isinside)
+            self.isinside = np.where(self.isinside==a.condid,0,self.isinside)
         else:
             print("removeisinside only works when the assembly does not overlap any others")
-            print('Set the nooverlap flag to true is this is the case.')
+            print('Set the nooverlap flag to True is this is the case.')
             raise Exception('removeisinside only works when the assembly does not overlap any others')
 
     def getisinside(self,a,mglevel=0,aura=0.):
@@ -3031,9 +3037,9 @@ class Grid:
                 for small, thin conductors that don't overlap any grid points. In
                 units of meters.
         """
-        starttime = wtime()
-        tt2 = zeros(4,'d')
-        tt1 = wtime()
+        starttime = warp.wtime()
+        tt2 = np.zeros(4,'d')
+        tt1 = warp.wtime()
         ix,iy,iz,x,y,z,zmmin,dx,dy,dz,nxlocal,nylocal,nzlocal,zmesh,zbeam = self.getmesh(mglevel)
         try:
             self.isinside[0,0,0]
@@ -3043,23 +3049,23 @@ class Grid:
         ix2 = max(ix)
         iy1 = min(iy)
         iy2 = max(iy)
-        tt2[0] = tt2[0] + wtime() - tt1
+        tt2[0] = tt2[0] + warp.wtime() - tt1
         if len(x) == 0: return
         for zz in zmesh:
-            tt1 = wtime()
+            tt1 = warp.wtime()
             z[:] = zz #####
-            iz[:] = nint((zz - zmmin - zbeam)/dz)  #####
-            tt2[1] = tt2[1] + wtime() - tt1
-            tt1 = wtime()
+            iz[:] = warp.nint((zz - zmmin - zbeam)/dz)  #####
+            tt2[1] = tt2[1] + warp.wtime() - tt1
+            tt1 = warp.wtime()
             d = a.isinside(x,y,z,aura)  #####
-            tt2[2] = tt2[2] + wtime() - tt1
-            tt1 = wtime()
+            tt2[2] = tt2[2] + warp.wtime() - tt1
+            tt1 = warp.wtime()
             dd = d.isinside
             dd.shape = (ix2-ix1+1,iy2-iy1+1)
-            self.isinside[ix1:ix2+1,iy1:iy2+1,iz[0]] = where(dd>0,dd,
+            self.isinside[ix1:ix2+1,iy1:iy2+1,iz[0]] = np.where(dd>0,dd,
                                          self.isinside[ix1:ix2+1,iy1:iy2+1,iz[0]])
-            tt2[3] = tt2[3] + wtime() - tt1
-        endtime = wtime()
+            tt2[3] = tt2[3] + warp.wtime() - tt1
+        endtime = warp.wtime()
         self.generatetime = endtime - starttime
         #print tt2
 
@@ -3091,8 +3097,8 @@ class CADconductor(Assembly):
 
     def getextent(self):
         # --- The extent is not used with the new method, but define it anyway.
-        return ConductorExtent([-largepos,-largepos,-largepos],
-                               [+largepos,+largepos,+largepos],
+        return ConductorExtent([-warp.largepos,-warp.largepos,-warp.largepos],
+                               [+warp.largepos,+warp.largepos,+warp.largepos],
                                [self.xcent,self.ycent,self.zcent])
 
     def conductorf(self):
@@ -3148,8 +3154,8 @@ class Plane(Assembly):
                       condid='next',**kw):
         kwlist=['z0','zsign','theta','phi']
         Assembly.__init__(self,voltage,xcent,ycent,zcent,condid,kwlist,
-                               planeconductorf,planeconductord,planeintercept,
-                               planeconductorfnew,
+                               warp.planeconductorf,warp.planeconductord,planeintercept,
+                               warp.planeconductorfnew,
                                kw=kw)
         self.z0 = z0
         self.zsign = zsign
@@ -3159,8 +3165,8 @@ class Plane(Assembly):
     def getextent(self):
         # --- Just assume that the conductor extends everywhere since it can be tricky
         # --- to calculate its extent within the grid.
-        return ConductorExtent([-largepos,-largepos,-largepos],
-                               [+largepos,+largepos,+largepos],
+        return ConductorExtent([-warp.largepos,-warp.largepos,-warp.largepos],
+                               [+warp.largepos,+warp.largepos,+warp.largepos],
                                [self.xcent,self.ycent,self.zcent])
 
 
@@ -3180,18 +3186,18 @@ class ZPlane(Assembly):
                       condid='next',**kw):
         kwlist=['z0','zsign']
         Assembly.__init__(self,voltage,xcent,ycent,zcent,condid,kwlist,
-                               zplaneconductorf,zplaneconductord,zplaneintercept,
-                               zplaneconductorfnew,
+                               warp.zplaneconductorf,warp.zplaneconductord,warp.zplaneintercept,
+                               warp.zplaneconductorfnew,
                                kw=kw)
         self.z0 = z0
         self.zsign = zsign
 
     def getextent(self):
         if self.zsign > 0:
-            z1,z2 = self.z0,+largepos
+            z1,z2 = self.z0,+warp.largepos
         else:
-            z1,z2 = -largepos,self.z0
-        return ConductorExtent([-largepos,-largepos,z1],[+largepos,+largepos,z2],[self.xcent,self.ycent,self.zcent])
+            z1,z2 = -warp.largepos,self.z0
+        return ConductorExtent([-warp.largepos,-warp.largepos,z1],[+warp.largepos,+warp.largepos,z2],[self.xcent,self.ycent,self.zcent])
 
 #============================================================================
 class XPlane(ZPlane,XAssembly):
@@ -3279,8 +3285,8 @@ class Box(Assembly):
                       condid='next',**kw):
         kwlist=['xsize','ysize','zsize']
         Assembly.__init__(self,voltage,xcent,ycent,zcent,condid,kwlist,
-                               boxconductorf,boxconductord,boxintercept,
-                               boxconductorfnew,
+                               warp.boxconductorf,warp.boxconductord,warp.boxintercept,
+                               warp.boxconductorfnew,
                                kw=kw)
         self.xsize = xsize
         self.ysize = ysize
@@ -3295,19 +3301,19 @@ class Box(Assembly):
         self.drawzx(**kw)
 
     def drawxy(self,color='fg',filled=None,fullplane=1,**kw):
-        y = self.ysize/2.*array([-1,+1,+1,-1,-1])
-        x = self.xsize/2.*array([-1,-1,+1,+1,-1])
+        y = self.ysize/2.*np.array([-1,+1,+1,-1,-1])
+        x = self.xsize/2.*np.array([-1,-1,+1,+1,-1])
         self.plotdata(y,x,color=color,filled=filled,fullplane=fullplane,
                       xcent=self.ycent,zcent=self.xcent,**kw)
 
     def drawzx(self,color='fg',filled=None,fullplane=1,**kw):
-        r = self.xsize/2.*array([-1,+1,+1,-1,-1])
-        z = self.zsize/2.*array([-1,-1,+1,+1,-1])
+        r = self.xsize/2.*np.array([-1,+1,+1,-1,-1])
+        z = self.zsize/2.*np.array([-1,-1,+1,+1,-1])
         self.plotdata(r,z,color=color,filled=filled,fullplane=fullplane,**kw)
 
     def drawzy(self,color='fg',filled=None,fullplane=1,**kw):
-        r = self.ysize/2.*array([-1,+1,+1,-1,-1])
-        z = self.zsize/2.*array([-1,-1,+1,+1,-1])
+        r = self.ysize/2.*np.array([-1,+1,+1,-1,-1])
+        z = self.zsize/2.*np.array([-1,-1,+1,+1,-1])
         self.plotdata(r,z,color=color,filled=filled,fullplane=fullplane,
                       xcent=self.ycent,**kw)
 
@@ -3335,8 +3341,8 @@ class Cylinder(Assembly):
                       voltage=0.,xcent=0.,ycent=0.,zcent=0.,condid='next',**kw):
         kwlist = ['radius','length','theta','phi']
         Assembly.__init__(self,voltage,xcent,ycent,zcent,condid,kwlist,
-                               cylinderconductorf,cylinderconductord,
-                               cylinderintercept,cylinderconductorfnew,
+                               warp.cylinderconductorf,warp.cylinderconductord,
+                               warp.cylinderintercept,warp.cylinderconductorfnew,
                                kw=kw)
         self.radius = radius
         self.length = length
@@ -3345,7 +3351,7 @@ class Cylinder(Assembly):
 
     def getextent(self):
         # --- This is the easiest thing to do without thinking.
-        ll = sqrt(self.radius**2 + (self.length/2.)**2)
+        ll = np.sqrt(self.radius**2 + (self.length/2.)**2)
         return ConductorExtent([-ll,-ll,-ll],[+ll,+ll,+ll],[self.xcent,self.ycent,self.zcent])
 
     def draw(self,color='fg',filled=None,fullplane=1,**kw):
@@ -3359,13 +3365,13 @@ class Cylinder(Assembly):
         """
         # --- This is kind of a hack, but this routine doesn't make much sense
         # --- for an arbitrarily rotated cylinder.
-        r = array([self.radius,self.radius,-self.radius,-self.radius,self.radius])
-        z = self.length*array([-0.5,0.5,0.5,-0.5,-0.5])
+        r = np.array([self.radius,self.radius,-self.radius,-self.radius,self.radius])
+        z = self.length*np.array([-0.5,0.5,0.5,-0.5,-0.5])
 
-        ct = cos(self.theta)
-        st = sin(self.theta)
-        cp = cos(self.phi)
-        sp = sin(self.phi)
+        ct = np.cos(self.theta)
+        st = np.sin(self.theta)
+        cp = np.cos(self.phi)
+        sp = np.sin(self.phi)
         xp = +r*ct - 0*st*sp + z*st*cp
         yp =       + 0*cp    + z*sp
         zp = -r*st - 0*ct*sp + z*ct*cp
@@ -3381,7 +3387,7 @@ class Cylinder(Assembly):
                            theta=self.theta,phi=self.phi,
                            rofzdata=[self.radius,self.radius],
                            zdata=[-self.length/2.,+self.length/2.],
-                           largepos=largepos,
+                           largepos=warp.largepos,
                            kwdict=kw)
         self.dxobject = v
 
@@ -3402,8 +3408,8 @@ class Cylinders(Assembly):
                       voltage=0.,xcent=0.,ycent=0.,zcent=0.,condid='next',**kw):
         kwlist = ['ncylinders','radius','length','theta','phi']
         Assembly.__init__(self,voltage,xcent,ycent,zcent,condid,kwlist,
-                               cylindersconductorf,cylindersconductord,
-                               cylindersintercept,
+                               warp.cylindersconductorf,warp.cylindersconductord,
+                               warp.cylindersintercept,
                                kw=kw)
         self.ncylinders = 0
         self.radius = radius
@@ -3424,16 +3430,16 @@ class Cylinders(Assembly):
                 pass
 
         assert self.ncylinders > 0,"At least on of the input arguments must be a list!"
-        self.radius = self.radius*ones(self.ncylinders)
-        self.length = self.length*ones(self.ncylinders)
-        self.theta  = self.theta*ones(self.ncylinders)
-        self.phi    = self.phi*ones(self.ncylinders)
-        self.xcent  = self.xcent*ones(self.ncylinders)
-        self.ycent  = self.ycent*ones(self.ncylinders)
-        self.zcent  = self.zcent*ones(self.ncylinders)
+        self.radius = self.radius*np.ones(self.ncylinders)
+        self.length = self.length*np.ones(self.ncylinders)
+        self.theta  = self.theta*np.ones(self.ncylinders)
+        self.phi    = self.phi*np.ones(self.ncylinders)
+        self.xcent  = self.xcent*np.ones(self.ncylinders)
+        self.ycent  = self.ycent*np.ones(self.ncylinders)
+        self.zcent  = self.zcent*np.ones(self.ncylinders)
 
     def getextent(self):
-        rmax = sqrt(self.radius**2 + (self.length/2.)**2)
+        rmax = np.sqrt(self.radius**2 + (self.length/2.)**2)
         xmin = min(-rmax)
         ymin = min(-rmax)
         zmin = min(-rmax)
@@ -3467,8 +3473,8 @@ class ZCylinder(Assembly):
           "ZCylinder: either length or both zlower and zupper must be specified"
         kwlist = ['radius','length']
         Assembly.__init__(self,voltage,xcent,ycent,zcent,condid,kwlist,
-                               zcylinderconductorf,zcylinderconductord,
-                               zcylinderintercept,zcylinderconductorfnew,
+                               warp.zcylinderconductorf,warp.zcylinderconductord,
+                               warp.zcylinderintercept,warp.zcylinderconductorfnew,
                                kw=kw)
         self.radius = radius
         self.length = length
@@ -3486,7 +3492,7 @@ class ZCylinder(Assembly):
                            xoff=self.xcent,yoff=self.ycent,zoff=self.zcent,
                            rofzdata=[self.radius,self.radius],
                            zdata=[-self.length/2.,+self.length/2.],
-                           largepos=largepos,
+                           largepos=warp.largepos,
                            kwdict=kw)
         self.dxobject = v
 
@@ -3502,7 +3508,7 @@ class ZCylinder(Assembly):
         rmin = kw.get('rmin',None)
         if rmin is None: rmin = 0.
         r = [self.radius,self.radius,rmin,rmin,self.radius]
-        z = self.length*array([-0.5,0.5,0.5,-0.5,-0.5])
+        z = self.length*np.array([-0.5,0.5,0.5,-0.5,-0.5])
         kw.setdefault('xcent',self.xcent)
         kw.setdefault('zcent',self.zcent)
         self.plotdata(r,z,color=color,filled=filled,fullplane=fullplane,**kw)
@@ -3530,7 +3536,7 @@ class ZCylinder(Assembly):
         rmin = kw.get('rmin',None)
         if rmin is None: rmin = 0.
         r = [self.radius,self.radius,rmin,rmin,self.radius]
-        z = self.length*array([-0.5,0.5,0.5,-0.5,-0.5])
+        z = self.length*np.array([-0.5,0.5,0.5,-0.5,-0.5])
         kw.setdefault('xcent',self.ycent)
         kw.setdefault('zcent',self.zcent)
         self.plotdata(r,z,color=color,filled=filled,fullplane=fullplane,**kw)
@@ -3548,11 +3554,11 @@ class ZCylinder(Assembly):
         rmin = kw.get('rmin',None)
         if rmin is None: rmin = 0.
         theta = linspace(0,2*pi,nn)
-        x = self.radius*cos(theta)
-        y = self.radius*sin(theta)
+        x = self.radius*np.cos(theta)
+        y = self.radius*np.sin(theta)
         if rmin > 0.:
-            x = array(list(x) + self.rmin*cos(-theta))
-            y = array(list(y) + self.rmin*sin(-theta))
+            x = np.array(list(x) + self.rmin*np.cos(-theta))
+            y = np.array(list(y) + self.rmin*np.sin(-theta))
         kw.setdefault('xcent',self.ycent)
         kw.setdefault('zcent',self.xcent)
         self.plotdata(y,x,color=color,filled=filled,fullplane=fullplane,**kw)
@@ -3584,8 +3590,8 @@ class ZRoundedCylinder(Assembly):
           "ZRoundedCylinder: either length or both zlower and zupper must be specified"
         kwlist = ['radius','length','radius2']
         Assembly.__init__(self,voltage,xcent,ycent,zcent,condid,kwlist,
-                          zroundedcylinderconductorf,zroundedcylinderconductord,
-                          zroundedcylinderintercept,zroundedcylinderconductorfnew,
+                          warp.zroundedcylinderconductorf,warp.zroundedcylinderconductord,
+                          warp.zroundedcylinderintercept,warp.zroundedcylinderconductorfnew,
                           kw=kw)
         self.radius = radius
         self.length = length
@@ -3608,7 +3614,7 @@ class ZRoundedCylinder(Assembly):
         if zz[1] > zz[2]:
             zz[1] = 0.5*(zz[1] + zz[2])
             zz[2] = zz[1]
-            rr[1:3] = sqrt(self.radius2**2 - (self.radius2 - self.length/2.)**2)
+            rr[1:3] = np.sqrt(self.radius2**2 - (self.radius2 - self.length/2.)**2)
         Srfrv.checkarcs(Srfrv(),zz,rr,rad,zc,rc)
 
         v = Opyndx.VisualRevolution(
@@ -3616,7 +3622,7 @@ class ZRoundedCylinder(Assembly):
                            rendzmin=0.,rendzmax=0.,
                            xoff=self.xcent,yoff=self.ycent,zoff=self.zcent,
                            rofzdata=rr,zdata=zz,raddata=rad,zcdata=zc,rcdata=rc,
-                           largepos=largepos,
+                           largepos=warp.largepos,
                            kwdict=kw)
         self.dxobject = v
 
@@ -3633,10 +3639,10 @@ class ZRoundedCylinder(Assembly):
         if rmin is None: rmin = 0.
         zc = self.length/2. - self.radius2
         rc = self.radius - self.radius2
-        rleft = +rc + self.radius2*sin(arange(101,dtype='l')/100.*pi/2.)
-        zleft = -zc - self.radius2*cos(arange(101,dtype='l')/100.*pi/2.)
-        rrght = +rc + self.radius2*cos(arange(101,dtype='l')/100.*pi/2.)
-        zrght = +zc + self.radius2*sin(arange(101,dtype='l')/100.*pi/2.)
+        rleft = +rc + self.radius2*np.sin(np.arange(101,dtype='l')/100.*pi/2.)
+        zleft = -zc - self.radius2*np.cos(np.arange(101,dtype='l')/100.*pi/2.)
+        rrght = +rc + self.radius2*np.cos(np.arange(101,dtype='l')/100.*pi/2.)
+        zrght = +zc + self.radius2*np.sin(np.arange(101,dtype='l')/100.*pi/2.)
         r = [rmin] + list(rleft) + list(rrght) + [rmin,rmin]
         z = [-self.length/2.] + list(zleft) + list(zrght) + [self.length/2.,-self.length/2.]
         self.plotdata(r,z,color=color,filled=filled,fullplane=fullplane,**kw)
@@ -3666,15 +3672,15 @@ class ZCylinderOut(Assembly):
           "ZCylinderOut: either length or both zlower and zupper must be specified"
         kwlist = ['radius','length']
         Assembly.__init__(self,voltage,xcent,ycent,zcent,condid,kwlist,
-                          zcylinderoutconductorf,zcylinderoutconductord,
-                          zcylinderoutintercept,zcylinderoutconductorfnew,
+                          warp.zcylinderoutconductorf,warp.zcylinderoutconductord,
+                          warp.zcylinderoutintercept,warp.zcylinderoutconductorfnew,
                           kw=kw)
         self.radius = radius
         self.length = length
 
     def getextent(self):
-        return ConductorExtent([-largepos,-largepos,-self.length/2.],
-                               [+largepos,+largepos,+self.length/2.],
+        return ConductorExtent([-warp.largepos,-warp.largepos,-self.length/2.],
+                               [+warp.largepos,+warp.largepos,+self.length/2.],
                                [self.xcent,self.ycent,self.zcent])
 
     def createdxobject(self,rend=1.,kwdict={},**kw):
@@ -3685,9 +3691,9 @@ class ZCylinderOut(Assembly):
                            xoff=self.xcent,yoff=self.ycent,zoff=self.zcent,
                            rofzdata=[self.radius,self.radius],
                            zdata=[-self.length/2.,+self.length/2.],
-                           raddata=[largepos],zcdata=[largepos],rcdata=[largepos],
+                           raddata=[warp.largepos],zcdata=[warp.largepos],rcdata=[warp.largepos],
                            normalsign=-1,
-                           largepos=largepos,
+                           largepos=warp.largepos,
                            kwdict=kw)
         self.dxobject = v
 
@@ -3700,10 +3706,10 @@ class ZCylinderOut(Assembly):
      - fullplane=1: when true, plot the top and bottom, i.e. r vs z, and -r vs z.
      - rmax=w3d.xmmax: outer range in r to include in plot
         """
-        if rmax is None: rmax = w3d.xmmax
+        if rmax is None: rmax = warp.w3d.xmmax
         if rmax < self.radius: rmax = self.radius
         r = [self.radius,self.radius,rmax,rmax,self.radius]
-        z = self.length*array([-0.5,0.5,0.5,-0.5,-0.5])
+        z = self.length*np.array([-0.5,0.5,0.5,-0.5,-0.5])
         self.plotdata(r,z,color=color,filled=filled,fullplane=fullplane,**kw)
 
 #============================================================================
@@ -3733,18 +3739,18 @@ class ZRoundedCylinderOut(Assembly):
           "ZRoundedCylinderOut: either length or both zlower and zupper must be specified"
         kwlist = ['radius','length','radius2']
         Assembly.__init__(self,voltage,xcent,ycent,zcent,condid,kwlist,
-                          zroundedcylinderoutconductorf,
-                          zroundedcylinderoutconductord,
-                          zroundedcylinderoutintercept,
-                          zroundedcylinderoutconductorfnew,
+                          warp.zroundedcylinderoutconductorf,
+                          warp.zroundedcylinderoutconductord,
+                          warp.zroundedcylinderoutintercept,
+                          warp.zroundedcylinderoutconductorfnew,
                           kw=kw)
         self.radius = radius
         self.length = length
         self.radius2 = radius2
 
     def getextent(self):
-        return ConductorExtent([-largepos,-largepos,-self.length/2.],
-                               [+largepos,+largepos,+self.length/2.],
+        return ConductorExtent([-warp.largepos,-warp.largepos,-self.length/2.],
+                               [+warp.largepos,+warp.largepos,+self.length/2.],
                                [self.xcent,self.ycent,self.zcent])
 
     def createdxobject(self,rend=1.,kwdict={},**kw):
@@ -3761,7 +3767,7 @@ class ZRoundedCylinderOut(Assembly):
             zz[1] = 0.5*(zz[1] + zz[2])
             zz[2] = zz[1]
             rfixed = (self.radius + self.radius2 -
-                       sqrt(self.radius2**2 - (self.radius2 - self.length/2.)**2))
+                       np.sqrt(self.radius2**2 - (self.radius2 - self.length/2.)**2))
             rr[1] = rfixed
             rr[2] = rfixed
         Srfrv.checkarcs(Srfrv(),zz,rr,rad,zc,rc)
@@ -3772,7 +3778,7 @@ class ZRoundedCylinderOut(Assembly):
                            xoff=self.xcent,yoff=self.ycent,zoff=self.zcent,
                            rofzdata=rr,zdata=zz,raddata=rad,zcdata=zc,rcdata=rc,
                            normalsign=-1,
-                           largepos=largepos,
+                           largepos=warp.largepos,
                            kwdict=kw)
         self.dxobject = v
 
@@ -3785,14 +3791,14 @@ class ZRoundedCylinderOut(Assembly):
      - fullplane=1: when true, plot the top and bottom, i.e. r vs z, and -r vs z.
      - rmax=w3d.xmmax: outer range in r to include in plot
         """
-        if rmax is None: rmax = w3d.xmmax
+        if rmax is None: rmax = warp.w3d.xmmax
         if rmax < self.radius: rmax = self.radius
         zc = self.length/2. - self.radius2
         rc = self.radius + self.radius2
-        rleft = +rc - self.radius2*sin(arange(101,dtype='l')/100.*pi/2.)
-        zleft = -zc - self.radius2*cos(arange(101,dtype='l')/100.*pi/2.)
-        rrght = +rc - self.radius2*cos(arange(101,dtype='l')/100.*pi/2.)
-        zrght = +zc + self.radius2*sin(arange(101,dtype='l')/100.*pi/2.)
+        rleft = +rc - self.radius2*np.sin(np.arange(101,dtype='l')/100.*pi/2.)
+        zleft = -zc - self.radius2*np.cos(np.arange(101,dtype='l')/100.*pi/2.)
+        rrght = +rc - self.radius2*np.cos(np.arange(101,dtype='l')/100.*pi/2.)
+        zrght = +zc + self.radius2*np.sin(np.arange(101,dtype='l')/100.*pi/2.)
         r = [rmax] + list(rleft) + list(rrght) + [rmax,rmax]
         z = [-self.length/2.] + list(zleft) + list(zrght) + [self.length/2.,-self.length/2.]
         self.plotdata(r,z,color=color,filled=filled,fullplane=fullplane,**kw)
@@ -4016,7 +4022,7 @@ class ZCylinderElliptic(ZCylinder,EllipticAssembly):
                            rxofzdata=[self.radius,self.radius],
                            ryofzdata=[e*self.radius,e*self.radius],
                            zdata=[-self.length/2.,+self.length/2.],
-                           largepos=largepos,
+                           largepos=warp.largepos,
                            kwdict=kw)
         self.dxobject = v
 
@@ -4064,7 +4070,7 @@ class ZCylinderEllipticOut(ZCylinderOut,EllipticAssembly):
                            rxofzdata=[self.radius,self.radius],
                            ryofzdata=[e*self.radius,e*self.radius],
                            zdata=[-self.length/2.,+self.length/2.],
-                           largepos=largepos,
+                           largepos=warp.largepos,
                            kwdict=kw)
         self.dxobject = v
 
@@ -4290,8 +4296,8 @@ class Sphere(Assembly):
                       condid='next',**kw):
         kwlist = ['radius']
         Assembly.__init__(self,voltage,xcent,ycent,zcent,condid,kwlist,
-                          sphereconductorf,sphereconductord,sphereintercept,
-                          sphereconductorfnew,
+                          warp.sphereconductorf,warp.sphereconductord,warp.sphereintercept,
+                          warp.sphereconductorfnew,
                           kw=kw)
         self.radius = radius
 
@@ -4309,15 +4315,15 @@ class Sphere(Assembly):
                            rofzdata=[0.,0.],
                            zdata=[-self.radius,self.radius],
                            raddata=[self.radius],zcdata=[0.],rcdata=[0.],
-                           largepos=largepos,
+                           largepos=warp.largepos,
                            kwdict=kw)
         self.dxobject = v
 
     def draw(self,color='fg',filled=None,fullplane=1,**kw):
         narcpoints = kw.get('narcpoints',64)
         theta = linspace(0., 2.*pi, narcpoints+1)
-        r = self.radius*cos(theta)
-        z = self.radius*sin(theta)
+        r = self.radius*np.cos(theta)
+        z = self.radius*np.sin(theta)
         self.plotdata(r,z,color=color,filled=filled,fullplane=fullplane,**kw)
 
 #============================================================================
@@ -4366,8 +4372,8 @@ class Cone(Assembly):
                       xcent=0.,ycent=0.,zcent=0.,condid='next',**kw):
         kwlist = ['r_zmin','r_zmax','length','theta','phi']
         Assembly.__init__(self,voltage,xcent,ycent,zcent,condid,kwlist,
-                          coneconductorf,coneconductord,coneintercept,
-                          coneconductorfnew,
+                          warp.coneconductorf,warp.coneconductord,warp.coneintercept,
+                          warp.coneconductorfnew,
                           kw=kw)
         self.r_zmin = r_zmin
         self.r_zmax = r_zmax
@@ -4376,8 +4382,8 @@ class Cone(Assembly):
         self.length = length
 
     def getextent(self):
-        rmax = max(sqrt(self.r_zmin**2+(self.length/2.)**2),
-                   sqrt(self.r_zmax**2+(self.length/2.)**2))
+        rmax = max(np.sqrt(self.r_zmin**2+(self.length/2.)**2),
+                   np.sqrt(self.r_zmax**2+(self.length/2.)**2))
         return ConductorExtent([-rmax,-rmax,-self.length/2.],
                                [+rmax,+rmax,+self.length/2.],
                                [self.xcent,self.ycent,self.zcent])
@@ -4393,13 +4399,13 @@ class Cone(Assembly):
         """
         # --- This is kind of a hack, but this routine doesn't make much sense
         # --- for an arbitrarily rotated cone.
-        r =             array([self.r_zmin,0.0,0.0,self.r_zmax, self.r_zmin])
-        z = self.length*array([-0.5,      -0.5,0.5,0.5,        -0.5])
+        r =             np.array([self.r_zmin,0.0,0.0,self.r_zmax, self.r_zmin])
+        z = self.length*np.array([-0.5,      -0.5,0.5,0.5,        -0.5])
 
-        ct = cos(self.theta)
-        st = sin(self.theta)
-        cp = cos(self.phi)
-        sp = sin(self.phi)
+        ct = np.cos(self.theta)
+        st = np.sin(self.theta)
+        cp = np.cos(self.phi)
+        sp = np.sin(self.phi)
 
         xp = +r*ct - 0*st*sp + z*st*cp
         yp =       + 0*cp    + z*sp
@@ -4432,8 +4438,8 @@ class ConeSlope(Assembly):
                       xcent=0.,ycent=0.,zcent=0.,condid='next',**kw):
         kwlist = ['r_zmin','r_zmax','length','theta','phi']
         Assembly.__init__(self,voltage,xcent,ycent,zcent,condid,kwlist,
-                          coneconductorf,coneconductord,coneintercept,
-                          coneconductorfnew,
+                          warp.coneconductorf,warp.coneconductord,warp.coneintercept,
+                          warp.coneconductorfnew,
                           kw=kw)
         self.slope = slope
         self.intercept = intercept
@@ -4445,8 +4451,8 @@ class ConeSlope(Assembly):
         self.r_zmax = self.slope*(+self.length/2. - self.intercept)
 
     def getextent(self):
-        rmax = max(sqrt(self.r_zmin**2+(self.length/2.)**2),
-                   sqrt(self.r_zmax**2+(self.length/2.)**2))
+        rmax = max(np.sqrt(self.r_zmin**2+(self.length/2.)**2),
+                   np.sqrt(self.r_zmax**2+(self.length/2.)**2))
         return ConductorExtent([-rmax,-rmax,-self.length/2.],
                                [+rmax,+rmax,+self.length/2.],
                                [self.xcent,self.ycent,self.zcent])
@@ -4475,7 +4481,7 @@ class Cones(Assembly):
                       xcent=0.,ycent=0.,zcent=0.,condid='next',**kw):
         kwlist = ['ncones','r_zmin','r_zmax','length','theta','phi']
         Assembly.__init__(self,voltage,xcent,ycent,zcent,condid,kwlist,
-                          conesconductorf,conesconductord,conesintercept,
+                          warp.conesconductorf,warp.conesconductord,warp.conesintercept,
                           kw=kw)
         self.ncones = 0
         self.r_zmin = r_zmin
@@ -4497,17 +4503,17 @@ class Cones(Assembly):
                 pass
 
         assert self.ncones > 0,"At least on of the input arguments must be a list!"
-        self.r_zmin = self.r_zmin*ones(self.ncones)
-        self.r_zmax = self.r_zmax*ones(self.ncones)
-        self.length = self.length*ones(self.ncones)
-        self.theta  = self.theta*ones(self.ncones)
-        self.phi    = self.phi*ones(self.ncones)
-        self.xcent  = self.xcent*ones(self.ncones)
-        self.ycent  = self.ycent*ones(self.ncones)
-        self.zcent  = self.zcent*ones(self.ncones)
+        self.r_zmin = self.r_zmin*np.ones(self.ncones)
+        self.r_zmax = self.r_zmax*np.ones(self.ncones)
+        self.length = self.length*np.ones(self.ncones)
+        self.theta  = self.theta*np.ones(self.ncones)
+        self.phi    = self.phi*np.ones(self.ncones)
+        self.xcent  = self.xcent*np.ones(self.ncones)
+        self.ycent  = self.ycent*np.ones(self.ncones)
+        self.zcent  = self.zcent*np.ones(self.ncones)
 
     def getextent(self):
-        rmax = sqrt(maximum(abs(self.r_zmin),abs(self.r_zmax))**2 +
+        rmax = np.sqrt(np.maximum(abs(self.r_zmin),abs(self.r_zmax))**2 +
                             (self.length/2.)**2)
         xmin = min(-rmax)
         ymin = min(-rmax)
@@ -4531,8 +4537,8 @@ class ZTorus(Assembly):
     def __init__(self,r1,r2,voltage=0.,xcent=0.,ycent=0.,zcent=0.,condid='next',**kw):
         kwlist = ['r1','r2']
         Assembly.__init__(self,voltage,xcent,ycent,zcent,condid,kwlist,
-                          ztorusconductorf,ztorusconductord,ztorusintercept,
-                          zsrfrvconductorfnew,
+                          warp.ztorusconductorf,warp.ztorusconductord,warp.ztorusintercept,
+                          warp.zsrfrvconductorfnew,
                           kw=kw)
         self.r1 = r1
         self.r2 = r2
@@ -4571,15 +4577,15 @@ class ZTorus(Assembly):
                            zdata=[-self.r2,self.r2,-self.r2],
                            raddata=[self.r2,self.r2],
                            zcdata=[0.,0.],rcdata=[self.r1,self.r1],
-                           largepos=largepos,
+                           largepos=warp.largepos,
                            kwdict=kw)
         self.dxobject = v
 
     def draw(self,color='fg',filled=None,fullplane=1,**kw):
         narcpoints = kw.get('narcpoints',64)
         theta = linspace(0., 2.*pi, narcpoints+1)
-        r = self.r2*cos(theta) + self.r1
-        z = self.r2*sin(theta)
+        r = self.r2*np.cos(theta) + self.r1
+        z = self.r2*np.sin(theta)
         self.plotdata(r,z,color=color,filled=filled,fullplane=fullplane,**kw)
 
 #============================================================================
@@ -4599,7 +4605,7 @@ class ZGrid(Assembly):
                  xcent=0.,ycent=0.,zcent=0.,condid='next',**kw):
         kwlist = ['xcellsize','ycellsize','length','thickness']
         Assembly.__init__(self,voltage,xcent,ycent,zcent,condid,kwlist,
-                          zgridconductorf,zgridconductord,zgridintercept,
+                          warp.zgridconductorf,warp.zgridconductord,warp.zgridintercept,
                           kw=kw)
         self.xcellsize = xcellsize
         self.ycellsize = ycellsize
@@ -4609,8 +4615,8 @@ class ZGrid(Assembly):
     def getextent(self):
         zmin = -length/2.
         zmax = +length/2.
-        return ConductorExtent([-largepos,-largepos,zmin],
-                               [+largepos,+largepos,zmax],
+        return ConductorExtent([-warp.largepos,-warp.largepos,zmin],
+                               [+warp.largepos,+warp.largepos,zmax],
                                [self.xcent,self.ycent,self.zcent])
 
     def draw(self,color='fg',filled=None,fullplane=1,**kw):
@@ -4636,8 +4642,8 @@ class Beamletplate(Assembly):
                  xcent=0.,ycent=0.,zcent=0.,condid='next',**kw):
         kwlist = ['za','zb','z0','thickness']
         Assembly.__init__(self,voltage,xcent,ycent,zcent,condid,kwlist,
-                          beamletplateconductorf,beamletplateconductord,
-                          beamletplateintercept,
+                          warp.beamletplateconductorf,warp.beamletplateconductord,
+                          warp.beamletplateintercept,
                           kw=kw)
         self.za = za
         self.zb = zb
@@ -4647,17 +4653,17 @@ class Beamletplate(Assembly):
     def getextent(self):
         # --- Give a somewhat thoughtful result.
         if self.za < 1.e10:
-            zza = self.za - sqrt((self.za - self.z0)**2 - w3d.xmmax**2 - w3d.ymmax**2)
+            zza = self.za - np.sqrt((self.za - self.z0)**2 - warp.w3d.xmmax**2 - warp.w3d.ymmax**2)
         else:
             zza = self.z0
         if self.zb < 1.e10:
-            zzb = self.zb - sqrt((self.zb - self.z0)**2 - w3d.xmmax**2 - w3d.ymmax**2)
+            zzb = self.zb - np.sqrt((self.zb - self.z0)**2 - warp.w3d.xmmax**2 - warp.w3d.ymmax**2)
         else:
             zzb = self.z0
         zmin = self.z0 - self.thickness
         zmax = max(zza,zzb) + 5*self.thickness
-        return ConductorExtent([-largepos,-largepos,zmin],
-                               [+largepos,+largepos,zmax],
+        return ConductorExtent([-warp.largepos,-warp.largepos,zmin],
+                               [+warp.largepos,+warp.largepos,zmax],
                                [self.xcent,self.ycent,self.zcent])
 
     def createdxobject(self,xmin=None,xmax=None,ymin=None,ymax=None,
@@ -4665,17 +4671,17 @@ class Beamletplate(Assembly):
                        xmmin=None,xmmax=None,ymmin=None,ymmax=None,
                        zmmin=None,zmmax=None,l2symtry=None,l4symtry=None):
         _default = lambda x,d: (x,d)[x is None]
-        xmmin = _default(xmmin,w3d.xmmin)
-        xmmax = _default(xmmax,w3d.xmmax)
-        ymmin = _default(ymmin,w3d.ymmin)
-        ymmax = _default(ymmax,w3d.ymmax)
-        zmmin = _default(zmmin,w3d.zmmin)
-        zmmax = _default(zmmax,w3d.zmmax)
-        nx = _default(nx,w3d.nx)
-        ny = _default(ny,w3d.ny)
-        nz = _default(nz,w3d.nz)
-        l2symtry = _default(l2symtry,w3d.l2symtry)
-        l4symtry = _default(l4symtry,w3d.l4symtry)
+        xmmin = _default(xmmin,warp.w3d.xmmin)
+        xmmax = _default(xmmax,warp.w3d.xmmax)
+        ymmin = _default(ymmin,warp.w3d.ymmin)
+        ymmax = _default(ymmax,warp.w3d.ymmax)
+        zmmin = _default(zmmin,warp.w3d.zmmin)
+        zmmax = _default(zmmax,warp.w3d.zmmax)
+        nx = _default(nx,warp.w3d.nx)
+        ny = _default(ny,warp.w3d.ny)
+        nz = _default(nz,warp.w3d.nz)
+        l2symtry = _default(l2symtry,warp.w3d.l2symtry)
+        l4symtry = _default(l4symtry,warp.w3d.l4symtry)
 
         xmin = _default(xmin,xmmin)
         xmax = _default(xmax,xmmax)
@@ -4701,14 +4707,14 @@ class Beamletplate(Assembly):
         dz = (zmmax - zmmin)/nz
         if ny == 0: dy = dx
 
-        xmesh = xmmin + dx*arange(nx+1,dtype='l')
-        ymesh = ymmin + dy*arange(ny+1,dtype='l')
-        xmesh = compress(logical_and(xmin-dx <= xmesh,xmesh <= xmax+dx),xmesh)
-        ymesh = compress(logical_and(ymin-dy <= ymesh,ymesh <= ymax+dy),ymesh)
-        x = ravel(xmesh[:,newaxis]*ones(len(ymesh)))
-        y = ravel(ymesh*ones(len(xmesh))[:,newaxis])
-        ix = nint((x - xmmin)/dx)
-        iy = nint((y - ymmin)/dy)
+        xmesh = xmmin + dx*np.arange(nx+1,dtype='l')
+        ymesh = ymmin + dy*np.arange(ny+1,dtype='l')
+        xmesh = np.compress(np.logical_and(xmin-dx <= xmesh,xmesh <= xmax+dx),xmesh)
+        ymesh = np.compress(np.logical_and(ymin-dy <= ymesh,ymesh <= ymax+dy),ymesh)
+        x = np.ravel(xmesh[:,np.newaxis]*np.ones(len(ymesh)))
+        y = np.ravel(ymesh*np.ones(len(xmesh))[:,np.newaxis])
+        ix = warp.nint((x - xmmin)/dx)
+        iy = warp.nint((y - ymmin)/dy)
         if len(x) == 0: return
 
         xx = x
@@ -4717,40 +4723,40 @@ class Beamletplate(Assembly):
         yy.shape = (len(xmesh),len(ymesh))
 
         # --- Outer face
-        z = self.z0*ones(len(xmesh)*len(ymesh),'d') - self.thickness
-        iz = nint((z - zmmin)/dz)
+        z = self.z0*np.ones(len(xmesh)*len(ymesh),'d') - self.thickness
+        iz = warp.nint((z - zmmin)/dz)
         d = self.griddistance(ix,iy,iz,x,y,z)
         zl = z[0] + d.dels[5,:]
         zl.shape = (len(xmesh),len(ymesh))
         ml = Opyndx.VisualMesh(xx,yy,zl,twoSided=true)
 
         # --- Inner face
-        z = self.z0*ones(len(xmesh)*len(ymesh),'d') + 0.5*self.za
-        iz = nint((z - zmmin)/dz)
+        z = self.z0*np.ones(len(xmesh)*len(ymesh),'d') + 0.5*self.za
+        iz = warp.nint((z - zmmin)/dz)
         d = self.griddistance(ix,iy,iz,x,y,z)
         zr = z[0] - d.dels[4,:]
         zr.shape = (len(xmesh),len(ymesh))
         mr = Opyndx.VisualMesh(xx,yy,zr,twoSided=true)
 
         # --- Four sides between faces
-        xside = xx[:,0]*ones(2)[:,newaxis]
-        yside = yy[:,0]*ones(2)[:,newaxis]
-        zside = array([zl[:,0],zr[:,0]])
+        xside = xx[:,0]*np.ones(2)[:,np.newaxis]
+        yside = yy[:,0]*np.ones(2)[:,np.newaxis]
+        zside = np.array([zl[:,0],zr[:,0]])
         ms1 = Opyndx.VisualMesh(xside,yside,zside,twoSided=true)
 
-        xside = xx[:,-1]*ones(2)[:,newaxis]
-        yside = yy[:,-1]*ones(2)[:,newaxis]
-        zside = array([zl[:,-1],zr[:,-1]])
+        xside = xx[:,-1]*np.ones(2)[:,np.newaxis]
+        yside = yy[:,-1]*np.ones(2)[:,np.newaxis]
+        zside = np.array([zl[:,-1],zr[:,-1]])
         ms1 = Opyndx.VisualMesh(xside,yside,zside,twoSided=true)
 
-        xside = xx[0,:]*ones(2)[:,newaxis]
-        yside = yy[0,:]*ones(2)[:,newaxis]
-        zside = array([zl[0,:],zr[0,:]])
+        xside = xx[0,:]*np.ones(2)[:,np.newaxis]
+        yside = yy[0,:]*np.ones(2)[:,np.newaxis]
+        zside = np.array([zl[0,:],zr[0,:]])
         ms1 = Opyndx.VisualMesh(xside,yside,zside,twoSided=true)
 
-        xside = xx[-1,:]*ones(2)[:,newaxis]
-        yside = yy[-1,:]*ones(2)[:,newaxis]
-        zside = array([zl[-1,:],zr[-1,:]])
+        xside = xx[-1,:]*np.ones(2)[:,np.newaxis]
+        yside = yy[-1,:]*np.ones(2)[:,np.newaxis]
+        zside = np.array([zl[-1,:],zr[-1,:]])
         ms1 = Opyndx.VisualMesh(xside,yside,zside,twoSided=true)
 
 #============================================================================
@@ -4765,42 +4771,42 @@ class Srfrv:
       Checks consistency of input and calculates any parameters not given.
         """
         for i in range(len(zz)-1):
-            if ((rad[i] == None or rad[i] == largepos) and
-                (zc[i] == None or zc[i] == largepos) and
-                (rc[i] == None or rc[i] == largepos)):
+            if ((rad[i] == None or rad[i] == warp.largepos) and
+                (zc[i] == None or zc[i] == warp.largepos) and
+                (rc[i] == None or rc[i] == warp.largepos)):
                 # --- When there is a straight line, then set the radius to a large
                 # --- number (used as a flag in the code).
-                rad[i] = largepos
-                zc[i] = largepos
-                rc[i] = largepos
-            elif ((zc[i] == None or zc[i] == largepos) or
-                  (rc[i] == None or rc[i] == largepos)):
+                rad[i] = warp.largepos
+                zc[i] = warp.largepos
+                rc[i] = warp.largepos
+            elif ((zc[i] == None or zc[i] == warp.largepos) or
+                  (rc[i] == None or rc[i] == warp.largepos)):
                 # --- Given a radius and the two endpoints, the center of the
                 # --- circle can be found.
                 assert 4*rad[i]**2 > ((zz[i] - zz[i+1])**2 + (rr[i] - rr[i+1])**2),\
                      "Radius of circle must be larger than the distance between points %d,%d\n%e < %e"%\
-                     (i,i+1,2*rad[i],sqrt((zz[i] - zz[i+1])**2 + (rr[i] - rr[i+1])**2))
+                     (i,i+1,2*rad[i],np.sqrt((zz[i] - zz[i+1])**2 + (rr[i] - rr[i+1])**2))
                 zm = 0.5*(zz[i] + zz[i+1])
                 rm = 0.5*(rr[i] + rr[i+1])
                 if zz[i+1] > zz[i]:
                     ip1 = i+1
                 else:
                     ip1 = i
-                dbm = sqrt((zm - zz[ip1])**2 + (rm - rr[ip1])**2)
-                dcm = sqrt(rad[i]**2 - dbm**2)
-                angle1 = arcsin((rm - rr[ip1])/dbm)
+                dbm = np.sqrt((zm - zz[ip1])**2 + (rm - rr[ip1])**2)
+                dcm = np.sqrt(rad[i]**2 - dbm**2)
+                angle1 = np.arcsin((rm - rr[ip1])/dbm)
                 if rad[i] < 0:
-                    zc[i] = zm + dcm*sin(angle1)
-                    rc[i] = rm + dcm*cos(angle1)
+                    zc[i] = zm + dcm*np.sin(angle1)
+                    rc[i] = rm + dcm*np.cos(angle1)
                 else:
-                    zc[i] = zm - dcm*sin(angle1)
-                    rc[i] = rm - dcm*cos(angle1)
-            elif (rad[i] == None or rad[i] == largepos):
+                    zc[i] = zm - dcm*np.sin(angle1)
+                    rc[i] = rm - dcm*np.cos(angle1)
+            elif (rad[i] == None or rad[i] == warp.largepos):
                 # --- Given the center, the radius can be found. With the two end
                 # --- points of the arc given, the data is redundant, so check
                 # --- to be sure it is consistent.
-                rad[i] = sqrt((zz[i] - zc[i])**2 + (rr[i] - rc[i])**2)
-                rad2 = sqrt((zz[i+1] - zc[i])**2 + (rr[i+1] - rc[i])**2)
+                rad[i] = np.sqrt((zz[i] - zc[i])**2 + (rr[i] - rc[i])**2)
+                rad2 = np.sqrt((zz[i+1] - zc[i])**2 + (rr[i+1] - rc[i])**2)
                 assert (abs(rad[i] - rad2)/rad[i] < 1.e-2),\
                    "Points %d and %d are not at the same radius relative to the arc center. The radii are %e and %e"%(i,i+1,rad[i],rad2)
                 # --- Make sure the radius has the correct sign.
@@ -4821,37 +4827,37 @@ class Srfrv:
         if lrfunc:
             # --- Get the data from the rofz function
             if npoints is None:
-                solver = getregisteredsolver()
-                if solver is None: dz = w3d.dz
+                solver = warp.getregisteredsolver()
+                if solver is None: dz = warp.w3d.dz
                 else:              dz = solver.dz
-                npoints = max(100,nint((self.zmax-self.zmin)/dz))
+                npoints = max(100,warp.nint((self.zmax-self.zmin)/dz))
             dz = (self.zmax - self.zmin)/npoints
             for i in range(npoints+1):
-                f3d.srfrv_z = self.zmin + i*dz
+                warp.f3d.srfrv_z = self.zmin + i*dz
                 rfunc()
-                r.append(f3d.srfrv_r)
-                z.append(f3d.srfrv_z)
+                r.append(warp.f3d.srfrv_r)
+                z.append(warp.f3d.srfrv_z)
         else:
             # --- Get the data from the rofz table
             for i in range(len(rdata)-1):
-                if raddata[i] == largepos:
+                if raddata[i] == warp.largepos:
                     r.append(rdata[i])
                     z.append(zdata[i])
                 else:
-                    th1 = arctan2(rdata[i]   - rcdata[i],zdata[i]   - zcdata[i])
-                    th2 = arctan2(rdata[i+1] - rcdata[i],zdata[i+1] - zcdata[i])
+                    th1 = np.arctan2(rdata[i]   - rcdata[i],zdata[i]   - zcdata[i])
+                    th2 = np.arctan2(rdata[i+1] - rcdata[i],zdata[i+1] - zcdata[i])
                     if (th1 > th2 and raddata[i] < 0. and zdata[i] < zdata[i+1]):
                         th2 = th2 + 2*pi
                     if (th1 < th2 and raddata[i] > 0. and zdata[i] < zdata[i+1]):
                         th1 = th1 + 2*pi
                     tt = linspace(th1, th2, narcpoints)
-                    rr = abs(raddata[i])*sin(tt) + rcdata[i]
-                    zz = abs(raddata[i])*cos(tt) + zcdata[i]
+                    rr = abs(raddata[i])*np.sin(tt) + rcdata[i]
+                    zz = abs(raddata[i])*np.cos(tt) + zcdata[i]
                     #zz = linspace(zdata[i], zdata[i+1], narcpoints)
                     #if raddata[i] > 0.:
-                    #  rr = rcdata[i] + sqrt(maximum(0,raddata[i]**2 - (zz-zcdata[i])**2))
+                    #  rr = rcdata[i] + np.sqrt(np.maximum(0,raddata[i]**2 - (zz-zcdata[i])**2))
                     #else:
-                    #  rr = rcdata[i] - sqrt(maximum(0,raddata[i]**2 - (zz-zcdata[i])**2))
+                    #  rr = rcdata[i] - np.sqrt(np.maximum(0,raddata[i]**2 - (zz-zcdata[i])**2))
                     r = r + list(rr)
                     z = z + list(zz)
             r.append(rdata[-1])
@@ -4859,7 +4865,7 @@ class Srfrv:
 
             # --- chop the data at zmin and zmax
             # --- Note that zmin and zmax, as well as z, are relative to zcent
-            z = minimum(self.zmax,maximum(self.zmin,array(z)))
+            z = np.minimum(self.zmax,np.maximum(self.zmin,np.array(z)))
 
         return r,z
 
@@ -4875,14 +4881,14 @@ class Srfrv:
             nperdz = 100
         np = (self.zmax - self.zmin)/self.griddz*nperdz
         zdata = linspace(self.zmin, self.zmax, nperdz+1)
-        rofzdata = zeros(nperdz+1)
+        rofzdata = np.zeros(nperdz+1)
         for i in range(nperdz+1):
-            f3d.srfrv_z = zdata[i]
+            warp.f3d.srfrv_z = zdata[i]
             rofzfunclocal()
-            rofzdata[i] = f3d.srfrv_r
-        raddata = zeros(nperdz) + largepos
-        rcdata = zeros(nperdz)
-        zcdata = zeros(nperdz)
+            rofzdata[i] = warp.f3d.srfrv_r
+        raddata = np.zeros(nperdz) + warp.largepos
+        rcdata = np.zeros(nperdz)
+        zcdata = np.zeros(nperdz)
         return rofzdata,zdata,raddata,rcdata,zcdata
 
 #============================================================================
@@ -4890,17 +4896,17 @@ class Srfrv:
 # --- describe the surface of revolution.
 def rofzfunc():
     try:
-        f3d.srfrv_r = rofzfunc.rofzfunc(f3d.srfrv_z)
+        warp.f3d.srfrv_r = rofzfunc.rofzfunc(warp.f3d.srfrv_z)
     except TypeError:
         rofzfunc.rofzfunc()
 def rminofz():
     try:
-        f3d.srfrv_r = rminofz.rminofz(f3d.srfrv_z)
+        warp.f3d.srfrv_r = rminofz.rminofz(warp.f3d.srfrv_z)
     except TypeError:
         rminofz.rminofz()
 def rmaxofz():
     try:
-        f3d.srfrv_r = rmaxofz.rmaxofz(f3d.srfrv_z)
+        warp.f3d.srfrv_r = rmaxofz.rmaxofz(warp.f3d.srfrv_z)
     except TypeError:
         rmaxofz.rmaxofz()
 
@@ -4942,8 +4948,8 @@ class ZSrfrv(Srfrv,Assembly):
 
         kwlist = ['nn','rsrf','zsrf','rad','rc','zc']
         Assembly.__init__(self,voltage,xcent,ycent,zcent,condid,kwlist,
-                          None,zsrfrvconductord,
-                          zsrfrvintercept,zsrfrvconductorfnew,
+                          None,warp.zsrfrvconductord,
+                          warp.zsrfrvintercept,warp.zsrfrvconductorfnew,
                           kw=kw)
 
         # --- Make sure the input is consistent
@@ -4966,7 +4972,7 @@ class ZSrfrv(Srfrv,Assembly):
         self.zmin = min(self.zsrf)
         self.zmax = max(self.zsrf)
         for i in range(self.nn-1):
-            if self.rad[i] < largepos:
+            if self.rad[i] < warp.largepos:
                 self.rmin = min(self.rmin,-self.rc[i] - abs(self.rad[i]))
                 self.rmax = max(self.rmax,+self.rc[i] + abs(self.rad[i]))
                 self.zmin = min(self.zmin,self.zc[i] - abs(self.rad[i]))
@@ -5013,7 +5019,7 @@ class ZSrfrv(Srfrv,Assembly):
                            rofzdata=self.rsrf,zdata=self.zsrf,
                            raddata=self.rad,zcdata=self.zc,rcdata=self.rc,
                            normalsign=-1,
-                           largepos=largepos,
+                           largepos=warp.largepos,
                            kwdict=kw)
         self.dxobject = v
 
@@ -5051,22 +5057,22 @@ class ZSrfrvOut(Srfrv,Assembly):
                    specify options on how the image is made. The returned object
                    is then passed to DXImage
     """
-    def __init__(self,rofzfunc=None,zmin=None,zmax=None,rmax=largepos,
+    def __init__(self,rofzfunc=None,zmin=None,zmax=None,rmax=warp.largepos,
                       voltage=0.,xcent=0.,ycent=0.,zcent=0.,condid='next',
                       rofzdata=None,zdata=None,raddata=None,
                       zcdata=None,rcdata=None,**kw):
         kwlist = ['lrofzfunc','zmin','zmax','rmax','griddz']
         Assembly.__init__(self,voltage,xcent,ycent,zcent,condid,kwlist,
-                          zsrfrvoutconductorf,zsrfrvoutconductord,
-                          zsrfrvoutintercept,zsrfrvconductorfnew,
+                          warp.zsrfrvoutconductorf,warp.zsrfrvoutconductord,
+                          warp.zsrfrvoutintercept,warp.zsrfrvconductorfnew,
                           kw=kw)
         self.rofzfunc = rofzfunc
         self.rmax = rmax
 
         # --- Deal with tablized data.
         # --- Make sure the input is consistent
-        if isinstance(rofzdata,(ndarray,collections.abc.Sequence)):
-            self.lrofzfunc = false
+        if isinstance(rofzdata,(np.ndarray,collections.abc.Sequence)):
+            self.lrofzfunc = False
             self.zdata = zdata
             self.rofzdata = self.setdatadefaults(rofzdata,len(zdata),rmax)
             self.raddata = self.setdatadefaults(raddata,len(zdata)-1,None)
@@ -5106,12 +5112,12 @@ class ZSrfrvOut(Srfrv,Assembly):
         if self.lrofzfunc:
             rofzfunc.rofzfunc = self.rofzfunc
         else:
-            f3d.npnts_sr = len(self.zdata)
-            f3d.z_sr = self.zdata
-            f3d.r_sr = self.rofzdata
-            f3d.rad_sr = self.raddata
-            f3d.zc_sr = self.zcdata
-            f3d.rc_sr = self.rcdata
+            warp.f3d.npnts_sr = len(self.zdata)
+            warp.f3d.z_sr = self.zdata
+            warp.f3d.r_sr = self.rofzdata
+            warp.f3d.rad_sr = self.raddata
+            warp.f3d.zc_sr = self.zcdata
+            warp.f3d.rc_sr = self.rcdata
 
         return Assembly.getkwlist(self)
 
@@ -5134,9 +5140,9 @@ class ZSrfrvOut(Srfrv,Assembly):
         self.nn = len(zdata)+3
         self.rsrf = [self.rmax] + list(rofzdata) + [self.rmax,self.rmax]
         self.zsrf = [self.zmin] + list(zdata) + [self.zmax,self.zmin]
-        self.rad = [largepos] + list(raddata) + [largepos,largepos]
-        self.rc = [largepos] + list(rcdata) + [largepos,largepos]
-        self.zc = [largepos] + list(zcdata) + [largepos,largepos]
+        self.rad = [warp.largepos] + list(raddata) + [warp.largepos,warp.largepos]
+        self.rc = [warp.largepos] + list(rcdata) + [warp.largepos,warp.largepos]
+        self.zc = [warp.largepos] + list(zcdata) + [warp.largepos,warp.largepos]
         result = Assembly.gridintercepts(self,xmmin,ymmin,zmmin,dx,dy,dz,
                                          nx,ny,nz,ix,iy,iz,mglevel)
          #result.intercepts.xintercepts.sort(axis=0)
@@ -5184,7 +5190,7 @@ class ZSrfrvOut(Srfrv,Assembly):
                            raddata=self.raddata,zcdata=self.zcdata,
                            rcdata=self.rcdata,
                            normalsign=-1,
-                           largepos=largepos,
+                           largepos=warp.largepos,
                            kwdict=kw)
         self.dxobject = v
 
@@ -5228,16 +5234,16 @@ class ZSrfrvIn(Srfrv,Assembly):
                       zcdata=None,rcdata=None,**kw):
         kwlist = ['lrofzfunc','zmin','zmax','rmin','griddz']
         Assembly.__init__(self,voltage,xcent,ycent,zcent,condid,kwlist,
-                          zsrfrvinconductorf,zsrfrvinconductord,
-                          zsrfrvinintercept,zsrfrvconductorfnew,
+                          warp.zsrfrvinconductorf,warp.zsrfrvinconductord,
+                          warp.zsrfrvinintercept,warp.zsrfrvconductorfnew,
                           kw=kw)
         self.rofzfunc = rofzfunc
         self.rmin = rmin
 
         # --- Deal with tablized data.
         # --- Make sure the input is consistent
-        if isinstance(rofzdata,(ndarray,collections.abc.Sequence)):
-            self.lrofzfunc = false
+        if isinstance(rofzdata,(np.ndarray,collections.abc.Sequence)):
+            self.lrofzfunc = False
             self.zdata = zdata
             self.rofzdata = self.setdatadefaults(rofzdata,len(zdata),rmin)
             self.raddata = self.setdatadefaults(raddata,len(zdata)-1,None)
@@ -5268,7 +5274,7 @@ class ZSrfrvIn(Srfrv,Assembly):
 
     def getextent(self):
         if self.lrofzfunc:
-            rmax = largepos
+            rmax = warp.largepos
         else:
             rmax = max(self.rofzdata)
             for rc,rr in zip(self.rcdata,self.raddata):
@@ -5284,12 +5290,12 @@ class ZSrfrvIn(Srfrv,Assembly):
         if self.lrofzfunc:
             rofzfunc.rofzfunc = self.rofzfunc
         else:
-            f3d.npnts_sr = len(self.zdata)
-            f3d.z_sr = self.zdata
-            f3d.r_sr = self.rofzdata
-            f3d.rad_sr = self.raddata
-            f3d.zc_sr = self.zcdata
-            f3d.rc_sr = self.rcdata
+            warp.f3d.npnts_sr = len(self.zdata)
+            warp.f3d.z_sr = self.zdata
+            warp.f3d.r_sr = self.rofzdata
+            warp.f3d.rad_sr = self.raddata
+            warp.f3d.zc_sr = self.zcdata
+            warp.f3d.rc_sr = self.rcdata
 
         return Assembly.getkwlist(self)
 
@@ -5312,9 +5318,9 @@ class ZSrfrvIn(Srfrv,Assembly):
         self.nn = len(zdata)+3
         self.rsrf = [self.rmin] + list(rofzdata) + [self.rmin,self.rmin]
         self.zsrf = [self.zmin] + list(zdata) + [self.zmax,self.zmin]
-        self.rad = [largepos] + list(raddata) + [largepos,largepos]
-        self.rc = [largepos] + list(rcdata) + [largepos,largepos]
-        self.zc = [largepos] + list(zcdata) + [largepos,largepos]
+        self.rad = [warp.largepos] + list(raddata) + [warp.largepos,warp.largepos]
+        self.rc = [warp.largepos] + list(rcdata) + [warp.largepos,warp.largepos]
+        self.zc = [warp.largepos] + list(zcdata) + [warp.largepos,warp.largepos]
         result = Assembly.gridintercepts(self,xmmin,ymmin,zmmin,dx,dy,dz,
                                          nx,ny,nz,ix,iy,iz,mglevel)
          #result.intercepts.xintercepts.sort(axis=0)
@@ -5361,7 +5367,7 @@ class ZSrfrvIn(Srfrv,Assembly):
                            rofzdata=self.rofzdata,zdata=self.zdata,
                            raddata=self.raddata,zcdata=self.zcdata,
                            rcdata=self.rcdata,
-                           largepos=largepos,
+                           largepos=warp.largepos,
                            kwdict=kw)
         self.dxobject = v
 
@@ -5406,16 +5412,16 @@ class ZSrfrvInOut(Srfrv,Assembly):
                       rcmaxdata=None,zcmaxdata=None,**kw):
         kwlist = ['lrminofz','lrmaxofz','zmin','zmax','griddz']
         Assembly.__init__(self,voltage,xcent,ycent,zcent,condid,kwlist,
-                          zsrfrvinoutconductorf,zsrfrvinoutconductord,
-                          zsrfrvinoutintercept,zsrfrvconductorfnew,
+                          warp.zsrfrvinoutconductorf,warp.zsrfrvinoutconductord,
+                          warp.zsrfrvinoutintercept,warp.zsrfrvconductorfnew,
                           kw=kw)
         self.rminofz = rminofz
         self.rmaxofz = rmaxofz
 
         # --- Deal with tablized data.
         # --- Making sure the input is consistent
-        if isinstance(zmindata,(ndarray,collections.abc.Sequence)):
-            self.lrminofz = false
+        if isinstance(zmindata,(np.ndarray,collections.abc.Sequence)):
+            self.lrminofz = False
             self.zmindata = zmindata
             self.rminofzdata = self.setdatadefaults(rminofzdata,len(zmindata),0.)
             self.radmindata = self.setdatadefaults(radmindata,len(zmindata)-1,None)
@@ -5441,11 +5447,11 @@ class ZSrfrvInOut(Srfrv,Assembly):
             self.rcmindata = None
             self.zcmindata = None
 
-        if isinstance(zmaxdata,(ndarray,collections.abc.Sequence)):
-            self.lrmaxofz = false
+        if isinstance(zmaxdata,(np.ndarray,collections.abc.Sequence)):
+            self.lrmaxofz = False
             self.zmaxdata = zmaxdata
             self.rmaxofzdata = self.setdatadefaults(rmaxofzdata,len(zmaxdata),
-                                                    largepos)
+                                                    warp.largepos)
             self.radmaxdata = self.setdatadefaults(radmaxdata,len(zmaxdata)-1,None)
             self.rcmaxdata = self.setdatadefaults(rcmaxdata,len(zmaxdata)-1,None)
             self.zcmaxdata = self.setdatadefaults(zcmaxdata,len(zmaxdata)-1,None)
@@ -5486,7 +5492,7 @@ class ZSrfrvInOut(Srfrv,Assembly):
 
     def getextent(self):
         if self.lrmaxofz:
-            rmax = largepos
+            rmax = warp.largepos
         else:
             rmax = max(self.rmaxofzdata)
             for rc,rr in zip(self.rcmaxdata,self.radmaxdata):
@@ -5502,22 +5508,22 @@ class ZSrfrvInOut(Srfrv,Assembly):
         if self.lrminofz:
             rminofz.rminofz = self.rminofz
         else:
-            f3d.npnts_srmin = len(self.zmindata)
-            f3d.z_srmin = self.zmindata
-            f3d.r_srmin = self.rminofzdata
-            f3d.rad_srmin = self.radmindata
-            f3d.zc_srmin = self.zcmindata
-            f3d.rc_srmin = self.rcmindata
+            warp.f3d.npnts_srmin = len(self.zmindata)
+            warp.f3d.z_srmin = self.zmindata
+            warp.f3d.r_srmin = self.rminofzdata
+            warp.f3d.rad_srmin = self.radmindata
+            warp.f3d.zc_srmin = self.zcmindata
+            warp.f3d.rc_srmin = self.rcmindata
 
         if self.lrmaxofz:
             rmaxofz.rmaxofz = self.rmaxofz
         else:
-            f3d.npnts_srmax = len(self.zmaxdata)
-            f3d.z_srmax = self.zmaxdata
-            f3d.r_srmax = self.rmaxofzdata
-            f3d.rad_srmax = self.radmaxdata
-            f3d.zc_srmax = self.zcmaxdata
-            f3d.rc_srmax = self.rcmaxdata
+            warp.f3d.npnts_srmax = len(self.zmaxdata)
+            warp.f3d.z_srmax = self.zmaxdata
+            warp.f3d.r_srmax = self.rmaxofzdata
+            warp.f3d.rad_srmax = self.radmaxdata
+            warp.f3d.zc_srmax = self.zcmaxdata
+            warp.f3d.rc_srmax = self.rcmaxdata
 
         return Assembly.getkwlist(self)
 
@@ -5552,12 +5558,12 @@ class ZSrfrvInOut(Srfrv,Assembly):
                      [rminofzdata[0]])
         self.zsrf = (list(zmindata) + list(zmaxdata[::-1]) +
                      [zmindata[0]])
-        self.rad = (list(radmindata) + [largepos] +
-                    list(radmaxdata[::-1]) + [largepos])
-        self.rc = (list(rcmindata) + [largepos] +
-                   list(rcmaxdata[::-1]) + [largepos])
-        self.zc = (list(zcmindata) + [largepos] +
-                   list(zcmaxdata[::-1]) + [largepos])
+        self.rad = (list(radmindata) + [warp.largepos] +
+                    list(radmaxdata[::-1]) + [warp.largepos])
+        self.rc = (list(rcmindata) + [warp.largepos] +
+                   list(rcmaxdata[::-1]) + [warp.largepos])
+        self.zc = (list(zcmindata) + [warp.largepos] +
+                   list(zcmaxdata[::-1]) + [warp.largepos])
         result = Assembly.gridintercepts(self,xmmin,ymmin,zmmin,dx,dy,dz,
                                          nx,ny,nz,ix,iy,iz,mglevel)
          #result.intercepts.xintercepts.sort(axis=0)
@@ -5599,22 +5605,22 @@ class ZSrfrvInOut(Srfrv,Assembly):
         """
         kw.update(kwdict)
         if self.lrminofz:
-            f3d.srfrv_z = self.zmin
+            warp.f3d.srfrv_z = self.zmin
             self.rminofz()
-            rminzmin = f3d.srfrv_r
-            f3d.srfrv_z = self.zmax
+            rminzmin = warp.f3d.srfrv_r
+            warp.f3d.srfrv_z = self.zmax
             self.rminofz()
-            rminzmax = f3d.srfrv_r
+            rminzmax = warp.f3d.srfrv_r
         else:
             rminzmin = self.rminofzdata[0]
             rminzmax = self.rminofzdata[-1]
         if self.lrmaxofz:
-            f3d.srfrv_z = self.zmin
+            warp.f3d.srfrv_z = self.zmin
             self.rmaxofz()
-            rmaxzmin = f3d.srfrv_r
-            f3d.srfrv_z = self.zmax
+            rmaxzmin = warp.f3d.srfrv_r
+            warp.f3d.srfrv_z = self.zmax
             self.rmaxofz()
-            rmaxzmax = f3d.srfrv_r
+            rmaxzmax = warp.f3d.srfrv_r
         else:
             rmaxzmin = self.rmaxofzdata[0]
             rmaxzmax = self.rmaxofzdata[-1]
@@ -5623,17 +5629,17 @@ class ZSrfrvInOut(Srfrv,Assembly):
 
         if not self.lrminofz or not self.lrmaxofz:
 
-            rr = concatenate((self.rmaxofzdata,array(self.rminofzdata)[::-1],
+            rr = warp.concatenate((self.rmaxofzdata,np.array(self.rminofzdata)[::-1],
                               [self.rmaxofzdata[0]]))
-            zz = concatenate((self.zmaxdata,array(self.zmindata)[::-1],
+            zz = warp.concatenate((self.zmaxdata,np.array(self.zmindata)[::-1],
                              [self.zmaxdata[0]]))
-            radmin = array(self.radmindata)
-            radmin = where(radmin < largepos,-radmin,largepos)
-            rad = concatenate((self.radmaxdata,[largepos],array(radmin)[::-1],
-                               [largepos]))
-            zc = concatenate((self.zcmaxdata,[0.],array(self.zcmindata)[::-1],
+            radmin = np.array(self.radmindata)
+            radmin = np.where(radmin < warp.largepos,-radmin,warp.largepos)
+            rad = warp.concatenate((self.radmaxdata,[warp.largepos],np.array(radmin)[::-1],
+                               [warp.largepos]))
+            zc = warp.concatenate((self.zcmaxdata,[0.],np.array(self.zcmindata)[::-1],
                               [0.]))
-            rc = concatenate((self.rcmaxdata,[0.],array(self.rcmindata)[::-1],
+            rc = warp.concatenate((self.rcmaxdata,[0.],np.array(self.rcmindata)[::-1],
                               [0.]))
             v = Opyndx.VisualRevolution(zzmin=self.zmin,zzmax=self.zmax,
                              rendzmin=None,rendzmax=None,
@@ -5649,7 +5655,7 @@ class ZSrfrvInOut(Srfrv,Assembly):
                              raddata=self.radmindata,zcdata=self.zcmindata,
                              rcdata=self.rcmindata,
                              normalsign=-1,
-                             largepos=largepos,
+                             largepos=warp.largepos,
                              kwdict=kw)
             vmax = Opyndx.VisualRevolution(self.rmaxofz,self.zmin,self.zmax,
                              rendzmin=rendzmin,rendzmax=rendzmax,
@@ -5657,7 +5663,7 @@ class ZSrfrvInOut(Srfrv,Assembly):
                              rofzdata=self.rmaxofzdata,zdata=self.zmaxdata,
                              raddata=self.radmaxdata,zcdata=self.zcmaxdata,
                              rcdata=self.rcmaxdata,
-                             largepos=largepos,
+                             largepos=warp.largepos,
                              kwdict=kw)
             v = Opyndx.DXCollection(vmin,vmax)
 
@@ -5688,7 +5694,7 @@ class ZSrfrvEllipticOut(ZSrfrvOut,EllipticAssembly):
         of the list of r and z data.
       Note that if tablized data is given, the first argument is ignored.
     """
-    def __init__(self,ellipticity,rofzfunc=None,zmin=None,zmax=None,rmax=largepos,
+    def __init__(self,ellipticity,rofzfunc=None,zmin=None,zmax=None,rmax=warp.largepos,
                       voltage=0.,xcent=0.,ycent=0.,zcent=0.,condid='next',
                       rofzdata=None,zdata=None,raddata=None,
                       zcdata=None,rcdata=None,**kw):
@@ -5825,7 +5831,7 @@ class XSrfrvOut(ZSrfrvOut,XAssembly):
         of the list of r and x data.
       Note that if tablized data is given, the first argument is ignored.
     """
-    def __init__(self,rofxfunc=None,xmin=None,xmax=None,rmax=largepos,
+    def __init__(self,rofxfunc=None,xmin=None,xmax=None,rmax=warp.largepos,
                       voltage=0.,xcent=0.,ycent=0.,zcent=0.,condid='next',
                       rofxdata=None,xdata=None,raddata=None,
                       xcdata=None,rcdata=None,**kw):
@@ -5981,7 +5987,7 @@ class YSrfrvOut(ZSrfrvOut,YAssembly):
         of the list of r and y data.
       Note that if tablized data is given, the first argument is ignored.
     """
-    def __init__(self,rofyfunc=None,ymin=None,ymax=None,rmax=largepos,
+    def __init__(self,rofyfunc=None,ymin=None,ymax=None,rmax=warp.largepos,
                       voltage=0.,xcent=0.,ycent=0.,zcent=0.,condid='next',
                       rofydata=None,ydata=None,raddata=None,
                       ycdata=None,rcdata=None,**kw):
@@ -6128,8 +6134,8 @@ class Annulus(Assembly):
         assert (rmin<rmax),"rmin must be less than rmax"
         kwlist = ['rmin','rmax','length','theta','phi']
         Assembly.__init__(self,voltage,xcent,ycent,zcent,condid,kwlist,
-                               annulusconductorf,annulusconductord,
-                               annulusintercept,cylinderconductorfnew,
+                               warp.annulusconductorf,warp.annulusconductord,
+                               warp.annulusintercept,warp.cylinderconductorfnew,
                                kw=kw)
         self.rmin   = rmin
         self.rmax   = rmax
@@ -6139,7 +6145,7 @@ class Annulus(Assembly):
 
     def getextent(self):
         # --- This is the easiest thing to do without thinking.
-        ll = sqrt(self.rmax**2 + (self.length/2.)**2)
+        ll = np.sqrt(self.rmax**2 + (self.length/2.)**2)
         return ConductorExtent([-ll,-ll,-ll],[+ll,+ll,+ll],[self.xcent,self.ycent,self.zcent])
 
     def gridintercepts(self,xmmin,ymmin,zmmin,dx,dy,dz,
@@ -6167,13 +6173,13 @@ class Annulus(Assembly):
         """
         # --- This is kind of a hack, but this routine doesn't make much sense
         # --- for an arbitrarily rotated annulus.
-        r = array([self.rmin,self.rmin,self.rmax,self.rmax,self.rmin])
-        z = self.length*array([-0.5,0.5,0.5,-0.5,-0.5])
+        r = np.array([self.rmin,self.rmin,self.rmax,self.rmax,self.rmin])
+        z = self.length*np.array([-0.5,0.5,0.5,-0.5,-0.5])
 
-        ct = cos(self.theta)
-        st = sin(self.theta)
-        cp = cos(self.phi)
-        sp = sin(self.phi)
+        ct = np.cos(self.theta)
+        st = np.sin(self.theta)
+        cp = np.cos(self.phi)
+        sp = np.sin(self.phi)
 
         xp = +r*ct - 0*st*sp + z*st*cp
         yp =       + 0*cp    + z*sp
@@ -6195,7 +6201,7 @@ class Annulus(Assembly):
                            theta=self.theta,phi=self.phi,
                            rofzdata=[self.rmin,self.rmin],
                            zdata=[-self.length/2.,+self.length/2.],
-                           largepos=largepos,
+                           largepos=warp.largepos,
                            kwdict=kw)
         vout = Opyndx.VisualRevolution(
                            zzmin=-self.length/2.,zzmax=+self.length/2.,
@@ -6204,7 +6210,7 @@ class Annulus(Assembly):
                            theta=self.theta,phi=self.phi,
                            rofzdata=[self.rmax,self.rmax],
                            zdata=[-self.length/2.,+self.length/2.],
-                           largepos=largepos,
+                           largepos=warp.largepos,
                            kwdict=kw)
         v = Opyndx.DXCollection(vin,vout)
         self.dxobject = v
@@ -6366,7 +6372,7 @@ class ZConeOut(ZSrfrvOut):
         zmin = -length/2.
         zmax = +length/2.
         zdata = [zmin,zmin,zmax,zmax]
-        rofzdata = [largepos,r_zmin,r_zmax,largepos]
+        rofzdata = [warp.largepos,r_zmin,r_zmax,warp.largepos]
 
         ZSrfrvOut.__init__(self,' ',zmin,zmax,
                            voltage=voltage,xcent=xcent,ycent=ycent,zcent=zcent,
@@ -6399,7 +6405,7 @@ class ZConeOutSlope(ZSrfrvOut):
         zmin = -length/2.
         zmax = +length/2.
         zdata = [zmin,zmin,zmax,zmax]
-        rofzdata = [largepos,r_zmin,r_zmax,largepos]
+        rofzdata = [warp.largepos,r_zmin,r_zmax,warp.largepos]
 
         ZSrfrvOut.__init__(self,' ',zmin,zmax,
                            voltage=voltage,xcent=xcent,ycent=ycent,zcent=zcent,
@@ -6425,8 +6431,8 @@ class Triangles(Assembly):
                       condid='next',**kw):
         kwlist=['ntriangles', 'triangles']
         Assembly.__init__(self,voltage,xcent,ycent,zcent,condid,kwlist,
-                               None,trianglesconductord,trianglesintercept,
-                               trianglesconductorfnew,
+                               None,warp.trianglesconductord,warp.trianglesintercept,
+                               warp.trianglesconductorfnew,
                                kw=kw)
         self.ntriangles = triangles.shape[2]
         self.triangles = triangles
@@ -6448,7 +6454,7 @@ class Triangles(Assembly):
             if len(ll) > 0:
                 lines.append(ll)
         # --- There should be two points for each triangle that intersects the plane
-        return array(lines)
+        return np.array(lines)
 
     def intersection_with_plane(self, it, planeN, planeD, epsilon=1.e-13):
         """
@@ -6478,7 +6484,7 @@ class Triangles(Assembly):
         def floatunique(segs):
             # --- Find unique items in the segments, within epsilon
             if len(segs) == 0:
-                return array(segs)
+                return np.array(segs)
             result = [segs[0]]
             for i in range(1, len(segs)):
                 for r in result:
@@ -6486,7 +6492,7 @@ class Triangles(Assembly):
                        break
                 else:
                     result.append(segs[i])
-            return array(result)
+            return np.array(result)
 
         P1 = self.triangles[:,0,it]
         P2 = self.triangles[:,1,it]
@@ -6500,7 +6506,7 @@ class Triangles(Assembly):
         if outSegTips.shape[0] == 1:
             # --- Only one of the vertices is on the plane.
             # --- Duplicate it to get two points.
-            outSegTips = array([outSegTips[0], outSegTips[0]])
+            outSegTips = np.array([outSegTips[0], outSegTips[0]])
         return outSegTips
 
     def draw(self,color='fg',filled=None,fullplane=1,**kw):
@@ -6508,25 +6514,25 @@ class Triangles(Assembly):
 
     def drawxy(self,iz=None,color='fg',filled=None,fullplane=1,**kw):
         if iz is None:
-            iz = w3d.iz_axis
-        lines = self.intersections_with_plane(planeN = array([0., 0., 1.]),
-                                              planeD = w3d.zmmin + iz*w3d.dz)
+            iz = warp.w3d.iz_axis
+        lines = self.intersections_with_plane(planeN = np.array([0., 0., 1.]),
+                                              planeD = warp.w3d.zmmin + iz*warp.w3d.dz)
         pldj(lines[:,0,0]+self.xcent, lines[:,0,1]+self.ycent,
              lines[:,1,0]+self.xcent, lines[:,1,1]+self.ycent, color=color, **kw)
 
     def drawzx(self,iy=None,color='fg',filled=None,fullplane=1,**kw):
         if iy is None:
-            iy = w3d.iy_axis
-        lines = self.intersections_with_plane(planeN = array([0., 1., 0.]),
-                                              planeD = w3d.ymmin + iy*w3d.dy)
+            iy = warp.w3d.iy_axis
+        lines = self.intersections_with_plane(planeN = np.array([0., 1., 0.]),
+                                              planeD = warp.w3d.ymmin + iy*warp.w3d.dy)
         pldj(lines[:,0,2]+self.zcent, lines[:,0,0]+self.xcent,
              lines[:,1,2]+self.zcent, lines[:,1,0]+self.xcent, color=color, **kw)
 
     def drawzy(self,ix=None,color='fg',filled=None,fullplane=1,**kw):
         if ix is None:
-            ix = w3d.ix_axis
-        lines = self.intersections_with_plane(planeN = array([1., 0., 0.]),
-                                              planeD = w3d.xmmin + ix*w3d.dx)
+            ix = warp.w3d.ix_axis
+        lines = self.intersections_with_plane(planeN = np.array([1., 0., 0.]),
+                                              planeD = warp.w3d.xmmin + ix*warp.w3d.dx)
         pldj(lines[:,0,2]+self.zcent, lines[:,0,1]+self.ycent,
              lines[:,1,2]+self.zcent, lines[:,1,1]+self.ycent, color=color, **kw)
 
@@ -6543,7 +6549,7 @@ def Quadrupole(ap=None,rl=None,rr=None,gl=None,gp=None,
                vxp=None,vxm=None,vyp=None,vym=None,
                oxp=None,oxm=None,oyp=None,oym=None,
                pwl=None,pwr=None,pal=None,par=None,prl=None,prr=None,
-               xcent=0.,ycent=0.,zcent=None,condid=None,splitrodids=false,
+               xcent=0.,ycent=0.,zcent=None,condid=None,splitrodids=False,
                elemid=None,elem='quad',**kw):
     """
   Creates an interdigited quadrupole structure.
@@ -6585,7 +6591,7 @@ def Quadrupole(ap=None,rl=None,rr=None,gl=None,gp=None,
     - xcent=0.,ycent=0.: transverse center of quadrupole
     - zcent: axial center of quadrupole, default taken from element
     - condid='next': conductor id of quadrupole, must be integer
-    - splitrodids=false: when true, the condid's of the x and y rods are
+    - splitrodids=False: when true, the condid's of the x and y rods are
                          different, y is the negative of x (which is condid)
   Or give the quadrupole id to use...
     - elem='quad': element type to get data from
@@ -6606,27 +6612,27 @@ def Quadrupole(ap=None,rl=None,rr=None,gl=None,gp=None,
         if zcent is None: zcent = 0.
         if condid is None: condid = 'next'
     else:
-        if ap is None: ap = getattr(top,elem+'ap')[elemid]
-        if rl is None: rl = getattr(top,elem+'rl')[elemid]
-        if rr is None: rr = getattr(top,elem+'rr')[elemid]
-        if gl is None: gl = getattr(top,elem+'gl')[elemid]
-        if gp is None: gp = getattr(top,elem+'gp')[elemid]
-        if pa is None: pa = getattr(top,elem+'pa')[elemid]
-        if pw is None: pw = getattr(top,elem+'pw')[elemid]
+        if ap is None: ap = getattr(warp.top,elem+'ap')[elemid]
+        if rl is None: rl = getattr(warp.top,elem+'rl')[elemid]
+        if rr is None: rr = getattr(warp.top,elem+'rr')[elemid]
+        if gl is None: gl = getattr(warp.top,elem+'gl')[elemid]
+        if gp is None: gp = getattr(warp.top,elem+'gp')[elemid]
+        if pa is None: pa = getattr(warp.top,elem+'pa')[elemid]
+        if pw is None: pw = getattr(warp.top,elem+'pw')[elemid]
         if elem == 'quad':
-            if pr is None: pr = getattr(top,elem+'pr')[elemid]
-            if vx is None: vx = top.quadvx[elemid]
-            if vy is None: vy = top.quadvy[elemid]
-            if xcent is None: xcent = top.qoffx[elemid]
-            if ycent is None: ycent = top.qoffy[elemid]
+            if pr is None: pr = getattr(warp.top,elem+'pr')[elemid]
+            if vx is None: vx = warp.top.quadvx[elemid]
+            if vy is None: vy = warp.top.quadvy[elemid]
+            if xcent is None: xcent = warp.top.qoffx[elemid]
+            if ycent is None: ycent = warp.top.qoffy[elemid]
         else:
             if vx is None: vx = 0.
             if vy is None: vy = 0.
-            if xcent is None: xcent = getattr(top,elem+'ox')[elemid]
-            if ycent is None: ycent = getattr(top,elem+'oy')[elemid]
+            if xcent is None: xcent = getattr(warp.top,elem+'ox')[elemid]
+            if ycent is None: ycent = getattr(warp.top,elem+'oy')[elemid]
         if zcent is None:
-            zcent = 0.5*(getattr(top,elem+'zs')[elemid] +
-                         getattr(top,elem+'ze')[elemid])
+            zcent = 0.5*(getattr(warp.top,elem+'zs')[elemid] +
+                         getattr(warp.top,elem+'ze')[elemid])
         if condid is None: condid = elemid
 
     dels = ['glx','gly','axp','axm','ayp','aym','rxp','rxm','ryp','rym',
@@ -6638,7 +6644,7 @@ def Quadrupole(ap=None,rl=None,rr=None,gl=None,gp=None,
     else:
         edel = 'qdel'
         for d in dels:
-            if locals()[d] is None: exec('%s = top.qdel%s[elemid]'%(d,d))
+            if locals()[d] is None: exec('%s = warp.top.qdel%s[elemid]'%(d,d))
 
     if condid == 'next':
         condid = Assembly.nextcondid
@@ -6786,23 +6792,23 @@ class SRFRVLApart:
         yi=y0-yc
         xf=x1-xc
         yf=y1-yc
-        r=sqrt(xi**2+yi**2)
-        thetai=arctan2(yi,xi)
-        thetaf=arctan2(yf,xf)
+        r=np.sqrt(xi**2+yi**2)
+        thetai=np.arctan2(yi,xi)
+        thetaf=np.arctan2(yf,xf)
         if(abs(thetaf-thetai)>pi):
             if(thetaf-thetai<0.):
                 thetaf=thetaf+2.*pi
             else:
                 thetaf=thetaf-2.*pi
         dtheta=(thetaf-thetai)/(ncirc-1)
-        x=zeros(ncirc+1,'d')
-        y=zeros(ncirc+1,'d')
+        x=np.zeros(ncirc+1,'d')
+        y=np.zeros(ncirc+1,'d')
         x[0]=x0
         y[0]=y0
         for i in range(1,ncirc):
             theta=thetai+i*dtheta
-            x[i]=xc+r*cos(theta)
-            y[i]=yc+r*sin(theta)
+            x[i]=xc+r*np.cos(theta)
+            y[i]=yc+r*np.sin(theta)
         return [x,y]
 
 
@@ -6844,16 +6850,16 @@ class SRFRVLAcond:
                     nsrmin += 1
             if(nsrmax != 0):
                 l_t = 1
-                r_srmax = zeros(nsrmax+1,'d')
-                z_srmax = zeros(nsrmax+1,'d')
-                rc_srmax = zeros(nsrmax,'d')
-                zc_srmax = zeros(nsrmax,'d')
+                r_srmax = np.zeros(nsrmax+1,'d')
+                z_srmax = np.zeros(nsrmax+1,'d')
+                rc_srmax = np.zeros(nsrmax,'d')
+                zc_srmax = np.zeros(nsrmax,'d')
             if(nsrmin != 0):
                 l_b = 1
-                r_srmin = zeros(nsrmin+1,'d')
-                z_srmin = zeros(nsrmin+1,'d')
-                rc_srmin = zeros(nsrmin,'d')
-                zc_srmin = zeros(nsrmin,'d')
+                r_srmin = np.zeros(nsrmin+1,'d')
+                z_srmin = np.zeros(nsrmin+1,'d')
+                rc_srmin = np.zeros(nsrmin,'d')
+                zc_srmin = np.zeros(nsrmin,'d')
 
             # Fill arrays with datas from parts.
             do = data[0]
@@ -6868,8 +6874,8 @@ class SRFRVLAcond:
                         zc_srmax[it-1]=d[2]
                         rc_srmax[it-1]=d[3]
                     else:
-                        zc_srmax[it-1]=largepos
-                        rc_srmax[it-1]=largepos
+                        zc_srmax[it-1]=warp.largepos
+                        rc_srmax[it-1]=warp.largepos
                 elif(d[-1]=='b'):
                     z_srmin[ib]=do[0]
                     r_srmin[ib]=do[1]
@@ -6880,25 +6886,25 @@ class SRFRVLAcond:
                         zc_srmin[ib-1]=d[2]
                         rc_srmin[ib-1]=d[3]
                     else:
-                        zc_srmin[ib-1]=largepos
-                        rc_srmin[ib-1]=largepos
+                        zc_srmin[ib-1]=warp.largepos
+                        rc_srmin[ib-1]=warp.largepos
                 do=d
 
             # Make sure arrays are in Z ascending order.
             if(z_srmin[0]>z_srmin[nsrmin]):
-                args =argsort(z_srmin)
-                argsc=argsort(z_srmin[1:])
-                z_srmin=take(z_srmin,args)
-                r_srmin=take(r_srmin,args)
-                zc_srmin=take(zc_srmin,argsc)
-                rc_srmin=take(rc_srmin,argsc)
+                args =np.argsort(z_srmin)
+                argsc=np.argsort(z_srmin[1:])
+                z_srmin=np.take(z_srmin,args)
+                r_srmin=np.take(r_srmin,args)
+                zc_srmin=np.take(zc_srmin,argsc)
+                rc_srmin=np.take(rc_srmin,argsc)
             if(z_srmax[0]>z_srmax[nsrmax]):
-                args =argsort(z_srmax)
-                argsc=argsort(z_srmax[1:])
-                z_srmax=take(z_srmax,args)
-                r_srmax=take(r_srmax,args)
-                zc_srmax=take(zc_srmax,argsc)
-                rc_srmax=take(rc_srmax,argsc)
+                args =np.argsort(z_srmax)
+                argsc=np.argsort(z_srmax[1:])
+                z_srmax=np.take(z_srmax,args)
+                r_srmax=np.take(r_srmax,args)
+                zc_srmax=np.take(zc_srmax,argsc)
+                rc_srmax=np.take(rc_srmax,argsc)
 
             # Register parts.
             if(l_t==1 and l_b==1):
@@ -6959,8 +6965,8 @@ class SRFRVLAcond:
       Install SRFRVLA conductors.
         """
         if l_verbose:print('installing',self.name,'( ID=',self.condid,')...')
-        if w3d.solvergeom==w3d.RZgeom or w3d.solvergeom==w3d.XZgeom:
-            if grid is None:grid=frz.basegrid
+        if warp.w3d.solvergeom==warp.w3d.RZgeom or warp.w3d.solvergeom==warp.w3d.XZgeom:
+            if grid is None:grid=warp.frz.basegrid
             print(grid.gid)
             for part in self.parts:
                 installconductor(part.installed,xmin=part.rmin,xmax=part.rmax,
@@ -7062,7 +7068,7 @@ class SRFRVLAsystem:
             parts.draw(ncirc,scx,scy,colort,colorb,color,signx,width)
 
     def getextent(self):
-        return ConductorExtent([w3d.xmmin,w3d.ymmin,w3d.zmmin],[w3d.xmmax,w3d.ymmax,w3d.zmmax],zeros(3))
+        return ConductorExtent([warp.w3d.xmmin,warp.w3d.ymmin,warp.w3d.zmmin],[warp.w3d.xmmax,warp.w3d.ymmax,warp.w3d.zmmax],np.zeros(3))
 
 class SRFRVLAfromfile(SRFRVLAsystem):
     """
