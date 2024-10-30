@@ -1150,7 +1150,7 @@ class SubcycledPoissonSolver(FieldSolver):
     def returnfieldp(self,indts,iselfb):
         """Returns the slice of fieldparray determined by the inputs. If
         fieldparray was not created, returns 0."""
-        indts = min(indts,top.nsndtsphi-1)
+        indts = min([indts,top.nsndtsphi-1])
         try:
             return self.fieldparray[...,indts,iselfb]
         except AttributeError:
@@ -1159,7 +1159,7 @@ class SubcycledPoissonSolver(FieldSolver):
     def returnpotentialp(self,indts,iselfb):
         """Returns the slice of potentialparray determined by the inputs. If
         potentialparray was not created, returns 0."""
-        indts = min(indts,top.nsndtsphi-1)
+        indts = min([indts,top.nsndtsphi-1])
         try:
             return self.potentialparray[...,indts,iselfb]
         except AttributeError:
@@ -1176,7 +1176,7 @@ class SubcycledPoissonSolver(FieldSolver):
     def returnfield(self,indts,iselfb):
         """Returns the slice of fieldarray determined by the inputs. If
         fieldarray was not created, returns 0."""
-        indts = min(indts,top.nsndtsphi-1)
+        indts = min([indts,top.nsndtsphi-1])
         try:
             return self.fieldarray[...,indts,iselfb]
         except AttributeError:
@@ -1185,7 +1185,7 @@ class SubcycledPoissonSolver(FieldSolver):
     def returnpotential(self,indts,iselfb):
         """Returns the slice of potentialarray determined by the inputs. If
         potentialarray was not created, returns 0."""
-        indts = min(indts,top.nsndtsphi-1)
+        indts = min([indts,top.nsndtsphi-1])
         try:
             return self.potentialarray[...,indts,iselfb]
         except AttributeError:
@@ -1194,7 +1194,7 @@ class SubcycledPoissonSolver(FieldSolver):
     def returnsource(self,indts,iselfb):
         """Returns the slice of sourcearray determined by the inputs. If
         sourcearray was not created, returns 0."""
-        indts = min(indts,top.nsndtsphi-1)
+        indts = min([indts,top.nsndtsphi-1])
         try:
             return self.sourcearray[...,indts,iselfb]
         except AttributeError:
@@ -1262,7 +1262,7 @@ class SubcycledPoissonSolver(FieldSolver):
         if len(self._zgridndts) < top.nsndts:
             # --- Update ndtstozgrid
             ndtstozgridnew = zeros(top.ndtsmax,'d')
-            nn = min(top.ndtsmax,len(self._ndtstozgrid))
+            nn = min([top.ndtsmax,len(self._ndtstozgrid)])
             ndtstozgridnew[:nn] = self._ndtstozgrid[:nn]
             ndtstozgridnew[nn:] = self._zgrid
             self._ndtstozgrid = ndtstozgridnew
@@ -1453,7 +1453,7 @@ class SubcycledPoissonSolver(FieldSolver):
             for iselfb in range(top.nsselfb):
                 if self.iselfb_list is not None and iselfb not in self.iselfb_list:
                     continue
-                isndts = min(indts,top.nsndtsphi)
+                isndts = min([indts,top.nsndtsphi])
                 self.setsourceforfieldsolve(top.nrhopndtscopies-1,isndts,iselfb)
                 self.applysourceboundaryconditions()
 
@@ -1540,7 +1540,7 @@ class SubcycledPoissonSolver(FieldSolver):
         else:        indts = top.ndtstorho[w3d.ndtsfsapi-1]
 
         tmpnsndts = getnsndtsforsubcycling()
-        indts = min(tmpnsndts-1,indts)
+        indts = min([tmpnsndts-1,indts])
         iselfb = top.iselfb[jsid]
         self.setpotentialpforparticles(None,indts,iselfb)
         self.setfieldpforparticles(None,indts,iselfb)
@@ -1597,7 +1597,7 @@ class SubcycledPoissonSolver(FieldSolver):
         else:        indts = top.ndtstorho[w3d.ndtsfsapi-1]
 
         tmpnsndts = getnsndtsforsubcycling()
-        indts = min(tmpnsndts-1,indts)
+        indts = min([tmpnsndts-1,indts])
         iselfb = top.iselfb[jsid]
         self.setpotentialpforparticles(None,indts,iselfb)
         self.fetchpotentialfrompositions(x,y,z,potential)
@@ -1627,7 +1627,7 @@ class SubcycledPoissonSolver(FieldSolver):
             # --- Note that the field solve is done even if there are no species
             # --- (i.e. when top.nsselfb==0)
             if self.iselfb_list is None:
-                iselfb_list = list(range(max(1,top.nsselfb)-1,-1,-1))
+                iselfb_list = list(range(max([1,top.nsselfb])-1,-1,-1))
             else:
                 iselfb_list = self.iselfb_list
  
@@ -1671,22 +1671,22 @@ class SubcycledPoissonSolver(FieldSolver):
         nox = max(top.depos_order[0,:])
         noy = max(top.depos_order[1,:])
         noz = max(top.depos_order[2,:])
-        if self.nx > 0: self.nxguardrho = max(self.nxguardrho,nox - 1)
-        if self.ny > 0: self.nyguardrho = max(self.nyguardrho,noy - 1)
-        if self.nz > 0: self.nzguardrho = max(self.nzguardrho,noz - 1)
-        if self.nx > 0: self.nxguardphi = max(self.nxguardphi,nox)
-        if self.ny > 0: self.nyguardphi = max(self.nyguardphi,noy)
-        if self.nz > 0: self.nzguardphi = max(self.nzguardphi,noz)
-        if self.nx > 0: self.nxguarde = max(self.nxguarde,nox - 1)
-        if self.ny > 0: self.nyguarde = max(self.nyguarde,noy - 1)
-        if self.nz > 0: self.nzguarde = max(self.nzguarde,noz - 1)
+        if self.nx > 0: self.nxguardrho = max([self.nxguardrho,nox - 1])
+        if self.ny > 0: self.nyguardrho = max([self.nyguardrho,noy - 1])
+        if self.nz > 0: self.nzguardrho = max([self.nzguardrho,noz - 1])
+        if self.nx > 0: self.nxguardphi = max([self.nxguardphi,nox])
+        if self.ny > 0: self.nyguardphi = max([self.nyguardphi,noy])
+        if self.nz > 0: self.nzguardphi = max([self.nzguardphi,noz])
+        if self.nx > 0: self.nxguarde = max([self.nxguarde,nox - 1])
+        if self.ny > 0: self.nyguarde = max([self.nyguarde,noy - 1])
+        if self.nz > 0: self.nzguarde = max([self.nzguarde,noz - 1])
 
         # --- Get base dimension of the arrays for the particles
         pdims = self.getpdims()
 
         # --- This ensures that the arrays would be set up for a field solve even
         # --- if there were no species (and top.nsselfb==0).
-        nsselfb = max(1,top.nsselfb)
+        nsselfb = max([1,top.nsselfb])
 
         sourcepdims = list(pdims[0]) + [top.nrhopndtscopies,top.nsndts,nsselfb]
         if ('sourceparray' not in self.__dict__ or

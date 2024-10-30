@@ -474,10 +474,10 @@ def gun(iter=1, ipsave=None, save_same_part=None, maxtime=None, min_particles=0,
             if lvariabletimestep:
                 for js in range(top.pgroup.ns):
                     vzmax = globalmax(abs(getvz(js=js, gather=0)))
-                    newdtscale = max(_dtscaleinit[js],
-                                     (fvariabletimestep*w3d.dz/vzmax)/top.dt)
-                    newdtscalechange = min(dtscalechangemax,
-                                           newdtscale/top.pgroup.dtscale[js])
+                    newdtscale = max([_dtscaleinit[js],
+                                     (fvariabletimestep*w3d.dz/vzmax)/top.dt])
+                    newdtscalechange = min([dtscalechangemax,
+                                           newdtscale/top.pgroup.dtscale[js]])
                     top.pgroup.dtscale[js] = top.pgroup.dtscale[js]*newdtscalechange
             # --- push markers one step ahead
             step()

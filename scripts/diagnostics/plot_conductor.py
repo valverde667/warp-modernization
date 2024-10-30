@@ -2,6 +2,9 @@ from ..warp import *
 import __main__
 import copy
 
+# replace numpy versions that leaked in
+max = builtins.max
+min = builtins.min
 
 def plot_conductordoc():
     print("""
