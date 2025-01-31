@@ -1905,7 +1905,7 @@ def add_particles(x=0., y=0., z=0., vx=0., vy=0., vz=0., gi=1.,
         return
 
     # --- Max length of input arrays
-    maxlen = max(lenx, leny, lenz, lenvx, lenvy, lenvz, lengi, lenpid, lenex, leney, lenez, lenbx, lenby, lenbz)
+    maxlen = max([lenx, leny, lenz, lenvx, lenvy, lenvz, lengi, lenpid, lenex, leney, lenez, lenbx, lenby, lenbz])
     assert lenx==maxlen or lenx==1, "Length of x doesn't match len of others"
     assert leny==maxlen or leny==1, "Length of y doesn't match len of others"
     assert lenz==maxlen or lenz==1, "Length of z doesn't match len of others"
