@@ -38,7 +38,7 @@ RUN ln -sf /usr/bin/python3 /usr/bin/python
 # openPMD-viewer is installed mainly for tests
 # Note: matplotlib is installed with pip since the apt-get install matplotlib
 #       needs the time zone to be set.
-RUN pip3 --no-cache-dir --break-system-packages install matplotlib \
+RUN pip3 --no-cache-dir install --break-system-packages matplotlib \
     openPMD-viewer \
     Forthon
 
