@@ -46,7 +46,7 @@ RUN ln -sf /usr/local/bin/python3 /usr/local/bin/python
 # Note: matplotlib is installed with pip3 since the apt-get install matplotlib
 #       needs the time zone to be set.
 
-RUN pip3 --no-cache-dir install \
+RUN pip3 --no-cache-dir --break-system-packages install \
     numpy \
     scipy \
     h5py \
