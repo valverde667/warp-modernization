@@ -1581,8 +1581,8 @@ c       --- Now scale the full Z moments by particle number
         if (ifzmmnt == 2) then
           do js=0,nszmmnt
             do izm = 0, nzmmnt
-              pnumi = 1./(zmmnts(izm, 1,js)+SMALLPOS)
-              npsimz(izm,js)   = zmmnts(izm, 1,js)
+              pnumi = 1./(zmmnts(izm, 2,js)+SMALLPOS)
+              npsimz(izm,js)   = zmmnts(izm, 2,js)
               pnumz(izm,js)    = zmmnts(izm, 2,js)*zmmntsw(js)
               xbarz(izm,js)    = zmmnts(izm, 3,js)*pnumi
               ybarz(izm,js)    = zmmnts(izm, 4,js)*pnumi
