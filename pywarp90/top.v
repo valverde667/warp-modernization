@@ -3349,8 +3349,6 @@ writarry(nn,arry:real,filename:string) subroutine # write array to file
 wtime() real function # returns current absolute CPU time
 wtimeon()  subroutine # turns timer on
 wtimeoff() real function # returns time since last call to wtimeon or wtimeoff
-wtremain() real function # returns the time remaining for the running job
-                         # (T3E only, otherwise returns large number)
 isdefmpiparallel() logical function # checks if MPIPARALLEL was defined during
                                     # compilation.
 getbeamcom(pgroup:ParticleGroup) real function

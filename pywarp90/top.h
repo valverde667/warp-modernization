@@ -32,7 +32,7 @@
 
 ! Define size of integers. Must be the same as the size of a long int in C.
 #ifndef ISZ
-#if defined ALPHA || defined T3E || defined J90 || defined X86_64 || defined IA64
+#if defined X86_64
 #define ISZ 8
 #else
 #define ISZ 4
@@ -46,9 +46,5 @@
 
 ! Define size of word.
 #ifndef WORDSIZE
-#if defined T3E || defined J90
 #define WORDSIZE 64
-#else
-#define WORDSIZE 32
-#endif
 #endif
