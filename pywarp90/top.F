@@ -1434,7 +1434,7 @@ c       --- Complete the calculation of moments: divide by particle number
 
 c       --- Global moments first
         do js=0,nsmmnt
-          pnumi = 1./(zmmnts0( 1,js)+SMALLPOS)
+          pnumi = 1./(zmmnts0( 2,js)+SMALLPOS)
           npsim(0,js)   = zmmnts0( 1,js)
           pnum(0,js)    = zmmnts0( 2,js)*zmmntsw(js)
           xbar(0,js)    = zmmnts0( 3,js)*pnumi
@@ -1582,7 +1582,7 @@ c       --- Now scale the full Z moments by particle number
           do js=0,nszmmnt
             do izm = 0, nzmmnt
               pnumi = 1./(zmmnts(izm, 2,js)+SMALLPOS)
-              npsimz(izm,js)   = zmmnts(izm, 2,js)
+              npsimz(izm,js)   = zmmnts(izm, 1,js)
               pnumz(izm,js)    = zmmnts(izm, 2,js)*zmmntsw(js)
               xbarz(izm,js)    = zmmnts(izm, 3,js)*pnumi
               ybarz(izm,js)    = zmmnts(izm, 4,js)*pnumi
