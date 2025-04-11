@@ -1,4 +1,5 @@
 """Class for doing 3 D electromagnetic solver """
+import builtins
 from ..warp import *
 from ..diagnostics.palettes.mkpalette import getpalhrgb
 from .laser.laser_antenna import LaserAntenna
@@ -182,9 +183,9 @@ class EM3D(SubcycledPoissonSolver):
             self.nxguard=self.nxlocal=self.nx=self.nxp=0
             self.nyguard=self.nylocal=self.ny=self.nyp=0
         # --- enforces number of guards cells to not go over the number of local cells
-        self.nxguard = min(self.nxguard,self.nxlocal)
-        self.nyguard = min(self.nyguard,self.nylocal)
-        self.nzguard = min(self.nzguard,self.nzlocal)
+        self.nxguard = builtins.min(self.nxguard,self.nxlocal)
+        self.nyguard = builtins.min(self.nyguard,self.nylocal)
+        self.nzguard = builtins.min(self.nzguard,self.nzlocal)
 
         # --- bounds is special since it will sometimes be set from the
         # --- variables bound0, boundnz, boundxy, l2symtry, and l4symtry
@@ -262,7 +263,7 @@ class EM3D(SubcycledPoissonSolver):
                 em3d.betazy = self.dz**2/self.dy**2*1./8
         elif self.l_setcowancoefs:
             if self.l_2dxz:
-                delta = min(self.dx,self.dz)
+                delta = builtins.min(self.dx,self.dz)
                 rx = (delta/self.dx)**2
                 ry = 0.
                 rz = (delta/self.dz)**2
@@ -272,7 +273,7 @@ class EM3D(SubcycledPoissonSolver):
                 em3d.alphax = 1. - 2.*em3d.betaxz
                 em3d.alphaz = 1. - 2.*em3d.betazx
             else:
-                delta = min(self.dx,self.dy,self.dz)
+                delta = builtins.min(self.dx,self.dy,self.dz)
                 rx = (delta/self.dx)**2
                 ry = (delta/self.dy)**2
                 rz = (delta/self.dz)**2
@@ -334,18 +335,18 @@ class EM3D(SubcycledPoissonSolver):
                             if self.stencil==0:  # Yee scheme
                                 self.dtcourant=1./(clight*sqrt(1./self.dx**2+1./self.dz**2))
                             elif self.stencil in [1,2] : # Cole-Karkkainen scheme
-                                self.dtcourant=min(self.dx,self.dz)/clight
+                                self.dtcourant=builtins.min(self.dx,self.dz)/clight
                                 Cx = em3d.alphax -2.*em3d.betaxz
                                 Cz = em3d.alphaz -2.*em3d.betazx
                                 self.dtcourant=1./(clight*sqrt(Cx/self.dx**2+Cz/self.dz**2))
                             elif self.stencil == 3 : # Lehe scheme
-                                self.dtcourant = 1./clight  * min( self.dz, self.dx )
+                                self.dtcourant = 1./clight  * builtins.min( self.dz, self.dx )
                         else :  # 2D r-z
                             if self.stencil==1:
                                 raise ValueError(
                                     "The Cole-Karkkainen solver (stencil=1) cannot be used in cylindrical geometry.")
                             elif self.stencil==3: # Lehe scheme
-                                self.dtcourant = 1./clight  * min( self.dz, self.dx )
+                                self.dtcourant = 1./clight  * builtins.min( self.dz, self.dx )
 
                             else:  # Yee scheme
                                 # In the rz case, the Courant limit has been evaluated
@@ -366,13 +367,13 @@ class EM3D(SubcycledPoissonSolver):
                         if self.stencil==0:
                             self.dtcourant=1./(clight*sqrt(1./self.dx**2+1./self.dy**2+1./self.dz**2))
                         elif self.stencil in [1,2] : # Cole-Karakkainen scheme
-                            self.dtcourant=min(self.dx,self.dy,self.dz)/clight
+                            self.dtcourant=builtins.min(self.dx,self.dy,self.dz)/clight
                             Cx = em3d.alphax -2.*(em3d.betaxy+em3d.betaxz)+4.*em3d.gammax
                             Cy = em3d.alphay -2.*(em3d.betayx+em3d.betayz)+4.*em3d.gammay
                             Cz = em3d.alphaz -2.*(em3d.betazx+em3d.betazy)+4.*em3d.gammaz
                             self.dtcourant=1./(clight*sqrt(Cx/self.dx**2+Cy/self.dy**2+Cz/self.dz**2))
                         elif self.stencil == 3 : # Lehe scheme
-                            self.dtcourant = 1./clight * min( self.dz, 1./sqrt( 1./self.dx**2 + 1./self.dy**2 ) )
+                            self.dtcourant = 1./clight * builtins.min( self.dz, 1./sqrt( 1./self.dx**2 + 1./self.dy**2 ) )
                     if self.theta_damp>0.:
                         self.dtcourant*=sqrt((2.+self.theta_damp)/(2.+3.*self.theta_damp))
                     if top.dt==0.:
@@ -2424,7 +2425,7 @@ class EM3D(SubcycledPoissonSolver):
             cmin *= cscale
             cmax *= cscale
         if l_csym:
-            cmax = max(abs(cmin),abs(cmax))
+            cmax = builtins.max(abs(cmin),abs(cmax))
             cmin = -cmax
         if procs is None:procs=arange(npes)
         if direction in [0,1,2]:
@@ -6501,7 +6502,7 @@ class EM3D(SubcycledPoissonSolver):
         ndt=shape(allcoefs[...])[0]
         dtodz_unit=1./(ndt-1)
         dtodz_norm=dtodz/dtodz_unit
-        i=max(0,min(ndt-2,int(dtodz_norm)))
+        i=builtins.max(0,builtins.min(ndt-2,int(dtodz_norm)))
         w=dtodz_norm-i
         excoef=(1.-w)*allcoefs[i,0,:]+w*allcoefs[i+1,0,:]
         bycoef=(1.-w)*allcoefs[i,1,:]+w*allcoefs[i+1,1,:]
@@ -6898,7 +6899,7 @@ def pyinit_3dem_block(nx, ny, nz,
 
     if f.stencil == 1:
         if f.l_2dxz:
-            delta = min(f.dx,f.dz)
+            delta = builtins.min(f.dx,f.dz)
             rx = (delta/f.dx)**2
             ry = 0.
             rz = (delta/f.dz)**2
@@ -6908,7 +6909,7 @@ def pyinit_3dem_block(nx, ny, nz,
             f.alphax = 1. - 2.*f.betaxz
             f.alphaz = 1. - 2.*f.betazx
         else:
-            delta = min(f.dx,f.dy,f.dz)
+            delta = builtins.min(f.dx,f.dy,f.dz)
             rx = (delta/f.dx)**2
             ry = (delta/f.dy)**2
             rz = (delta/f.dz)**2
@@ -7488,7 +7489,7 @@ def FD_weights(z,n,m):
 
     c=zeros([m+1,n]); c1=1.; c4=x[0]-z; c[0,0]=1.;
     for i in range(1,n):
-        mn=min(i+1,m+1); c2=1.; c5=c4; c4=x[i]-z;
+        mn=builtins.min(i+1,m+1); c2=1.; c5=c4; c4=x[i]-z;
         for j in range(0,i-0):
             c3=x[i]-x[j];  c2=c2*c3;
             if j==i-1:
@@ -7502,6 +7503,7 @@ def FD_weights(z,n,m):
 
 def FD_weights_hvincenti(p,l_staggered=False):
     # --- from Henri Vincenti's formulas
+    import math
     factorial = math.factorial
 
     c = zeros(p//2)

@@ -5,6 +5,7 @@ types that are passed into Species. These include all of the atomic elements
 (Hydrogen, etc.) and the following, Electron, Positron, Proton, Neutron,
 Dihydrogen, Dinitrogen, Dioxygen, Carbon_Monoxide, Carbon_Dioxide, and Water
 """
+import builtins
 from ..warp import *
 
 
@@ -926,12 +927,12 @@ class Species(object):
 
         # --- The min and max in the second argument guarantee that if the min and
         # --- max are outside of the grid, then it will end up with minp = maxp.
-        xminp = max(xmin, min(xmax, xdmin))
-        xmaxp = min(xmax, max(xmin, xdmax))
-        yminp = max(ymin, min(ymax, ydmin))
-        ymaxp = min(ymax, max(ymin, ydmax))
-        zminp = max(zmin, min(zmax, zdmin))
-        zmaxp = min(zmax, max(zmin, zdmax))
+        xminp = builtins.max(xmin, builtins.min(xmax, xdmin))
+        xmaxp = builtins.min(xmax, builtins.max(xmin, xdmax))
+        yminp = builtins.max(ymin, builtins.min(ymax, ydmin))
+        ymaxp = builtins.min(ymax, builtins.max(ymin, ydmax))
+        zminp = builtins.max(zmin, builtins.min(zmax, zdmin))
+        zmaxp = builtins.min(zmax, builtins.max(zmin, zdmax))
 
         if spacing == 'random':
             # --- Add a random number to the number of particles so that on
@@ -1020,7 +1021,7 @@ class Species(object):
                     d = (bmax - bmin)/n
                     iminp = nint((minp - bmin)/d)
                     imaxp = nint((maxp - bmin)/d)
-                    return max(0, imaxp - iminp), iminp
+                    return builtins.max(0, imaxp - iminp), iminp
 
             nxp, ixminp = setnp(xmin, xmax, xdmin, xdmax, xminp, xmaxp, nx)
             if nxp is None:
@@ -1193,8 +1194,8 @@ class Species(object):
         if theta == 0. and phi == 0.:
             # --- When no angle is specified, then the clipping to the domain
             # --- can be done directly on the zmin and zmax
-            zminp = max(zmin + zmean, min(zmax + zmean, zdmin)) - zmean
-            zmaxp = min(zmax + zmean, max(zmin + zmean, zdmax)) - zmean
+            zminp = builtins.max(zmin + zmean, builtins.min(zmax + zmean, zdmin)) - zmean
+            zmaxp = builtins.min(zmax + zmean, builtins.max(zmin + zmean, zdmax)) - zmean
         else:
             # --- When angles are specified, the clipping must be done on a particle
             # --- by particle basis. Copy the zmin and zmax directly over to start.
@@ -1236,7 +1237,7 @@ class Species(object):
                 dz = (zmax - zmin)/nz
                 izminp = int((zminp - zmin)/dz + 0.5)
                 izmaxp = int((zmaxp - zmin)/dz + 0.5)
-                nzp = max(0, izmaxp - izminp)
+                nzp = builtins.max(0, izmaxp - izminp)
                 np = nr*nzp
                 if np == 0:
                     if top.debug:
@@ -1447,7 +1448,7 @@ class Species(object):
             zmin = -(float(nz/2) - 0.5)*dz
             for i in range(nz):
                 zadd = zmin + i*dz
-                Nadd = max(0., np*dz*exp(-0.5*(zadd/deltaz)**2)/(sqrt(2.*pi)*deltaz))
+                Nadd = builtins.max(0., np*dz*exp(-0.5*(zadd/deltaz)**2)/(sqrt(2.*pi)*deltaz))
                 if ranf() < (Nadd - int(Nadd)):
                     Nadd = int(Nadd) + 1
                 else:
@@ -1458,7 +1459,7 @@ class Species(object):
                         y = SpRandom(0., deltay, Nadd)
                         wp = w
                     else: # rdist = flat, for uniform noise in R, need to adjust weight accordingly.
-                        rmax = 4.*sqrt(max(0.,(1.-(zadd/(pi*deltaz))**2)))
+                        rmax = 4.*sqrt(builtins.max(0.,(1.-(zadd/(pi*deltaz))**2)))
                         r = (arange(Nadd)+0.5)*rmax/Nadd
                         t = 2*pi*random.random(Nadd)
                         x = r*cos(t)*deltax
@@ -1623,7 +1624,7 @@ class Species(object):
             ng = 1 + pg.nps[js]/nparpgrp
             for ig in range(ng):
                 il = pg.ins[js] - 1 + nparpgrp*ig
-                iu = min(il + nparpgrp, pg.ins[js] - 1 + pg.nps[js])
+                iu = builtins.min(il + nparpgrp, pg.ins[js] - 1 + pg.nps[js])
                 np = iu - il
                 x = pg.xp[il:iu]
                 y = pg.yp[il:iu]

@@ -1,3 +1,4 @@
+import builtins
 from ..warp import *
 import __main__
 import copy
@@ -377,8 +378,8 @@ def plotcondfill(iy,ix,iz,izp,ymin,xmin,dy,dx,mglevel,yscale,xscale,
     else:
         maxixs = max(ixs)
         maxiys = max(iys)
-    nx = maximum(maxixc,maxixs) + 1
-    ny = maximum(maxiyc,maxiys) + 1
+    nx = builtins.max(maxixc,maxixs) + 1
+    ny = builtins.max(maxiyc,maxiys) + 1
     iii = zeros((5,1+nx,1+ny),'l') - 1
     mx,px,my,py = 1,2,3,4
     # --- Flag grid points where the conductors are.
@@ -638,8 +639,8 @@ def plotcondfillnew(yy,xx,zz,iz,ymin,xmin,dy,dx,mglevel,yscale,xscale,
     else:
         maxixs = max(ixs)
         maxiys = max(iys)
-    nx = maximum(maxixc,maxixs) + 1
-    ny = maximum(maxiyc,maxiys) + 1
+    nx = builtins.max(maxixc,maxixs) + 1
+    ny = builtins.max(maxiyc,maxiys) + 1
     iii = zeros((5,1+nx,1+ny),'l')
     mx,px,my,py = 1,2,3,4
     # --- Flag grid points where the conductors are.
@@ -1735,9 +1736,9 @@ def plotgrid(zbeam=None,ii=2,plotcond=1,solver=w3d,zcent=None):
     if zbeam is None: zbeam=top.zbeam
     if zcent is None: zcent=top.zbeam
     # --- declare temporary data space, 2 2-D arrays to hold grid coordinates
-    nx = maximum(1,nint(1.*solver.nx/ii))
+    nx = builtins.max(1,nint(1.*solver.nx/ii))
     dx = 1.*solver.nx/nx*solver.dx
-    nz = maximum(1,nint(1.*solver.nz/ii))
+    nz = builtins.max(1,nint(1.*solver.nz/ii))
     dz = 1.*solver.nz/nz*solver.dz
     xg,zg = getmesh2d(solver.xmmin,dx,nx,solver.zmmin+zbeam,dz,nz)
 
@@ -1932,8 +1933,8 @@ def plotsrfrvout(srfrvin,zmin,zmax,n=1000,color='fg',gridframe=0,
         plg(rr,zz,color=color)
     if fillcolor is not None:
         cc = array([fillcolor]).astype(ubyte)
-        rmax = minimum(rmax,w3d.xmmax)
-        rmax = maximum(rmax,max(rr))
+        rmax = builtins.min(rmax,w3d.xmmax)
+        rmax = builtins.max(rmax,max(rr))
         rr = array(list(rr) + [rmax,rmax])
         zz = array(list(zz) + [zmax,zmin])
         plfp(cc,rr,zz,[n+3])
@@ -1995,8 +1996,8 @@ def plotelementoutline(color,gridframe,axis,zl,zu,ie,ne,outline,fillcolor,
         if zl is None: zl = top.zlatstrt
         zoffset = floor((zl-top.zlatstrt)/top.zlatperi)*top.zlatperi
         while zoffset < zu:
-            z1 = maximum(zl,zoffset) - zoffset
-            z2 = minimum(zu,zoffset+top.zlatperi) - zoffset
+            z1 = builtins.max(zl,zoffset) - zoffset
+            z2 = builtins.min(zu,zoffset+top.zlatperi) - zoffset
             plotelementoutline(color,gridframe,axis,z1,z2,ie,ne,outline,fillcolor,
                                ezs,eze,eap,eax,eay,eox,eoy,err,erl,egl,egp,
                                epa,epr,epw,dpal,dpar,zoffset=zoffset)
@@ -2483,7 +2484,7 @@ def updatemgconductorsold():
 
     # --- Reset counters and reallocate arrays for the converted data.
     f3d.ncondmax = len(ixcondnew)
-    f3d.ncndmax = maximum(len(ee),len(oo))
+    f3d.ncndmax = builtins.max(len(ee),len(oo))
     gchange("Conductor3d")
     f3d.ncond = len(ixcondnew)
     f3d.necndbdy = len(ee)
@@ -2977,7 +2978,7 @@ def setconductorvoltage(voltage,condid=0,discrete=false,setvinject=false,
             lz = take(conductors.levellz,interior.ilevel)
             iz = take(conductors.leveliz,interior.ilevel)
             icz = nint(interior.indx[2,:]*lz + iz)
-            icz = minimum(icz,len(voltage)-2,icz)
+            icz = builtins.min(icz,len(voltage)-2,icz)
             cv = take(voltage,icz)
 
         if evensubgrid.n > 0:
@@ -2986,7 +2987,7 @@ def setconductorvoltage(voltage,condid=0,discrete=false,setvinject=false,
             iecl = take(conductors.levellz,evensubgrid.ilevel)
             iecliz = take(conductors.leveliz,evensubgrid.ilevel)
             iecz = nint(evensubgrid.indx[2,:]*iecl + iecliz)
-            iecz = minimum(iecz,len(voltage)-2,iecz)
+            iecz = builtins.min(iecz,len(voltage)-2,iecz)
             ecv = take(voltage,iecz)
             ecvmx = ecv
             ecvpx = ecv
@@ -3016,7 +3017,7 @@ def setconductorvoltage(voltage,condid=0,discrete=false,setvinject=false,
             iocl = take(conductors.levellz,oddsubgrid.ilevel)
             iocliz = take(conductors.leveliz,oddsubgrid.ilevel)
             iocz = nint(oddsubgrid.indx[2,:]*iocl + iocliz)
-            iocz = minimum(iocz,len(voltage)-2,iocz)
+            iocz = builtins.min(iocz,len(voltage)-2,iocz)
             ocv = take(voltage,iocz)
             ocvmx = ocv
             ocvpx = ocv
