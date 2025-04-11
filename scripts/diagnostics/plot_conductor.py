@@ -2,10 +2,6 @@ from ..warp import *
 import __main__
 import copy
 
-# replace numpy versions that leaked in
-max = builtins.max
-min = builtins.min
-
 def plot_conductordoc():
     print("""
   The following functions plot contours of the potential in various planes
@@ -381,8 +377,8 @@ def plotcondfill(iy,ix,iz,izp,ymin,xmin,dy,dx,mglevel,yscale,xscale,
     else:
         maxixs = max(ixs)
         maxiys = max(iys)
-    nx = max(maxixc,maxixs) + 1
-    ny = max(maxiyc,maxiys) + 1
+    nx = maximum(maxixc,maxixs) + 1
+    ny = maximum(maxiyc,maxiys) + 1
     iii = zeros((5,1+nx,1+ny),'l') - 1
     mx,px,my,py = 1,2,3,4
     # --- Flag grid points where the conductors are.
@@ -642,8 +638,8 @@ def plotcondfillnew(yy,xx,zz,iz,ymin,xmin,dy,dx,mglevel,yscale,xscale,
     else:
         maxixs = max(ixs)
         maxiys = max(iys)
-    nx = max(maxixc,maxixs) + 1
-    ny = max(maxiyc,maxiys) + 1
+    nx = maximum(maxixc,maxixs) + 1
+    ny = maximum(maxiyc,maxiys) + 1
     iii = zeros((5,1+nx,1+ny),'l')
     mx,px,my,py = 1,2,3,4
     # --- Flag grid points where the conductors are.
@@ -1739,9 +1735,9 @@ def plotgrid(zbeam=None,ii=2,plotcond=1,solver=w3d,zcent=None):
     if zbeam is None: zbeam=top.zbeam
     if zcent is None: zcent=top.zbeam
     # --- declare temporary data space, 2 2-D arrays to hold grid coordinates
-    nx = max(1,nint(1.*solver.nx/ii))
+    nx = maximum(1,nint(1.*solver.nx/ii))
     dx = 1.*solver.nx/nx*solver.dx
-    nz = max(1,nint(1.*solver.nz/ii))
+    nz = maximum(1,nint(1.*solver.nz/ii))
     dz = 1.*solver.nz/nz*solver.dz
     xg,zg = getmesh2d(solver.xmmin,dx,nx,solver.zmmin+zbeam,dz,nz)
 
@@ -1936,8 +1932,8 @@ def plotsrfrvout(srfrvin,zmin,zmax,n=1000,color='fg',gridframe=0,
         plg(rr,zz,color=color)
     if fillcolor is not None:
         cc = array([fillcolor]).astype(ubyte)
-        rmax = min(rmax,w3d.xmmax)
-        rmax = max(rmax,max(rr))
+        rmax = minimum(rmax,w3d.xmmax)
+        rmax = maximum(rmax,max(rr))
         rr = array(list(rr) + [rmax,rmax])
         zz = array(list(zz) + [zmax,zmin])
         plfp(cc,rr,zz,[n+3])
@@ -1999,8 +1995,8 @@ def plotelementoutline(color,gridframe,axis,zl,zu,ie,ne,outline,fillcolor,
         if zl is None: zl = top.zlatstrt
         zoffset = floor((zl-top.zlatstrt)/top.zlatperi)*top.zlatperi
         while zoffset < zu:
-            z1 = max(zl,zoffset) - zoffset
-            z2 = min(zu,zoffset+top.zlatperi) - zoffset
+            z1 = maximum(zl,zoffset) - zoffset
+            z2 = minimum(zu,zoffset+top.zlatperi) - zoffset
             plotelementoutline(color,gridframe,axis,z1,z2,ie,ne,outline,fillcolor,
                                ezs,eze,eap,eax,eay,eox,eoy,err,erl,egl,egp,
                                epa,epr,epw,dpal,dpar,zoffset=zoffset)
@@ -2487,7 +2483,7 @@ def updatemgconductorsold():
 
     # --- Reset counters and reallocate arrays for the converted data.
     f3d.ncondmax = len(ixcondnew)
-    f3d.ncndmax = max(len(ee),len(oo))
+    f3d.ncndmax = maximum(len(ee),len(oo))
     gchange("Conductor3d")
     f3d.ncond = len(ixcondnew)
     f3d.necndbdy = len(ee)
