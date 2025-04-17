@@ -150,7 +150,7 @@ void Mixranf(int *s,u32 s48[2])
         struct timeval tv;
         struct timezone tz;
 #if !defined(__sgi)
-        int gettimeofday(struct timeval *, void *);
+        /* int gettimeofday(struct timeval *, void *); */
 #endif
 
         (void)gettimeofday(&tv,&tz);
