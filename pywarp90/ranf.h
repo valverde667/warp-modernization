@@ -4,17 +4,7 @@
 #include <stdio.h>
 #endif
 
-#ifdef __MWERKS__
-/*#include <utime.h>*/
 #include <time.h>
-#include <Timer.h>
-#else
-#if defined(_WIN32)
-#include <time.h>
-#else
-#include <sys/time.h>
-#endif
-#endif
 
 typedef unsigned int u32;
 typedef unsigned short int u16;

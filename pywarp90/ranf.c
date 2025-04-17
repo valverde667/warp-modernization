@@ -127,17 +127,6 @@ void Mixranf(int *s,u32 s48[2])
 
     }else if(*s == 0){ /* Use the clock */
         int i;
-#ifdef __MWERKS__
-/* use this for the Macintosh */
-        time_t theTime;
-        UnsignedWide tv_usec;
-
-        (void)time(&theTime);
-        Microseconds(&tv_usec); /* the microsecs since start up */
-        s48[0] = (u32)theTime;
-        s48[1] = (u32)tv_usec.lo;
-#else
-#if defined(_WIN32)
     // suggestions welcome for something better!
     // one of these is from start of job, the other time of day
         time_t long_time;
@@ -146,18 +135,6 @@ void Mixranf(int *s,u32 s48[2])
         clock_time = clock();
         s48[0] = (u32)long_time;
         s48[1] = (u32)clock_time;
-#else
-        struct timeval tv;
-        struct timezone tz;
-#if !defined(__sgi)
-        /* int gettimeofday(struct timeval *, void *); */
-#endif
-
-        (void)gettimeofday(&tv,&tz);
-        s48[0] = (u32)tv.tv_sec;
-        s48[1] = (u32)tv.tv_usec;
-#endif /* !_WIN32 */
-#endif /* !__MWERKS__ */
         Setranf(s48);
         for(i=0;i<10;i++) (void)Ranf();  /* Discard first 10 numbers */
         Getranf(s48);  /* Return seed after these 10 calls */
