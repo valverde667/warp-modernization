@@ -2428,8 +2428,8 @@ def getj(comp=None,ix=None,iy=None,iz=None,bcast=1,local=0,fullplane=0,
         
         
         Jx = j[0,...]
-        JY = j[1,...]
-        JZ = j[2,...]
+        Jy = j[1,...]
+        Jz = j[2,...]
 
     if comp == 'J':
         Jx = getdecomposedarray(Jx,ix=ix,iy=iy,iz=iz,
