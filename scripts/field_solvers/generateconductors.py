@@ -4879,7 +4879,6 @@ class Srfrv:
             nperdz = self.tabulatednperdz
         except AttributeError:
             nperdz = 100
-        np = (self.zmax - self.zmin)/self.griddz*nperdz
         zdata = linspace(self.zmin, self.zmax, nperdz+1)
         rofzdata = np.zeros(nperdz+1)
         for i in range(nperdz+1):
