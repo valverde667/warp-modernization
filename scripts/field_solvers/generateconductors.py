@@ -3553,7 +3553,7 @@ class ZCylinder(Assembly):
         """
         rmin = kw.get('rmin',None)
         if rmin is None: rmin = 0.
-        theta = linspace(0,2*pi,nn)
+        theta = np.linspace(0,2*pi,nn)
         x = self.radius*np.cos(theta)
         y = self.radius*np.sin(theta)
         if rmin > 0.:
@@ -4321,7 +4321,7 @@ class Sphere(Assembly):
 
     def draw(self,color='fg',filled=None,fullplane=1,**kw):
         narcpoints = kw.get('narcpoints',64)
-        theta = linspace(0., 2.*pi, narcpoints+1)
+        theta = np.linspace(0., 2.*pi, narcpoints+1)
         r = self.radius*np.cos(theta)
         z = self.radius*np.sin(theta)
         self.plotdata(r,z,color=color,filled=filled,fullplane=fullplane,**kw)
@@ -4583,7 +4583,7 @@ class ZTorus(Assembly):
 
     def draw(self,color='fg',filled=None,fullplane=1,**kw):
         narcpoints = kw.get('narcpoints',64)
-        theta = linspace(0., 2.*pi, narcpoints+1)
+        theta = np.linspace(0., 2.*pi, narcpoints+1)
         r = self.r2*np.cos(theta) + self.r1
         z = self.r2*np.sin(theta)
         self.plotdata(r,z,color=color,filled=filled,fullplane=fullplane,**kw)
@@ -4850,10 +4850,10 @@ class Srfrv:
                         th2 = th2 + 2*pi
                     if (th1 < th2 and raddata[i] > 0. and zdata[i] < zdata[i+1]):
                         th1 = th1 + 2*pi
-                    tt = linspace(th1, th2, narcpoints)
+                    tt = np.linspace(th1, th2, narcpoints)
                     rr = abs(raddata[i])*np.sin(tt) + rcdata[i]
                     zz = abs(raddata[i])*np.cos(tt) + zcdata[i]
-                    #zz = linspace(zdata[i], zdata[i+1], narcpoints)
+                    #zz = np.linspace(zdata[i], zdata[i+1], narcpoints)
                     #if raddata[i] > 0.:
                     #  rr = rcdata[i] + np.sqrt(np.maximum(0,raddata[i]**2 - (zz-zcdata[i])**2))
                     #else:
@@ -4879,7 +4879,7 @@ class Srfrv:
             nperdz = self.tabulatednperdz
         except AttributeError:
             nperdz = 100
-        zdata = linspace(self.zmin, self.zmax, nperdz+1)
+        zdata = np.linspace(self.zmin, self.zmax, nperdz+1)
         rofzdata = np.zeros(nperdz+1)
         for i in range(nperdz+1):
             warp.f3d.srfrv_z = zdata[i]
