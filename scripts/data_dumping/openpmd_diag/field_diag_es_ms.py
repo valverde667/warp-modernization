@@ -48,6 +48,7 @@ class StaticDiagnostic(object):
         if self.solver.solvergeom == self.w3d.XYZgeom:
             self.geometry = 'cartesian'
             self.dims = ['x', 'y', 'z']
+            self.axisLabels = ['x', 'y', 'z']
             self.gridsize = [self.solver.nx+1, self.solver.ny+1, self.solver.nz+1]
             self.gridSpacing = [self.solver.dx, self.solver.dy, self.solver.dz]
             self.gridGlobalOffset = [self.solver.xmmin, self.solver.ymmin, self.solver.zmmin]
@@ -55,6 +56,7 @@ class StaticDiagnostic(object):
         elif self.solver.solvergeom == self.w3d.XZgeom:
             self.geometry = 'cartesian2D'
             self.dims = ['x', 'y', 'z']
+            self.axisLabels = ['x', 'z']
             self.gridsize = [self.solver.nx + 1, self.solver.nz + 1]
             self.gridSpacing = [self.solver.dx, self.solver.dz]
             self.gridGlobalOffset = [self.solver.xmmin, self.solver.zmmin]
@@ -63,6 +65,7 @@ class StaticDiagnostic(object):
             self.geometry = 'thetaMode'
             self.geometryParameters = 'm=0'
             self.dims = ['r', 't', 'z']
+            self.axisLabels = ['r', 'z']
             self.gridsize = [self.solver.nx + 1, self.solver.nz + 1]
             self.gridSpacing = [self.solver.dx, self.solver.dz]
             self.gridGlobalOffset = [self.solver.xmmin, self.solver.zmmin]
@@ -118,7 +121,7 @@ class StaticDiagnostic(object):
         if len(data.shape) == len(self.dims) or (self.geometry == 'cartesian2D' and len(data.shape) == len(self.dims) - 1):  # Scalar data on the mesh
             self.file[prefix] = data
             field = self.file[prefix]
-            field.attrs['position'] = [0.0]*len(self.dims)  # Report scalar as on the mesh elements
+            field.attrs['position'] = [0.0]*len(self.axisLabels)  # Report scalar as on the mesh elements
             field.attrs['unitSI'] = 1.0
         elif len(data.shape) == len(self.dims) + 1 or (self.geometry == 'cartesian2D' and len(data.shape) == len(self.dims)):  # Vector data on the mesh
 
@@ -127,7 +130,7 @@ class StaticDiagnostic(object):
             for i, v in enumerate(data):
                 self.file['%s/%s' % (prefix, self.dims[i])] = v
                 coord = self.file['%s/%s' % (prefix, self.dims[i])]
-                coord.attrs['position'] = [0.0]*len(self.dims)  # Report field as on the mesh elements
+                coord.attrs['position'] = [0.0]*len(self.axisLabels)  # Report field as on the mesh elements
                 coord.attrs['unitSI'] = 1.0
 
                 field = self.file[prefix]
@@ -147,7 +150,7 @@ class StaticDiagnostic(object):
         field.attrs['geometry'] = self.geometry
         field.attrs['geometryParameters'] = self.geometryParameters
         field.attrs['dataOrder'] = 'C'  # C-like order
-        field.attrs['axisLabels'] = self.dims
+        field.attrs['axisLabels'] = self.axisLabels
         field.attrs['gridSpacing'] = self.gridSpacing
         field.attrs['gridGlobalOffset'] = self.gridGlobalOffset
         field.attrs['gridUnitSI'] = 1.0
