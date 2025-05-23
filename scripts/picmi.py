@@ -235,12 +235,12 @@ class UniformDistribution(picmistandard.PICMI_UniformDistribution):
         elif isinstance(layout, PseudoRandomLayout):
             assert not self.fill_in, Exception('Warp does not support fill_in with PseudoRandomLayout')
             # For this option, the mins and maxs must be bounded by the domain
-            xmin = max(xmin, w3d.xmmin)
-            xmax = min(xmax, w3d.xmmax)
-            ymin = max(ymin, w3d.ymmin)
-            ymax = min(ymax, w3d.ymmax)
-            zmin = max(zmin, w3d.zmmin)
-            zmax = min(zmax, w3d.zmmax)
+            xmin = max([xmin, w3d.xmmin])
+            xmax = min([xmax, w3d.xmmax])
+            ymin = max([ymin, w3d.ymmin])
+            ymax = min([ymax, w3d.ymmax])
+            zmin = max([zmin, w3d.zmmin])
+            zmax = min([zmax, w3d.zmmax])
             # Determine the number of particles to load
             if layout.n_macroparticles_per_cell is not None:
                 n_simulation_particles = layout.n_macroparticles_per_cell*w3d.nx*w3d.ny*w3d.nz
@@ -361,12 +361,12 @@ class AnalyticDistribution(picmistandard.PICMI_AnalyticDistribution):
             assert not self.fill_in, Exception('Warp does not support fill_in with PseudoRandomLayout')
             assert not isinstance(self.density_expression, str), Exception('Warp does not support PseudoRandomLayout with nonuniform distribution')
             # For this option, the mins and maxs must be bounded by the domain
-            xmin = max(xmin, w3d.xmmin)
-            xmax = min(xmax, w3d.xmmax)
-            ymin = max(ymin, w3d.ymmin)
-            ymax = min(ymax, w3d.ymmax)
-            zmin = max(zmin, w3d.zmmin)
-            zmax = min(zmax, w3d.zmmax)
+            xmin = max([xmin, w3d.xmmin])
+            xmax = min([xmax, w3d.xmmax])
+            ymin = max([ymin, w3d.ymmin])
+            ymax = min([ymax, w3d.ymmax])
+            zmin = max([zmin, w3d.zmmin])
+            zmax = min([zmax, w3d.zmmax])
             # Determine the number of particles to load
             if layout.n_macroparticles_per_cell is not None:
                 n_simulation_particles = layout.n_macroparticles_per_cell*w3d.nx*w3d.ny*w3d.nz

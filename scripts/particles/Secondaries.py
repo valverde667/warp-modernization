@@ -412,14 +412,14 @@ class Secondaries:
         cwidth=0
         ewidth={}
         for js in self.inter:
-            swidth=max(swidth,len(self.inter[js]['incident_species'].name))
+            swidth=max([swidth,len(self.inter[js]['incident_species'].name)])
             for ics,cond in enumerate(self.inter[js]['conductors']):
-                cwidth=max(cwidth,len(cond.name))
+                cwidth=max([cwidth,len(cond.name)])
                 for ie,emitted_species in enumerate(self.inter[js]['emitted_species'][ics]):
                     if ie not in ewidth:
                         ewidth[ie]=len(emitted_species.name)
                     else:
-                        ewidth[ie]=max(ewidth[ie],len(emitted_species.name))
+                        ewidth[ie]=max([ewidth[ie],len(emitted_species.name)])
         fs='%%-%gs'%swidth
         fc='%%-%gs'%cwidth
         fe={}
@@ -595,7 +595,7 @@ class Secondaries:
                         pxsum += sum(weight*uxplost)*top.pgroup.sm[js]*top.pgroup.sw[js]
                         pysum += sum(weight*uyplost)*top.pgroup.sm[js]*top.pgroup.sw[js]
                         pzsum += sum(weight*uzplost)*top.pgroup.sm[js]*top.pgroup.sw[js]
-                    ek0max=max(max(e0),ek0max)
+                    ek0max=max([max(e0),ek0max])
                     
                     ## Collection of data
                     if 1:#cond.lcollectlpdata:
@@ -837,7 +837,7 @@ class Secondaries:
                                             ion_ind_e0 = zeros(1,'d')
                                             ion_ind_ct = zeros(1,'d')
                                             ion_ind_e0[0] = e0[i]/(1.e6)
-                                            ion_ind_ct[0] = max(0.04,coseta[i])
+                                            ion_ind_ct[0] = max([0.04,coseta[i]])
                                             Te=0.
                                             Ne=0.
                                             self.emitted_e,self.emitted_bn,self.emitted_bt,self.emitted_bz = \
@@ -971,7 +971,7 @@ class Secondaries:
                                         # --- Thermal emission
                                         conductor_temperature = self.inter[incident_species]['conductor_temperature'][ics]
                                         vth = sqrt(2.*conductor_temperature*jperev/emitted_species.mass)
-                                        vmag = vth*sqrt(2.*log(1./max(1.e-14, random.random())))
+                                        vmag = vth*sqrt(2.*log(1./max([1.e-14, random.random()])))
                                         thnew = pi/2.*random.random()
                                         phnew = 2.*pi*random.random()
                                         vgt = vmag*sin(thnew)*sin(phnew)
@@ -984,7 +984,7 @@ class Secondaries:
                                                         vyplost[i]*n_unit0[0][i]-vxplost[i]*n_unit0[1][i]])
                                             z_unit  = z/sqrt(sum(z*z))
                                             cospsi  = sum(z_unit*z_unit0)
-                                            sinpsi  = sqrt(max(0.,1.-cospsi*cospsi))
+                                            sinpsi  = sqrt(max([0.,1.-cospsi*cospsi]))
                                             vt0 = -(cospsi*vgt - sinpsi*vgz)
                                             vz0 = -(sinpsi*vgt + cospsi*vgz)
                                             vn0 = vgn
@@ -1191,7 +1191,7 @@ class Secondaries:
                               vyplost[i]*n_unit0[0][i]-vxplost[i]*n_unit0[1][i]])
             z_unit  = z/sqrt(sum(z*z))
             cospsi  = sum(z_unit*z_unit0)
-            sinpsi  = sqrt(max(0.,1.-cospsi*cospsi))
+            sinpsi  = sqrt(max([0.,1.-cospsi*cospsi]))
             # bt0 = (cospsi*bt - sinpsi*bz)
             # bz0 = (sinpsi*bt + cospsi*bz)
             ut0 = -(cospsi*ut - sinpsi*uz)
@@ -1903,7 +1903,7 @@ class PhotoElectrons:
                                                                            charge=1),0),0)
             weightemit=top.pgroup.sw[emitted_species.jslist[0]]*abs(top.pgroup.sq[emitted_species.jslist[0]])
             # for i in range(self.nz+1):
-            for i in range(max(1,self.nz)):
+            for i in range(max([1,self.nz])):
                 if self.nz<1:
                     rhel = self.Lambda*posC.queffp*posC.photpbppm*clight*top.dt/weightemit
                 else:

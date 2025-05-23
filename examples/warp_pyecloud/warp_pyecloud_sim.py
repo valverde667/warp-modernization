@@ -137,7 +137,7 @@ upper_box = picmi.warp.YPlane(y0=h,ysign=1,condid=1)
 lower_box = picmi.warp.YPlane(y0=-h,ysign=-1,condid=1)
 left_box = picmi.warp.XPlane(x0=r,xsign=1,condid=1)
 right_box = picmi.warp.XPlane(x0=-r,xsign=-1,condid=1) 
-sim = picmi.Simulation(solver = solver, verbose = 1, cfl = 1.0,
+sim = picmi.Simulation(solver = solver, verbose = 1,
                            warp_initialize_solver_after_generate = 1)
         
 sim.conductors = upper_box + lower_box + left_box + right_box
@@ -234,20 +234,20 @@ for n_step in range(tot_nsteps):
     if n_step/ntsteps_p_bunch > b_pass:
         b_pass+=1
         perc = 10
-        print '==========================='
-        print 'Bunch passage: %d' %b_pass
-        print 'Number of electrons in the dipole: %d' %(np.sum(secelec.wspecies.getw())+np.sum(elecb.wspecies.getw()))
+        print ('===========================')
+        print ('Bunch passage: %d' %b_pass)
+        print ('Number of electrons in the dipole: %d' %(np.sum(secelec.wspecies.getw())+np.sum(elecb.wspecies.getw())))
     if n_step%ntsteps_p_bunch/ntsteps_p_bunch*100>=perc:
-        print '%d%% of bunch passage' %perc
+        print ('%d%% of bunch passage' %perc)
         perc = perc+10
     
-    original = sys.stdout
-    sys.stdout = text_trap
+#    original = sys.stdout
+#    sys.stdout = text_trap
     step(1)
-    sys.stdout = original
+#    sys.stdout = original
     
 t1 = time.time()
 totalt = t1-t0
 
-print 'Run terminated in %ds' %totalt
+print ('Run terminated in %ds' %totalt)
 

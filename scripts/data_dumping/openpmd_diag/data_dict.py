@@ -76,17 +76,17 @@ particle_quantity_dict = { 'E' : 'e', 'B' : 'b', \
 # Correspondance between the boundary conditions in Warp,
 # and the corresponding representative integer
 field_boundary_dict = {
-    0: np.string_("reflecting"),
-    1: np.string_("reflecting"),
-    2: np.string_("periodic"),
-    3: np.string_("openbc") }
+    0: np.bytes_("reflecting"),
+    1: np.bytes_("reflecting"),
+    2: np.bytes_("periodic"),
+    3: np.bytes_("openbc") }
 particle_boundary_dict = {
-    0: np.string_("absorbing"),
-    1: np.string_("reflecting"),
-    2: np.string_("periodic") }
+    0: np.bytes_("absorbing"),
+    1: np.bytes_("reflecting"),
+    2: np.bytes_("periodic") }
 # Correspondance between the field solver in Warp,
 # and the corresponding representative integer
 field_solver_dict = {
-    0: np.string_("Yee"),
-    1: np.string_("CK"),
-    3: np.string_("Lehe") }
+    0: np.bytes_("Yee"),
+    1: np.bytes_("CK"),
+    3: np.bytes_("Lehe") }
