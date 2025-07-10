@@ -1187,7 +1187,7 @@ def printtimers(file=None,lminmax=0,mintime=0.,icontrollers=2):
             vlist = array(gather(value))
             if me > 0: return
             vsum = sum(vlist)
-            vrms = sqrt(max(0.,ave(vlist**2) - ave(vlist)**2))
+            vrms = numpy.std(vlist)
             ff.write('%18s  %10.4f  %10.4f  %10.4f'%(name,vsum,vsum/npes,vrms))
             if lminmax:
                 vmin = min(vlist)
@@ -1219,7 +1219,7 @@ def printtimers(file=None,lminmax=0,mintime=0.,icontrollers=2):
             if me > 0: continue
             vsum = sum(vlist)
             if vsum <= mintime: continue
-            vrms = sqrt(max(0.,ave(vlist**2) - ave(vlist)**2))
+            vrms = numpy.std(vlist)
             ff.write('%18s  %10.4f  %10.4f  %10.4f'%(name[4:],vsum,vsum/npes,vrms))
             if lminmax:
                 vmin = min(vlist)
@@ -1240,7 +1240,7 @@ def printtimers(file=None,lminmax=0,mintime=0.,icontrollers=2):
             if me > 0: continue
             vsum = sum(vlist)
             if vsum == 0.: continue
-            vrms = sqrt(max(0.,ave(vlist**2) - ave(vlist)**2))
+            vrms = numpy.std(vlist)
             ff.write('%20s  %10.4f  %10.4f  %10.4f'%(c.name,vsum,vsum/npes,vrms))
             if lminmax:
                 vmin = min(vlist)

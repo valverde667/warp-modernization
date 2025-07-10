@@ -506,7 +506,7 @@ class ControllerFunctionContainer:
                 if me > 0: continue
                 vsum = sum(vlist)
                 if vsum <= tmin: continue
-                vrms = sqrt(max(0.,ave(vlist**2) - ave(vlist)**2))
+                vrms = numpy.std(vlist)
                 ff.write('%20s %s %10.4f  %10.4f %10.4f'%(c.name,fname,vsum,vsum/npes,vrms))
                 if lminmax:
                     vmin = min(vlist)
