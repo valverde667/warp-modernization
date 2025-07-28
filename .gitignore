@@ -18,6 +18,8 @@ build3parallel
 forthonf2c.h
 ranffortran.c
 __version__.py
+pywarp90/dist
+pywarp90/warp.egg-info
 
 # Ignore local definitions for building
 Makefile.local
