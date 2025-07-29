@@ -420,14 +420,14 @@ class Assembly(VisualizableClass):
         # --- without modifying the user set attribute, voltage.
         if self.timedependentvoltage is not None:
             v = self.timedependentvoltage
-        elif callable(self.voltage):
-            if time is None:
-                time = warp.top.time
-            v = self.voltage(time)
         elif hasattr(self.voltage, 'getvolt') and callable(self.voltage.getvolt):
             if time is None:
                 time = warp.top.time
             v = self.voltage.getvolt(time)
+        elif callable(self.voltage):
+            if time is None:
+                time = warp.top.time
+            v = self.voltage(time)
         else:
             v = self.voltage
         return v
