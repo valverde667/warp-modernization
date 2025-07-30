@@ -114,7 +114,6 @@ import copy
 import numpy as np
 
 from .. import warp
-#from ..warp import *
 from ..utils.appendablearray import *
 
 try:
@@ -405,7 +404,7 @@ class Assembly(VisualizableClass):
         r = np.array(r)
         if filled is not None:
             if filled == 'condid': filled = self.condid
-            c = np.array([filled]).astype(ubyte)
+            c = np.array([filled]).astype(np.ubyte)
             warp.plfp(c,xcent+r,z,[len(r)],**kw)
             if fullplane:
                 warp.plfp(c,xcent-np.array(r),z,[len(r)],**kw)
@@ -450,7 +449,7 @@ class Assembly(VisualizableClass):
         emintot=warp.parallelmin(emin)
         emaxtot=warp.parallelmax(emax)
         netot=0
-        if me>0:
+        if warp.me>0:
             warp.mpisend((ne,emin,emax), dest = 0, tag = 1)
             if ne>0:
                 warp.mpisend(self.lostparticles_energies[js], dest = 0, tag = 1)
@@ -461,11 +460,11 @@ class Assembly(VisualizableClass):
                 de = (emax-emin)/(ne-1)
                 energies = emin+np.arange(ne,dtype='l')*de
                 warp.setgrid1dw(ne,energies,self.lostparticles_energies[js],n,henergies,emintot,emaxtot)
-            for i in range(1,npes):
-                ne,emin,emax = mpirecv(source = i, tag = 1)
+            for i in range(1,warp.npes):
+                ne,emin,emax = warp.mpirecv(source = i, tag = 1)
                 if ne>0:
                     netot+=ne
-                    he = mpirecv(source = i, tag = 1)
+                    he = warp.mpirecv(source = i, tag = 1)
                     de = (emax-emin)/(ne-1)
                     energies = emin+np.arange(ne,dtype='l')*de
                     warp.setgrid1dw(ne,energies,he,n,henergies,emintot,emaxtot)
@@ -568,10 +567,10 @@ class Assembly(VisualizableClass):
         - width=1      : line width
         - type='solid' : line type
         """
-        if me != 0:return
+        if warp.me != 0: return
         time,current=self.get_current_history(js=js,l_lost=l_lost,l_emit=l_emit,l_image=l_image,tmin=tmin,tmax=tmax,nt=nt)
         warp.plg(current,time,color=color,width=width,type=type)
-        ptitles('Current history at '+self.name,'time (s)','I (A)')
+        warp.ptitles('Current history at '+self.name,'time (s)','I (A)')
 
     def enable_accuimagecharge(self):
         if self.accuimagechargeenabled: return
@@ -712,10 +711,10 @@ class Assembly(VisualizableClass):
 
         if warp.w3d.solvergeom in [warp.w3d.RZgeom]:
             # --- The rfac is to take into account the r dtheta term in the integrals.
-            rfac = 2.*pi*(warp.iota(ixmin,ixmax)*dx + xmmin)
+            rfac = 2.*np.pi*(warp.iota(ixmin,ixmax)*dx + xmmin)
             rfac.shape = (rfac.shape[0],1)
-            rmin = 2.*pi*((ixmin - 0.5)*dx + xmmin)
-            rmax = 2.*pi*((ixmax + 0.5)*dx + xmmin)
+            rmin = 2.*np.pi*((ixmin - 0.5)*dx + xmmin)
+            rmax = 2.*np.pi*((ixmax + 0.5)*dx + xmmin)
         else:
             rfac = np.ones([ixmax-ixmin+1,iymax-iymin+1],'d')
             rmin = 1.
@@ -1116,7 +1115,7 @@ class EllipticAssembly(Assembly):
         tt = np.arctan2(y,x)
         dx = distance*np.cos(tt)
         dy = distance*np.sin(tt)*self.ellipticity
-        distance[:] = np.sqrt(dx**2 + dy**2)*sign(distance)
+        distance[:] = np.sqrt(dx**2 + dy**2)*np.sign(distance)
 
     def ellipseintercept(self,*argtuple):
         arglist = list(argtuple)
@@ -1565,8 +1564,8 @@ class Delta:
                                 self.dels[2, :], self.dels[3, :],
                                 self.dels[4, :], self.dels[5, :]] + [fuzz]
             generator(*arglist)
-            self.vs = full((6,self.ndata), voltage)
-            self.ns = full((6,self.ndata), int(condid), dtype='l')
+            self.vs = np.full((6,self.ndata), voltage)
+            self.ns = np.full((6,self.ndata), int(condid), dtype='l')
             self.setlevels(0)
         else:
             self.ndata = len(ix)
@@ -1586,7 +1585,7 @@ class Delta:
         self.append(self)
 
     def setlevels(self,level):
-        self.mglevel = full(self.ndata, level, dtype='l')
+        self.mglevel = np.full(self.ndata, level, dtype='l')
 
     def normalize(self,dx,dy,dz):
         """
@@ -1658,22 +1657,22 @@ class Delta:
         # --- Using the inplace add is slightly faster since it doesn't have to
         # --- allocate a new array.
         self.parity = np.zeros(self.ndata,'l')
-        add(self.parity,999,self.parity)
+        np.add(self.parity,999,self.parity)
         self.fuzzsign = fuzzsign
         if self.neumann: fuzz0 = 0.
         else:            fuzz0 = +1.e-9
         fuzz1 = 1.e-9
         if self.neumann: dfill = 0.
         # --- A compiled routine is called for optimization
-        setconductorparity(self.ndata,self.ix,self.iy,self.iz,
-                           self.dels,self.parity,fuzz0,fuzz1,fuzzsign,dfill)
+        warp.setconductorparity(self.ndata,self.ix,self.iy,self.iz,
+                                self.dels,self.parity,fuzz0,fuzz1,fuzzsign,dfill)
 
     def clean(self):
         """
     Removes the data which is far from any conductors. Assumes that setparity
     has already been called.
         """
-        ii = nonzero(self.parity < 2)[0]
+        ii = np.nonzero(self.parity < 2)[0]
         self.ix    = self.ix[ii]
         self.iy    = self.iy[ii]
         self.iz    = self.iz[ii]
@@ -1759,7 +1758,7 @@ class Delta:
 
             ncnew = data.ncnew
             if ncnew > 0:
-                ii = nonzero(data.parity == -1)[0]
+                ii = np.nonzero(data.parity == -1)[0]
                 conductors.interior.indx[0,nc:nc+ncnew] = data.ix[ii]
                 conductors.interior.indx[1,nc:nc+ncnew] = data.iy[ii]
                 conductors.interior.indx[2,nc:nc+ncnew] = data.iz[ii]
@@ -1770,7 +1769,7 @@ class Delta:
 
             nenew = data.nenew
             if nenew > 0:
-                ii = nonzero(data.parity == 0)[0]
+                ii = np.nonzero(data.parity == 0)[0]
                 conductors.evensubgrid.indx[0,ne:ne+nenew] = data.ix[ii]
                 conductors.evensubgrid.indx[1,ne:ne+nenew] = data.iy[ii]
                 conductors.evensubgrid.indx[2,ne:ne+nenew] = data.iz[ii]
@@ -1783,7 +1782,7 @@ class Delta:
 
             nonew = data.nonew
             if nonew > 0:
-                ii = nonzero(data.parity == 1)[0]
+                ii = np.nonzero(data.parity == 1)[0]
                 conductors.oddsubgrid.indx[0,no:no+nonew] = data.ix[ii]
                 conductors.oddsubgrid.indx[1,no:no+nonew] = data.iy[ii]
                 conductors.oddsubgrid.indx[2,no:no+nonew] = data.iz[ii]
@@ -1814,9 +1813,9 @@ class Delta:
           "Neumann objects cannot be mixed with Dirichlet objects"
         c = np.less(self.dels,right.dels)
         return Delta(self.ix,self.iy,self.iz,self.xx,self.yy,self.zz,
-                     choose(c,(self.dels,right.dels)),
-                     choose(c,(self.vs  ,right.vs)),
-                     choose(c,(self.ns  ,right.ns)),neumann=right.neumann)
+                     np.choose(c,(self.dels,right.dels)),
+                     np.choose(c,(self.vs  ,right.vs)),
+                     np.choose(c,(self.ns  ,right.ns)),neumann=right.neumann)
 
     def __add__(self,right):
         "'or' operator, returns minimum of distances to surfaces."
@@ -1824,9 +1823,9 @@ class Delta:
           "Neumann objects cannot be mixed with Dirichlet objects"
         c = np.greater(self.dels,right.dels)
         return Delta(self.ix,self.iy,self.iz,self.xx,self.yy,self.zz,
-                     choose(c,(self.dels,right.dels)),
-                     choose(c,(self.vs  ,right.vs)),
-                     choose(c,(self.ns  ,right.ns)),neumann=right.neumann)
+                     np.choose(c,(self.dels,right.dels)),
+                     np.choose(c,(self.vs  ,right.vs)),
+                     np.choose(c,(self.ns  ,right.ns)),neumann=right.neumann)
 
     def __sub__(self,right):
         "'or' operator, returns minimum of distances to surfaces."
@@ -1835,9 +1834,9 @@ class Delta:
         rdels = -right.dels
         c = np.less(self.dels,rdels)
         result = Delta(self.ix,self.iy,self.iz,self.xx,self.yy,self.zz,
-                       choose(c,(self.dels,rdels)),
-                       choose(c,(self.vs  ,right.vs)),
-                       choose(c,(self.ns  ,right.ns)),neumann=right.neumann)
+                       np.choose(c,(self.dels,rdels)),
+                       np.choose(c,(self.vs  ,right.vs)),
+                       np.choose(c,(self.ns  ,right.ns)),neumann=right.neumann)
         # --- This is a kludgy fix for problems with subtracting elements.
         # --- If the subtractee has surfaces in common with the subtractor,
         # --- the above algorithm leaves a zero thickness shell there.
@@ -2095,7 +2094,7 @@ class GridIntercepts(object):
          #assert self.neumann == right.neumann,\
          #  "Neumann objects cannot be mixed with Dirichlet objects"
         intercepts = warp.ConductorInterceptType()
-        intercepts_not(self.intercepts,intercepts)
+        warp.intercepts_not(self.intercepts,intercepts)
         return GridIntercepts(intercepts=intercepts)
 
     def __mul__(self,right):
@@ -2103,7 +2102,7 @@ class GridIntercepts(object):
          #assert self.neumann == right.neumann,\
          #  "Neumann objects cannot be mixed with Dirichlet objects"
         intercepts = warp.ConductorInterceptType()
-        intercepts_and(self.intercepts,right.intercepts,intercepts)
+        warp.intercepts_and(self.intercepts,right.intercepts,intercepts)
         return GridIntercepts(intercepts=intercepts)
 
     def __add__(self,right):
@@ -2111,7 +2110,7 @@ class GridIntercepts(object):
          #assert self.neumann == right.neumann,\
          #  "Neumann objects cannot be mixed with Dirichlet objects"
         intercepts = warp.ConductorInterceptType()
-        intercepts_or(self.intercepts,right.intercepts,intercepts)
+        warp.intercepts_or(self.intercepts,right.intercepts,intercepts)
         return GridIntercepts(intercepts=intercepts)
 
     def __sub__(self,right):
@@ -2321,7 +2320,7 @@ class Intercept:
     def __neg__(self):
         "Intercept not operator."
         return Intercept(self.xx,self.yy,self.zz,self.vx,self.vy,self.vz,
-                         self.xi,self.yi,self.zi,self.itheta+pi,self.iphi,
+                         self.xi,self.yi,self.zi,self.itheta+np.pi,self.iphi,
                          conductor=self.conductor,condid=self.condid)
 
     def magsq(self):
@@ -2425,7 +2424,7 @@ class Intercept:
     def __sub__(self,right):
         "'or' operator, returns logical or."
         cond = self.conductor - right.conductor
-        return self.binaryop(right,cond,pi)
+        return self.binaryop(right,cond,np.pi)
 
     def __str__(self):
         "Prints out delta"
@@ -3154,7 +3153,7 @@ class Plane(Assembly):
                       condid='next',**kw):
         kwlist=['z0','zsign','theta','phi']
         Assembly.__init__(self,voltage,xcent,ycent,zcent,condid,kwlist,
-                               warp.planeconductorf,warp.planeconductord,planeintercept,
+                               warp.planeconductorf,warp.planeconductord,warp.planeintercept,
                                warp.planeconductorfnew,
                                kw=kw)
         self.z0 = z0
@@ -3553,7 +3552,7 @@ class ZCylinder(Assembly):
         """
         rmin = kw.get('rmin',None)
         if rmin is None: rmin = 0.
-        theta = np.linspace(0,2*pi,nn)
+        theta = np.linspace(0,2*np.pi,nn)
         x = self.radius*np.cos(theta)
         y = self.radius*np.sin(theta)
         if rmin > 0.:
@@ -3639,10 +3638,10 @@ class ZRoundedCylinder(Assembly):
         if rmin is None: rmin = 0.
         zc = self.length/2. - self.radius2
         rc = self.radius - self.radius2
-        rleft = +rc + self.radius2*np.sin(np.arange(101,dtype='l')/100.*pi/2.)
-        zleft = -zc - self.radius2*np.cos(np.arange(101,dtype='l')/100.*pi/2.)
-        rrght = +rc + self.radius2*np.cos(np.arange(101,dtype='l')/100.*pi/2.)
-        zrght = +zc + self.radius2*np.sin(np.arange(101,dtype='l')/100.*pi/2.)
+        rleft = +rc + self.radius2*np.sin(np.arange(101,dtype='l')/100.*np.pi/2.)
+        zleft = -zc - self.radius2*np.cos(np.arange(101,dtype='l')/100.*np.pi/2.)
+        rrght = +rc + self.radius2*np.cos(np.arange(101,dtype='l')/100.*np.pi/2.)
+        zrght = +zc + self.radius2*np.sin(np.arange(101,dtype='l')/100.*np.pi/2.)
         r = [rmin] + list(rleft) + list(rrght) + [rmin,rmin]
         z = [-self.length/2.] + list(zleft) + list(zrght) + [self.length/2.,-self.length/2.]
         self.plotdata(r,z,color=color,filled=filled,fullplane=fullplane,**kw)
@@ -3795,10 +3794,10 @@ class ZRoundedCylinderOut(Assembly):
         if rmax < self.radius: rmax = self.radius
         zc = self.length/2. - self.radius2
         rc = self.radius + self.radius2
-        rleft = +rc - self.radius2*np.sin(np.arange(101,dtype='l')/100.*pi/2.)
-        zleft = -zc - self.radius2*np.cos(np.arange(101,dtype='l')/100.*pi/2.)
-        rrght = +rc - self.radius2*np.cos(np.arange(101,dtype='l')/100.*pi/2.)
-        zrght = +zc + self.radius2*np.sin(np.arange(101,dtype='l')/100.*pi/2.)
+        rleft = +rc - self.radius2*np.sin(np.arange(101,dtype='l')/100.*np.pi/2.)
+        zleft = -zc - self.radius2*np.cos(np.arange(101,dtype='l')/100.*np.pi/2.)
+        rrght = +rc - self.radius2*np.cos(np.arange(101,dtype='l')/100.*np.pi/2.)
+        zrght = +zc + self.radius2*np.sin(np.arange(101,dtype='l')/100.*np.pi/2.)
         r = [rmax] + list(rleft) + list(rrght) + [rmax,rmax]
         z = [-self.length/2.] + list(zleft) + list(zrght) + [self.length/2.,-self.length/2.]
         self.plotdata(r,z,color=color,filled=filled,fullplane=fullplane,**kw)
@@ -4321,7 +4320,7 @@ class Sphere(Assembly):
 
     def draw(self,color='fg',filled=None,fullplane=1,**kw):
         narcpoints = kw.get('narcpoints',64)
-        theta = np.linspace(0., 2.*pi, narcpoints+1)
+        theta = np.linspace(0., 2.*np.pi, narcpoints+1)
         r = self.radius*np.cos(theta)
         z = self.radius*np.sin(theta)
         self.plotdata(r,z,color=color,filled=filled,fullplane=fullplane,**kw)
@@ -4583,7 +4582,7 @@ class ZTorus(Assembly):
 
     def draw(self,color='fg',filled=None,fullplane=1,**kw):
         narcpoints = kw.get('narcpoints',64)
-        theta = np.linspace(0., 2.*pi, narcpoints+1)
+        theta = np.linspace(0., 2.*np.pi, narcpoints+1)
         r = self.r2*np.cos(theta) + self.r1
         z = self.r2*np.sin(theta)
         self.plotdata(r,z,color=color,filled=filled,fullplane=fullplane,**kw)
@@ -4613,6 +4612,7 @@ class ZGrid(Assembly):
         self.thickness = thickness
 
     def getextent(self):
+        length = self.length
         zmin = -length/2.
         zmax = +length/2.
         return ConductorExtent([-warp.largepos,-warp.largepos,zmin],
@@ -4728,7 +4728,7 @@ class Beamletplate(Assembly):
         d = self.griddistance(ix,iy,iz,x,y,z)
         zl = z[0] + d.dels[5,:]
         zl.shape = (len(xmesh),len(ymesh))
-        ml = Opyndx.VisualMesh(xx,yy,zl,twoSided=true)
+        ml = Opyndx.VisualMesh(xx,yy,zl,twoSided=warp.true)
 
         # --- Inner face
         z = self.z0*np.ones(len(xmesh)*len(ymesh),'d') + 0.5*self.za
@@ -4736,28 +4736,28 @@ class Beamletplate(Assembly):
         d = self.griddistance(ix,iy,iz,x,y,z)
         zr = z[0] - d.dels[4,:]
         zr.shape = (len(xmesh),len(ymesh))
-        mr = Opyndx.VisualMesh(xx,yy,zr,twoSided=true)
+        mr = Opyndx.VisualMesh(xx,yy,zr,twoSided=warp.true)
 
         # --- Four sides between faces
         xside = xx[:,0]*np.ones(2)[:,np.newaxis]
         yside = yy[:,0]*np.ones(2)[:,np.newaxis]
         zside = np.array([zl[:,0],zr[:,0]])
-        ms1 = Opyndx.VisualMesh(xside,yside,zside,twoSided=true)
+        ms1 = Opyndx.VisualMesh(xside,yside,zside,twoSided=warp.true)
 
         xside = xx[:,-1]*np.ones(2)[:,np.newaxis]
         yside = yy[:,-1]*np.ones(2)[:,np.newaxis]
         zside = np.array([zl[:,-1],zr[:,-1]])
-        ms1 = Opyndx.VisualMesh(xside,yside,zside,twoSided=true)
+        ms1 = Opyndx.VisualMesh(xside,yside,zside,twoSided=warp.true)
 
         xside = xx[0,:]*np.ones(2)[:,np.newaxis]
         yside = yy[0,:]*np.ones(2)[:,np.newaxis]
         zside = np.array([zl[0,:],zr[0,:]])
-        ms1 = Opyndx.VisualMesh(xside,yside,zside,twoSided=true)
+        ms1 = Opyndx.VisualMesh(xside,yside,zside,twoSided=warp.true)
 
         xside = xx[-1,:]*np.ones(2)[:,np.newaxis]
         yside = yy[-1,:]*np.ones(2)[:,np.newaxis]
         zside = np.array([zl[-1,:],zr[-1,:]])
-        ms1 = Opyndx.VisualMesh(xside,yside,zside,twoSided=true)
+        ms1 = Opyndx.VisualMesh(xside,yside,zside,twoSided=warp.true)
 
 #============================================================================
 #============================================================================
@@ -4847,9 +4847,9 @@ class Srfrv:
                     th1 = np.arctan2(rdata[i]   - rcdata[i],zdata[i]   - zcdata[i])
                     th2 = np.arctan2(rdata[i+1] - rcdata[i],zdata[i+1] - zcdata[i])
                     if (th1 > th2 and raddata[i] < 0. and zdata[i] < zdata[i+1]):
-                        th2 = th2 + 2*pi
+                        th2 = th2 + 2*np.pi
                     if (th1 < th2 and raddata[i] > 0. and zdata[i] < zdata[i+1]):
-                        th1 = th1 + 2*pi
+                        th1 = th1 + 2*np.pi
                     tt = np.linspace(th1, th2, narcpoints)
                     rr = abs(raddata[i])*np.sin(tt) + rcdata[i]
                     zz = abs(raddata[i])*np.cos(tt) + zcdata[i]
@@ -5084,7 +5084,7 @@ class ZSrfrvOut(Srfrv,Assembly):
         else:
             assert isinstance(self.rofzfunc,(types.FunctionType,types.MethodType,str)),\
                    'The rofzfunc is not properly specified'
-            self.lrofzfunc = true
+            self.lrofzfunc = True
             if isinstance(self.rofzfunc,str):
                 # --- Check if the rofzfunc is in main. Complain if it is not.
                 import __main__
@@ -5255,7 +5255,7 @@ class ZSrfrvIn(Srfrv,Assembly):
         else:
             assert isinstance(self.rofzfunc,(types.FunctionType,types.MethodType,str)),\
                    'The rofzfunc is not properly specified'
-            self.lrofzfunc = true
+            self.lrofzfunc = True
             if isinstance(self.rofzfunc,str):
                 # --- Check if the rofzfunc is in main. Complain if it is not.
                 import __main__
@@ -5433,7 +5433,7 @@ class ZSrfrvInOut(Srfrv,Assembly):
         else:
             assert isinstance(self.rminofz,(types.FunctionType,types.MethodType,str)),\
                    'The rminofz is not properly specified'
-            self.lrminofz = true
+            self.lrminofz = True
             zminmin = zmin
             zmaxmin = zmax
             if isinstance(self.rminofz,str):
@@ -5461,7 +5461,7 @@ class ZSrfrvInOut(Srfrv,Assembly):
         else:
             assert isinstance(self.rmaxofz,(types.FunctionType,types.MethodType,str)),\
                    'The rmaxofz is not properly specified'
-            self.lrmaxofz = true
+            self.lrmaxofz = True
             zminmax = zmin
             zmaxmax = zmax
             if isinstance(self.rmaxofz,str):
@@ -6095,7 +6095,7 @@ class YSrfrvInOut(ZSrfrvInOut,YAssembly):
                              voltage,xcent,ycent,zcent,condid,
                              rminofydata,ymindata,radmindata,
                              rcmindata,ycmindata,
-                             rmayofxdata,ymaxdata,radmaxdata,
+                             rmaxofydata,ymaxdata,radmaxdata,
                              rcmaxdata,ycmaxdata)
         YAssembly.__init__(self,self.voltage,self.xcent,self.ycent,self.zcent,
                                 self.condid,self.kwlist,
@@ -6460,7 +6460,7 @@ class Triangles(Assembly):
         Finds the line segment of the intersection of a triangle and a plane
         """
         def DistanceFromPlane(P):
-            return dot(planeN,P) + planeD
+            return np.dot(planeN,P) + planeD
 
         def GetSegmentPlaneIntersection(Pa, Pb, outSegTips):
             """Finds the point with the line (Pa, Pb) intersects the plane
@@ -6516,24 +6516,24 @@ class Triangles(Assembly):
             iz = warp.w3d.iz_axis
         lines = self.intersections_with_plane(planeN = np.array([0., 0., 1.]),
                                               planeD = warp.w3d.zmmin + iz*warp.w3d.dz)
-        pldj(lines[:,0,0]+self.xcent, lines[:,0,1]+self.ycent,
-             lines[:,1,0]+self.xcent, lines[:,1,1]+self.ycent, color=color, **kw)
+        warp.pldj(lines[:,0,0]+self.xcent, lines[:,0,1]+self.ycent,
+                  lines[:,1,0]+self.xcent, lines[:,1,1]+self.ycent, color=color, **kw)
 
     def drawzx(self,iy=None,color='fg',filled=None,fullplane=1,**kw):
         if iy is None:
             iy = warp.w3d.iy_axis
         lines = self.intersections_with_plane(planeN = np.array([0., 1., 0.]),
                                               planeD = warp.w3d.ymmin + iy*warp.w3d.dy)
-        pldj(lines[:,0,2]+self.zcent, lines[:,0,0]+self.xcent,
-             lines[:,1,2]+self.zcent, lines[:,1,0]+self.xcent, color=color, **kw)
+        warp.pldj(lines[:,0,2]+self.zcent, lines[:,0,0]+self.xcent,
+                  lines[:,1,2]+self.zcent, lines[:,1,0]+self.xcent, color=color, **kw)
 
     def drawzy(self,ix=None,color='fg',filled=None,fullplane=1,**kw):
         if ix is None:
             ix = warp.w3d.ix_axis
         lines = self.intersections_with_plane(planeN = np.array([1., 0., 0.]),
                                               planeD = warp.w3d.xmmin + ix*warp.w3d.dx)
-        pldj(lines[:,0,2]+self.zcent, lines[:,0,1]+self.ycent,
-             lines[:,1,2]+self.zcent, lines[:,1,1]+self.ycent, color=color, **kw)
+        warp.pldj(lines[:,0,2]+self.zcent, lines[:,0,1]+self.ycent,
+                  lines[:,1,2]+self.zcent, lines[:,1,1]+self.ycent, color=color, **kw)
 
     def createdxobject(self,kwdict={},**kw):
         pass
@@ -6771,16 +6771,16 @@ class SRFRVLApart:
         """
       Draw a line.
         """
-        pldj(x0,y0,x1,y1,color=color,width=width)
+        warp.pldj(x0,y0,x1,y1,color=color,width=width)
 
     def draw_arc(self,x0,y0,x1,y1,xc,yc,ncirc=50,color='black',width=1.):
         """
       Draw an arc as ncirc segments.
         """
         xy = self.get_xy_arc(x0,y0,x1,y1,xc,yc,ncirc)
-        pldj(xy[0][0:ncirc-1],xy[1][0:ncirc-1],
-             xy[0][1:ncirc],  xy[1][1:ncirc],
-             color=color,width=width)
+        warp.pldj(xy[0][0:ncirc-1],xy[1][0:ncirc-1],
+                  xy[0][1:ncirc],  xy[1][1:ncirc],
+                  color=color,width=width)
 
     def get_xy_arc(self,x0,y0,x1,y1,xc,yc,ncirc):
         """
@@ -6794,11 +6794,11 @@ class SRFRVLApart:
         r=np.sqrt(xi**2+yi**2)
         thetai=np.arctan2(yi,xi)
         thetaf=np.arctan2(yf,xf)
-        if(abs(thetaf-thetai)>pi):
+        if(abs(thetaf-thetai)>np.pi):
             if(thetaf-thetai<0.):
-                thetaf=thetaf+2.*pi
+                thetaf=thetaf+2.*np.pi
             else:
-                thetaf=thetaf-2.*pi
+                thetaf=thetaf-2.*np.pi
         dtheta=(thetaf-thetai)/(ncirc-1)
         x=np.zeros(ncirc+1,'d')
         y=np.zeros(ncirc+1,'d')
