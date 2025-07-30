@@ -65,7 +65,10 @@ def controllersdoc():
     from . import controllers
     print(controllers.__doc__)
 
+import builtins
+import sys
 from .warp import *
+import numpy
 import types
 import copy
 import time
@@ -499,22 +502,38 @@ class ControllerFunctionContainer:
         """Prints timings of install functions.
      - tmin=1.: only functions with time greater than tmin will be printed
         """
-        if ff is None: ff = sys.stdout
+        from .utils import printtimer_utils
+        cw = 20
+        fw = 1
         for c in self.clist:
             for fname,time in list(c.timers.items()):
-                vlist = array(gather(time))
+                cw = builtins.max(cw, len(c.name))
+                fw = builtins.max(fw, len(fname))
+
+        if ff is None: ff = sys.stdout
+
+        if me == 0:
+            ff.write('\n')
+            ff.write('ControllerFunctionContainer.printtimers\n')
+            header_rows = printtimer_utils.make_header_rows_parallel(
+                lminmax = lminmax,
+                ltime = (top.it > 0),
+                namewidth = cw + 1 + fw,
+            )
+            ff.write('\n'.join(header_rows)+'\n')
+
+        for c in self.clist:
+            for fname,time in list(c.timers.items()):
+                vlist = numpy.array(gather(time))
                 if me > 0: continue
-                vsum = sum(vlist)
-                if vsum <= tmin: continue
-                vrms = numpy.std(vlist)
-                ff.write('%20s %s %10.4f  %10.4f %10.4f'%(c.name,fname,vsum,vsum/npes,vrms))
-                if lminmax:
-                    vmin = min(vlist)
-                    vmax = max(vlist)
-                    ff.write('  %10.4f  %10.4f'%(vmin,vmax))
-                if top.it > 0:
-                    ff.write('   %10.4f'%(vsum/npes/(top.it)))
-                ff.write('\n')
+                printtimer_utils.write_vlist(
+                    vlist = vlist,
+                    ff = ff,
+                    name = f"{c.name:>{cw}} {fname:<{fw}}",
+                    mintime = tmin,
+                    lminmax = lminmax,
+                    top_it = top.it,
+                )
 
 # --- This is primarily needed by warp.py so that these objects can be removed
 # --- from the list of python objects which are not written out.

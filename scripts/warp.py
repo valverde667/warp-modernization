@@ -7,7 +7,9 @@ warpstarttime = time.perf_counter()
 
 # import all of the neccesary packages
 import __main__
+import builtins
 import sys
+from typing import Literal
 
 #from line_profiler import LineProfiler
 #lineprofile = LineProfiler()
@@ -1113,7 +1115,7 @@ def restart(filename,suffix='',verbose=false,skip=[],
 ##############################################################################
 
 ##############################################################################
-def printtimers(file=None,lminmax=0,mintime=0.,icontrollers=2):
+def printtimers(file=None,lminmax=0,mintime=0.,icontrollers:Literal[0,1,2]=2):
     """
   Print timers in a nice annotated format
     - file=None: Optional input file. If it is not include, stdout is used. It can
@@ -1128,6 +1130,10 @@ def printtimers(file=None,lminmax=0,mintime=0.,icontrollers=2):
                       When 2, also prints the timings of all of the
                       installed functions
     """
+    from .utils import printtimer_utils
+    def f2s(val):
+        return printtimer_utils.formatfloat2str(val, width=10, ndigits=4)
+
     if file is None:
         ff = sys.stdout
         closeit = 0
@@ -1139,17 +1145,16 @@ def printtimers(file=None,lminmax=0,mintime=0.,icontrollers=2):
         closeit = 0
     if not lparallel:
 
-        if top.it == 0:
-            ff.write('                    Total time\n')
-            ff.write('                          (s)\n')
-        else:
-            ff.write('                    Total time          Time per step\n')
-            ff.write('                          (s)                  (s)\n')
+        header_rows = printtimer_utils.make_header_rows_serial(
+            ltime = (top.it > 0),
+            namewidth = 19,
+        )
+        ff.write('\n'.join(header_rows)+'\n')
 
         def _doprint(name,value,gen):
-            ff.write('%-19s%10.4f'%(name,value))
+            ff.write(f"{name:<19}{f2s(value)}")
             if top.it > 0 and gen is not None:
-                ff.write('           %10.4f'%(value/(top.it+gen)))
+                ff.write(f"           {f2s(value/(top.it+gen))}")
             ff.write('\n')
 
         _doprint('Generate time',top.gentime,None)
@@ -1166,36 +1171,26 @@ def printtimers(file=None,lminmax=0,mintime=0.,icontrollers=2):
     else: # --- parallel
 
         if me == 0:
-            ff.write('                          Total time         Deviation')
-            if lminmax: ff.write('      Min         Max')
-            if top.it > 0: ff.write('     Time per step')
-            ff.write('\n')
-
-            ff.write('                    (all CPUs)   (per CPU)            ')
-            if lminmax: ff.write('                     ')
-            if top.it > 0: ff.write('       (per CPU)')
-            ff.write('\n')
-
-            ff.write('                        (s)         (s)         (s)   ')
-            if lminmax: ff.write('      (s)         (s)')
-            if top.it > 0: ff.write('          (s)')
-            ff.write('\n')
+            header_rows = printtimer_utils.make_header_rows_parallel(
+                lminmax = lminmax,
+                ltime = (top.it > 0),
+                namewidth = 18,
+            )
+            ff.write('\n'.join(header_rows)+'\n')
 
         def _doprint(name,value,gen):
             # --- gen is None when printing the generate time.
             # --- gen is either 0 or 1, 1 if the action happened during the generate
-            vlist = array(gather(value))
+            vlist = numpy.array(gather(value))
             if me > 0: return
-            vsum = sum(vlist)
-            vrms = numpy.std(vlist)
-            ff.write('%18s  %10.4f  %10.4f  %10.4f'%(name,vsum,vsum/npes,vrms))
-            if lminmax:
-                vmin = min(vlist)
-                vmax = max(vlist)
-                ff.write('  %10.4f  %10.4f'%(vmin,vmax))
-            if top.it > 0 and gen is not None:
-                ff.write('   %10.4f'%(vsum/npes/(top.it+gen)))
-            ff.write('\n')
+            printtimer_utils.write_vlist(
+                vlist = vlist,
+                ff = ff,
+                name = f"{name:>18}",
+                mintime = -1.,
+                lminmax = lminmax,
+                top_it = None if gen is None else (top.it + gen),
+            )
 
         _doprint('Generate time',      top.gentime,     None)
         _doprint('Step time',          top.steptime,    0)
@@ -1209,46 +1204,62 @@ def printtimers(file=None,lminmax=0,mintime=0.,icontrollers=2):
         _doprint('Dump time',          top.dumptime,    0)
 
     # --- Print the subroutine timers
-    def _doprint(pkg,timergroup):
+    def _doprint_subtimers(pkg,timergroup:str):
         if me == 0: ff.write('\n')
+        nwidth = builtins.max([18]+[len(name[4:]) for name in pkg.varlist(timergroup)[1:]])
+        if me == 0:
+            timergroup_pkg_name = str(timergroup)[len('Subtimers'):]
+            ff.write(f"Subroutine timers of {timergroup_pkg_name}\n")
+            header_rows = printtimer_utils.make_header_rows_parallel(
+                lminmax = lminmax,
+                ltime = (top.it > 0),
+                namewidth = nwidth,
+            )
+            ff.write('\n'.join(header_rows)+'\n')
+
         # --- Loop over the list of timer variables (skipping the first which is
         # --- the flag)
         for name in pkg.varlist(timergroup)[1:]:
             value = getattr(pkg,name)
-            vlist = array(gather(value))
+            vlist = numpy.array(gather(value))
             if me > 0: continue
-            vsum = sum(vlist)
-            if vsum <= mintime: continue
-            vrms = numpy.std(vlist)
-            ff.write('%18s  %10.4f  %10.4f  %10.4f'%(name[4:],vsum,vsum/npes,vrms))
-            if lminmax:
-                vmin = min(vlist)
-                vmax = max(vlist)
-                ff.write('  %10.4f  %10.4f'%(vmin,vmax))
-            if top.it > 0:
-                ff.write('   %10.4f'%(vsum/npes/(top.it)))
-            ff.write('\n')
+            printtimer_utils.write_vlist(
+                vlist = vlist,
+                ff = ff,
+                name = f"{name[4:]:>{nwidth}}",
+                mintime = mintime,
+                lminmax = lminmax,
+                top_it = top.it,
+            )
 
-    if top.ltoptimesubs: _doprint(top,'Subtimerstop')
-    if w3d.lw3dtimesubs: _doprint(w3d,'Subtimersw3d')
-    if f3d.lf3dtimesubs: _doprint(f3d,'Subtimersf3d')
+    if top.ltoptimesubs: _doprint_subtimers(top,'Subtimerstop')
+    if w3d.lw3dtimesubs: _doprint_subtimers(w3d,'Subtimersw3d')
+    if f3d.lf3dtimesubs: _doprint_subtimers(f3d,'Subtimersf3d')
     #if em3d.lem3dtimesubs: _doprint(em3d,'Subtimersem3d')
 
     if icontrollers > 0:
-        for c in controllerfunctioncontainer.clist:
-            vlist = array(gather(c.time))
-            if me > 0: continue
-            vsum = sum(vlist)
-            if vsum == 0.: continue
-            vrms = numpy.std(vlist)
-            ff.write('%20s  %10.4f  %10.4f  %10.4f'%(c.name,vsum,vsum/npes,vrms))
-            if lminmax:
-                vmin = min(vlist)
-                vmax = max(vlist)
-                ff.write('  %10.4f  %10.4f'%(vmin,vmax))
-            if top.it > 0:
-                ff.write('   %10.4f'%(vsum/npes/(top.it)))
+        nwidth = builtins.max([20]+[len(str(c.name)) for c in controllerfunctioncontainer.clist])
+        if me == 0:
             ff.write('\n')
+            ff.write('Controller timers\n')
+            header_rows = printtimer_utils.make_header_rows_parallel(
+                lminmax = lminmax,
+                ltime = (top.it > 0),
+                namewidth = nwidth,
+            )
+            ff.write('\n'.join(header_rows)+'\n')
+
+        for c in controllerfunctioncontainer.clist:
+            vlist = numpy.array(gather(c.time))
+            if me > 0: continue
+            printtimer_utils.write_vlist(
+                vlist = vlist,
+                ff = ff,
+                name = f"{c.name:>{nwidth}}",
+                mintime = 0.,
+                lminmax = lminmax,
+                top_it = top.it,
+            )
 
         if icontrollers > 1:
             controllerfunctioncontainer.printtimers(tmin=0.,lminmax=lminmax,ff=ff)
@@ -1256,7 +1267,7 @@ def printtimers(file=None,lminmax=0,mintime=0.,icontrollers=2):
     if closeit:
         ff.close()
 
-def printtimersordered(file=None,depth=3):
+def printtimersordered(file=None,depth:Literal[0,1,2,3,4]=3,mintime=0.1):
     """
   Print timers in a nice annotated format, sorted by call sequence
     - file=None: Optional input file. If it is not include, stdout is used. It
@@ -1265,6 +1276,7 @@ def printtimersordered(file=None,depth=3):
                  written to that file (the file remains open).
     - depth=3: depth of the call chain to show
     """
+    from .utils.printtimer_utils import formatfloat2str as f2s
 
     if file is None:
         ff = sys.stdout
@@ -1278,9 +1290,9 @@ def printtimersordered(file=None,depth=3):
 
     def _doprint(i,v,name):
         if i > depth: return
-        v = sum(gather(v))/npes
-        if v > 0.1:
-            ff.write('%s%-20s  %7.1f\n'%(i*'    ',name,v))
+        v = numpy.array(gather(v)).sum()/npes
+        if v > mintime:
+            ff.write(f"{i*'    '}{name:<20}  {f2s(v,7,1)}\n")
 
     ff.write('times per CPU (s)\n')
     _doprint(0,top.steptime,'step')
