@@ -2121,7 +2121,7 @@ def setdecomposedarray(arr,val,ix=None,iy=None,iz=None,local=0,solver=None):
 
             # --- Add extra dimensions so that the input has the same number of
             # --- dimensions as array.
-            ppp = array(val,copy=False)
+            ppp = np.asarray(val)
             sss = list(ppp.shape)
             if ix is not None and nx > 0: sss[0:0] = [1]
             if iy is not None and ny > 0: sss[1:1] = [1]
@@ -2337,7 +2337,7 @@ def getselfe(comp=None,ix=None,iy=None,iz=None,bcast=1,local=0,fullplane=0,
         Ey = solver.getey()
         Ez = solver.getez()
 
-    elif ((alltrue(top.efetch != 3) and maxnd(top.depos_order) == 1) or
+    elif ((np.all(top.efetch != 3) and maxnd(top.depos_order) == 1) or
           not w3d.allocated('selfe')):
         # --- If not already using selfe, then allocate it and set it.
         # --- Note that this could be an unexpected expense for a user.
