@@ -160,7 +160,7 @@ class MeshRefinement(VisualizableClass):
 
                 # --- Make sure that the input makes sense.
                 # --- Make sure that the block has a finite extent in all dimensions
-                assert alltrue(self.maxs>=self.mins),\
+                assert np.all(self.maxs>=self.mins),\
                      "The child must have a finite extent in all dimensions"
 
                 # --- Save the input values. the actual values used will be modified
@@ -189,7 +189,7 @@ class MeshRefinement(VisualizableClass):
 
                 # --- Make sure that the input makes sense.
                 # --- Make sure that the block has a finite extent in all dimensions
-                assert alltrue(self.upper>=self.lower),\
+                assert np.all(self.upper>=self.lower),\
                      "The child must have a finite extent in all dimensions"
 
                 # --- Save the input values. the actual values used will be modified
@@ -245,7 +245,7 @@ class MeshRefinement(VisualizableClass):
 
             # --- If it is still odd, then there is some serious problem. The number
             # --- in the base grid may be odd.
-            assert alltrue(self.dims[:2]%2 == 0),\
+            assert np.all(self.dims[:2]%2 == 0),\
                    """The number of grid cells in one of the transverse dimensions is odd - they all must be even. Check that the number of cells in the base grid is even."""
 
             # --- Now calculate the extent of the grid
@@ -272,7 +272,7 @@ class MeshRefinement(VisualizableClass):
             # --- necessarily intersect to domain of some processors.
             # --- This flag can also provide a way for a user to turn off blocks
             # --- for testing purposes or otherwise.
-            self.isactive = alltrue(self.upper>=self.lower)
+            self.isactive = np.all(self.upper>=self.lower)
 
             # --- First, just use same boundary conditions as root.
             self.bounds = self.root.bounds.copy()
@@ -677,7 +677,7 @@ class MeshRefinement(VisualizableClass):
             # --- Get extent of possible overlapping domain
             l = maximum(block.fullloweroverrefinement,self.fulllower)
             u = minimum(block.fullupperoverrefinement,self.fullupper)
-            #if alltrue(u >= l):
+            #if np.all(u >= l):
             if (u[0] >= l[0] and u[1] >= l[1] and u[2] >= l[2]):
                 self.children.append(block)
                 block.parents.append(self.blocknumber)
