@@ -842,9 +842,9 @@ pla( y [, x] )
     kw.setdefault('type',linetype)
     if len(shape(y)) == 0: y = [y]
     if x is not None and len(shape(x)) == 0: x = [x]
-    y = array(y,copy=False)
+    y = np.asarray(y)
     if x is not None:
-        x = array(x,copy=False)
+        x = np.asarray(x)
         # --- This is the only constraint on the input arrays.
         assert shape(x)[0]==shape(y)[0],\
           'The first dimensions of the two input arrays must be of the same length'

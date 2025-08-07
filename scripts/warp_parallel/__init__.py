@@ -3,6 +3,7 @@
 #
 import warpoptions
 from numpy import *
+import numpy as np
 
 if warpoptions.options is not None:
     serial = warpoptions.options.serial
@@ -521,7 +522,7 @@ def gatherarray(a, root=0, othersempty=0, bcast=0, comm=None):
         if type(a) in [type(0.), type(0)]:
             a = array([a])
         else:
-            a = array(a, copy=False)
+            a = np.asarray(a)
     except:
         isinputok = 0
     # --- Make sure the input is ok on all of the processors
@@ -618,19 +619,19 @@ def globalop(a, localop, mpiop, defaultval, comm=None):
 # --- Specific operations on a distributed array.
 def globalmax(a, comm=None):
     def _max(a):
-        return array(a, copy=False).max()
+        return np.asarray(a).max()
     return globalop(a, _max, "MAX", -1.e36, comm=comm)
 def globalmin(a, comm=None):
     def _min(a):
-        return array(a, copy=False).min()
+        return np.asarray(a).min()
     return globalop(a, _min, "MIN", +1.e36, comm=comm)
 def globalsum(a, comm=None):
     def _sum(a):
-        return array(a, copy=False).sum()
+        return np.asarray(a).sum()
     return globalop(a, _sum, "SUM", 0., comm=comm)
 def globalave(a, comm=None):
     def _sum(a):
-        return array(a, copy=False).sum()
+        return np.asarray(a).sum()
     s = globalop(a, _sum, "SUM", 0., comm=comm)
     if len(shape(a)) == 0:
         a = [a]
